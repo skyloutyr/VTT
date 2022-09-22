@@ -286,7 +286,7 @@
                 this._buffer[bIdx + 1] = p.WorldPosition.Y;
                 this._buffer[bIdx + 2] = p.WorldPosition.Z;
                 this._buffer[bIdx + 3] = p.Active ? p.Scale : 0.0f;
-                this._buffer[bIdx + 4] = VTTMath.UInt32BitsToSingle(Extensions.Argb(p.Color));
+                this._buffer[bIdx + 4] = VTTMath.UInt32BitsToSingle(Extensions.Rgba(p.Color));
                 this._buffer[bIdx + 5] = VTTMath.UInt32BitsToSingle(p.Lifespan == 0 ? 0 : (uint)(this._frameAmount * ((float)p.Age / p.Lifespan)));
                 if (p.Active)
                 {

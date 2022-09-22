@@ -69,7 +69,17 @@
         public static byte AlphaB(this Color self) => self.ToPixel<Rgba32>().A;
 
         public static uint Argb(this Color color) => ((uint)color.AlphaB() << 24) | ((uint)color.RedB() << 16) | ((uint)color.GreenB() << 8) | color.BlueB();
-        public static uint Argb(this TKVec4 color) => FromVec4(color).Argb();
+        public static uint Rgba(this TKVec4 clrVec)
+        {
+            unchecked
+            {
+                uint br = (byte)(clrVec.X * 255);
+                uint bg = (byte)(clrVec.Y * 255);
+                uint bb = (byte)(clrVec.Z * 255);
+                uint ba = (byte)(clrVec.W * 255);
+                return (br << 24) | (bg << 16) | (bb << 8) | ba;
+            }
+        }
         public static uint Rgba(this Color color) => ((uint)color.RedB() << 24) | ((uint)color.GreenB() << 16) | ((uint)color.Blue() << 8) | color.AlphaB();
         public static uint Abgr(this Color color) => ((uint)color.AlphaB() << 24) | ((uint)color.BlueB() << 16) | ((uint)color.GreenB() << 8) | color.RedB();
         public static uint Bgra(this Color color) => ((uint)color.BlueB() << 24) | ((uint)color.GreenB() << 16) | ((uint)color.RedB() << 8) | color.AlphaB();

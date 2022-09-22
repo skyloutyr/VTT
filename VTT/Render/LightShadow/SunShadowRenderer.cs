@@ -38,6 +38,11 @@
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, this._sunDepthTexture, 0);
             GL.DrawBuffer(DrawBufferMode.None);
             GL.ReadBuffer(ReadBufferMode.None);
+            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (fec != FramebufferErrorCode.FramebufferComplete)
+            {
+                throw new System.Exception("Sun framebuffer not complete!");
+            }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
@@ -60,8 +65,8 @@
                 this.SunView = vCam.View;
                 this.SunProjection = vCam.Projection;
 
-                GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._sunFbo);
+                GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
                 GL.Clear(ClearBufferMask.DepthBufferBit);
 
                 this.SunShader.Bind();
@@ -78,7 +83,7 @@
                         if (status == AssetStatus.Return && a != null && a.Model != null && a.Model.GLMdl != null)
                         {
                             Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                            a.Model.GLMdl.Render(this.SunShader, this.SunProjection, this.SunView, modelMatrix, 0);
+                            a.Model.GLMdl.Render(this.SunShader, modelMatrix, this.SunProjection, this.SunView, 0);
                         }
                     }
                 }

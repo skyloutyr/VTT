@@ -61,7 +61,7 @@
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
-            tex.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
+            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
             using Image<Rgba32> img = IOVTT.ResourceToImage<Rgba32>("VTT.Embed." + name + ".png");
             tex.SetImage(img, format);
@@ -73,7 +73,7 @@
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
-            tex.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
+            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             using Image<Rgba32> img = new Image<Rgba32>(1, 1, pixel);
             tex.SetImage(img, format);

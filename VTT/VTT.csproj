@@ -1,0 +1,288 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>icon-alpha.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Embed\arrow_arrow.obj" />
+    <None Remove="Embed\arrow_center_arrow.obj" />
+    <None Remove="Embed\arrow_center_square.obj" />
+    <None Remove="Embed\arrow_cube.obj" />
+    <None Remove="Embed\arrow_move.obj" />
+    <None Remove="Embed\arrow_move_outline.obj" />
+    <None Remove="Embed\arrow_ptr.obj" />
+    <None Remove="Embed\arrow_ring.obj" />
+    <None Remove="Embed\arrow_square.obj" />
+    <None Remove="Embed\arrow_start.obj" />
+    <None Remove="Embed\atlas.png" />
+    <None Remove="Embed\atlas_info.json" />
+    <None Remove="Embed\atlas_low.png" />
+    <None Remove="Embed\cross.obj" />
+    <None Remove="Embed\cube.obj" />
+    <None Remove="Embed\deferred.frag" />
+    <None Remove="Embed\deferred.vert" />
+    <None Remove="Embed\deferred_final.frag" />
+    <None Remove="Embed\deferred_final.vert" />
+    <None Remove="Embed\emoji-data.txt" />
+    <None Remove="Embed\grid.frag" />
+    <None Remove="Embed\grid.vert" />
+    <None Remove="Embed\highlight.frag" />
+    <None Remove="Embed\highlight.vert" />
+    <None Remove="Embed\icon-alpha.png" />
+    <None Remove="Embed\icons8-3d-64.png" />
+    <None Remove="Embed\icons8-abscissa-40.png" />
+    <None Remove="Embed\icons8-accuracy-40.png" />
+    <None Remove="Embed\icons8-block-40.png" />
+    <None Remove="Embed\icons8-box-important-80.png" />
+    <None Remove="Embed\icons8-closed-eye-40.png" />
+    <None Remove="Embed\icons8-cube-40.png" />
+    <None Remove="Embed\icons8-cursor-40.png" />
+    <None Remove="Embed\icons8-curved-arrow-40.png" />
+    <None Remove="Embed\icons8-day-camera-40.png" />
+    <None Remove="Embed\icons8-dice-40.png" />
+    <None Remove="Embed\icons8-dice-60.png" />
+    <None Remove="Embed\icons8-double-down-80.png" />
+    <None Remove="Embed\icons8-drag-40.png" />
+    <None Remove="Embed\icons8-edit-40.png" />
+    <None Remove="Embed\icons8-error-40.png" />
+    <None Remove="Embed\icons8-eye-40.png" />
+    <None Remove="Embed\icons8-folder-40.png" />
+    <None Remove="Embed\icons8-help-80.png" />
+    <None Remove="Embed\icons8-incoming-data-40.png" />
+    <None Remove="Embed\icons8-length-40.png" />
+    <None Remove="Embed\icons8-link-picture-40.png" />
+    <None Remove="Embed\icons8-lips-40.png" />
+    <None Remove="Embed\icons8-loading-circle.gif" />
+    <None Remove="Embed\icons8-loading-circle.png" />
+    <None Remove="Embed\icons8-magic-64.png" />
+    <None Remove="Embed\icons8-money-bag-40.png" />
+    <None Remove="Embed\icons8-move-all-arrow-40.png" />
+    <None Remove="Embed\icons8-move-separate-40.png" />
+    <None Remove="Embed\icons8-no-image-40.png" />
+    <None Remove="Embed\icons8-outgoing-data-40.png" />
+    <None Remove="Embed\icons8-paint-40.png" />
+    <None Remove="Embed\icons8-paper-plane-40.png" />
+    <None Remove="Embed\icons8-particle-40.png" />
+    <None Remove="Embed\icons8-pause-40.png" />
+    <None Remove="Embed\icons8-pentagram-64.png" />
+    <None Remove="Embed\icons8-picture-40.png" />
+    <None Remove="Embed\icons8-pipeline-40.png" />
+    <None Remove="Embed\icons8-play-40.png" />
+    <None Remove="Embed\icons8-plus-math-40.png" />
+    <None Remove="Embed\icons8-process-40.png" />
+    <None Remove="Embed\icons8-radar-plot-40.png" />
+    <None Remove="Embed\icons8-radius-40.png" />
+    <None Remove="Embed\icons8-rectangle-40.png" />
+    <None Remove="Embed\icons8-resize-40.png" />
+    <None Remove="Embed\icons8-return-40.png" />
+    <None Remove="Embed\icons8-security-lock-80.png" />
+    <None Remove="Embed\icons8-so-so-40.png" />
+    <None Remove="Embed\icons8-sphere-58.png" />
+    <None Remove="Embed\icons8-stopwatch-40.png" />
+    <None Remove="Embed\icons8-surface-40.png" />
+    <None Remove="Embed\icons8-sword-80.png" />
+    <None Remove="Embed\icons8-swords-40.png" />
+    <None Remove="Embed\icons8-thinking-male-40.png" />
+    <None Remove="Embed\icons8-trash-can-40.png" />
+    <None Remove="Embed\icons8-vertical-line-40.png" />
+    <None Remove="Embed\icons8-visualy-impaired-40.png" />
+    <None Remove="Embed\Lang\en-EN.txt" />
+    <None Remove="Embed\Lang\ru-RU.txt" />
+    <None Remove="Embed\logo-alpha.png" />
+    <None Remove="Embed\logo-alpha.xcf" />
+    <None Remove="Embed\Logo\alpha-hardhat-broken.png" />
+    <None Remove="Embed\Logo\alpha-hardhat.png" />
+    <None Remove="Embed\Logo\alpha-letters.png" />
+    <None Remove="Embed\Logo\alpha-mascot.png" />
+    <None Remove="Embed\Logo\alpha-sparks.png" />
+    <None Remove="Embed\Logo\alpha-thunk.png" />
+    <None Remove="Embed\Logo\beta-letters-off.png" />
+    <None Remove="Embed\Logo\beta-letters.png" />
+    <None Remove="Embed\Logo\beta-light.png" />
+    <None Remove="Embed\Logo\beta-mascot.png" />
+    <None Remove="Embed\Logo\beta-switch-off.png" />
+    <None Remove="Embed\Logo\beta-switch.png" />
+    <None Remove="Embed\Logo\beta-wires.png" />
+    <None Remove="Embed\Logo\logo-alpha.png" />
+    <None Remove="Embed\Logo\Logo-Main.png" />
+    <None Remove="Embed\Logo\Logo-NulEng-Anim.png" />
+    <None Remove="Embed\Logo\Logo-NulEng.png" />
+    <None Remove="Embed\moverlay.frag" />
+    <None Remove="Embed\moverlay.vert" />
+    <None Remove="Embed\object.frag" />
+    <None Remove="Embed\object.vert" />
+    <None Remove="Embed\object_shadow.frag" />
+    <None Remove="Embed\object_shadow.vert" />
+    <None Remove="Embed\overlay.frag" />
+    <None Remove="Embed\overlay.vert" />
+    <None Remove="Embed\particle.frag" />
+    <None Remove="Embed\particle.vert" />
+    <None Remove="Embed\ping_lower.obj" />
+    <None Remove="Embed\pl.frag" />
+    <None Remove="Embed\pl.geom" />
+    <None Remove="Embed\pl.vert" />
+    <None Remove="Embed\sky.frag" />
+    <None Remove="Embed\sky.vert" />
+    <None Remove="Embed\square.obj" />
+    <None Remove="Embed\turn-tracker-back-no-object.png" />
+    <None Remove="Embed\turn-tracker-back.png" />
+    <None Remove="Embed\unifont-14.0.04.ttf" />
+    <None Remove="Embed\unifont-14.0.04.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icon-alpha.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Embed\arrow_arrow.obj" />
+    <EmbeddedResource Include="Embed\arrow_center_arrow.obj" />
+    <EmbeddedResource Include="Embed\arrow_center_square.obj" />
+    <EmbeddedResource Include="Embed\arrow_cube.obj" />
+    <EmbeddedResource Include="Embed\arrow_move.obj" />
+    <EmbeddedResource Include="Embed\arrow_move_outline.obj" />
+    <EmbeddedResource Include="Embed\arrow_ptr.obj" />
+    <EmbeddedResource Include="Embed\arrow_ring.obj" />
+    <EmbeddedResource Include="Embed\arrow_square.obj" />
+    <EmbeddedResource Include="Embed\arrow_start.obj" />
+    <EmbeddedResource Include="Embed\atlas.png" />
+    <EmbeddedResource Include="Embed\atlas_info.json" />
+    <EmbeddedResource Include="Embed\atlas_low.png" />
+    <EmbeddedResource Include="Embed\cross.obj" />
+    <EmbeddedResource Include="Embed\cube.obj" />
+    <EmbeddedResource Include="Embed\deferred.frag" />
+    <EmbeddedResource Include="Embed\deferred.vert" />
+    <EmbeddedResource Include="Embed\deferred_final.frag" />
+    <EmbeddedResource Include="Embed\deferred_final.vert" />
+    <EmbeddedResource Include="Embed\emoji-data.txt" />
+    <EmbeddedResource Include="Embed\grid.frag" />
+    <EmbeddedResource Include="Embed\grid.vert" />
+    <EmbeddedResource Include="Embed\icon-alpha.png" />
+    <EmbeddedResource Include="Embed\icons8-3d-64.png" />
+    <EmbeddedResource Include="Embed\icons8-abscissa-40.png" />
+    <EmbeddedResource Include="Embed\icons8-accuracy-40.png" />
+    <EmbeddedResource Include="Embed\icons8-block-40.png" />
+    <EmbeddedResource Include="Embed\icons8-box-important-80.png" />
+    <EmbeddedResource Include="Embed\icons8-closed-eye-40.png" />
+    <EmbeddedResource Include="Embed\icons8-cube-40.png" />
+    <EmbeddedResource Include="Embed\icons8-curved-arrow-40.png" />
+    <EmbeddedResource Include="Embed\icons8-day-camera-40.png" />
+    <EmbeddedResource Include="Embed\icons8-dice-40.png" />
+    <EmbeddedResource Include="Embed\icons8-dice-60.png" />
+    <EmbeddedResource Include="Embed\icons8-double-down-80.png" />
+    <EmbeddedResource Include="Embed\icons8-edit-40.png" />
+    <EmbeddedResource Include="Embed\icons8-eye-40.png" />
+    <EmbeddedResource Include="Embed\icons8-help-80.png" />
+    <EmbeddedResource Include="Embed\icons8-incoming-data-40.png" />
+    <EmbeddedResource Include="Embed\icons8-length-40.png" />
+    <EmbeddedResource Include="Embed\icons8-link-picture-40.png" />
+    <EmbeddedResource Include="Embed\icons8-lips-40.png" />
+    <EmbeddedResource Include="Embed\icons8-magic-64.png" />
+    <EmbeddedResource Include="Embed\icons8-money-bag-40.png" />
+    <EmbeddedResource Include="Embed\icons8-move-all-arrow-40.png" />
+    <EmbeddedResource Include="Embed\icons8-move-separate-40.png" />
+    <EmbeddedResource Include="Embed\icons8-no-image-40.png" />
+    <EmbeddedResource Include="Embed\icons8-outgoing-data-40.png" />
+    <EmbeddedResource Include="Embed\icons8-paint-40.png" />
+    <EmbeddedResource Include="Embed\icons8-paper-plane-40.png" />
+    <EmbeddedResource Include="Embed\icons8-particle-40.png" />
+    <EmbeddedResource Include="Embed\icons8-pause-40.png" />
+    <EmbeddedResource Include="Embed\icons8-pentagram-64.png" />
+    <EmbeddedResource Include="Embed\icons8-picture-40.png" />
+    <EmbeddedResource Include="Embed\icons8-pipeline-40.png" />
+    <EmbeddedResource Include="Embed\icons8-play-40.png" />
+    <EmbeddedResource Include="Embed\icons8-radar-plot-40.png" />
+    <EmbeddedResource Include="Embed\icons8-radius-40.png" />
+    <EmbeddedResource Include="Embed\icons8-rectangle-40.png" />
+    <EmbeddedResource Include="Embed\icons8-security-lock-80.png" />
+    <EmbeddedResource Include="Embed\icons8-so-so-40.png" />
+    <EmbeddedResource Include="Embed\icons8-sphere-58.png" />
+    <EmbeddedResource Include="Embed\icons8-stopwatch-40.png" />
+    <EmbeddedResource Include="Embed\icons8-surface-40.png" />
+    <EmbeddedResource Include="Embed\icons8-sword-80.png" />
+    <EmbeddedResource Include="Embed\icons8-swords-40.png" />
+    <EmbeddedResource Include="Embed\icons8-thinking-male-40.png" />
+    <EmbeddedResource Include="Embed\icons8-trash-can-40.png" />
+    <EmbeddedResource Include="Embed\icons8-vertical-line-40.png" />
+    <EmbeddedResource Include="Embed\icons8-visualy-impaired-40.png" />
+    <EmbeddedResource Include="Embed\Lang\ru-RU.txt" />
+    <EmbeddedResource Include="Embed\Lang\en-EN.txt" />
+    <EmbeddedResource Include="Embed\logo-alpha.png" />
+    <EmbeddedResource Include="Embed\logo-alpha.xcf" />
+    <EmbeddedResource Include="Embed\Logo\alpha-hardhat-broken.png" />
+    <EmbeddedResource Include="Embed\Logo\alpha-hardhat.png" />
+    <EmbeddedResource Include="Embed\Logo\alpha-letters.png" />
+    <EmbeddedResource Include="Embed\Logo\alpha-mascot.png" />
+    <EmbeddedResource Include="Embed\Logo\alpha-sparks.png" />
+    <EmbeddedResource Include="Embed\Logo\alpha-thunk.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-letters-off.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-letters.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-light.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-mascot.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-switch-off.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-switch.png" />
+    <EmbeddedResource Include="Embed\Logo\beta-wires.png" />
+    <EmbeddedResource Include="Embed\Logo\logo-alpha.png" />
+    <EmbeddedResource Include="Embed\Logo\logo-main.png" />
+    <EmbeddedResource Include="Embed\Logo\logo-nuleng-anim.png" />
+    <EmbeddedResource Include="Embed\Logo\Logo-NulEng.png" />
+    <EmbeddedResource Include="Embed\moverlay.frag" />
+    <EmbeddedResource Include="Embed\moverlay.vert" />
+    <EmbeddedResource Include="Embed\icons8-cursor-40.png" />
+    <EmbeddedResource Include="Embed\icons8-drag-40.png" />
+    <EmbeddedResource Include="Embed\icons8-error-40.png" />
+    <EmbeddedResource Include="Embed\icons8-folder-40.png" />
+    <EmbeddedResource Include="Embed\icons8-loading-circle.gif" />
+    <EmbeddedResource Include="Embed\icons8-loading-circle.png" />
+    <EmbeddedResource Include="Embed\icons8-plus-math-40.png" />
+    <EmbeddedResource Include="Embed\icons8-process-40.png" />
+    <EmbeddedResource Include="Embed\icons8-resize-40.png" />
+    <EmbeddedResource Include="Embed\icons8-return-40.png" />
+    <EmbeddedResource Include="Embed\object.frag" />
+    <EmbeddedResource Include="Embed\object.vert" />
+    <EmbeddedResource Include="Embed\highlight.frag" />
+    <EmbeddedResource Include="Embed\highlight.vert" />
+    <EmbeddedResource Include="Embed\object_shadow.frag" />
+    <EmbeddedResource Include="Embed\object_shadow.vert" />
+    <EmbeddedResource Include="Embed\overlay.frag" />
+    <EmbeddedResource Include="Embed\overlay.vert" />
+    <EmbeddedResource Include="Embed\particle.frag" />
+    <EmbeddedResource Include="Embed\particle.vert" />
+    <EmbeddedResource Include="Embed\ping_lower.obj" />
+    <EmbeddedResource Include="Embed\pl.frag" />
+    <EmbeddedResource Include="Embed\pl.geom" />
+    <EmbeddedResource Include="Embed\pl.vert" />
+    <EmbeddedResource Include="Embed\sky.frag" />
+    <EmbeddedResource Include="Embed\sky.vert" />
+    <EmbeddedResource Include="Embed\square.obj" />
+    <EmbeddedResource Include="Embed\turn-tracker-back-no-object.png" />
+    <EmbeddedResource Include="Embed\turn-tracker-back.png" />
+    <EmbeddedResource Include="Embed\unifont-14.0.04.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CoreCLR-NCalc" Version="2.2.110" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="5.1.0" />
+    <PackageReference Include="glTF2Loader" Version="1.1.4-alpha" />
+    <PackageReference Include="ImGui.NET" Version="1.87.3" />
+    <PackageReference Include="NetCoreServer" Version="6.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2-beta2" />
+    <PackageReference Include="OpenTK" Version="4.7.5" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Version.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

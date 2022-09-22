@@ -1,0 +1,185 @@
+﻿namespace VTT.Render.Chat
+{
+    using ImGuiNET;
+    using SixLabors.ImageSharp;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using VTT.Control;
+    using VTT.Util;
+
+    public class ChatRendererLine : ChatRendererBase
+    {
+        internal ImCachedLine[] _cachedLines;
+        private float _spacebarWidth;
+        private float _spacebarHeight;
+
+        public ChatRendererLine(ChatLine container) : base(container)
+        {
+        }
+
+        public override void Cache(out float width, out float height)
+        {
+            float maxX = ImGui.GetContentRegionMax().X;
+            // float startX = ImGui.GetCursorPosX();
+            StringBuilder sb = new StringBuilder();
+            List<ImCachedWord> words = new List<ImCachedWord>();
+            List<ImCachedLine> lines = new List<ImCachedLine>();
+            float wMax = 0;
+            float cW = 0;
+            System.Numerics.Vector2 ssize = ImGui.CalcTextSize(" ");
+            this._spacebarWidth = ssize.X;
+            this._spacebarHeight = ssize.Y;
+
+            void AddWord(string text, ChatBlock cb)
+            {
+                bool addedWord = false;
+                ImCachedWord icw = new ImCachedWord(cb, text);
+                cW += icw.Width + this._spacebarWidth;
+                if (cW > maxX)
+                {
+                    if (words.Count == 0) // uh-oh
+                    {
+                        words.Add(icw);
+                        addedWord = true;
+                    }
+
+                    ImCachedLine icl = new ImCachedLine(words.ToArray());
+                    lines.Add(icl);
+                    words.Clear();
+                    cW = 0;
+                }
+                else
+                {
+                    wMax = MathF.Max(wMax, cW);
+                }
+
+                if (!addedWord)
+                {
+                    words.Add(icw);
+                }
+            }
+
+            foreach (ChatBlock cb in this.Container.Blocks)
+            {
+                string text = cb.Text;
+                foreach (char c in text)
+                {
+                    if (c == ' ')
+                    {
+                        if (sb.Length > 0)
+                        {
+                            AddWord(sb.ToString(), cb);
+                            sb.Clear();
+                        }
+
+                        continue;
+                    }
+
+                    if (c == '\n')
+                    {
+                        if (sb.Length > 0)
+                        {
+                            AddWord(sb.ToString(), cb);
+                            sb.Clear();
+                        }
+
+                        ImCachedLine icl = new ImCachedLine(words.ToArray());
+                        lines.Add(icl);
+                        words.Clear();
+                        continue;
+                    }
+
+                    sb.Append(c);
+                }
+
+                if (sb.Length > 0)
+                {
+                    AddWord(sb.ToString(), cb);
+                    sb.Clear();
+                }
+            }
+
+            if (words.Count > 0)
+            {
+                ImCachedLine icl2 = new ImCachedLine(words.ToArray());
+                lines.Add(icl2);
+                words.Clear();
+            }
+
+            this._cachedLines = lines.ToArray();
+            height = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
+            width = wMax;
+        }
+
+        public override void ClearCache()
+        {
+            this._cachedLines = null;
+        }
+
+        public override void Render()
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            uint cell = Extensions.FromHex("202020").Abgr();
+            uint cellOutline = Color.Gray.Abgr();
+            float ipX = ImGui.GetCursorPosX();
+            if (this._cachedLines.Length == 0)
+            {
+                ImGui.SetCursorPos(new(ipX, ImGui.GetCursorPosY() + this._spacebarHeight));
+            }
+            else
+            {
+                foreach (ImCachedLine icl in this._cachedLines)
+                {
+                    float pX = ImGui.GetCursorPosX();
+                    float pY = ImGui.GetCursorPosY();
+                    for (int i = 0; i < icl.Words.Length; i++)
+                    {
+                        ImCachedWord icw = icl.Words[i];
+                        System.Numerics.Vector2 vBase = ImGui.GetCursorScreenPos();
+                        if (icw.IsExpression)
+                        {
+                            ImGui.SetCursorPosX(pX + 4);
+                            float cX = vBase.X;
+                            float cY = vBase.Y;
+                            float w = icw.Width;
+                            float h = icw.Height;
+                            bool overRect = ImGui.IsMouseHoveringRect(new(cX, cY), new(cX + w, cY + h));
+                            cellOutline = overRect ? Color.DarkGoldenrod.Abgr() : Color.Gray.Abgr();
+                            drawList.AddQuadFilled(
+                                new(cX, cY),
+                                new(cX + w, cY),
+                                new(cX + w, cY + h),
+                                new(cX, cY + h),
+                                cell
+                            );
+
+                            drawList.AddQuad(
+                                new(cX, cY),
+                                new(cX + w, cY),
+                                new(cX + w, cY + h),
+                                new(cX, cY + h),
+                                cellOutline
+                            );
+                        }
+
+                        ImGui.TextColored((System.Numerics.Vector4)icw.Owner.Color, icw.Text);
+                        pX += icw.Width + (i == icl.Words.Length - 1 ? 0 : this._spacebarWidth);
+                        ImGui.SetCursorPos(new(pX, pY));
+                        System.Numerics.Vector2 vEnd = ImGui.GetCursorScreenPos() + new System.Numerics.Vector2(0, icl.Height);
+                        if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.Text(icw.Owner.Tooltip);
+                            ImGui.EndTooltip();
+                        }
+                    }
+
+                    pY += icl.Height;
+                    ImGui.SetCursorPos(new(ipX, pY));
+                }
+            }
+        }
+    }
+}

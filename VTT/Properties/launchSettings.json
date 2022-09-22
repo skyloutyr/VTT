@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "VTT": {
+      "commandName": "Project",
+      "commandLineArgs": "-quick true -debug true -gldebug DebugSeverityHigh"
+    }
+  }
+}

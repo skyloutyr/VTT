@@ -258,7 +258,6 @@ void main()
 			_fontTexture.Size = new Size(w, h);
 			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, w, h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
             fonts.TexID = _fontTexture;
-			_fontTexture.GetImage<Rgba32>().SaveAsPng("font_atlas.png");
             fonts.ClearTexData();
         }
 

@@ -564,7 +564,7 @@
 
         private void HandleRotationGizmo()
         {
-            if (this._blockSelection && this._lbmDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate)
+            if (this._blockSelection && this._lbmDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate && this.SelectedObjects.Count > 0)
             {
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                 Vector2 pCurrent = new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
@@ -607,7 +607,7 @@
 
         private void HandleMovementGizmo()
         {
-            if (this._blockSelection && this._lbmDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale))
+            if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lbmDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale))
             {
                 if (this._moveMode == 4)
                 {

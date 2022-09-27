@@ -28,48 +28,89 @@
                     string ext = Path.GetExtension(s).ToLower();
                     if (ext.EndsWith("glb")) // Model
                     {
-                        byte[] binary = File.ReadAllBytes(s);
-                        using MemoryStream str = new MemoryStream(binary);
-                        GlbScene glbm = new GlbScene(str);
-                        Image<Rgba32> img = glbm.CreatePreview(Client.Instance.Frontend.Renderer.ObjectRenderer.RenderShader, 256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
-                        using MemoryStream imgMs = new MemoryStream();
-                        img.SaveAsPng(imgMs);
-                        Asset a = new Asset()
+                        GlbScene glbm = null;
+                        Image<Rgba32> img = null;
+                        try
                         {
-                            ID = Guid.NewGuid(),
-                            Model = new ModelData { GLMdl = glbm },
-                            Type = AssetType.Model
-                        };
+                            byte[] binary = File.ReadAllBytes(s);
+                            using MemoryStream str = new MemoryStream(binary);
+                            glbm = new GlbScene(str);
+                            img = glbm.CreatePreview(Client.Instance.Frontend.Renderer.ObjectRenderer.RenderShader, 256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
+                            using MemoryStream imgMs = new MemoryStream();
+                            img.SaveAsPng(imgMs);
+                            Asset a = new Asset()
+                            {
+                                ID = Guid.NewGuid(),
+                                Model = new ModelData { GLMdl = glbm },
+                                Type = AssetType.Model
+                            };
 
-                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model };
-                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(binary), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                        pau.Send(Client.Instance.NetClient);
-                        glbm.Dispose();
-                        img.Dispose();
+                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model };
+                            AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                            PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(binary), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                            pau.Send(Client.Instance.NetClient);
+                            glbm.Dispose();
+                            img.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            // Issue parsing model/rendering preview
+                            Client.Instance.Logger.Log(LogLevel.Error, "Could not parse glb - " + ex.Message);
+                            Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                            try
+                            {
+                                glbm?.Dispose();
+                                img?.Dispose();
+                            }
+                            catch
+                            {
+                                // NOOP
+                            }
+                        }
+
                         continue;
                     }
 
                     if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg")) // Image
                     {
-                        Image<Rgba32> img = Image.Load<Rgba32>(s);
-                        Image<Rgba32> preview = img.Clone();
-                        preview.Mutate(x => x.Resize(256, 256));
-                        using MemoryStream ms = new MemoryStream();
-                        preview.SaveAsPng(ms);
-                        preview.Dispose();
-                        Asset a = new Asset()
+                        Image<Rgba32> img = null;
+                        Image<Rgba32> preview = null;
+                        try
                         {
-                            ID = Guid.NewGuid(),
-                            Texture = TextureData.CreateDefaultFromImage(img, out byte[] tdataBinary, out TextureData.Metadata meta),
-                            Type = AssetType.Texture
-                        };
+                            img = Image.Load<Rgba32>(s);
+                            preview = img.Clone();
+                            preview.Mutate(x => x.Resize(256, 256));
+                            using MemoryStream ms = new MemoryStream();
+                            preview.SaveAsPng(ms);
+                            preview.Dispose();
+                            Asset a = new Asset()
+                            {
+                                ID = Guid.NewGuid(),
+                                Texture = TextureData.CreateDefaultFromImage(img, out byte[] tdataBinary, out TextureData.Metadata meta),
+                                Type = AssetType.Texture
+                            };
 
-                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = meta };
-                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(tdataBinary), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                        pau.Send(Client.Instance.NetClient);
-                        img.Dispose();
+                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = meta };
+                            AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                            PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(tdataBinary), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                            pau.Send(Client.Instance.NetClient);
+                            img.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Error, "Could not parse image - " + ex.Message);
+                            Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                            try
+                            {
+                                img?.Dispose();
+                                preview?.Dispose();
+                            }
+                            catch
+                            {
+                                // NOOP
+                            }
+                        }
+
                         continue;
                     }
 
@@ -77,59 +118,73 @@
                     {
                         if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
                         {
-                            int i = 0;
-                            byte[] previewBinary = new byte[0];
-                            List<TextureData.Frame> frames = new List<TextureData.Frame>();
-                            foreach (Image<Rgba32> img in Client.Instance.Frontend.FFmpegWrapper.DecodeAllFrames(s))
+                            try
                             {
-                                if (i == 0)
+                                int i = 0;
+                                byte[] previewBinary = new byte[0];
+                                List<TextureData.Frame> frames = new List<TextureData.Frame>();
+                                foreach (Image<Rgba32> img in Client.Instance.Frontend.FFmpegWrapper.DecodeAllFrames(s))
                                 {
-                                    Image<Rgba32> preview = img.Clone();
-                                    preview.Mutate(x => x.Resize(256, 256));
-                                    using MemoryStream ms1 = new MemoryStream();
-                                    preview.SaveAsPng(ms1);
-                                    previewBinary = ms1.ToArray();
-                                    preview.Dispose();
+                                    if (i == 0)
+                                    {
+                                        Image<Rgba32> preview = img.Clone();
+                                        preview.Mutate(x => x.Resize(256, 256));
+                                        using MemoryStream ms1 = new MemoryStream();
+                                        preview.SaveAsPng(ms1);
+                                        previewBinary = ms1.ToArray();
+                                        preview.Dispose();
+                                    }
+
+                                    MemoryStream ms = new MemoryStream();
+                                    img.SaveAsPng(ms);
+                                    byte[] imgBin = ms.ToArray();
+                                    ms.Dispose();
+                                    TextureData.Frame f = new TextureData.Frame(i, 1, false, imgBin);
+                                    frames.Add(f);
+                                    img.Dispose();
+                                    ++i;
                                 }
 
-                                MemoryStream ms = new MemoryStream();
-                                img.SaveAsPng(ms);
-                                byte[] imgBin = ms.ToArray();
-                                ms.Dispose();
-                                TextureData.Frame f = new TextureData.Frame(i, 1, false, imgBin);
-                                frames.Add(f);
-                                img.Dispose();
-                                ++i;
+                                TextureData ret = new TextureData()
+                                {
+                                    Meta = new TextureData.Metadata()
+                                    {
+                                        WrapS = WrapParam.Repeat,
+                                        WrapT = WrapParam.Repeat,
+                                        FilterMag = FilterParam.Linear,
+                                        FilterMin = FilterParam.LinearMipmapLinear,
+                                        EnableBlending = true,
+                                        Compress = true,
+                                        GammaCorrect = true,
+                                    },
+
+                                    Frames = frames.ToArray()
+                                };
+
+                                Asset a = new Asset()
+                                {
+                                    ID = Guid.NewGuid(),
+                                    Texture = ret,
+                                    Type = AssetType.Texture
+                                };
+
+                                AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = ret.Meta };
+                                AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(ret.Write()), AssetPreview = previewBinary, IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                pau.Send(Client.Instance.NetClient);
+                            }
+                            catch (Exception ex)
+                            {
+                                Client.Instance.Logger.Log(LogLevel.Error, "Could not parse webm - " + ex.Message);
+                                Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                                // Nothing to dispose of, high potential memory leak
                             }
 
-                            TextureData ret = new TextureData()
-                            {
-                                Meta = new TextureData.Metadata()
-                                {
-                                    WrapS = WrapParam.Repeat,
-                                    WrapT = WrapParam.Repeat,
-                                    FilterMag = FilterParam.Linear,
-                                    FilterMin = FilterParam.LinearMipmapLinear,
-                                    EnableBlending = true,
-                                    Compress = true,
-                                    GammaCorrect = true,
-                                },
-
-                                Frames = frames.ToArray()
-                            };
-
-                            Asset a = new Asset()
-                            {
-                                ID = Guid.NewGuid(),
-                                Texture = ret,
-                                Type = AssetType.Texture
-                            };
-
-                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = ret.Meta };
-                            AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                            PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(ret.Write()), AssetPreview = previewBinary, IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                            pau.Send(Client.Instance.NetClient);
                             continue;
+                        }
+                        else
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Warn, "Couldn't upload webm due to missing ffmpeg");
                         }
                     }
                 }

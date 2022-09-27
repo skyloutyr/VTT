@@ -2,8 +2,10 @@
 {
     using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.Advanced;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Buffers;
     using System.Runtime.InteropServices;
 
     public class Texture
@@ -74,21 +76,54 @@
 
         public unsafe void SetImage<T>(Image<T> img, PixelInternalFormat format, int level = 0, PixelType type = PixelType.UnsignedByte) where T : unmanaged, IPixel<T>
         {
+            this.Size = new Size(img.Width, img.Height);
+            if (img.GetConfiguration().PreferContiguousImageBuffers && img.DangerousTryGetSinglePixelMemory(out Memory<T> mem))
+            {
+                MemoryHandle mh = mem.Pin();
+                GL.TexImage2D(this._type, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));
+                mh.Dispose();
+                return;
+            }
+
             GL.TexImage2D(this._type, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
             TextureTarget selfTT = this._type;
-            img.ProcessPixelRows(x =>
+            if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
             {
-                for (int y = 0; y < x.Height; ++y)
+                T* pixelBuffer = (T*)Marshal.AllocHGlobal(sizeof(T) * img.Width * 4);
+                img.ProcessPixelRows(x =>
                 {
-                    Span<T> rowSpan = x.GetRowSpan(y);
-                    fixed (void* span = rowSpan)
+                    for (int y = 0; y < x.Height; ++y)
                     {
-                        GL.TexSubImage2D(selfTT, level, 0, y, x.Width, 1, GetFormatFromPixelType(typeof(T)), type, new IntPtr(span));
-                    }
-                }
-            });
+                        Span<T> rowSpan = x.GetRowSpan(y);
+                        if (y != 0 && y % 4 == 0)
+                        {
+                            GL.TexSubImage2D(selfTT, level, 0, y - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
+                        }
 
-            this.Size = new Size(img.Width, img.Height);
+                        T* tOffsetB = pixelBuffer + (y * img.Width);
+                        Span<T> s = new Span<T>(tOffsetB, img.Width);
+                        rowSpan.CopyTo(s);
+                    }
+
+                    GL.TexSubImage2D(selfTT, level, 0, img.Height - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
+                });
+
+                Marshal.FreeHGlobal((IntPtr)pixelBuffer);
+            }
+            else
+            {
+                img.ProcessPixelRows(x =>
+                {
+                    for (int y = 0; y < x.Height; ++y)
+                    {
+                        Span<T> rowSpan = x.GetRowSpan(y);
+                        fixed (void* span = rowSpan)
+                        {
+                            GL.TexSubImage2D(selfTT, level, 0, y, x.Width, 1, GetFormatFromPixelType(typeof(T)), type, new IntPtr(span));
+                        }
+                    }
+                });
+            }
         }
 
         public void GenerateMipMaps() => GL.GenerateMipmap((GenerateMipmapTarget)this._type);

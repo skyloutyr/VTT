@@ -9,6 +9,7 @@
     {
         public Guid RefID { get; set; }
         public string Name { get; set; }
+        public override uint PacketID => 6;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

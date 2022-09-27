@@ -10,6 +10,7 @@
         public Guid JournalID { get; set; }
         public FieldType Change { get; set; }
         public object Value { get; set; }
+        public override uint PacketID => 13;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -11,6 +11,7 @@
         public Guid AssetID { get; set; }
         public byte[] NewBinary { get; set; }
         public byte[] NewPreviewBinary { get; set; }
+        public override uint PacketID => 9;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

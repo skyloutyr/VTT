@@ -12,6 +12,7 @@
     {
         public Guid ClientID { get; set; }
         public bool Status { get; set; }
+        public override uint PacketID => 26;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -11,6 +11,8 @@
         public AssetDirectory Dir { get; set; }
         public AssetRef Ref { get; set; }
         public string Root { get; set; }
+        public override uint PacketID => 3;
+
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

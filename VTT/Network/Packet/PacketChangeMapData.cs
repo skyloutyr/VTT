@@ -12,6 +12,7 @@
         public DataType Type { get; set; }
         public Guid MapID { get; set; }
         public object Data { get; set; }
+        public override uint PacketID => 15;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

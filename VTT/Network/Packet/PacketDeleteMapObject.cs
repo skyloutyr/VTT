@@ -10,6 +10,7 @@
     {
         public List<(Guid, Guid)> DeletedObjects { get; set; } = new List<(Guid, Guid)>();
         public Guid SenderID { get; set; }
+        public override uint PacketID => 33;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -8,6 +8,7 @@
     {
         public bool IsAdmin { get; set; }
         public bool IsObserver { get; set; }
+        public override uint PacketID => 25;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

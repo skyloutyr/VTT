@@ -10,6 +10,7 @@
     {
         public Guid RefID { get; set; }
         public Guid AssetID { get; set; }
+        public override uint PacketID => 18;
 
         public TextureData.Metadata Metadata { get; set; }
 

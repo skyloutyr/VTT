@@ -13,6 +13,7 @@
         public bool Remove { get; set; }
         public float S { get; set; }
         public float T { get; set; }
+        public override uint PacketID => 50;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

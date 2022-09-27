@@ -6,6 +6,7 @@
 
     public class PacketClearMarks : PacketBase
     {
+        public override uint PacketID => 23;
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             if (isServer)

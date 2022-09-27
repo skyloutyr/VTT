@@ -7,6 +7,7 @@
     public class PacketChatLine : PacketBase
     {
         public ChatLine Line { get; set; }
+        public override uint PacketID => 20;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -14,6 +14,7 @@
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public Guid AssetID { get; set; }
+        public override uint PacketID => 16;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

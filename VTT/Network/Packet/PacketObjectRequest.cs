@@ -7,6 +7,7 @@
     public class PacketObjectRequest : PacketBase
     {
         public Guid ObjectID { get; set; }
+        public override uint PacketID => 49;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

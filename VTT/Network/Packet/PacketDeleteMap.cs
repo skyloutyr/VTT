@@ -8,6 +8,7 @@
     public class PacketDeleteMap : PacketBase
     {
         public Guid MapID { get; set; }
+        public override uint PacketID => 32;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

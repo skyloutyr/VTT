@@ -14,6 +14,7 @@
     public class PacketChatMessage : PacketBase
     {
         public string Message { get; set; }
+        public override uint PacketID => 21;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

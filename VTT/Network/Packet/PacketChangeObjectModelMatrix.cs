@@ -12,6 +12,7 @@
         public ChangeType Type { get; set; }
         public Guid MovementInducerID { get; set; }
         public List<(Guid, Guid, Vector4)> MovedObjects { get; set; } = new List<(Guid, Guid, Vector4)>();
+        public override uint PacketID => 17;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

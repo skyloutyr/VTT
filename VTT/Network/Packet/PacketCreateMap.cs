@@ -7,6 +7,7 @@
 
     public class PacketCreateMap : PacketBase
     {
+        public override uint PacketID => 29;
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             if (isServer)

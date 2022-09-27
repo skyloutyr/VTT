@@ -7,6 +7,7 @@
     public class PacketClientData : PacketBase
     {
         public List<ClientInfo> InfosToUpdate { get; set; } = new List<ClientInfo>();
+        public override uint PacketID => 24;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

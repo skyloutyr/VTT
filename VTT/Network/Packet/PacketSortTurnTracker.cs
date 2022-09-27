@@ -6,6 +6,7 @@
 
     public class PacketSortTurnTracker : PacketBase
     {
+        public override uint PacketID => 56;
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             if (isServer)

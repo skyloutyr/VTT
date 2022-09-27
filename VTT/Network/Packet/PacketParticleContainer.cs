@@ -12,6 +12,7 @@
         public Guid ParticleID { get; set; }
         public Action ActionType { get; set; }
         public DataElement Container { get; set; }
+        public override uint PacketID => 51;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

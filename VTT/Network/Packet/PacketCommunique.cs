@@ -9,6 +9,7 @@
     {
         public RequestType Request { get; set; }
         public int RequestData { get; set; }
+        public override uint PacketID => 27;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -10,6 +10,7 @@
     public class PacketSetDefaultMap : PacketBase
     {
         public Guid MapID { get; set; }
+        public override uint PacketID => 55;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

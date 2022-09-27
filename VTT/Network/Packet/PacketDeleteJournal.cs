@@ -8,6 +8,7 @@
     public class PacketDeleteJournal : PacketBase
     {
         public Guid JournalID { get; set; }
+        public override uint PacketID => 31;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

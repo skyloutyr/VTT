@@ -9,6 +9,7 @@
     {
         public int IndexFrom { get; set; }
         public int IndexTo { get; set; }
+        public override uint PacketID => 48;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

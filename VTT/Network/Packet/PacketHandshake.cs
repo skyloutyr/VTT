@@ -10,6 +10,7 @@
     {
         public Guid ClientID { get; set; }
         public ulong ClientVersion { get; set; }
+        public override uint PacketID => 0;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

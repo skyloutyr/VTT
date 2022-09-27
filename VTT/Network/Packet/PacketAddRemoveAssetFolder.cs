@@ -9,6 +9,7 @@
         public string Path { get; set; } // Where to add/remove
         public string Name { get; set; } // Name of thing to add/remove
         public bool Remove { get; set; }
+        public override uint PacketID => 1;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

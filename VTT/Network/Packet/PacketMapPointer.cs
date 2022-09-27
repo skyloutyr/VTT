@@ -8,6 +8,7 @@
     {
         public bool Remove { get; set; }
         public List<(Guid, string, string)> Data { get; set; } = new List<(Guid, string, string)>();
+        public override uint PacketID => 46;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

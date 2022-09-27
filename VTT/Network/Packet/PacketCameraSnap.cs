@@ -8,6 +8,7 @@
     {
         public Vector3 CameraPosition { get; set; }
         public Vector3 CameraDirection { get; set; }
+        public override uint PacketID => 12;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

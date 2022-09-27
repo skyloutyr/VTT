@@ -18,6 +18,7 @@
         public Color AuraColor { get; set; }
         public float AuraRange { get; set; }
         public Action ActionType { get; set; }
+        public override uint PacketID => 11;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

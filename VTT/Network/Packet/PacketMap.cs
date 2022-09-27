@@ -8,6 +8,7 @@
     public class PacketMap : PacketBase
     {
         public Map Map { get; set; }
+        public override uint PacketID => 42;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -48,12 +49,5 @@
             DataElement de = this.Map.SerializeWithoutObjects(); // S->C no object data needed, client needs to confirm the map first
             de.Write(bw);
         }
-    }
-
-    public class PacketMapAction : PacketBase
-    {
-        public override void Act(Guid sessionID, Server server, Client client, bool isServer) => throw new NotImplementedException();
-        public override void Decode(BinaryReader br) => throw new NotImplementedException();
-        public override void Encode(BinaryWriter bw) => throw new NotImplementedException();
     }
 }

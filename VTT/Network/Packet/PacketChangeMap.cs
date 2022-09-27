@@ -9,6 +9,7 @@
     {
         public Guid NewMapID { get; set; }
         public Guid[] Clients { get; set; }
+        public override uint PacketID => 14;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

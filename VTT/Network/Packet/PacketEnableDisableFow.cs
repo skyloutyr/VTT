@@ -9,6 +9,7 @@
     {
         public bool Status { get; set; }
         public Vector2 Size { get; set; }
+        public override uint PacketID => 36;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

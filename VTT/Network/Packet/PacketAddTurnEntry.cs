@@ -11,6 +11,8 @@
         public float Value { get; set; }
         public string TeamName { get; set; }
         public int AdditionIndex { get; set; }
+        public override uint PacketID => 2;
+
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

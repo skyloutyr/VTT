@@ -11,6 +11,7 @@
     {
         public DataType ChangeType { get; set; }
         public List<(Guid, Guid, object)> Data { get; set; } = new List<(Guid, Guid, object)>();
+        public override uint PacketID => 45;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

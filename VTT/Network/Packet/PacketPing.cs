@@ -8,6 +8,7 @@
     public class PacketPing : PacketBase
     {
         public Ping Ping { get; set; }
+        public override uint PacketID => 52;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

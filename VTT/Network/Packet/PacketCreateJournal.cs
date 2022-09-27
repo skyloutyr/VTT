@@ -10,6 +10,7 @@
         public Guid JournalID { get; set; }
         public Guid CreatorID { get; set; }
         public string Title { get; set; }
+        public override uint PacketID => 28;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

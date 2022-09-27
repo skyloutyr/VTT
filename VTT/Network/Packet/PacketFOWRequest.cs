@@ -10,6 +10,7 @@
     {
         public bool RequestType { get; set; }
         public List<Vector2> Polygon { get; set; } = new List<Vector2>();
+        public override uint PacketID => 38;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

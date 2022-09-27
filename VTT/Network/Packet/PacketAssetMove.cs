@@ -10,6 +10,7 @@
         public Guid MovedRefID { get; set; }
         public string MovedFrom { get; set; }
         public string MovedTo { get; set; }
+        public override uint PacketID => 4;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

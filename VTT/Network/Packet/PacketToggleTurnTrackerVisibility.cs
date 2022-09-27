@@ -8,6 +8,7 @@
     public class PacketToggleTurnTrackerVisibility : PacketBase
     {
         public bool Action { get; set; }
+        public override uint PacketID => 58;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

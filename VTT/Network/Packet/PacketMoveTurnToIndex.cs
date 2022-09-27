@@ -8,6 +8,7 @@
     public class PacketMoveTurnToIndex : PacketBase
     {
         public int Index { get; set; }
+        public override uint PacketID => 47;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

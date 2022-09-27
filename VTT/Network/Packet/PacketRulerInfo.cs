@@ -7,6 +7,7 @@
     public class PacketRulerInfo : PacketBase
     {
         public RulerInfo Info { get; set; }
+        public override uint PacketID => 54;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

@@ -2,22 +2,18 @@
 {
     using NetCoreServer;
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
     using VTT.Util;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Security.Cryptography;
     using System.Threading;
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network.Packet;
-    using VTT.Util;
 
     public class Server : TcpServer
     {

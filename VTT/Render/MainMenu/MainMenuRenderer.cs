@@ -15,6 +15,7 @@
     using System.IO;
     using VTT.GL;
     using MathHelper = OpenTK.Mathematics.MathHelper;
+    using System.Diagnostics;
 
     public class MainMenuRenderer
     {
@@ -83,7 +84,6 @@
                 int numFrames = 10;
                 float vStart = (float)frame / numFrames;
                 float vEnd = vStart + 0.1f;
-                ImGui.Image(this.LogoNulEng, new Vector2(198, 131), new Vector2(0, vStart), new Vector2(1, vEnd));
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 320, 0));
                 ImGui.Image(this.LogoMain, new Vector2(640, 240));
@@ -170,7 +170,7 @@
                 }
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 128, 300));
-                ImGui.BeginChild("Main Menu Entry", new Vector2(256, 158), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
+                ImGui.BeginChild("Main Menu Entry", new Vector2(256, 192), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
                 if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
                 {
                     this.MenuMode = 1;
@@ -184,6 +184,11 @@
                 if (ImGui.Button(lang.Translate("menu.settings") + "###Settings", new Vector2(240, 32)))
                 {
                     this.MenuMode = 3;
+                }
+
+                if (ImGui.Button(lang.Translate("menu.credits") + "###Credits", new Vector2(240, 32)))
+                {
+                    this.MenuMode = 4;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.quit") + "###Quit", new Vector2(240, 32)))
@@ -295,6 +300,100 @@
                     }
                 }
 
+                if (this.MenuMode == 4)
+                {
+                    ImGui.SetCursorPos(new Vector2((width / 2) - 256, 500));
+                    if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar))
+                    {
+                        string sp = "    ";
+                        ImGui.Text(lang.Translate("credits.dependencies"));
+                        ImGui.Text(sp + lang.Translate("credits.ncalc"));
+                        ImGui.Text(sp + lang.Translate("credits.ffmpeg"));
+                        ImGui.Text(sp + lang.Translate("credits.gltf"));
+                        ImGui.Text(sp + lang.Translate("credits.imgui"));
+                        ImGui.Text(sp + lang.Translate("credits.imgui.c"));
+                        ImGui.Text(sp + lang.Translate("credits.netcoreserver"));
+                        ImGui.Text(sp + lang.Translate("credits.json"));
+                        ImGui.Text(sp + lang.Translate("credits.opentk"));
+                        ImGui.Text(sp + lang.Translate("credits.imagesharp"));
+                        ImGui.Text(sp + lang.Translate("credits.net"));
+                        ImGui.NewLine();
+                        ImLink(lang.Translate("credits.icons8"), "https://icons8.com/");
+                        ImGui.Text("    3d");
+                        ImGui.Text("    abscissa");
+                        ImGui.Text("    accuracy");
+                        ImGui.Text("    block");
+                        ImGui.Text("    box-important");
+                        ImGui.Text("    closed-eye");
+                        ImGui.Text("    cube");
+                        ImGui.Text("    cursor");
+                        ImGui.Text("    curved-arrow");
+                        ImGui.Text("    day-camera");
+                        ImGui.Text("    dice");
+                        ImGui.Text("    double-down");
+                        ImGui.Text("    drag");
+                        ImGui.Text("    edit");
+                        ImGui.Text("    error");
+                        ImGui.Text("    eye");
+                        ImGui.Text("    folder");
+                        ImGui.Text("    help");
+                        ImGui.Text("    incoming-data");
+                        ImGui.Text("    length");
+                        ImGui.Text("    link-picture");
+                        ImGui.Text("    lips");
+                        ImGui.Text("    loading-circle");
+                        ImGui.Text("    magic");
+                        ImGui.Text("    money-bag");
+                        ImGui.Text("    move-all-arrow");
+                        ImGui.Text("    move-separate");
+                        ImGui.Text("    no-image");
+                        ImGui.Text("    outgoing-data");
+                        ImGui.Text("    paint");
+                        ImGui.Text("    paper-plane");
+                        ImGui.Text("    particle");
+                        ImGui.Text("    pause");
+                        ImGui.Text("    pentagram");
+                        ImGui.Text("    picture");
+                        ImGui.Text("    pipeline");
+                        ImGui.Text("    play");
+                        ImGui.Text("    plus-math");
+                        ImGui.Text("    process");
+                        ImGui.Text("    radar-plot");
+                        ImGui.Text("    radius");
+                        ImGui.Text("    rectangle");
+                        ImGui.Text("    resize");
+                        ImGui.Text("    return");
+                        ImGui.Text("    security-lock");
+                        ImGui.Text("    so-so");
+                        ImGui.Text("    sphere");
+                        ImGui.Text("    stopwatch");
+                        ImGui.Text("    surface");
+                        ImGui.Text("    sword");
+                        ImGui.Text("    swords");
+                        ImGui.Text("    thinking-male");
+                        ImGui.Text("    trash-can");
+                        ImGui.Text("    vertical-line");
+                        ImGui.Text("    visialy-impared");
+                        ImGui.NewLine();
+                        ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
+                        ImGui.NewLine();
+                        ImGui.Text(lang.Translate("credits.tools"));
+                        ImLink(sp + lang.Translate("credits.blender"), "https://www.blender.org/");
+                        ImLink(sp + lang.Translate("credits.gimp"), "https://www.gimp.org/");
+                        ImLink(sp + lang.Translate("credits.vs"), "https://visualstudio.microsoft.com/");
+                        ImLink(sp + lang.Translate("credits.emojidata"), "https://www.unicode.org");
+                        ImLink(sp + lang.Translate("credits.nsight"), "https://developer.nvidia.com/nsight-graphics");
+                        ImGui.NewLine();
+                        ImGui.Text(lang.Translate("credits.special"));
+                        ImGui.Text(sp + lang.Translate("credits.stackoverflow"));
+                        ImGui.Text(sp + lang.Translate("credits.msspecial"));
+                        ImGui.Text(sp + lang.Translate("credits.khronos"));
+                        ImGui.Text(sp + lang.Translate("credits.you"));
+                    }
+
+                    ImGui.EndChild();
+                }
+
                 ImGui.End();
             }
 
@@ -314,6 +413,29 @@
 
                 ImGui.End();
             }
+        }
+
+        private void ImLink(string text, string url)
+        {
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0);
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.ButtonHovered));
+            ImGui.PushStyleColor(ImGuiCol.Button, 0);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
+            if (ImGui.Button(text))
+            {
+                System.Diagnostics.Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+
+            ImGui.PopStyleColor();
+            ImGui.PopStyleColor();
+            ImGui.PopStyleColor();
+            ImGui.PopStyleColor();
+            ImGui.PopStyleVar();
         }
 
         private static Size? oldScreenSize;

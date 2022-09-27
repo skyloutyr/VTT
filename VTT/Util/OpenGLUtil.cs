@@ -57,11 +57,16 @@
             return sp;
         }
 
-        public static Texture LoadUIImage(string name, PixelInternalFormat format = PixelInternalFormat.Rgba)
+        public static Texture LoadUIImage(string name, PixelInternalFormat format = PixelInternalFormat.Rgba, WrapParam wrap = WrapParam.ClampToBorder)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
-            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+            tex.SetWrapParameters(wrap, wrap, wrap);
+            if (wrap == WrapParam.ClampToBorder)
+            {
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 0, 0, 0, 0 });
+            }
+
             tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
             using Image<Rgba32> img = IOVTT.ResourceToImage<Rgba32>("VTT.Embed." + name + ".png");
             tex.SetImage(img, format);

@@ -634,6 +634,50 @@
             {
                 objectsSelected = objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver }).Distinct();
             }
+
+            void RenderStatusEffects(MapObject mo, Vector3 screen, float tX = float.MaxValue)
+            {
+                lock (mo.Lock)
+                {
+                    int nEffects = mo.StatusEffects.Count;
+                    float nW = MathF.Min(nEffects * 24, tX);
+                    if (nW > 0)
+                    {
+                        float nH = MathF.Ceiling(nEffects * 24 / nW) * 24;
+
+                        ImGui.SetNextWindowSize(new System.Numerics.Vector2(nW, nH));
+                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (nW / 2), screen.Y));
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, System.Numerics.Vector2.Zero);
+                        ImGui.Begin("OverlayEffects_" + mo.ID.ToString(), ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings);
+                        ImDrawListPtr imDrawList = ImGui.GetWindowDrawList();
+                        System.Numerics.Vector2 imCursor = ImGui.GetCursorScreenPos();
+                        float cX = 0;
+                        float cY = 0;
+                        foreach ((float, float) eff in mo.StatusEffects.Values)
+                        {
+                            System.Numerics.Vector2 st = new System.Numerics.Vector2(eff.Item1, eff.Item2);
+                            imDrawList.AddImage(this.StatusAtlas,
+                                imCursor + new System.Numerics.Vector2(cX, cY),
+                                imCursor + new System.Numerics.Vector2(cX, cY) + Vec24x24,
+                                st,
+                                st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY));
+
+                            cX += 24;
+                            if (cX + 24 > nW)
+                            {
+                                cX = 0;
+                                cY += 24;
+                            }
+                        }
+
+                        ImGui.PopStyleVar();
+                        ImGui.PopStyleVar();
+                        ImGui.End();
+                    }
+                }
+            }
+
             // Object names and bars overlay
             foreach (MapObject mo in objectsSelected)
             {
@@ -647,6 +691,7 @@
                         continue;
                     }
 
+                    mo.ClientGuiOverlayDrawnThisFrame = true;
                     bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                     float cbby = mo.ClientBoundingBox.End.Y - mo.ClientBoundingBox.Start.Y;
                     Vector3 screen = is2d ?
@@ -660,45 +705,7 @@
 
                     if (renderName)
                     {
-                        lock (mo.Lock)
-                        {
-                            int nEffects = mo.StatusEffects.Count;
-                            float nW = MathF.Min(nEffects * 24, tX);
-                            if (nW > 0)
-                            {
-                                float nH = MathF.Ceiling(nEffects * 24 / nW) * 24;
-
-                                ImGui.SetNextWindowSize(new System.Numerics.Vector2(nW, nH));
-                                ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (nW / 2), screen.Y));
-                                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
-                                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, System.Numerics.Vector2.Zero);
-                                ImGui.Begin("OverlayEffects_" + mo.ID.ToString(), flags);
-                                ImDrawListPtr imDrawList = ImGui.GetWindowDrawList();
-                                System.Numerics.Vector2 imCursor = ImGui.GetCursorScreenPos();
-                                float cX = 0;
-                                float cY = 0;
-                                foreach ((float, float) eff in mo.StatusEffects.Values)
-                                {
-                                    System.Numerics.Vector2 st = new System.Numerics.Vector2(eff.Item1, eff.Item2);
-                                    imDrawList.AddImage(this.StatusAtlas,
-                                        imCursor + new System.Numerics.Vector2(cX, cY),
-                                        imCursor + new System.Numerics.Vector2(cX, cY) + Vec24x24,
-                                        st,
-                                        st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY));
-
-                                    cX += 24;
-                                    if (cX + 24 > nW)
-                                    {
-                                        cX = 0;
-                                        cY += 24;
-                                    }
-                                }
-
-                                ImGui.PopStyleVar();
-                                ImGui.PopStyleVar();
-                                ImGui.End();
-                            }
-                        }
+                        RenderStatusEffects(mo, screen, tX);
                     }
 
                     ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h));
@@ -740,6 +747,33 @@
                     }
 
                     ImGui.End();
+                }
+            }
+
+            Map cMap = Client.Instance.CurrentMap;
+            if (cMap == null)
+            {
+                return;
+            }
+
+            foreach (MapObject mo in cMap.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
+            {
+                if (!mo.ClientGuiOverlayDrawnThisFrame)
+                {
+                    if (mo.CanEdit(Client.Instance.ID))
+                    {
+                        bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
+                        float cbby = mo.ClientBoundingBox.End.Y - mo.ClientBoundingBox.Start.Y;
+                        Vector3 screen = is2d ?
+                            Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
+                            Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
+                        RenderStatusEffects(mo, screen);
+                    }
+                }
+                else
+                {
+                    mo.ClientGuiOverlayDrawnThisFrame = false;
+                    continue;
                 }
             }
         }

@@ -93,6 +93,7 @@
         public bool ClientAssignedModelBounds { get; set; }
 
         public bool ClientRenderedThisFrame { get; set; }
+        public bool ClientGuiOverlayDrawnThisFrame { get; set; }
         public bool ClientDeferredRejectThisFrame { get; set; }
         public Vector3 ClientDragMoveResetInitialPosition { get; set; }
         public Vector3 ClientDragMoveAccumulatedPosition { get; set; }

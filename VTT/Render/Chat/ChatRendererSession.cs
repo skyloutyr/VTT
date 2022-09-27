@@ -56,7 +56,9 @@
                 string text = this.Container.Blocks[0].Text;
                 Vector2 center = localPos + (new Vector2(size.X, h) / 2);
                 ImGui.SetCursorPos(center - (ImGui.CalcTextSize(text) / 2));
-                ImGui.TextColored((Vector4)this.Container.Blocks[0].Color, text);
+                ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[0].Color.Abgr());
+                ImGui.TextUnformatted(text);
+                ImGui.PopStyleColor();
             }
             else
             {
@@ -65,10 +67,14 @@
                     string text = this.Container.Blocks[1].Text;
                     Vector2 center = localPos + (new Vector2(size.X, h) / 2);
                     ImGui.SetCursorPos(center - (ImGui.CalcTextSize(text) / 2));
-                    ImGui.TextColored((Vector4)this.Container.Blocks[1].Color, text);
+                    ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[1].Color.Abgr());
+                    ImGui.TextUnformatted(text);
+                    ImGui.PopStyleColor();
                     ImGui.SetCursorPos(localPos);
                     text = this.Container.Blocks[0].Text;
-                    ImGui.TextColored((Vector4)this.Container.Blocks[0].Color, text);
+                    ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[0].Color.Abgr());
+                    ImGui.TextUnformatted(text);
+                    ImGui.PopStyleColor();
                 }
             }
 

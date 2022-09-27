@@ -548,7 +548,7 @@
 
                                         ImGui.PopID();
                                         ImGui.SameLine();
-                                        ImGui.Text(mDat.Item2 + "(" + mDat.Item1.ToString() + ")");
+                                        ImGui.TextUnformatted(mDat.Item2 + "(" + mDat.Item1.ToString() + ")");
 
                                         ImGui.EndChild();
                                         bool hover = ImGui.IsItemHovered();
@@ -560,7 +560,7 @@
                                             {
                                                 if (!ckv.Key.Equals(Guid.Empty) && ckv.Value.MapID.Equals(mDat.Item1))
                                                 {
-                                                    ImGui.Text(" " + ckv.Value.Name);
+                                                    ImGui.TextUnformatted(" " + ckv.Value.Name);
                                                 }
                                             }
 

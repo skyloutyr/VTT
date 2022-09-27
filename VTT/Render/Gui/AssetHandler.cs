@@ -225,7 +225,7 @@
 
                     ImGui.SetCursorPosX(32 - (label_size.X / 2));
                     ImGui.SetCursorPosY(64 - label_size.Y);
-                    ImGui.Text(txt);
+                    ImGui.TextUnformatted(txt);
 
                     if (hover)
                     {
@@ -233,7 +233,7 @@
                         label_size = ImGui.CalcTextSize(txt);
                         ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
                         ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
-                        ImGui.Text(txt);
+                        ImGui.TextUnformatted(txt);
                         ImGui.End();
                         state.dirHovered = d;
                     }
@@ -308,7 +308,7 @@
 
                     ImGui.SetCursorPosX(32 - (label_size.X / 2));
                     ImGui.SetCursorPosY(64 - label_size.Y);
-                    ImGui.Text(txt);
+                    ImGui.TextUnformatted(txt);
 
                     if (hover)
                     {
@@ -316,7 +316,7 @@
                         label_size = ImGui.CalcTextSize(txt);
                         ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
                         ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
-                        ImGui.Text(txt);
+                        ImGui.TextUnformatted(txt);
                         ImGui.End();
                         if (!this._lmbDown && ImGui.IsMouseDown(ImGuiMouseButton.Left))
                         {

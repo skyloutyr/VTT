@@ -149,7 +149,7 @@
                 string copyright = "SkyLouTyr MIT © 2022";
                 Vector2 cLen = ImGui.CalcTextSize(copyright);
                 ImGui.SetCursorPos(new Vector2(width, height) - new Vector2(8, 8) - cLen);
-                ImGui.Text(copyright);
+                ImGui.TextUnformatted(copyright);
 
                 if (Client.Instance.Frontend.UpdaterExitCode == 1)
                 {

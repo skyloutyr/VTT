@@ -614,7 +614,7 @@
 
                         ImGui.PopStyleColor();
                         ImGui.SameLine();
-                        ImGui.Text((mo.Name ?? lang.Translate("ui.objects.unnamed")) + "(" + mo.ID + ")");
+                        ImGui.TextUnformatted((mo.Name ?? lang.Translate("ui.objects.unnamed")) + "(" + mo.ID + ")");
                         ImGui.EndChild();
                         if (changedColor)
                         {
@@ -706,7 +706,7 @@
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
                     if (renderName)
                     {
-                        ImGui.Text(mo.Name);
+                        ImGui.TextUnformatted(mo.Name);
                     }
 
                     if (renderBars)

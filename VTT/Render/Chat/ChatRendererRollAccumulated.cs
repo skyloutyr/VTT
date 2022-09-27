@@ -78,12 +78,13 @@
            );
 
             ImGui.SetCursorPos(new(ImGui.GetCursorPosX() + (w / 2) - (tLen.X / 2) + padding.X + 1, ccY + 16 - (tLen.Y / 2) + padding.Y));
-            ImGui.TextColored((System.Numerics.Vector4)this.Container.Blocks[0].Color, this.Container.Blocks[0].Text);
-
+            ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[0].Color.Abgr());
+            ImGui.TextUnformatted(this.Container.Blocks[0].Text);
+            ImGui.PopStyleColor();
             if (!string.IsNullOrEmpty(this.Container.Blocks[0].Tooltip) && overRect)
             {
                 ImGui.BeginTooltip();
-                ImGui.Text(this.Container.Blocks[0].Tooltip);
+                ImGui.TextUnformatted(this.Container.Blocks[0].Tooltip);
                 ImGui.EndTooltip();
             }
 

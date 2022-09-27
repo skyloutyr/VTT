@@ -16,7 +16,9 @@
                     foreach (Tuple<System.Numerics.Vector4, string> s in VTTLogListener.Instance.Logs)
                     {
                         ImGui.PushTextWrapPos();
-                        ImGui.TextColored(s.Item1, s.Item2);
+                        ImGui.PushStyleColor(ImGuiCol.Text, s.Item1);
+                        ImGui.TextUnformatted(s.Item2);
+                        ImGui.PopStyleColor();
                         ImGui.PopTextWrapPos();
                         ++logCount;
                     }

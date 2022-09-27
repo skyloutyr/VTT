@@ -74,7 +74,7 @@
                         ImGui.TableSetColumnIndex(0);
                         ImGui.Text(ci.ID.ToString());
                         ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(ci.Name.ToString());
+                        ImGui.TextUnformatted(ci.Name.ToString());
                         ImGui.TableSetColumnIndex(2);
                         if (ci.IsLoggedOn)
                         {

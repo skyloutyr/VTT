@@ -53,8 +53,10 @@
                                         if (ImGui.IsItemHovered())
                                         {
                                             ImGui.BeginTooltip();
-                                            ImGui.Text(eName);
-                                            ImGui.TextColored((System.Numerics.Vector4)tColor, tName);
+                                            ImGui.TextUnformatted(eName);
+                                            ImGui.PushStyleColor(ImGuiCol.Text, tColor.Abgr());
+                                            ImGui.TextUnformatted(tName);
+                                            ImGui.PopStyleColor();
                                             ImGui.EndTooltip();
                                         }
 
@@ -141,8 +143,10 @@
                                         if (ImGui.IsItemHovered())
                                         {
                                             ImGui.BeginTooltip();
-                                            ImGui.Text(eName);
-                                            ImGui.TextColored((System.Numerics.Vector4)tColor, tName);
+                                            ImGui.TextUnformatted(eName);
+                                            ImGui.PushStyleColor(ImGuiCol.Text, tColor.Abgr());
+                                            ImGui.TextUnformatted(tName);
+                                            ImGui.PopStyleColor();
                                             ImGui.EndTooltip();
                                         }
 
@@ -187,13 +191,15 @@
                             float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
                             ImGui.SetCursorPosX(320 - (tW / 2));
                             ImGui.SetCursorPosY(110);
-                            ImGui.Text(cMap.TurnTracker.EntryName);
+                            ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                             ImGui.SetCursorPosY(110);
                             ImGui.SetCursorPosX(120);
-                            ImGui.TextColored((System.Numerics.Vector4)cMap.TurnTracker.CurrentColor, cMap.TurnTracker.TeamName);
+                            ImGui.PushStyleColor(ImGuiCol.Text, cMap.TurnTracker.CurrentColor.Abgr());
+                            ImGui.TextUnformatted(cMap.TurnTracker.TeamName);
                             ImGui.SetCursorPosY(110);
                             ImGui.SetCursorPosX(520);
-                            ImGui.TextColored((System.Numerics.Vector4)cMap.TurnTracker.CurrentColor, cMap.TurnTracker.TeamName);
+                            ImGui.TextUnformatted(cMap.TurnTracker.TeamName);
+                            ImGui.PopStyleColor();
                         }
 
                         ImGui.End();
@@ -416,7 +422,7 @@
                                 {
                                     IntPtr sIdx = new IntPtr(&i);
                                     ImGui.SetDragDropPayload("TurnTrackerDragDropPayload", sIdx, sizeof(int));
-                                    ImGui.Text(oName);
+                                    ImGui.TextUnformatted(oName);
                                     ImGui.EndDragDropSource();
                                 }
 
@@ -496,7 +502,7 @@
 
                                 ImGui.PopID();
                                 ImGui.SameLine();
-                                ImGui.Text(oName);
+                                ImGui.TextUnformatted(oName);
                                 ImGui.SameLine();
 
                                 ImGui.EndChild();

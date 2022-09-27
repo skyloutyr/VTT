@@ -218,7 +218,7 @@
             if (hover && !string.IsNullOrEmpty(tt))
             {
                 ImGui.BeginTooltip();
-                ImGui.Text(tt);
+                ImGui.TextUnformatted(tt);
                 ImGui.EndTooltip();
             }
         }

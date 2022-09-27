@@ -79,11 +79,13 @@
                 );
 
                 ImGui.SetCursorPos(cursorLocal + new Vector2(cXL, 24) - (sR1 / 2));
-                ImGui.TextColored((Vector4)r1.Color, tR1);
+                ImGui.PushStyleColor(ImGuiCol.Text, r1.Color.Abgr());
+                ImGui.TextUnformatted(tR1);
+                ImGui.PopStyleColor();
                 if (!string.IsNullOrEmpty(r1.Tooltip) && overRect)
                 {
                     ImGui.BeginTooltip();
-                    ImGui.Text(r1.Tooltip);
+                    ImGui.TextUnformatted(r1.Tooltip);
                     ImGui.EndTooltip();
                 }
 
@@ -111,22 +113,26 @@
                 );
 
                 ImGui.SetCursorPos(cursorLocal + new Vector2(cXR, 24) - (sR2 / 2));
-                ImGui.TextColored((Vector4)r2.Color, tR2);
+                ImGui.PushStyleColor(ImGuiCol.Text, r2.Color.Abgr());
+                ImGui.TextUnformatted(tR2);
+                ImGui.PopStyleColor();
                 if (!string.IsNullOrEmpty(r2.Tooltip) && overRect)
                 {
                     ImGui.BeginTooltip();
-                    ImGui.Text(r2.Tooltip);
+                    ImGui.TextUnformatted(r2.Tooltip);
                     ImGui.EndTooltip();
                 }
 
                 Vector2 sRn = ImGui.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));
-                ImGui.TextColored((Vector4)rnameAndMod.Color, rnameAndMod.Text);
-
+                ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color.Abgr());
+                ImGui.TextUnformatted(rnameAndMod.Text);
+                ImGui.PopStyleColor();
                 sRn = ImGui.CalcTextSize(rcharname.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 60) - (sRn / 2));
-                ImGui.TextColored((Vector4)rcharname.Color, rcharname.Text);
-
+                ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color.Abgr());
+                ImGui.TextUnformatted(rcharname.Text);
+                ImGui.PopStyleColor();
                 ImGui.SetCursorPosY(cursorLocal.Y + 88);
             }
             else // Uh-oh, wrong format!

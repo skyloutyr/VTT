@@ -4,6 +4,7 @@
     using System;
     using System.IO;
     using VTT.Asset;
+    using VTT.Util;
 
     public class PacketAssetRename : PacketBase
     {
@@ -13,7 +14,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            this.GetContextLogger().Log(VTT.Util.LogLevel.Debug, "Got asset rename packet for " + this.RefID);
+            this.GetContextLogger().Log(LogLevel.Debug, "Got asset rename packet for " + this.RefID);
             if (isServer)
             {
                 if (this.Sender.IsAdmin)
@@ -27,7 +28,7 @@
                             if (am.ConstructedFromOldBinaryEncoding)
                             {
                                 AssetBinaryPointer.ChangeAssetNameForOldEncoding(aRef.ServerPointer.FileLocation, am);
-                                server.Logger.Log(VTT.Util.LogLevel.Warn, "Metadata change forced asset version migration.");
+                                server.Logger.Log(LogLevel.Warn, "Metadata change forced asset version migration.");
                             }
                             else
                             {
@@ -36,7 +37,7 @@
                         }
                         else
                         {
-                            server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for asset name change for an asset but there was a trouble retreiving metadata. Asset name change will not persist!");
+                            server.Logger.Log(LogLevel.Warn, "Client asked for asset name change for an asset but there was a trouble retreiving metadata. Asset name change will not persist!");
                         }
 
                         aRef.Name = this.Name;
@@ -44,13 +45,13 @@
                     }
                     else
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for asset name change for non-existing asset!");
+                        server.Logger.Log(LogLevel.Warn, "Client asked for asset name change for non-existing asset!");
                         return;
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for asset name change without permissions!");
+                    server.Logger.Log(LogLevel.Warn, "Client asked for asset name change without permissions!");
                     return;
                 }
             }

@@ -131,7 +131,9 @@
                     cellOutline);
 
                     ImGui.SetCursorPos(new(ccX + block.x + imPadding.X, ccY + block.y));
-                    ImGui.TextColored(block.color, block.text);
+                    ImGui.PushStyleColor(ImGuiCol.Text, block.color);
+                    ImGui.TextUnformatted(block.text);
+                    ImGui.PopStyleColor();
                     ImGui.SetCursorPos(new(ccX + block.x + block.w, ccY + block.y));
                     if (i != this._lines.Count - 1 || (i1 != line.Length - 2 && i1 != line.Length - 1))
                     {
@@ -148,7 +150,7 @@
                     if (!string.IsNullOrEmpty(block.tooltip) && overRect)
                     {
                         ImGui.BeginTooltip();
-                        ImGui.Text(block.tooltip);
+                        ImGui.TextUnformatted(block.tooltip);
                         ImGui.EndTooltip();
                     }
 

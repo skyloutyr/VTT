@@ -54,7 +54,7 @@
                 {
                     Vector2 cursorOld = ImGui.GetCursorPos();
                     ImGui.SetCursorPos(cursorLocal + new Vector2(24, 4));
-                    ImGui.Text(value.Text);
+                    ImGui.TextUnformatted(value.Text);
                     ImGui.SetCursorPos(cursorOld);
                 }
             }
@@ -77,17 +77,21 @@
 
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.TextColored((Vector4)key.Color, key.Text);
+                    ImGui.PushStyleColor(ImGuiCol.Text, key.Color.Abgr());
+                    ImGui.TextUnformatted(key.Text);
+                    ImGui.PopStyleColor();
                     ImGui.TableSetColumnIndex(1);
                     Vector2 imTtStart = ImGui.GetCursorScreenPos();
-                    ImGui.TextColored((Vector4)value.Color, value.Text);
+                    ImGui.PushStyleColor(ImGuiCol.Text, value.Color.Abgr());
+                    ImGui.TextUnformatted(value.Text);
+                    ImGui.PopStyleColor();
                     Vector2 imTtEnd = imTtStart + new Vector2(ImGui.GetColumnWidth(), ImGui.GetTextLineHeight());
                     if (!string.IsNullOrEmpty(value.Tooltip))
                     {
                         if (ImGui.IsMouseHoveringRect(imTtStart, imTtEnd))
                         {
                             ImGui.BeginTooltip();
-                            ImGui.Text(value.Tooltip);
+                            ImGui.TextUnformatted(value.Tooltip);
                             ImGui.EndTooltip();
                         }
                     }

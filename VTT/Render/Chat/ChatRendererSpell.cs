@@ -170,7 +170,7 @@
 
                 ImGui.SetCursorPos(localPos + new Vector2(8, 162));
                 ImGui.PushTextWrapPos(maxWindowW);
-                ImGui.Text(desc.Text);
+                ImGui.TextUnformatted(desc.Text);
                 ImGui.PopTextWrapPos();
                 ImGui.SetCursorPosY(localPos.Y + h);
             }

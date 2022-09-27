@@ -142,11 +142,15 @@
                 }
 
                 Vector2 cV = ImGui.GetCursorPos();
-                ImGui.TextColored((Vector4)this.SenderColor, this.SenderDisplayName);
+                ImGui.PushStyleColor(ImGuiCol.Text, this.SenderColor.Abgr());
+                ImGui.TextUnformatted(this.SenderDisplayName);
+                ImGui.PopStyleColor();
                 ImGui.SameLine();
                 ImGui.Text("->");
                 ImGui.SameLine();
-                ImGui.TextColored((Vector4)this.DestColor, string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
+                ImGui.PushStyleColor(ImGuiCol.Text, this.DestColor.Abgr());
+                ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
+                ImGui.PopStyleColor();
                 float eY = ImGui.GetCursorScreenPos().Y;
                 ImGui.SameLine();
                 Vector2 eV = new Vector2(ImGui.GetCursorScreenPos().X, eY);

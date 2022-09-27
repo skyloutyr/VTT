@@ -357,8 +357,9 @@
                                         ImGui.SetCursorPosX(cX + (delta / 2));
                                     }
 
-                                    ImGui.TextColored((System.Numerics.Vector4)ri.Color, ri.OwnerName);
-
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                    ImGui.TextUnformatted(ri.OwnerName);
+                                    ImGui.PopStyleColor();
                                     if (!string.IsNullOrEmpty(ri.Tooltip))
                                     {
                                         if (tLen2.X < maxW)
@@ -368,7 +369,7 @@
                                             ImGui.SetCursorPosX(cX + (delta / 2));
                                         }
 
-                                        ImGui.Text(ri.Tooltip);
+                                        ImGui.TextUnformatted(ri.Tooltip);
                                     }
 
 
@@ -381,7 +382,9 @@
 
                                     if (len > 0.01f)
                                     {
-                                        ImGui.TextColored((System.Numerics.Vector4)ri.Color, text);
+                                        ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                        ImGui.TextUnformatted(text);
+                                        ImGui.PopStyleColor();
                                     }
 
                                     ImGui.End();
@@ -401,7 +404,9 @@
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
                                 if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
                                 {
-                                    ImGui.TextColored((System.Numerics.Vector4)ri.Color, text);
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                    ImGui.TextUnformatted(text);
+                                    ImGui.PopStyleColor();
                                     ImGui.End();
                                 }
                             }
@@ -586,7 +591,7 @@
                         System.Numerics.Vector2 tSize = ImGui.CalcTextSize(this._inspectedObject.Name);
                         ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
                         ImGui.SetCursorPosY(72);
-                        ImGui.Text(this._inspectedObject.Name);
+                        ImGui.TextUnformatted(this._inspectedObject.Name);
 
                         ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         ImGui.TextWrapped(this._inspectedObject.Description);

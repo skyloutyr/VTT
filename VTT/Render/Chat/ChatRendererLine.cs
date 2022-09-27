@@ -164,14 +164,16 @@
                             );
                         }
 
-                        ImGui.TextColored((System.Numerics.Vector4)icw.Owner.Color, icw.Text);
+                        ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color.Abgr());
+                        ImGui.TextUnformatted(icw.Text);
+                        ImGui.PopStyleColor();
                         pX += icw.Width + (i == icl.Words.Length - 1 ? 0 : this._spacebarWidth);
                         ImGui.SetCursorPos(new(pX, pY));
                         System.Numerics.Vector2 vEnd = ImGui.GetCursorScreenPos() + new System.Numerics.Vector2(0, icl.Height);
                         if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
                         {
                             ImGui.BeginTooltip();
-                            ImGui.Text(icw.Owner.Tooltip);
+                            ImGui.TextUnformatted(icw.Owner.Tooltip);
                             ImGui.EndTooltip();
                         }
                     }

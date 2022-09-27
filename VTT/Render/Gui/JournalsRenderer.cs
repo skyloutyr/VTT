@@ -22,7 +22,7 @@
                 {
                     ImGui.BeginChild("journal_" + tj.SelfID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings);
 
-                    ImGui.Text(tj.Title);
+                    ImGui.TextUnformatted(tj.Title);
                     ImGui.SameLine();
                     ImGui.SetCursorPosX(wC.X - 32 - 28);
                     if (!Client.Instance.IsAdmin && tj.OwnerID != Client.Instance.ID)

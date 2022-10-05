@@ -100,7 +100,7 @@
                             GL.TexSubImage2D(selfTT, level, 0, y - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
                         }
 
-                        T* tOffsetB = pixelBuffer + (y * img.Width);
+                        T* tOffsetB = pixelBuffer + ((y % 4) * img.Width);
                         Span<T> s = new Span<T>(tOffsetB, img.Width);
                         rowSpan.CopyTo(s);
                     }

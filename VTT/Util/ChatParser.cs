@@ -548,7 +548,7 @@
         private static bool hadRollColorChange;
         private static bool hadRollMax;
         private static bool hadRollMin;
-        private static readonly Dictionary<string, List<int>> rollResults = new Dictionary<string, List<int>>();
+        private static readonly Dictionary<string, List<string>> rollResults = new Dictionary<string, List<string>>();
 
         private static void RollFunction(string name, FunctionArgs args)
         {
@@ -558,7 +558,8 @@
                 {
                     int num = Math.Min((int)args.Parameters[0].Evaluate(), 10000000);
                     int side = (int)args.Parameters[1].Evaluate();
-                    int accum = 0;
+                    string accumStr = string.Empty;
+                    int accumInt = 0;
                     for (int i = 0; i < num; ++i)
                     {
                         int r = RandomNumberGenerator.GetInt32(side) + 1;
@@ -574,12 +575,13 @@
                             hadRollMax = true;
                         }
 
-                        accum += r;
+                        accumStr += r.ToString() + (i != num - 1 ? ',' : "");
+                        accumInt += r;
                     }
 
                     args.HasResult = true;
-                    args.Result = accum;
-                    AddRollResult($"{name}({num}, {side})", accum);
+                    args.Result = accumInt;
+                    AddRollResult($"{name}({num}, {side})", accumStr);
                 }
                 catch
                 {
@@ -589,11 +591,11 @@
             }
         }
 
-        private static void AddRollResult(string expr, int val)
+        private static void AddRollResult(string expr, string val)
         {
             if (!rollResults.ContainsKey(expr))
             {
-                rollResults.Add(expr, new List<int>());
+                rollResults.Add(expr, new List<string>());
             }
 
             rollResults[expr].Add(val);
@@ -603,7 +605,7 @@
         {
             try
             {
-                foreach (KeyValuePair<string, List<int>> kv in rollResults)
+                foreach (KeyValuePair<string, List<string>> kv in rollResults)
                 {
                     int lF = 0;
                     int lIndex = 0;

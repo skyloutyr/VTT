@@ -48,6 +48,8 @@
         public NetworkMonitor NetworkIn { get; } = new NetworkMonitor();
         public NetworkMonitor NetworkOut { get; } = new NetworkMonitor();
 
+        public long TimeoutInterval { get; set; } = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
+
         public Server(IPAddress address, int port) : base(address, port) => Instance = this;
 
         public bool TryGetMap(Guid mapID, out Map map)
@@ -104,6 +106,11 @@
                 ll = LogLevel.Off;
             }
 
+            if (ArgsManager.TryGetValue("timeout", out long ti))
+            {
+                this.TimeoutInterval = ti;
+            }
+
             this.Logger = new Logger() { Prefix = "Client", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
             this.Logger.OnLog += Logger.Debug;
@@ -152,6 +159,7 @@
         }
 
         private readonly Stack<TextJournal> _deletions = new Stack<TextJournal>();
+        private readonly Stack<ServerClient> _dcRequests = new Stack<ServerClient>();
         private int _kaTimer;
         protected void RunWorker()
         {
@@ -249,6 +257,20 @@
                     lock (clientsLock)
                     {
                         new PacketKeepalivePing() { Side = true }.Broadcast();
+                        long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        foreach (ServerClient sc in this.ClientsByID.Values)
+                        {
+                            if (now - sc.LastPingResponseTime > this.TimeoutInterval)
+                            {
+                                new PacketDisconnectReason() { DCR = DisconnectReason.Timeout }.Send(sc);
+                                this._dcRequests.Push(sc);
+                            }
+                        }
+                    }
+
+                    while (this._dcRequests.Count > 0)
+                    {
+                        this._dcRequests.Pop().Disconnect();
                     }
                 }
 
@@ -487,6 +509,7 @@
     public class ServerClient : TcpSession
     {
         public ClientInfo Info { get; set; }
+        public long LastPingResponseTime { get; set; }
 
         public Guid ID
         {
@@ -550,6 +573,7 @@
             Network.Server.Instance.Logger.Log(LogLevel.Info, "Client connected with session id " + this.Id.ToString());
             Network.Server.Instance.Logger.Log(LogLevel.Info, "Connecting client IP address is " + this.Socket.RemoteEndPoint.ToString());
             base.OnConnected();
+            this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         protected override void OnDisconnected()

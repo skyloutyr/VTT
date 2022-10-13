@@ -20,12 +20,28 @@
                 {
                     this.Send(this.Sender);
                 }
+                else
+                {
+                    ServerClient sc = this.Sender;
+                    if (sc != null)
+                    {
+                        sc.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    }
+                }
             }
             else
             {
                 if (this.Side)
                 {
                     this.Send();
+                }
+                else
+                {
+                    NetClient nc = client.NetClient;
+                    if (nc != null)
+                    {
+                        nc.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    }
                 }
             }
         }

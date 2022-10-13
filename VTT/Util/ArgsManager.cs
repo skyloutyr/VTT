@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Text;
 
     public static class ArgsManager
     {
@@ -102,6 +103,59 @@
                 case "-gldebug":
                 {
                     Args["gldebug"] = value;
+                    break;
+                }
+
+                case "-timeout":
+                {
+                    try
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        int idx = value.Length - 1;
+                        while (!char.IsDigit(value[idx]) && idx >= 0)
+                        {
+                            sb.Insert(0, value[idx]);
+                            --idx;
+                        }
+
+                        string type = sb.ToString().Trim();
+                        long num = long.Parse(value[..(idx + 1)]);
+                        long mul = 1;
+                        switch (type)
+                        {
+                            case "ms":
+                            {
+                                mul = 1;
+                                break;
+                            }
+
+                            case "s":
+                            {
+                                mul = 1000;
+                                break;
+                            }
+
+                            case "m":
+                            {
+                                mul = 60000;
+                                break;
+                            }
+
+                            case "h":
+                            {
+                                mul = 3600000;
+                                break;
+                            }
+                        }
+
+                        num *= mul;
+                        Args["timeout"] = num;
+                    }
+                    catch
+                    {
+                        Args["timeout"] = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
+                    }
+
                     break;
                 }
             }

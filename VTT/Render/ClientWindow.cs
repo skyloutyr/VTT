@@ -167,18 +167,28 @@
         private void Instance_UpdateFrame(OpenTK.Windowing.Common.FrameEventArgs obj)
         {
             ++this.UpdatesExisted;
-            if (Client.Instance.NetClient?.IsConnected ?? false)
+            NetClient nc = Client.Instance.NetClient;
+            if (nc != null)
             {
-                if (++this._kaTimer >= 300)
+                if (nc.IsConnected)
                 {
-                    this._kaTimer = 0;
-                    try
+                    if (++this._kaTimer >= 300)
                     {
-                        new PacketKeepalivePing() { Side = false }.Send();
+                        this._kaTimer = 0;
+                        try
+                        {
+                            new PacketKeepalivePing() { Side = false }.Send();
+                        }
+                        catch
+                        {
+                            // NOOP
+                        }
                     }
-                    catch
+
+                    long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    if (now - nc.LastPingResponseTime > Client.Instance.TimeoutInterval)
                     {
-                        // NOOP
+                        Client.Instance.Disconnect(DisconnectReason.Timeout);
                     }
                 }
             }

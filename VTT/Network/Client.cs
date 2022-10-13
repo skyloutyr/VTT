@@ -62,6 +62,7 @@
         public NetworkMonitor NetworkOut { get; } = new NetworkMonitor();
 
         public DisconnectReason LastDisconnectReason { get; set; } = DisconnectReason.InternalClientError;
+        public long TimeoutInterval { get; set; } = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
         public Client()
         {
@@ -69,6 +70,11 @@
             if (!ArgsManager.TryGetValue("loglevel", out LogLevel ll))
             {
                 ll = LogLevel.Off;
+            }
+
+            if (ArgsManager.TryGetValue("timeout", out long ti))
+            {
+                this.TimeoutInterval = ti;
             }
 
             this.Logger = new Logger() { Prefix = "Client", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
@@ -283,9 +289,11 @@
     {
         public Client Container { get; set; }
         public PacketNetworkManager PacketNetworkManager { get; set; }
+        public long LastPingResponseTime { get; set; }
 
         public NetClient(IPEndPoint endpoint) : base(endpoint)
         {
+            this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         protected override void OnConnected()
@@ -296,6 +304,7 @@
             new PacketHandshake() { ClientID = this.Container.ID, Session = this.Id, IsServer = false, ClientVersion = Program.GetVersionBytes() }.Send(this);
             Client.Instance.Logger.Log(LogLevel.Info, "Sending handshake");
             this.Container.SessionID = this.Id;
+            this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         protected override void OnError(System.Net.Sockets.SocketError error)

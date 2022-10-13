@@ -23,7 +23,13 @@
                     ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
                     if (ImGui.Button(lang.Translate("ui.maps.cam_snap") + "###Cam Snap"))
                     {
-                        PacketCameraSnap pcs = new PacketCameraSnap() { CameraPosition = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position, CameraDirection = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction };
+                        Vector3 cPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
+                        if (state.clientMap.Is2D)
+                        {
+                            cPos = new Vector3(cPos.X, cPos.Y, Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho);
+                        }
+
+                        PacketCameraSnap pcs = new PacketCameraSnap() { CameraPosition = cPos, CameraDirection = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction };
                         pcs.Send();
                     }
 
@@ -39,8 +45,12 @@
                     if (ImGui.Button(lang.Translate("ui.maps.cam_set") + "###Set Cam"))
                     {
                         Vector3 cPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
-                        Vector3 cDir = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
+                        if (state.clientMap.Is2D)
+                        {
+                            cPos = new Vector3(cPos.X, cPos.Y, Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho);
+                        }
 
+                        Vector3 cDir = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cPos, Type = PacketChangeMapData.DataType.CameraPosition }.Send();
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
                     }
@@ -132,7 +142,16 @@
                         state.clientMap.Is2D = m2d;
                         Client.Instance.Frontend.Renderer.MapRenderer.Switch2D(m2d);
                         PacketChangeMapData pcmd = new PacketChangeMapData() { Data = m2d, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.Is2D };
-                        pcmd.Send();
+                        Vector3 cPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
+                        if (state.clientMap.Is2D)
+                        {
+                            cPos = new Vector3(cPos.X, cPos.Y, Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho);
+                        }
+
+                        Vector3 cDir = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
+                        new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cPos, Type = PacketChangeMapData.DataType.CameraPosition }.Send();
+                        new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
+                        pcmd.Send(); // Change default camera position/direction when 2d is switched to current to fix 2d zoom levels
                     }
 
                     if (ImGui.IsItemHovered())

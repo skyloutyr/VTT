@@ -3,6 +3,7 @@
     using OpenTK.Mathematics;
     using System;
     using System.IO;
+    using VTT.Control;
 
     public class PacketCameraSnap : PacketBase
     {
@@ -19,9 +20,19 @@
             }
             else
             {
-                if (Client.Instance.CurrentMap != null)
+                Map m = Client.Instance.CurrentMap;
+                if (m != null)
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = this.CameraPosition;
+                    if (m.Is2D)
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = new Vector3(this.CameraDirection.X, this.CameraDirection.Y, m.Camera2DHeight);
+                        Client.Instance.Frontend.Renderer.MapRenderer.ChangeFOVOrZoom(this.CameraDirection.Z);
+                    }
+                    else
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = this.CameraPosition;
+                    }
+
                     Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction = this.CameraDirection;
                     Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                 }

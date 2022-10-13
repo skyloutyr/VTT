@@ -65,7 +65,7 @@
             this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
         }
 
-        public void ChangeFOV(float to)
+        public void ChangeFOVOrZoom(float to)
         {
             this.FOV = to;
             if (!this.IsOrtho)
@@ -73,9 +73,14 @@
                 this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(this.FOV, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
+            else
+            {
+                this.camera2dzoom = to;
+                this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+            }
         }
 
-        public void Switch2D(bool b)
+        public void Switch2D(bool b, float zoom = 0.01f)
         {
             Map m = Client.Instance.CurrentMap;
             if (m == null)
@@ -88,7 +93,7 @@
             int h = Client.Instance.Frontend.Height;
             if (b)
             {
-                float zoom = this.camera2dzoom = 0.01f;
+                this.camera2dzoom = zoom;
                 this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -50, 100);
                 this.ClientCamera.Direction = new Vector3(0, 0.001f, -1).Normalized();
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);

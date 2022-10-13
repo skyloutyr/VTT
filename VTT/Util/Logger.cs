@@ -85,7 +85,7 @@
 
         public static LogListener Debug => (l, msg) =>
         {
-            System.Diagnostics.Debugger.Log(0, null, msg);
+            System.Diagnostics.Debugger.Log(0, null, msg + "\n");
         };
 
         public class FileLogListener

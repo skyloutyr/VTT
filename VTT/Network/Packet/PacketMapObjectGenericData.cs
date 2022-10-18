@@ -250,6 +250,11 @@
                     m = this.Client.CurrentMapIfMatches(d.Item1);
                 }
 
+                if (m == null)
+                {
+                    continue;
+                }
+
                 if (m.GetObject(d.Item2, out MapObject mo))
                 {
                 }

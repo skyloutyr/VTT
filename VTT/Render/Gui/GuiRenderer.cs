@@ -115,7 +115,6 @@
         private string _editedTeamName;
 
         private AssetRef _draggedRef;
-        private MapObject _draggedRefObjectParam;
 
         private AssetRef _editedRef;
         private Guid _editedParticleSystemId;

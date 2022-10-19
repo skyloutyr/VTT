@@ -1,5 +1,6 @@
 ﻿namespace VTTUpdater
 {
+    using System;
     using System.IO.Compression;
     using System.Net;
     using System.Text.Json;
@@ -7,11 +8,11 @@
 
     public static class Program
     {
-        public static int lastX;
-        public static int lastY;
-        public static bool isBackground;
+        private static int lastX;
+        private static int lastY;
+        private static bool isBackground;
 
-        public static Lazy<HttpClient> client = new Lazy<HttpClient>(() => {
+        private static readonly Lazy<HttpClient> client = new Lazy<HttpClient>(() => {
             
             HttpClient c = new HttpClient();
             c.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue() { NoCache = true, NoStore = true };
@@ -30,7 +31,9 @@
                 AddTslProtocol(SecurityProtocolType.Tls11);
                 AddTslProtocol(SecurityProtocolType.Tls12);
                 AddTslProtocol(SecurityProtocolType.Tls13);
+#pragma warning disable CS0618 // Type or member is obsolete - Need this for Win7
                 AddTslProtocol(SecurityProtocolType.Ssl3);
+#pragma warning restore CS0618 // Type or member is obsolete
             }
 
             bool back = isBackground = args.Length > 0 && args[0] == "--background";
@@ -55,8 +58,8 @@
 
             WriteStatusString("Startup");
             WriteStatusString("Reading Versions");
-            VersionSpec local = VersionSpec.Local();
-            VersionSpec remote = await VersionSpec.Remote();
+            VersionSpec? local = VersionSpec.Local();
+            VersionSpec? remote = await VersionSpec.Remote();
             if (local != null && remote != null)
             {
                 WriteStatusString("Comparing Versions");
@@ -240,10 +243,7 @@
             isWriting = false;
         }
 
-        public static async Task<string> Request(string url)
-        {
-            return await client.Value.GetStringAsync(url);
-        }
+        public static async Task<string> Request(string url) => await client.Value.GetStringAsync(url);
 
         public static void AddTslProtocol(SecurityProtocolType spt)
         {
@@ -261,16 +261,16 @@
     public class VersionSpec
     {
         [JsonInclude]
-        public string version;
+        public string version = string.Empty;
 
         [JsonInclude]
-        public string link;
+        public string link = string.Empty;
 
         [JsonInclude]
-        public Dictionary<string, string> changelog;
+        public Dictionary<string, string> changelog = new Dictionary<string, string>();
 
-        public static VersionSpec Local() => JsonSerializer.Deserialize<VersionSpec>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json")));
-        public static async Task<VersionSpec> Remote()
+        public static VersionSpec? Local() => JsonSerializer.Deserialize<VersionSpec>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Version.json")));
+        public static async Task<VersionSpec?> Remote()
         {
             string s = await Program.Request("https://raw.githubusercontent.com/skyloutyr/VTT/master/VTT/Version.json");
             return JsonSerializer.Deserialize<VersionSpec>(s);
@@ -279,20 +279,20 @@
 
     public class HttpClientHelper
     {
-        public static async Task DownloadAsync(HttpClient client, string requestUri, Stream destination, IProgress<float> progress = null, CancellationToken cancellationToken = default)
+        public static async Task DownloadAsync(HttpClient client, string requestUri, Stream destination, IProgress<float>? progress = default, CancellationToken cancellationToken = default)
         {
-            using (var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead))
+            using (var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 var contentLength = response.Content.Headers.ContentLength;
 
-                using (var download = await response.Content.ReadAsStreamAsync())
+                using (var download = await response.Content.ReadAsStreamAsync(cancellationToken))
                 {
 
                     // Ignore progress reporting when no progress reporter was 
                     // passed or when the content length is unknown
                     if (progress == null || !contentLength.HasValue)
                     {
-                        await download.CopyToAsync(destination);
+                        await download.CopyToAsync(destination, cancellationToken);
                         return;
                     }
 
@@ -305,7 +305,7 @@
             }
         }
 
-        public static async Task CopyToAsync(Stream source, Stream destination, int bufferSize, IProgress<long> progress = null, CancellationToken cancellationToken = default)
+        public static async Task CopyToAsync(Stream source, Stream destination, int bufferSize, IProgress<long>? progress = default, CancellationToken cancellationToken = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -321,9 +321,9 @@
             var buffer = new byte[bufferSize];
             long totalBytesRead = 0;
             int bytesRead;
-            while ((bytesRead = await source.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) != 0)
+            while ((bytesRead = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) != 0)
             {
-                await destination.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+                await destination.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
                 totalBytesRead += bytesRead;
                 progress?.Report(totalBytesRead);
             }

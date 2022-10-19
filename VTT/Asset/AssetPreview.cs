@@ -7,7 +7,7 @@
 
     public class AssetPreview // Client-only
     {
-        public Texture? GLTex { get; set; }
+        public Texture GLTex { get; set; }
         public byte[] Data { get; set; }
 
         public bool IsAnimated { get; set; }
@@ -29,7 +29,7 @@
             return this.Frames[0];
         }
 
-        public Texture? GetGLTexture()
+        public Texture GetGLTexture()
         {
             if (this.GLTex == null && (this.Data == null || this.Data.Length == 0))
             {
@@ -60,11 +60,7 @@
             return this.GLTex;
         }
 
-        public void Delete()
-        {
-            this.GLTex?.Dispose();
-            // TODO deletion
-        }
+        public void Delete() => this.GLTex?.Dispose();
 
         public struct FrameData
         { 

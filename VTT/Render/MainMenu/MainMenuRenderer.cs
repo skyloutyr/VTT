@@ -80,10 +80,6 @@
 
                 ImGui.SetCursorPosX(8);
                 ImGui.SetCursorPosY(height - 131 - 8);
-                int frame = this._currentNulEngAnimFrame;
-                int numFrames = 10;
-                float vStart = (float)frame / numFrames;
-                float vEnd = vStart + 0.1f;
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 320, 0));
                 ImGui.Image(this.LogoMain, new Vector2(640, 240));
@@ -761,14 +757,7 @@
 
         private Random _rand = new Random();
         private int _fCount = 0;
-        private int _mascotThunk = 0;
         private int _currentNulEngAnimFrame = 0;
-
-        private int _lastThunkTick = 0;
-        private int _consecutiveThunks = 0;
-        private bool _hardhatBroken = false;
-
-        private HardhatParticle _hardhatParticle;
 
         private int[,] _frameData = new int[,] { 
             { 0, 1 }, 
@@ -792,21 +781,12 @@
             { 430, 0 } 
         };
 
-        private bool _lmbDown;
-        private bool _hardhatInHand;
-
-        private Vector2 _mouseLastUpdate;
-        private Vector2 _hardhatCursor2CenterWhenBroken;
-
         public void Update(double delta)
         {
             if (Client.Instance.NetClient != null && Client.Instance.NetClient.IsConnected)
             {
                 return;
             }
-
-            float width = ImGui.GetIO().DisplaySize.X;
-            float height = ImGui.GetIO().DisplaySize.Y;
 
             this._fCount += 1;
             int idx = 0;

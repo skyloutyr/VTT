@@ -249,6 +249,7 @@ void main()
 			LoadEmoji(builder);
 			builder.BuildRanges(out ImVector ranges);
 			fonts.AddFontFromFileTTF(temp, 16, null, ranges.Data);
+			fonts.Build();
 
             _fontTexture = new Texture(TextureTarget.Texture2D);
             _fontTexture.Bind();

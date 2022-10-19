@@ -265,7 +265,7 @@
                     ImGui.InputInt("##Dice Amount", ref this._numDiceSeparate);
                     ImGui.PopID();
 
-                    int[] dieSide = { 2, 4, 6, 8, 12, 20, 100 };
+                    int[] dieSide = { 2, 4, 6, 8, 10, 12, 20, 100 };
                     for (int i = 0; i < dieSide.Length; ++i)
                     {
                         ImGui.TableNextRow();

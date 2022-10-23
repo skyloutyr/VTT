@@ -369,7 +369,13 @@
 
                 this._glTex = new Texture(TextureTarget.Texture2D);
                 this._glTex.Bind();
-                PixelInternalFormat pif = this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha : PixelInternalFormat.Rgba;
+                PixelInternalFormat pif = 
+                    this.Meta.Compress ? 
+                        this.Meta.GammaCorrect ? PixelInternalFormat.CompressedSrgbAlpha :
+                    PixelInternalFormat.CompressedRgba :
+                this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha :
+                    PixelInternalFormat.Rgba;
+
                 this._glTex.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
                 this._glTex.SetWrapParameters(this.Meta.WrapS, this.Meta.WrapT, WrapParam.Repeat);
                 Configuration cfg = Configuration.Default.Clone();

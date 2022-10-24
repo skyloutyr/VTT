@@ -177,68 +177,20 @@
         {
             if (this.Renderer == null)
             {
-                switch (this.Type)
+                this.Renderer = this.Type switch
                 {
-                    case RenderType.Line:
-                    {
-                        this.Renderer = new ChatRendererLine(this);
-                        break;
-                    }
-
-                    case RenderType.DiceRoll:
-                    {
-                        this.Renderer = new ChatRendererRollAccumulated(this);
-                        break;
-                    }
-
-                    case RenderType.DiceRolls:
-                    {
-                        this.Renderer = new ChatRendererRolls(this);
-                        break;
-                    }
-
-                    case RenderType.Default:
-                    {
-                        this.Renderer = new ChatRendererDefault(this);
-                        break;
-                    }
-
-                    case RenderType.Simple:
-                    {
-                        this.Renderer = new ChatRendererSimple(this);
-                        break;
-                    }
-
-                    case RenderType.SessionMarker:
-                    {
-                        this.Renderer = new ChatRendererSession(this);
-                        break;
-                    }
-
-                    case RenderType.Image:
-                    {
-                        this.Renderer = new ChatRendererImage(this);
-                        break;
-                    }
-
-                    case RenderType.RollExpression:
-                    {
-                        this.Renderer = new ChatRendererRollExpression(this);
-                        break;
-                    }
-
-                    case RenderType.AtkDmg:
-                    {
-                        this.Renderer = new ChatRendererAtkDmg(this);
-                        break;
-                    }
-
-                    case RenderType.Spell:
-                    {
-                        this.Renderer = new ChatRendererSpell(this);
-                        break;
-                    }
-                }
+                    RenderType.Line => new ChatRendererLine(this),
+                    RenderType.DiceRoll => new ChatRendererRollAccumulated(this),
+                    RenderType.DiceRolls => new ChatRendererRolls(this),
+                    RenderType.Default => new ChatRendererDefault(this),
+                    RenderType.Simple => new ChatRendererSimple(this),
+                    RenderType.SessionMarker => new ChatRendererSession(this),
+                    RenderType.Image => new ChatRendererImage(this),
+                    RenderType.RollExpression => new ChatRendererRollExpression(this),
+                    RenderType.AtkDmg => new ChatRendererAtkDmg(this),
+                    RenderType.Spell => new ChatRendererSpell(this),
+                    _ => default
+                };
             }
 
             this.Renderer.Cache(out _, out this._cachedHeight);

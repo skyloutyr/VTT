@@ -35,15 +35,20 @@
             ImGui.SetNextWindowBgAlpha(0.0f);
             ImGui.DockSpaceOverViewport(ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
 
+            Vector2 cSize = Vector2.Zero;
+            bool chatChanged = false;
+            bool loseFocus = false;
+            bool sendSignal = false;
+
             if (ImGui.Begin(lang.Translate("ui.chat") + "###Chat"))
             {
-                System.Numerics.Vector2 cSize = ImGui.GetContentRegionAvail();
-                bool chatChanged = !Equals(this._chatClientRect, cSize);
-                bool loseFocus = false;
-                System.Numerics.Vector2 cwSize = ImGui.GetWindowContentRegionMax();
-                System.Numerics.Vector2 cwB = ImGui.GetWindowContentRegionMin();
+                cSize = ImGui.GetContentRegionAvail();
+                chatChanged = !Equals(this._chatClientRect, cSize);
+                loseFocus = false;
+                Vector2 cwSize = ImGui.GetWindowContentRegionMax();
+                Vector2 cwB = ImGui.GetWindowContentRegionMin();
                 ImGui.SetCursorPosY(cwSize.Y - 128);
-                bool sendSignal = false;
+                sendSignal = false;
                 string inputCopy = this._chatString;
                 if (this._needsRefocusChat)
                 {
@@ -51,7 +56,7 @@
                     this._needsRefocusChat = false;
                 }
 
-                bool b = ImGui.InputTextMultiline("##ChatInput", ref inputCopy, ushort.MaxValue, new System.Numerics.Vector2(cwSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
+                bool b = ImGui.InputTextMultiline("##ChatInput", ref inputCopy, ushort.MaxValue, new Vector2(cwSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
                 {
                     if (data != null) // null ptr check
                     {
@@ -106,26 +111,26 @@
 
                 ImGui.SameLine();
                 float bscX = ImGui.GetCursorPosX();
-                if (ImGui.ImageButton(this.ChatLinkImage, Vec48x36, new System.Numerics.Vector2(-0.6f, -0.5f), new System.Numerics.Vector2(1.6f, 1.5f), 0))
+                if (ImGui.ImageButton(this.ChatLinkImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0))
                 {
                     state.linkPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cwSize.Y - 82);
-                if (ImGui.ImageButton(this.RollIcon, Vec48x36, new System.Numerics.Vector2(-0.6f, -0.5f), new System.Numerics.Vector2(1.6f, 1.5f), 0))
+                if (ImGui.ImageButton(this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0))
                 {
                     state.rollPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cwSize.Y - 36);
-                sendSignal |= ImGui.ImageButton(this.ChatSendImage, Vec48x36, new System.Numerics.Vector2(-0.6f, -0.5f), new System.Numerics.Vector2(1.6f, 1.5f), 0);
+                sendSignal |= ImGui.ImageButton(this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0);
                 ImGui.SetCursorPosY(cwB.Y);
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Lerp(imDefault, darkGray, Client.Instance.Settings.ChatBackgroundBrightness));
-                ImGui.BeginChild("ChatWindow", new System.Numerics.Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
+                ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
 
                 int clRendered = 0;
                 int lowestIndex = -1;
@@ -177,49 +182,49 @@
                 this._scrollYLast = ImGui.GetScrollY() / ImGui.GetScrollMaxY();
                 ImGui.EndChild();
                 ImGui.PopStyleColor();
+            }
 
-                ImGui.End();
+            ImGui.End();
 
-                if (loseFocus)
+            if (loseFocus)
+            {
+                ImGui.SetKeyboardFocusHere(-1);
+            }
+
+            if (sendSignal)
+            {
+                ImGui.SetKeyboardFocusHere(-1);
+                if (Client.Instance.NetClient?.IsConnected ?? false)
                 {
-                    ImGui.SetKeyboardFocusHere(-1);
-                }
-
-                if (sendSignal)
-                {
-                    ImGui.SetKeyboardFocusHere(-1);
-                    if (Client.Instance.NetClient?.IsConnected ?? false)
+                    if (!string.IsNullOrEmpty(this._chatString))
                     {
-                        if (!string.IsNullOrEmpty(this._chatString))
+                        if (this._chatString.StartsWith("/as "))
                         {
-                            if (this._chatString.StartsWith("/as "))
+                            if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                             {
-                                if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
-                                {
-                                    string n = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].Name;
-                                    string p = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].ID.ToString();
-                                    this._chatString = $"[n:{n}][o:{p}]" + this._chatString[4..];
-                                }
-                                else
-                                {
-                                    this._chatString = this._chatString[4..];
-                                }
+                                string n = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].Name;
+                                string p = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].ID.ToString();
+                                this._chatString = $"[n:{n}][o:{p}]" + this._chatString[4..];
                             }
-
-                            PacketChatMessage pcm = new PacketChatMessage() { Message = this._chatString };
-                            pcm.Send();
-                            this._chat.Add(this._chatString);
-                            this._cChatIndex = this._chat.Count;
+                            else
+                            {
+                                this._chatString = this._chatString[4..];
+                            }
                         }
+
+                        PacketChatMessage pcm = new PacketChatMessage() { Message = this._chatString };
+                        pcm.Send();
+                        this._chat.Add(this._chatString);
+                        this._cChatIndex = this._chat.Count;
                     }
-
-                    this._chatString = "";
                 }
 
-                if (chatChanged)
-                {
-                    this._chatClientRect = cSize;
-                }
+                this._chatString = "";
+            }
+
+            if (chatChanged)
+            {
+                this._chatClientRect = cSize;
             }
         }
     }

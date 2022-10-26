@@ -385,9 +385,9 @@
                                         ImGui.TextUnformatted(text);
                                         ImGui.PopStyleColor();
                                     }
-
-                                    ImGui.End();
                                 }
+
+                                ImGui.End();
                             }
                         }
                         else
@@ -406,8 +406,9 @@
                                     ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
                                     ImGui.TextUnformatted(text);
                                     ImGui.PopStyleColor();
-                                    ImGui.End();
                                 }
+
+                                ImGui.End();
                             }
                         }
                     }

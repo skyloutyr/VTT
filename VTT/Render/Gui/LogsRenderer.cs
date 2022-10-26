@@ -8,28 +8,32 @@
     {
         private unsafe void RenderLogs(SimpleLanguage lang)
         {
-            if (DebugEnabled && ImGui.Begin(lang.Translate("ui.logs") + "###Logs"))
+            if (DebugEnabled)
             {
-                int logCount = 0;
-                lock (VTTLogListener.Instance.lockV)
+                if (ImGui.Begin(lang.Translate("ui.logs") + "###Logs"))
                 {
-                    foreach (Tuple<System.Numerics.Vector4, string> s in VTTLogListener.Instance.Logs)
+                    int logCount = 0;
+                    lock (VTTLogListener.Instance.lockV)
                     {
-                        ImGui.PushTextWrapPos();
-                        ImGui.PushStyleColor(ImGuiCol.Text, s.Item1);
-                        ImGui.TextUnformatted(s.Item2);
-                        ImGui.PopStyleColor();
-                        ImGui.PopTextWrapPos();
-                        ++logCount;
+                        foreach (Tuple<System.Numerics.Vector4, string> s in VTTLogListener.Instance.Logs)
+                        {
+                            ImGui.PushTextWrapPos();
+                            ImGui.PushStyleColor(ImGuiCol.Text, s.Item1);
+                            ImGui.TextUnformatted(s.Item2);
+                            ImGui.PopStyleColor();
+                            ImGui.PopTextWrapPos();
+                            ++logCount;
+                        }
                     }
+
+                    if (this._lastLogNum != logCount)
+                    {
+                        ImGui.SetScrollHereY(1.0f);
+                    }
+
+                    this._lastLogNum = logCount;
                 }
 
-                if (this._lastLogNum != logCount)
-                {
-                    ImGui.SetScrollHereY(1.0f);
-                }
-
-                this._lastLogNum = logCount;
                 ImGui.End();
             }
         }

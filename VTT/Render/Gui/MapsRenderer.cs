@@ -600,8 +600,9 @@
                     }
                 }
 
-                ImGui.End();
             }
+
+            ImGui.End();
         }
     }
 }

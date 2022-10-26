@@ -193,242 +193,245 @@
 
         private unsafe void RenderAssets(SimpleLanguage lang, GuiState state)
         {
-            if (Client.Instance.IsAdmin && ImGui.Begin(lang.Translate("ui.assets") + "###Assets"))
+            if (Client.Instance.IsAdmin)
             {
-                this._mouseOverAssets = ImGui.IsWindowHovered();
-
-                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                if (ImGui.ImageButton(this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
+                if (ImGui.Begin(lang.Translate("ui.assets") + "###Assets"))
                 {
-                    state.moveTo = this.CurrentFolder.Parent;
-                }
+                    this._mouseOverAssets = ImGui.IsWindowHovered();
 
-                if (ImGui.IsItemHovered())
-                {
-                    state.mouseOverMoveUp = true;
-                    ImGui.SetTooltip(lang.Translate("ui.assets.back"));
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.SameLine();
-
-                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                if (ImGui.ImageButton(this.AddIcon, Vec12x12))
-                {
-                    state.openNewFolderPopup = true;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.assets.add"));
-                }
-
-                ImGui.SameLine();
-                if (ImGui.ImageButton(this.AssetParticleIcon, Vec12x12))
-                {
-                    ParticleSystem ps = new ParticleSystem();
-                    AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem };
-                    using MemoryStream ms = new MemoryStream();
-                    using BinaryWriter bw = new BinaryWriter(ms);
-                    ps.Write(bw);
-                    using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
-                    using MemoryStream imgMs = new MemoryStream();
-                    img.SaveAsPng(imgMs);
-                    PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                    pau.Send(Client.Instance.NetClient);
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.assets.add_particle"));
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.SameLine();
-
-                ImGui.TextDisabled(this.CurrentFolder.GetPath());
-                ImGui.Separator();
-
-                float ww = ImGui.GetWindowWidth();
-                float wpx = ImGui.GetWindowPos().X;
-                float xmax = wpx + ww;
-
-                float spx = ImGui.GetCursorPosX();
-
-                float px = ImGui.GetCursorPosX();
-                float py = ImGui.GetCursorPosY();
-                for (int i = 0; i < this.CurrentFolder.Directories.Count; i++)
-                {
-                    AssetDirectory d = this.CurrentFolder.Directories[i];
-                    ImGui.SetCursorPosX(px);
-                    ImGui.SetCursorPosY(py);
-                    ImGui.BeginChild(d.Name, new System.Numerics.Vector2(64 + (ImGui.GetStyle().CellPadding.X * 2), 64 + (ImGui.GetStyle().CellPadding.Y * 2)), false, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar);
-                    bool hover = ImGui.IsWindowHovered();
-                    bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
-                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left) && hover)
+                    ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+                    if (ImGui.ImageButton(this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
                     {
-                        state.moveTo = d;
+                        state.moveTo = this.CurrentFolder.Parent;
                     }
 
-                    ImGui.SetCursorPosX(8);
-                    ImGui.SetCursorPosY(8);
-                    ImGui.Image(this.FolderIcon, new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(0, 0), new System.Numerics.Vector2(1, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
-
-                    string txt = d.Name;
-                    System.Numerics.Vector2 label_size;
-                    label_size = FitLabelByBinarySearch(d.Name, ref txt);
-
-                    ImGui.SetCursorPosX(32 - (label_size.X / 2));
-                    ImGui.SetCursorPosY(64 - label_size.Y);
-                    ImGui.TextUnformatted(txt);
-
-                    if (hover)
+                    if (ImGui.IsItemHovered())
                     {
-                        txt = d.Name;
-                        label_size = ImGui.CalcTextSize(txt);
-                        ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
-                        ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
-                        ImGui.TextUnformatted(txt);
-                        ImGui.End();
-                        state.dirHovered = d;
+                        state.mouseOverMoveUp = true;
+                        ImGui.SetTooltip(lang.Translate("ui.assets.back"));
                     }
 
-                    if (!ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsItemHovered())
+                    ImGui.PopStyleColor();
+                    ImGui.SameLine();
+
+                    ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+                    if (ImGui.ImageButton(this.AddIcon, Vec12x12))
                     {
-                        if (ImGui.BeginPopupContextWindow(d.Name))
+                        state.openNewFolderPopup = true;
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.assets.add"));
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.ImageButton(this.AssetParticleIcon, Vec12x12))
+                    {
+                        ParticleSystem ps = new ParticleSystem();
+                        AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem };
+                        using MemoryStream ms = new MemoryStream();
+                        using BinaryWriter bw = new BinaryWriter(ms);
+                        ps.Write(bw);
+                        using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
+                        using MemoryStream imgMs = new MemoryStream();
+                        img.SaveAsPng(imgMs);
+                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                        pau.Send(Client.Instance.NetClient);
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.assets.add_particle"));
+                    }
+
+                    ImGui.PopStyleColor();
+                    ImGui.SameLine();
+
+                    ImGui.TextDisabled(this.CurrentFolder.GetPath());
+                    ImGui.Separator();
+
+                    float ww = ImGui.GetWindowWidth();
+                    float wpx = ImGui.GetWindowPos().X;
+                    float xmax = wpx + ww;
+
+                    float spx = ImGui.GetCursorPosX();
+
+                    float px = ImGui.GetCursorPosX();
+                    float py = ImGui.GetCursorPosY();
+                    for (int i = 0; i < this.CurrentFolder.Directories.Count; i++)
+                    {
+                        AssetDirectory d = this.CurrentFolder.Directories[i];
+                        ImGui.SetCursorPosX(px);
+                        ImGui.SetCursorPosY(py);
+                        ImGui.BeginChild(d.Name, new System.Numerics.Vector2(64 + (ImGui.GetStyle().CellPadding.X * 2), 64 + (ImGui.GetStyle().CellPadding.Y * 2)), false, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar);
+                        bool hover = ImGui.IsWindowHovered();
+                        bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+                        if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left) && hover)
                         {
-                            if (ImGui.MenuItem(lang.Translate("ui.assets.rename") + "###Rename"))
-                            {
-                                state.editFolderPopup = true;
-                                this._contextDir = d;
-                                this._newFolderNameString = d.Name;
-                            }
-
-                            if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))
-                            {
-                                state.deleteFolderPopup = true;
-                                this._contextDir = d;
-                            }
-
-                            ImGui.EndPopup();
+                            state.moveTo = d;
                         }
-                    }
 
-                    ImGui.EndChild();
+                        ImGui.SetCursorPosX(8);
+                        ImGui.SetCursorPosY(8);
+                        ImGui.Image(this.FolderIcon, new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(0, 0), new System.Numerics.Vector2(1, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
 
-                    px += 64 + ImGui.GetStyle().CellPadding.X;
-                    if (px >= xmax - 64 + ImGui.GetStyle().CellPadding.X)
-                    {
-                        px = spx;
-                        py += 64 + ImGui.GetStyle().CellPadding.Y;
-                    }
-                }
+                        string txt = d.Name;
+                        System.Numerics.Vector2 label_size;
+                        label_size = FitLabelByBinarySearch(d.Name, ref txt);
 
-                for (int i = 0; i < this.CurrentFolder.Refs.Count; ++i)
-                {
-                    AssetRef aRef = this.CurrentFolder.Refs[i];
-                    ImGui.SetCursorPosX(px);
-                    ImGui.SetCursorPosY(py);
-                    ImGui.BeginChild(aRef.AssetID.ToString(), new System.Numerics.Vector2(64 + (ImGui.GetStyle().CellPadding.X * 2), 64 + (ImGui.GetStyle().CellPadding.Y * 2)), false, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar); ;
-                    AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
-
-                    bool hover = ImGui.IsWindowHovered();
-                    bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
-
-                    ImGui.SetCursorPosX(8);
-                    ImGui.SetCursorPosY(8);
-                    if (a == AssetStatus.Await)
-                    {
-                        int frame =
-                            (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
-                        float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
-                        float texelSize = 1f / this.LoadingSpinnerFrames;
-                        ImGui.Image(a == AssetStatus.Await ? this.LoadingSpinner : a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(texelIndexStart, 0), new System.Numerics.Vector2(texelIndexStart + texelSize, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
-                    }
-                    else
-                    {
-                        ImGui.Image(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(0, 0), new System.Numerics.Vector2(1, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
-                    }
-
-                    string txt = aRef.Name;
-                    System.Numerics.Vector2 label_size;
-                    label_size = FitLabelByBinarySearch(aRef.Name, ref txt);
-
-                    if (a == AssetStatus.Return && ap != null)
-                    {
-                        ImGui.SetCursorPosX(44);
-                        ImGui.SetCursorPosY(44);
-                        ImGui.Image(aRef.Type == AssetType.Model ? this.AssetModelIcon : aRef.Type == AssetType.ParticleSystem ? this.AssetParticleIcon : this.AssetImageIcon, new System.Numerics.Vector2(16, 16));
-                    }
-
-                    ImGui.SetCursorPosX(32 - (label_size.X / 2));
-                    ImGui.SetCursorPosY(64 - label_size.Y);
-                    ImGui.TextUnformatted(txt);
-
-                    if (hover)
-                    {
-                        txt = aRef.Name;
-                        label_size = ImGui.CalcTextSize(txt);
-                        ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
-                        ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
+                        ImGui.SetCursorPosX(32 - (label_size.X / 2));
+                        ImGui.SetCursorPosY(64 - label_size.Y);
                         ImGui.TextUnformatted(txt);
-                        ImGui.End();
-                        if (!this._lmbDown && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+
+                        if (hover)
                         {
-                            this._lmbDown = true;
-                            this._draggedRef = aRef;
+                            txt = d.Name;
+                            label_size = ImGui.CalcTextSize(txt);
+                            ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
+                            ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
+                            ImGui.TextUnformatted(txt);
+                            ImGui.End();
+                            state.dirHovered = d;
                         }
-                    }
 
-                    if (!ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsItemHovered())
-                    {
-                        if (ImGui.BeginPopupContextWindow(aRef.AssetID.ToString()))
+                        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsItemHovered())
                         {
-                            if (ImGui.MenuItem(lang.Translate("ui.assets.rename") + "###Rename"))
+                            if (ImGui.BeginPopupContextWindow(d.Name))
                             {
-                                state.editAssetPopup = true;
-                                this._editedRef = aRef;
-                                this._newFolderNameString = aRef.Name;
-                            }
-
-                            if (aRef.Meta != null && aRef.Meta.Type == AssetType.Texture)
-                            {
-                                if (ImGui.MenuItem(lang.Translate("ui.assets.edit.tex") + "###Edit Texture"))
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.rename") + "###Rename"))
                                 {
-                                    state.editTexturePopup = true;
+                                    state.editFolderPopup = true;
+                                    this._contextDir = d;
+                                    this._newFolderNameString = d.Name;
+                                }
+
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))
+                                {
+                                    state.deleteFolderPopup = true;
+                                    this._contextDir = d;
+                                }
+
+                                ImGui.EndPopup();
+                            }
+                        }
+
+                        ImGui.EndChild();
+
+                        px += 64 + ImGui.GetStyle().CellPadding.X;
+                        if (px >= xmax - 64 + ImGui.GetStyle().CellPadding.X)
+                        {
+                            px = spx;
+                            py += 64 + ImGui.GetStyle().CellPadding.Y;
+                        }
+                    }
+
+                    for (int i = 0; i < this.CurrentFolder.Refs.Count; ++i)
+                    {
+                        AssetRef aRef = this.CurrentFolder.Refs[i];
+                        ImGui.SetCursorPosX(px);
+                        ImGui.SetCursorPosY(py);
+                        ImGui.BeginChild(aRef.AssetID.ToString(), new System.Numerics.Vector2(64 + (ImGui.GetStyle().CellPadding.X * 2), 64 + (ImGui.GetStyle().CellPadding.Y * 2)), false, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar); ;
+                        AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
+
+                        bool hover = ImGui.IsWindowHovered();
+                        bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+
+                        ImGui.SetCursorPosX(8);
+                        ImGui.SetCursorPosY(8);
+                        if (a == AssetStatus.Await)
+                        {
+                            int frame =
+                                (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
+                            float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
+                            float texelSize = 1f / this.LoadingSpinnerFrames;
+                            ImGui.Image(a == AssetStatus.Await ? this.LoadingSpinner : a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(texelIndexStart, 0), new System.Numerics.Vector2(texelIndexStart + texelSize, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
+                        }
+                        else
+                        {
+                            ImGui.Image(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(0, 0), new System.Numerics.Vector2(1, 1), new System.Numerics.Vector4(1, 1, 1, 1), hover ? (System.Numerics.Vector4)Color.RoyalBlue : clicked ? (System.Numerics.Vector4)Color.Blue : new System.Numerics.Vector4(0, 0, 0, 0));
+                        }
+
+                        string txt = aRef.Name;
+                        System.Numerics.Vector2 label_size;
+                        label_size = FitLabelByBinarySearch(aRef.Name, ref txt);
+
+                        if (a == AssetStatus.Return && ap != null)
+                        {
+                            ImGui.SetCursorPosX(44);
+                            ImGui.SetCursorPosY(44);
+                            ImGui.Image(aRef.Type == AssetType.Model ? this.AssetModelIcon : aRef.Type == AssetType.ParticleSystem ? this.AssetParticleIcon : this.AssetImageIcon, new System.Numerics.Vector2(16, 16));
+                        }
+
+                        ImGui.SetCursorPosX(32 - (label_size.X / 2));
+                        ImGui.SetCursorPosY(64 - label_size.Y);
+                        ImGui.TextUnformatted(txt);
+
+                        if (hover)
+                        {
+                            txt = aRef.Name;
+                            label_size = ImGui.CalcTextSize(txt);
+                            ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
+                            ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
+                            ImGui.TextUnformatted(txt);
+                            ImGui.End();
+                            if (!this._lmbDown && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+                            {
+                                this._lmbDown = true;
+                                this._draggedRef = aRef;
+                            }
+                        }
+
+                        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsItemHovered())
+                        {
+                            if (ImGui.BeginPopupContextWindow(aRef.AssetID.ToString()))
+                            {
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.rename") + "###Rename"))
+                                {
+                                    state.editAssetPopup = true;
                                     this._editedRef = aRef;
-                                    this._editedTextureMetadataCopy = aRef.Meta.TextureInfo.Copy();
+                                    this._newFolderNameString = aRef.Name;
                                 }
-                            }
 
-                            if (aRef.Meta != null && aRef.Meta.Type == AssetType.ParticleSystem)
-                            {
-                                if (ImGui.MenuItem(lang.Translate("ui.assets.edit_particle") + "###Edit Particle System"))
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Texture)
                                 {
-                                    state.editParticleSystemPopup = true;
-                                    this._editedParticleSystemId = aRef.AssetID;
-                                    Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystem = null;
-                                    Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystemInstance = null;
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit.tex") + "###Edit Texture"))
+                                    {
+                                        state.editTexturePopup = true;
+                                        this._editedRef = aRef;
+                                        this._editedTextureMetadataCopy = aRef.Meta.TextureInfo.Copy();
+                                    }
                                 }
-                            }
 
-                            if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))
-                            {
-                                state.deleteAssetPopup = true;
-                                this._editedRef = aRef;
-                            }
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.ParticleSystem)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit_particle") + "###Edit Particle System"))
+                                    {
+                                        state.editParticleSystemPopup = true;
+                                        this._editedParticleSystemId = aRef.AssetID;
+                                        Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystem = null;
+                                        Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystemInstance = null;
+                                    }
+                                }
 
-                            ImGui.EndPopup();
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))
+                                {
+                                    state.deleteAssetPopup = true;
+                                    this._editedRef = aRef;
+                                }
+
+                                ImGui.EndPopup();
+                            }
                         }
-                    }
 
-                    ImGui.EndChild();
+                        ImGui.EndChild();
 
-                    px += 64 + ImGui.GetStyle().CellPadding.X;
-                    if (px >= xmax - 64 + ImGui.GetStyle().CellPadding.X)
-                    {
-                        px = spx;
-                        py += 64 + ImGui.GetStyle().CellPadding.Y;
+                        px += 64 + ImGui.GetStyle().CellPadding.X;
+                        if (px >= xmax - 64 + ImGui.GetStyle().CellPadding.X)
+                        {
+                            px = spx;
+                            py += 64 + ImGui.GetStyle().CellPadding.Y;
+                        }
                     }
                 }
 

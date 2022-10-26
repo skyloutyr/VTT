@@ -201,9 +201,9 @@
                             ImGui.TextUnformatted(cMap.TurnTracker.TeamName);
                             ImGui.PopStyleColor();
                         }
-
-                        ImGui.End();
                     }
+
+                    ImGui.End();
                 }
 
                 ImGui.SetNextWindowPos(new((ww / 4) + 320 - 24, this._turnTrackerCollapsed ? -12 : 120));
@@ -282,9 +282,9 @@
                         {
                             ImGui.SetTooltip(lang.Translate("ui.teams.add"));
                         }
-
-                        ImGui.End();
                     }
+
+                    ImGui.End();
 
                     if (this._teams.Length != cMap.TurnTracker.Teams.Count)
                     {
@@ -417,126 +417,124 @@
                             }
 
                             ImGui.BeginChild("turnTrackerNav_" + i, new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings);
+                            if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                             {
-                                if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
-                                {
-                                    IntPtr sIdx = new IntPtr(&i);
-                                    ImGui.SetDragDropPayload("TurnTrackerDragDropPayload", sIdx, sizeof(int));
-                                    ImGui.TextUnformatted(oName);
-                                    ImGui.EndDragDropSource();
-                                }
+                                IntPtr sIdx = new IntPtr(&i);
+                                ImGui.SetDragDropPayload("TurnTrackerDragDropPayload", sIdx, sizeof(int));
+                                ImGui.TextUnformatted(oName);
+                                ImGui.EndDragDropSource();
+                            }
 
-                                ImGui.PushID("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString());
-                                if (ImGui.ImageButton(this.GotoIcon, Vec12x12))
+                            ImGui.PushID("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString());
+                            if (ImGui.ImageButton(this.GotoIcon, Vec12x12))
+                            {
+                                if (haveObject)
                                 {
-                                    if (haveObject)
+                                    Vector3 p = mo.Position;
+                                    Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+                                    cam.Position = p - (cam.Direction * 5.0f);
+                                    cam.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift))
                                     {
-                                        Vector3 p = mo.Position;
-                                        Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                                        cam.Position = p - (cam.Direction * 5.0f);
-                                        cam.RecalculateData(assumedUpAxis: Vector3.UnitZ);
-                                        if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift))
-                                        {
-                                            Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();
-                                            Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);
-                                        }
+                                        Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();
+                                        Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);
                                     }
                                 }
+                            }
 
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.turn_tracker.goto"));
-                                }
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.turn_tracker.goto"));
+                            }
 
-                                ImGui.PopID();
-                                ImGui.SameLine();
-                                ImGui.PushID("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString());
-                                if (ImGui.ImageButton(this.MoveToIcon, Vec12x12))
-                                {
-                                    new PacketMoveTurnToIndex() { Index = i }.Send();
-                                }
+                            ImGui.PopID();
+                            ImGui.SameLine();
+                            ImGui.PushID("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString());
+                            if (ImGui.ImageButton(this.MoveToIcon, Vec12x12))
+                            {
+                                new PacketMoveTurnToIndex() { Index = i }.Send();
+                            }
 
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.turn_tracker.set_turn"));
-                                }
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.turn_tracker.set_turn"));
+                            }
 
-                                ImGui.PopID();
+                            ImGui.PopID();
 
-                                ImGui.SameLine();
-                                int tIdx = cMap.TurnTracker.Teams.IndexOf(e.Team);
-                                if (tIdx != -1)
-                                {
-                                    ImGui.PushItemWidth(100);
-                                    if (ImGui.Combo("##Team" + e.ObjectID, ref tIdx, this._teams, cMap.TurnTracker.Teams.Count))
-                                    {
-                                        string tName = this._teams[tIdx];
-                                        new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewTeam = tName, Type = PacketChangeTurnEntryProperty.ChangeType.Team }.Send();
-                                    }
-
-                                    ImGui.PopItemWidth();
-                                    ImGui.SameLine();
-                                    ImGui.ColorButton("##ClrBtnD" + i, (System.Numerics.Vector4)e.Team.Color);
-                                    ImGui.SameLine();
-                                }
-
-                                float v = e.NumericValue;
+                            ImGui.SameLine();
+                            int tIdx = cMap.TurnTracker.Teams.IndexOf(e.Team);
+                            if (tIdx != -1)
+                            {
                                 ImGui.PushItemWidth(100);
-                                if (ImGui.InputFloat("##Value" + e.ObjectID, ref v, 0, 0, "%.3f", ImGuiInputTextFlags.EnterReturnsTrue))
+                                if (ImGui.Combo("##Team" + e.ObjectID, ref tIdx, this._teams, cMap.TurnTracker.Teams.Count))
                                 {
-                                    new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewValue = v, Type = PacketChangeTurnEntryProperty.ChangeType.Value }.Send();
+                                    string tName = this._teams[tIdx];
+                                    new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewTeam = tName, Type = PacketChangeTurnEntryProperty.ChangeType.Team }.Send();
                                 }
 
                                 ImGui.PopItemWidth();
                                 ImGui.SameLine();
-                                ImGui.PushID("DeleteTurnEntry" + i + "_" + e.ObjectID);
-                                if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
-                                {
-                                    new PacketDeleteTurnEntry() { EntryIndex = i }.Send();
-                                }
-
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.turn_tracker.delete"));
-                                }
-
-                                ImGui.PopID();
+                                ImGui.ColorButton("##ClrBtnD" + i, (System.Numerics.Vector4)e.Team.Color);
                                 ImGui.SameLine();
-                                ImGui.TextUnformatted(oName);
-                                ImGui.SameLine();
-
-                                ImGui.EndChild();
-
-                                if (ImGui.BeginDragDropTarget())
-                                {
-                                    try
-                                    {
-                                        ImGuiPayloadPtr res = ImGui.AcceptDragDropPayload("TurnTrackerDragDropPayload");
-                                        if (res.NativePtr != null)
-                                        {
-                                            int idx = Marshal.ReadInt32(res.Data);
-                                            new PacketMoveTurnTrackerEntry() { IndexFrom = idx, IndexTo = i }.Send();
-                                        }
-                                    }
-                                    catch (Exception managedEx)
-                                    {
-                                        Client.Instance.Logger.Log(VTT.Util.LogLevel.Fatal, "Could not handle unmanaged ImGui state - restart recommended!");
-                                        Client.Instance.Logger.Exception(VTT.Util.LogLevel.Fatal, managedEx);
-                                    }
-
-                                    ImGui.EndDragDropTarget();
-                                }
-
                             }
+
+                            float v = e.NumericValue;
+                            ImGui.PushItemWidth(100);
+                            if (ImGui.InputFloat("##Value" + e.ObjectID, ref v, 0, 0, "%.3f", ImGuiInputTextFlags.EnterReturnsTrue))
+                            {
+                                new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewValue = v, Type = PacketChangeTurnEntryProperty.ChangeType.Value }.Send();
+                            }
+
+                            ImGui.PopItemWidth();
+                            ImGui.SameLine();
+                            ImGui.PushID("DeleteTurnEntry" + i + "_" + e.ObjectID);
+                            if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                            {
+                                new PacketDeleteTurnEntry() { EntryIndex = i }.Send();
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.turn_tracker.delete"));
+                            }
+
+                            ImGui.PopID();
+                            ImGui.SameLine();
+                            ImGui.TextUnformatted(oName);
+                            ImGui.SameLine();
+
+                            ImGui.EndChild();
+
+                            if (ImGui.BeginDragDropTarget())
+                            {
+                                try
+                                {
+                                    ImGuiPayloadPtr res = ImGui.AcceptDragDropPayload("TurnTrackerDragDropPayload");
+                                    if (res.NativePtr != null)
+                                    {
+                                        int idx = Marshal.ReadInt32(res.Data);
+                                        new PacketMoveTurnTrackerEntry() { IndexFrom = idx, IndexTo = i }.Send();
+                                    }
+                                }
+                                catch (Exception managedEx)
+                                {
+                                    Client.Instance.Logger.Log(VTT.Util.LogLevel.Fatal, "Could not handle unmanaged ImGui state - restart recommended!");
+                                    Client.Instance.Logger.Exception(VTT.Util.LogLevel.Fatal, managedEx);
+                                }
+
+                                ImGui.EndDragDropTarget();
+                            }
+
 
                             if (border)
                             {
                                 ImGui.PopStyleColor();
                             }
                         }
-
-                        ImGui.End();
                     }
+
+                    ImGui.End();
                 }
             }
         }

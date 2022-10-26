@@ -243,9 +243,9 @@
                         {
                             ImGui.EndDisabled();
                         }
-
-                        ImGui.EndChild();
                     }
+
+                    ImGui.EndChild();
                 }
                 if (this.MenuMode == 3)
                 {
@@ -291,9 +291,9 @@
                         {
                             ImGui.EndDisabled();
                         }
-
-                        ImGui.EndChild();
                     }
+
+                    ImGui.EndChild();
                 }
 
                 if (this.MenuMode == 4)
@@ -389,22 +389,25 @@
 
                     ImGui.EndChild();
                 }
-
-                ImGui.End();
             }
+
+            ImGui.End();
 
             ImGui.SetNextWindowSize(new Vector2(400, 200), ImGuiCond.Appearing);
             ImGui.SetNextWindowPos(new(ImGui.GetIO().DisplaySize.X * 0.5f - 200, ImGui.GetIO().DisplaySize.Y * 0.5f - 100), ImGuiCond.Appearing);
-            if (showDC && ImGui.Begin(lang.Translate("ui.disconnected") + "###Disconnected", ref showDC))
+            if (showDC)
             {
-                ImGui.Text(lang.Translate("ui.disconnected"));
-                ImGui.Text(lang.Translate("ui.disconnected.reason"));
-                ImGui.NewLine();
-                ImGui.Text("    " + lang.Translate("ui.disconnected.reason." + Enum.GetName(Client.Instance.LastDisconnectReason).ToLower()));
-                if (ImGui.IsItemHovered())
+                if (ImGui.Begin(lang.Translate("ui.disconnected") + "###Disconnected", ref showDC))
                 {
-                    ImGui.SetTooltip(lang.Translate("ui.disconnected.reason." + Enum.GetName(Client.Instance.LastDisconnectReason).ToLower() + ".tt"));
+                    ImGui.Text(lang.Translate("ui.disconnected"));
+                    ImGui.Text(lang.Translate("ui.disconnected.reason"));
+                    ImGui.NewLine();
+                    ImGui.Text("    " + lang.Translate("ui.disconnected.reason." + Enum.GetName(Client.Instance.LastDisconnectReason).ToLower()));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.disconnected.reason." + Enum.GetName(Client.Instance.LastDisconnectReason).ToLower() + ".tt"));
 
+                    }
                 }
 
                 ImGui.End();
@@ -748,8 +751,9 @@
                     ImGui.TreePop();
                 }
 
-                ImGui.EndChild();
             }
+
+            ImGui.EndChild();
         }
 
         private List<SparkParticle> _sparks = new List<SparkParticle>();

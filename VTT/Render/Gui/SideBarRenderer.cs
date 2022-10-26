@@ -83,22 +83,25 @@
                     ImGui.PopStyleColor();
                     ImGui.PopStyleVar();
                 }
-
-                ImGui.End();
             }
+
+            ImGui.End();
         }
 
         private unsafe void RenderDebugInfo(double time, ImGuiWindowFlags window_flags)
         {
             ImGui.SetNextWindowBgAlpha(0.35f);
             ImGui.SetNextWindowPos(Vec56x0);
-            if (DebugEnabled && ImGui.Begin("Debug", window_flags))
+            if (DebugEnabled)
             {
-                ImGui.Text("Frame: " + (time * 1000).ToString("0.000") + "ms");
-                ImGui.Text("Cursor: " + Client.Instance.Frontend.MouseX + ", " + Client.Instance.Frontend.MouseY);
+                if (ImGui.Begin("Debug", window_flags))
+                {
+                    ImGui.Text("Frame: " + (time * 1000).ToString("0.000") + "ms");
+                    ImGui.Text("Cursor: " + Client.Instance.Frontend.MouseX + ", " + Client.Instance.Frontend.MouseY);
 
-                OpenTK.Mathematics.Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
-                ImGui.Text("World: " + (cw.HasValue ? cw.Value.ToString() : "null"));
+                    OpenTK.Mathematics.Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                    ImGui.Text("World: " + (cw.HasValue ? cw.Value.ToString() : "null"));
+                }
 
                 ImGui.End();
             }

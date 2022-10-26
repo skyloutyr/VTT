@@ -74,6 +74,8 @@
 
                 ImGui.PopID();
             }
+
+            ImGui.End();
         }
 
     }

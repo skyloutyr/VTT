@@ -385,9 +385,18 @@
                 return this.ErroredAssets[aID];
             }
 
-            if (this.RequestQueue.Contains(aID) || !this.Container.Assets.ContainsKey(aID))
+            if (this.RequestQueue.Contains(aID))
             {
                 return AssetStatus.Await; // Asset already requested
+            }
+
+            if (!this.Container.Assets.ContainsKey(aID))
+            {
+                // Request asset
+                this.RequestQueue.Enqueue(aID);
+                this.RequestTypeQueue.Enqueue(AssetType.Model);
+                this.PulseRequest();
+                return AssetStatus.Await;
             }
 
             Asset a = this.Container.Assets[aID];

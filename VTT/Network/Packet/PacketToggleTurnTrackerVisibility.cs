@@ -28,14 +28,7 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.Action = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Action);
-        }
+        public override void Decode(BinaryReader br) => this.Action = br.ReadBoolean();
+        public override void Encode(BinaryWriter bw) => bw.Write(this.Action);
     }
 }

@@ -31,8 +31,8 @@
                     metadata = JsonConvert.DeserializeObject<AssetMetadata>(File.ReadAllText(aMeta));
                     if (metadata.Type == AssetType.Texture && metadata.TextureInfo == null) // Broken texture info
                     {
-                        Server.Instance.Logger.Log(VTT.Util.LogLevel.Warn, "Texture for " + path + " doesn't specify texture info, converted from earlier versions?");
-                        metadata.TextureInfo = new TextureData.Metadata() { Compress = true, EnableBlending = true, FilterMag = VTT.GL.FilterParam.Linear, FilterMin = VTT.GL.FilterParam.LinearMipmapLinear, GammaCorrect = true, WrapS = VTT.GL.WrapParam.Repeat, WrapT = VTT.GL.WrapParam.Repeat };
+                        Server.Instance.Logger.Log(Util.LogLevel.Warn, "Texture for " + path + " doesn't specify texture info, converted from earlier versions?");
+                        metadata.TextureInfo = new TextureData.Metadata() { Compress = true, EnableBlending = true, FilterMag = GL.FilterParam.Linear, FilterMin = GL.FilterParam.LinearMipmapLinear, GammaCorrect = true, WrapS = GL.WrapParam.Repeat, WrapT = GL.WrapParam.Repeat };
                         File.WriteAllText(aMeta, JsonConvert.SerializeObject(metadata));
                     }
 
@@ -40,8 +40,8 @@
                 }
                 catch (Exception e)
                 {
-                    Server.Instance.Logger.Log(VTT.Util.LogLevel.Error, "Could not read asset metadata for " + path);
-                    Server.Instance.Logger.Exception(VTT.Util.LogLevel.Error, e);
+                    Server.Instance.Logger.Log(Util.LogLevel.Error, "Could not read asset metadata for " + path);
+                    Server.Instance.Logger.Exception(Util.LogLevel.Error, e);
                     metadata = AssetMetadata.Broken;
                     return false;
                 }
@@ -66,7 +66,7 @@
                 }
                 else
                 {
-                    Server.Instance.Logger.Log(VTT.Util.LogLevel.Error, "Asset metadata format specified as separate (version > 0) but no such file exists! Can't read asset!");
+                    Server.Instance.Logger.Log(Util.LogLevel.Error, "Asset metadata format specified as separate (version > 0) but no such file exists! Can't read asset!");
                     metadata = AssetMetadata.Broken;
                     return false;
                 }

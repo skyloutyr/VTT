@@ -13,6 +13,7 @@
         private GPUBuffer _ebo;
 
         public System.Numerics.Vector3[] simplifiedTriangles;
+        public float[] areaSums;
 
         public int AmountToRender { get; set; }
         public float[] VertexBuffer { get; set; }

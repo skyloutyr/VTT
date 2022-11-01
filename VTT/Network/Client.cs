@@ -291,10 +291,7 @@
         public PacketNetworkManager PacketNetworkManager { get; set; }
         public long LastPingResponseTime { get; set; }
 
-        public NetClient(IPEndPoint endpoint) : base(endpoint)
-        {
-            this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        }
+        public NetClient(IPEndPoint endpoint) : base(endpoint) => this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         protected override void OnConnected()
         {
@@ -450,7 +447,7 @@
 
         public void Save()
         {
-            Network.Client.Instance.Logger.Log(LogLevel.Info, "Saved client settings");
+            Client.Instance.Logger.Log(LogLevel.Info, "Saved client settings");
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
         }

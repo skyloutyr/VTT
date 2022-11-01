@@ -14,7 +14,7 @@
         {
             if (!isServer) // Client-only
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got server maps pointer data");
+                client.Logger.Log(Util.LogLevel.Debug, "Got server maps pointer data");
                 lock (client.ServerMapPointersLock)
                 {
                     foreach ((Guid, string, string) d in this.Data)

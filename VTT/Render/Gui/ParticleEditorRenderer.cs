@@ -602,7 +602,7 @@
                 mdlTxt += aRef.Name;
                 if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
                 {
-                    VTT.GL.Texture tex = ap.GetGLTexture();
+                    GL.Texture tex = ap.GetGLTexture();
                     if (tex != null)
                     {
                         drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
@@ -651,10 +651,7 @@
             return b0 || b1;
         }
 
-        private static float Sign(System.Numerics.Vector2 p1, System.Numerics.Vector2 p2, System.Numerics.Vector2 p3)
-        {
-            return (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
-        }
+        private static float Sign(System.Numerics.Vector2 p1, System.Numerics.Vector2 p2, System.Numerics.Vector2 p3) => ((p1.X - p3.X) * (p2.Y - p3.Y)) - ((p2.X - p3.X) * (p1.Y - p3.Y));
 
         private static bool PointInTriangle(System.Numerics.Vector2 pt, System.Numerics.Vector2 v1, System.Numerics.Vector2 v2, System.Numerics.Vector2 v3)
         {

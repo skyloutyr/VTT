@@ -53,7 +53,7 @@
                 throw new System.Exception("Framebuffer could not be completed - " + fec);
             }
 
-            this._cam = new VectorCamera(new OpenTK.Mathematics.Vector3(5, 5, 5), new OpenTK.Mathematics.Vector3(-5, -5, -5).Normalized());
+            this._cam = new VectorCamera(new Vector3(5, 5, 5), new Vector3(-5, -5, -5).Normalized());
             this._cam.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60), 1, 0.01f, 100f);
             this._cam.RecalculateData(assumedUpVector: Vector3.UnitZ);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -62,6 +62,7 @@
             this.SecondaryWorker.Start();
         }
 
+        private readonly int[] viewport = new int[4];
         public void RenderFake()
         {
             if (this.CurrentlyEditedSystemInstance == null)
@@ -70,8 +71,7 @@
             }
 
             int fboID = GL.GetInteger(GetPName.FramebufferBinding);
-            int[] viewport = new int[4];
-            GL.GetInteger(GetPName.Viewport, viewport);
+            GL.GetInteger(GetPName.Viewport, this.viewport);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._fbo);
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
@@ -98,14 +98,14 @@
             GL.Disable(EnableCap.Blend);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboID);
             GL.Disable(EnableCap.FramebufferSrgb);
-            GL.Viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            GL.Viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
         }
 
-        protected static EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
-        protected static EventWaitHandle particleSecondaryMutex = new EventWaitHandle(true, EventResetMode.AutoReset);
-        protected static List<ParticleContainer> containers = new List<ParticleContainer>();
+        private static readonly EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
+        private static readonly EventWaitHandle particleSecondaryMutex = new EventWaitHandle(true, EventResetMode.AutoReset);
+        private static readonly List<ParticleContainer> containers = new List<ParticleContainer>();
 
-        private List<Map> _disposeQueue = new List<Map>();
+        private readonly List<Map> _disposeQueue = new List<Map>();
         public void Update()
         {
             particleSecondaryMutex.WaitOne();
@@ -167,10 +167,7 @@
         }
 
         // Only call this method when changing maps, descyncs internal state for client objects!
-        public void ClearParticles(Map m)
-        {
-            this._disposeQueue.Add(m);
-        }
+        public void ClearParticles(Map m) => this._disposeQueue.Add(m);
 
         public void RenderAll()
         {

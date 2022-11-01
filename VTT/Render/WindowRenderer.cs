@@ -26,10 +26,7 @@
         public Texture White { get; set; }
         public Texture Black { get; set; }
 
-        public WindowRenderer(ClientWindow container)
-        {
-            this.Container = container;
-        }
+        public WindowRenderer(ClientWindow container) => this.Container = container;
 
         public void Create()
         {
@@ -101,10 +98,7 @@
             }
         }
 
-        public void ScrollWheel(float dx, float dy)
-        {
-            this.MapRenderer.ScrollCamera(dy);
-        }
+        public void ScrollWheel(float dx, float dy) => this.MapRenderer.ScrollCamera(dy);
 
         public void Render(double time)
         {
@@ -144,9 +138,6 @@
             this.ObjectRenderer?.Resize(w, h);
         }
 
-        public void SetWindowState(bool state)
-        {
-            this._windowNeedsDrawing = state;
-        }
+        public void SetWindowState(bool state) => this._windowNeedsDrawing = state;
     }
 }

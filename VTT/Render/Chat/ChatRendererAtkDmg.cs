@@ -19,7 +19,6 @@
             width = 340;
             bool hasRolls = this.Container.Blocks.Count == 11 && !string.IsNullOrEmpty(this.Container.Blocks[4].Text);
             bool hasDmg = this.Container.Blocks.Count == 11 && !string.IsNullOrEmpty(this.Container.Blocks[6].Text.Trim());
-
             height = hasRolls && hasDmg ? 172 : 172 - 48;
         }
         public override void ClearCache()

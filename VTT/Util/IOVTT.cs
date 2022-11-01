@@ -4,7 +4,6 @@
     using SixLabors.ImageSharp;
     using System;
     using System.IO;
-    using System.Reflection;
     using System.Linq;
 
     public static class IOVTT
@@ -49,7 +48,7 @@
             }
         }
 
-        private static string[] _logNames = { "old.txt", "older.txt", "oldest.txt" };
+        private static readonly string[] _logNames = { "old.txt", "older.txt", "oldest.txt" };
         private static void MoveLogFileRecursively(string baseDir, string cLogFile, int depth)
         {
             string nLogFile = Path.Combine(baseDir, _logNames[depth]);

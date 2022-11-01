@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
-    using System.Threading;
     using VTT.Util;
 
     public abstract class PacketBase
@@ -92,66 +91,5 @@
         }
 
         public Logger GetContextLogger() => this.IsServer ? Server.Instance.Logger : Client.Instance.Logger;
-
-#if OLD_CODE
-
-        private static ThreadLocal<byte[]> fullMessageBuffer = new ThreadLocal<byte[]>(() => new byte[1024]);
-        private static ThreadLocal<int> messageLength = new ThreadLocal<int>(() => 0);
-        private static ThreadLocal<int> messageLengthLeft = new ThreadLocal<int>(() => 0);
-
-        public static IEnumerable<PacketBase> Receive(byte[] binary, int offset, int length, bool server)
-        {
-            /*
-            int cumulativeReadThisFrame = 0;
-            while (true)
-            {
-                byte[] buffer = fullMessageBuffer.Value;
-                if (messageLength.Value == 0) // Have no message
-                {
-                    int l = BitConverter.ToInt32(binary, offset + cumulativeReadThisFrame) + 4; // Get message length
-                    messageLength.Value = messageLengthLeft.Value = l;
-                    while (buffer.Length < l)
-                    {
-                        buffer = new byte[buffer.Length * 2];
-                        fullMessageBuffer.Value = buffer;
-                    }
-                }
-
-                int r = Math.Min(messageLengthLeft.Value, length);
-                Array.Copy(binary, offset + cumulativeReadThisFrame, buffer, messageLength.Value - messageLengthLeft.Value, r);
-                fullMessageBuffer.Value = buffer;
-                cumulativeReadThisFrame += r;
-                messageLengthLeft.Value -= r;
-                if (messageLengthLeft.Value > 0) // Didn't read full packet! Wait for the next chunk
-                {
-                    break;
-                }
-
-                messageLength.Value = messageLengthLeft.Value = 0;
-                using MemoryStream ms = new MemoryStream(buffer);
-                using BinaryReader br = new BinaryReader(ms);
-                br.ReadInt32();
-                uint id = br.ReadUInt32();
-                PacketBase pb = (PacketBase)Activator.CreateInstance(PacketsByID[id]);
-                pb.IsServer = server;
-                pb.Decode(br);
-                if (server)
-                {
-                    pb.Server = Server.Instance;
-                }
-                else
-                {
-                    pb.Client = Client.Instance;
-                }
-
-                yield return pb;
-                if (cumulativeReadThisFrame == length)
-                {
-                    break;
-                }
-            }
-            */
-        }
-#endif
     }
 }

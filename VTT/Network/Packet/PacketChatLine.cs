@@ -13,7 +13,7 @@
         {
             if (!isServer)
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got chat line from server");
+                client.Logger.Log(Util.LogLevel.Debug, "Got chat line from server");
                 client.AddChatLine(this.Line);
             }
         }

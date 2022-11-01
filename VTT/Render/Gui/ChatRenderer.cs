@@ -3,11 +3,7 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Numerics;
-    using System.Text;
-    using System.Threading.Tasks;
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -23,7 +19,7 @@
 
         public void SendChat(string line)
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Debug, "Sending chat: " + line);
+            Client.Instance.Logger.Log(LogLevel.Debug, "Sending chat: " + line);
             PacketChatMessage pcm = new PacketChatMessage() { Message = line };
             pcm.Send();
             this._chat.Add(line);

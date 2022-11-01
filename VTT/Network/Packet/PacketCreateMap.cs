@@ -12,7 +12,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Asked for new map creation");
+                server.Logger.Log(Util.LogLevel.Info, "Asked for new map creation");
                 Map m = new Map()
                 {
                     IsServer = true,

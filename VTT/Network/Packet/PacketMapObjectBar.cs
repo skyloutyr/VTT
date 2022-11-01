@@ -18,7 +18,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Debug, "Got client bar packet of type " + this.BarAction);
+                server.Logger.Log(LogLevel.Debug, "Got client bar packet of type " + this.BarAction);
                 if (server.TryGetMap(this.MapID, out Map m))
                 {
                     if (m.GetObject(this.ContainerID, out MapObject mo))
@@ -50,7 +50,7 @@
                                     }
                                     else
                                     {
-                                        server.Logger.Log(VTT.Util.LogLevel.Error, "Client asked for bar deletion or change at a non-existing bar index!");
+                                        server.Logger.Log(LogLevel.Error, "Client asked for bar deletion or change at a non-existing bar index!");
                                     }
 
                                     break;
@@ -58,29 +58,29 @@
                             }
 
                             m.NeedsSave = true;
-                            server.Logger.Log(VTT.Util.LogLevel.Info, "Notifying all clients of bar data change");
+                            server.Logger.Log(LogLevel.Info, "Notifying all clients of bar data change");
                             new PacketMapObjectBar() { Bar = this.Bar, BarAction = this.BarAction, ContainerID = this.ContainerID, Index = this.Index, MapID = this.MapID }.Broadcast();
                         }
                         else
                         {
-                            server.Logger.Log(VTT.Util.LogLevel.Error, "Client asked for bar change without permissions! Resending base object data");
+                            server.Logger.Log(LogLevel.Error, "Client asked for bar change without permissions! Resending base object data");
                             PacketMapObject pmo = new PacketMapObject() { IsServer = true, Obj = mo, Session = sessionID };
                             pmo.Send(this.Sender);
                         }
                     }
                     else
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for bar change for non-existing object!");
+                        server.Logger.Log(LogLevel.Warn, "Client asked for bar change for non-existing object!");
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for bar change for non-existing map!");
+                    server.Logger.Log(LogLevel.Warn, "Client asked for bar change for non-existing map!");
                 }
             }
             else
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got server bar notify packet of type " + this.BarAction);
+                client.Logger.Log(LogLevel.Debug, "Got server bar notify packet of type " + this.BarAction);
                 Map m = client.CurrentMap;
                 if (this.MapID.Equals(m.ID))
                 {
@@ -110,7 +110,7 @@
                                 }
                                 else
                                 {
-                                    client.Logger.Log(VTT.Util.LogLevel.Error, "Server asked for bar deletion or change at a non-existing bar index, discarding!");
+                                    client.Logger.Log(LogLevel.Error, "Server asked for bar deletion or change at a non-existing bar index, discarding!");
                                 }
 
                                 break;
@@ -119,14 +119,14 @@
                     }
                     else
                     {
-                        client.Logger.Log(VTT.Util.LogLevel.Warn, "Server asked for bar change for non-existing object, asking for object");
+                        client.Logger.Log(LogLevel.Warn, "Server asked for bar change for non-existing object, asking for object");
                         PacketObjectRequest por = new PacketObjectRequest() { IsServer = false, ObjectID = this.ContainerID, Session = sessionID };
                         por.Send();
                     }
                 }
                 else
                 {
-                    client.Logger.Log(VTT.Util.LogLevel.Warn, "Server asked for a bar change on a different map, discarding.");
+                    client.Logger.Log(LogLevel.Warn, "Server asked for a bar change on a different map, discarding.");
                 }
             }
         }

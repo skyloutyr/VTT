@@ -1,14 +1,11 @@
 ﻿namespace VTT.GL
 {
     using OpenTK.Graphics.OpenGL;
-    using System;
 
     public class ShaderProgram
     {
         private readonly uint _glID;
-
         public UniformManager UniformManager { get; }
-
         public UniformWrapper this[string name] => this.UniformManager.GetUniform(name);
 
         public ShaderProgram()
@@ -22,7 +19,8 @@
             int vShader = -1;
             int gShader = -1;
             int fShader = -1;
-            bool CompileShader(ShaderType sType, ref int s, string code)
+
+            static bool CompileShader(ShaderType sType, ref int s, string code)
             {
                 s = GL.CreateShader(sType);
                 GL.ShaderSource(s, code);

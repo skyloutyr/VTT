@@ -131,8 +131,8 @@
         {
             if (!this.Container.GetObject(e.ObjectID, out MapObject mo))
             {
-                entryName = "Unknown (missing)";
-                teamName = "Unknown (missing)";
+                entryName = Client.Instance.Lang.Translate("turntracker.unknown");
+                teamName = Client.Instance.Lang.Translate("turntracker.unknown");
                 teamColor = Color.Gray;
                 return false;
             }
@@ -141,7 +141,7 @@
                 entryName = mo.Name;
                 if (mo.MapLayer > 0)
                 {
-                    entryName = "???";
+                    entryName = Client.Instance.Lang.Translate("turntracker.hidden");
                     if (Client.Instance.IsAdmin)
                     {
                         entryName += " (" + mo.Name + "), L " + mo.MapLayer;
@@ -154,7 +154,7 @@
                     }
                     else
                     {
-                        teamName = "???";
+                        teamName = Client.Instance.Lang.Translate("turntracker.hidden");
                         if (Client.Instance.IsAdmin)
                         {
                             teamName += " (" + e.Team.Name + ")";
@@ -167,7 +167,7 @@
                 {
                     if (!mo.IsNameVisible && !Client.Instance.IsAdmin && !mo.CanEdit(Client.Instance.ID))
                     {
-                        entryName = "???";
+                        entryName = Client.Instance.Lang.Translate("turntracker.hidden");
                     }
 
                     teamName = e.Team.Name;
@@ -188,14 +188,14 @@
             Entry e = this.GetAt(this.EntryIndex);
             if (!this.Container.GetObject(e.ObjectID, out MapObject mo))
             {
-                this.EntryName = "Unknown (missing)";
+                this.EntryName = Client.Instance.Lang.Translate("turntracker.unknown");
             }
             else
             {
                 this.EntryName = mo.Name;
                 if (mo.MapLayer > 0)
                 {
-                    this.EntryName = "???";
+                    this.EntryName = Client.Instance.Lang.Translate("turntracker.hidden");
                     if (Client.Instance.IsAdmin)
                     {
                         this.EntryName += " (" + mo.Name + "), L " + mo.MapLayer;
@@ -205,7 +205,7 @@
                 {
                     if (!mo.IsNameVisible && !Client.Instance.IsAdmin && !mo.CanEdit(Client.Instance.ID))
                     {
-                        this.EntryName = "???";
+                        this.EntryName = Client.Instance.Lang.Translate("turntracker.hidden");
                     }
                 }
 
@@ -217,8 +217,8 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set<int>("Index", this.EntryIndex);
-            ret.Set<bool>("Visible", this.Visible);
+            ret.Set("Index", this.EntryIndex);
+            ret.Set("Visible", this.Visible);
             ret.SetArray("Entries", this.Entries.ToArray(), (n, c, v) =>
             {
                 DataElement d = v.Serialize();
@@ -286,8 +286,8 @@
             {
                 DataElement ret = new DataElement();
                 ret.SetGuid("ID", this.ObjectID);
-                ret.Set<float>("Value", this.NumericValue);
-                ret.Set<string>("Team", this.Team.Name);
+                ret.Set("Value", this.NumericValue);
+                ret.Set("Team", this.Team.Name);
                 return ret;
             }
 

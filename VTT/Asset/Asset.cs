@@ -1,9 +1,7 @@
 ﻿namespace VTT.Asset
 {
-    using OpenTK.Graphics.OpenGL;
     using System;
     using System.IO;
-    using System.Text;
     using VTT.Asset.Glb;
 
     /*
@@ -72,17 +70,13 @@
             this.GLMdl = new GlbScene(ms);
         }
 
-        public void Dispose()
-        {
-            this.GLMdl?.Dispose();
-        }
+        public void Dispose() => this.GLMdl?.Dispose();
     }
 
     public class ShaderData : IAssetData
     {
         public void Accept(byte[] binary)
         {
-            string s = BitConverter.ToString(binary);
         }
 
         public void Dispose()

@@ -4,27 +4,27 @@
     using SixLabors.ImageSharp;
     using System;
     using System.IO;
-    using System.Net;
     using VTT.Util;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Used for automatic json property parsing and conversion through C# property system (see impl)")]
     public class ClientInfo
     {
         [JsonProperty(PropertyName = "Color")]
-        private uint clr_int
+        private uint ClrInt
         {
             get => this.Color.Argb();
             set => this.Color = Extensions.FromArgb(value);
         }
 
         [JsonProperty(PropertyName = "ID")]
-        private string id_string
+        private string IdString
         {
             get => this.ID.ToString();
             set => this.ID = Guid.Parse(value);
         }
 
         [JsonProperty(PropertyName = "MapID")]
-        private string mapid_string
+        private string MapIdString
         {
             get => this.MapID.ToString();
             set => this.MapID = Guid.Parse(value);
@@ -44,10 +44,7 @@
         {
         }
 
-        public ClientInfo(BinaryReader br) : this()
-        {
-            this.Read(br);
-        }
+        public ClientInfo(BinaryReader br) : this() => this.Read(br);
 
         [JsonIgnore]
         public Guid ID { get; set; }

@@ -163,16 +163,16 @@
         private bool _enterPressed;
         private bool _escapePressed;
         private Vector3 _initialWorldXYZ;
-        private List<uint> _indicesList = new List<uint>();
+        private readonly List<uint> _indicesList = new List<uint>();
         private Vector2 fOWWorldSize = new Vector2(256, 256);
 
         private Vector2 _brushLastXYZ;
         private Vector2[] _originalBrushPolygon = new Vector2[8];
-        private Vector2[] _brushPolygon = new Vector2[8];
+        private readonly Vector2[] _brushPolygon = new Vector2[8];
         private long _lastBrushRequest;
 
-        private List<Vector3> _brushRenderData = new List<Vector3>();
-        private List<uint> _brushRenderIndices = new List<uint>();
+        private readonly List<Vector3> _brushRenderData = new List<Vector3>();
+        private readonly List<uint> _brushRenderIndices = new List<uint>();
 
         public void Render(double time)
         {
@@ -426,49 +426,6 @@
             Box,
             Polygon,
             Brush
-        }
-
-        private static void MakeOutline(List<Vector3> positions, uint indices_offset, out List<Vector3> vertices, out List<uint> indices)
-        {
-            Vector3 GetPrev(int idx)
-            {
-                return idx switch
-                {
-                    0 => positions[positions.Count - 1],
-                    _ => positions[idx % positions.Count]
-                };
-            }
-
-            Vector3 GetNext(int idx) => positions[(idx + 1) % positions.Count];
-
-            vertices = new List<Vector3>();
-            for (int i = 0; i < positions.Count; ++i)
-            {
-                Vector3 c = positions[i];
-                Vector3 p = GetPrev(i);
-                Vector3 n = GetNext(i);
-                Vector3 p2c = (c - p).Normalized();
-                Vector3 c2n = (n - c).Normalized();
-
-                Vector3 lp = new Vector3(p2c.Xy.PerpendicularLeft);
-                Vector3 ln = new Vector3(c2n.Xy.PerpendicularLeft);
-
-                Vector3 avg = Vector3.Lerp(lp, ln, 0.5f);
-                vertices.Add(avg);
-                vertices.Add(-avg);
-            }
-
-            indices = new List<uint>();
-            for (uint i = 0; i < positions.Count; ++i)
-            {
-                indices.Add(indices_offset + i);
-                indices.Add(indices_offset + (uint)((i + 2) % vertices.Count));
-                indices.Add(indices_offset + (uint)((i + 3) % vertices.Count));
-
-                indices.Add(indices_offset + i);
-                indices.Add(indices_offset + (uint)((i + 3) % vertices.Count));
-                indices.Add(indices_offset + (uint)((i + 1) % vertices.Count));
-            }
         }
     }
 }

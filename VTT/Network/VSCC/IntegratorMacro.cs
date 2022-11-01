@@ -9,9 +9,8 @@
 
     public class IntegratorMacro : IIntegrator
     {
-        private string[] _types = { "r20command", "command", "roll20command", "roll20_command", "r20_command", "command_r20", "command_roll20", "macro", "advcommand", "adv_command", "advancedcommand", "advanced_command" };
-
-        private Dictionary<string, Action<JObject, VSCCIntegration, bool>> _templates = new Dictionary<string, Action<JObject, VSCCIntegration, bool>>();
+        private readonly string[] _types = { "r20command", "command", "roll20command", "roll20_command", "r20_command", "command_r20", "command_roll20", "macro", "advcommand", "adv_command", "advancedcommand", "advanced_command" };
+        private readonly Dictionary<string, Action<JObject, VSCCIntegration, bool>> _templates = new Dictionary<string, Action<JObject, VSCCIntegration, bool>>();
 
         public IntegratorMacro()
         {
@@ -32,14 +31,14 @@
                 JObject dataObject = (JObject)data["data"];
                 if (this._templates.ContainsKey(template))
                 {
-                    Client.Instance.Logger.Log(VTT.Util.LogLevel.Debug, $"Using { template }");
+                    Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Using { template }");
                     this._templates[template](dataObject, integration, gr);
                     return true;
                 }
             }
             else
             {
-                Client.Instance.Logger.Log(VTT.Util.LogLevel.Debug, "Malformed data, no template and/or data member present");
+                Client.Instance.Logger.Log(Util.LogLevel.Debug, "Malformed data, no template and/or data member present");
             }
 
             return false;

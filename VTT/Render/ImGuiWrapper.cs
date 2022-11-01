@@ -1,26 +1,21 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-	using OpenTK.Graphics.OpenGL;
+    using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using OpenTK.Windowing.Desktop;
     using OpenTK.Windowing.GraphicsLibraryFramework;
-	using SixLabors.ImageSharp;
-	using SixLabors.ImageSharp.PixelFormats;
-	using System;
+    using SixLabors.ImageSharp;
+    using System;
     using System.Collections.Generic;
-	using System.Globalization;
-	using System.IO;
+    using System.IO;
     using System.IO.Compression;
-    using System.Net;
-    using System.Net.Http;
     using System.Runtime.InteropServices;
-    using System.Threading.Tasks;
-	using VTT.GL;
-	using VTT.Network;
+    using VTT.GL;
+    using VTT.Network;
     using VTT.Util;
 
-    public class ImGuiWrapper : IDisposable
+    public sealed class ImGuiWrapper : IDisposable
     {
         private static string ImGuiVertexSource => @"#version 330 core
 
@@ -278,7 +273,7 @@ void main()
 					continue;
 				}
 
-				string codepoints = line.Substring(0, idx).Trim();
+				string codepoints = line[..idx].Trim();
 				if (codepoints.IndexOf("..") != -1) // Have ranges
 				{
 					string[] cps = codepoints.Split("..");

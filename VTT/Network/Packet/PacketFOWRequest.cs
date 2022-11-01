@@ -17,7 +17,7 @@
             if (isServer)
             {
                 Map m = server.Maps[this.Sender.ClientMapID];
-                server.Logger.Log(VTT.Util.LogLevel.Debug, "Got client FOW change message");
+                server.Logger.Log(Util.LogLevel.Debug, "Got client FOW change message");
                 if (this.Sender.IsAdmin)
                 {
                     if (m.FOW != null)
@@ -33,14 +33,14 @@
                     }
                     else
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for FOW change of a map without FOW enabled!");
+                        server.Logger.Log(Util.LogLevel.Warn, "Client asked for FOW change of a map without FOW enabled!");
                         PacketFOWData pfowd = new PacketFOWData() { Image = m.FOW?.Canvas, MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted };
                         pfowd.Send(this.Sender);
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for FOW change without permissions");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client asked for FOW change without permissions");
                     PacketFOWData pfowd = new PacketFOWData() { Image = m.FOW?.Canvas, MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted };
                     pfowd.Send(this.Sender);
                 }

@@ -94,9 +94,6 @@
             return ChatParser.FixXdY(sb.ToString());
         }
 
-        private static bool IsEscaped(string sIn, int index)
-        {
-            return index != 0 && sIn[index - 1] == '\\';
-        }
+        private static bool IsEscaped(string sIn, int index) => index != 0 && sIn[index - 1] == '\\';
     }
 }

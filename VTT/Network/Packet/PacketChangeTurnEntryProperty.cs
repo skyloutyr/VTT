@@ -1,6 +1,5 @@
 ﻿namespace VTT.Network.Packet
 {
-    using SixLabors.ImageSharp;
     using System;
     using System.IO;
     using VTT.Control;

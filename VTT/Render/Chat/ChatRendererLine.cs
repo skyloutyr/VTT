@@ -113,16 +113,13 @@
             width = wMax;
         }
 
-        public override void ClearCache()
-        {
-            this._cachedLines = null;
-        }
+        public override void ClearCache() => this._cachedLines = null;
 
         public override void Render()
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             uint cell = Extensions.FromHex("202020").Abgr();
-            uint cellOutline = Color.Gray.Abgr();
+            uint cellOutline;
             float ipX = ImGui.GetCursorPosX();
             if (this._cachedLines.Length == 0)
             {

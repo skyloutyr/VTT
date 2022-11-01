@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
     using VTT.Asset;
     using VTT.Util;
 

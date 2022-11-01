@@ -14,7 +14,7 @@
     public class PointLightsRenderer
     {
         public const int MaxLightsNum = 16;
-        public static int ShadowMapResolution = 256;
+        public static int ShadowMapResolution { get; set; } = 256;
 
         static PointLightsRenderer()
         {
@@ -132,10 +132,10 @@
         public PointLight PopLight() => this.Lights[this.NumLights--];
         public PointLight PeekLight() => this.Lights[this.NumLights - 1];
 
-        private static string[] constPositionPtrs;
-        private static string[] constColorPtrs;
-        private static string[] constCutoutPtrs;
-        private static string[] constIndexPtrs;
+        private static readonly string[] constPositionPtrs;
+        private static readonly string[] constColorPtrs;
+        private static readonly string[] constCutoutPtrs;
+        private static readonly string[] constIndexPtrs;
 
         private static readonly Vector3[,] LightLook = {
             { Vector3.UnitX, -Vector3.UnitY },
@@ -194,13 +194,10 @@
             this._ms.Pop();
         }
 
-        public void AddLightCandidate(PointLight pl)
-        {
-            this._selectedLights.Add(pl);
-        }
+        public void AddLightCandidate(PointLight pl) => this._selectedLights.Add(pl);
 
-        private List<MapObject> _objsCache = new List<MapObject>();
-        private Matrix4[] _lightMatrices = new Matrix4[6];
+        private readonly List<MapObject> _objsCache = new List<MapObject>();
+        private readonly Matrix4[] _lightMatrices = new Matrix4[6];
         public void DrawLights(Map m, bool doDraw, Camera cam = null)
         {
             if (cam != null) // Frustrum cull, sort and push lights

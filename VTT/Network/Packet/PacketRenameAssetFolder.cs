@@ -17,7 +17,7 @@
                 ServerClient sc = (ServerClient)server.FindSession(sessionID);
                 if (sc.IsAdmin)
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Info, "Client asked to rename " + this.Path + " to " + this.Name);
+                    server.Logger.Log(Util.LogLevel.Info, "Client asked to rename " + this.Path + " to " + this.Name);
                     AssetDirectory ad = server.AssetManager.GetDirAt(this.Path);
                     if (ad != null)
                     {
@@ -29,17 +29,17 @@
                     }
                     else
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Error, "Client asked to rename a non-existing asset directory!");
+                        server.Logger.Log(Util.LogLevel.Error, "Client asked to rename a non-existing asset directory!");
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
                 }
             }
             else
             {
-                client.Logger.Log(VTT.Util.LogLevel.Info, "Server asked to rename " + this.Path + " to " + this.Name);
+                client.Logger.Log(Util.LogLevel.Info, "Server asked to rename " + this.Path + " to " + this.Name);
                 AssetDirectory ad = client.AssetManager.GetDirAt(this.Path);
                 if (ad != null)
                 {
@@ -47,7 +47,7 @@
                 }
                 else
                 {
-                    client.Logger.Log(VTT.Util.LogLevel.Error, "Server asked to rename a non-existing asset directory!");
+                    client.Logger.Log(Util.LogLevel.Error, "Server asked to rename a non-existing asset directory!");
                 }
             }
         }

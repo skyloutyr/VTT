@@ -52,7 +52,7 @@
 
         public List<GlbMesh> Meshes { get; } = new List<GlbMesh>();
         public GlbLight Light { get; set; }
-        public VTT.Util.AABox Bounds { get; set; }
+        public AABox Bounds { get; set; }
 
         internal Node _node;
         private Vector3 _position;

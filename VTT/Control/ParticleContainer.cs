@@ -57,7 +57,7 @@
             }
         }
 
-        public void Render(ShaderProgram shader, VTT.Util.Camera cam)
+        public void Render(ShaderProgram shader, Camera cam)
         {
             if (this.IsActive && !Guid.Empty.Equals(this.SystemID))
             {

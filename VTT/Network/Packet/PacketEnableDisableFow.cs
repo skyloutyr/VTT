@@ -15,7 +15,7 @@
         {
             if (isServer) // Client ask server
             {
-                server.Logger.Log(VTT.Util.LogLevel.Debug, "Got client FOW change request");
+                server.Logger.Log(Util.LogLevel.Debug, "Got client FOW change request");
                 if (this.Sender.IsAdmin)
                 {
                     Map m = server.Maps[this.Sender.ClientMapID];
@@ -23,7 +23,7 @@
                     {
                         if (this.Size.X < 32 || this.Size.Y < 32 || this.Size.X > 4096 || this.Size.Y > 4096)
                         {
-                            server.Logger.Log(VTT.Util.LogLevel.Error, "Invalid FOW map size specified!");
+                            server.Logger.Log(Util.LogLevel.Error, "Invalid FOW map size specified!");
                             PacketFOWData pfowd = new PacketFOWData() { MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted, Image = m.FOW?.Canvas };
                             pfowd.Send(this.Sender);
                         }
@@ -48,7 +48,7 @@
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for FOW changes without permissions!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client asked for FOW changes without permissions!");
                     Map m = server.Maps[this.Sender.ClientMapID];
                     PacketFOWData pfowd = new PacketFOWData() { MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted, Image = m.FOW?.Canvas };
                     pfowd.Send(this.Sender);

@@ -14,7 +14,7 @@
         {
             Logger l = this.GetContextLogger();
             l.Log(LogLevel.Debug, "Got turn tracker entry deletion request");
-            bool allowed = isServer ? this.Sender.IsAdmin : true;
+            bool allowed = !isServer || this.Sender.IsAdmin;
             if (allowed)
             {
                 Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
@@ -41,14 +41,8 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.EntryIndex = br.ReadInt32();
-        }
+        public override void Decode(BinaryReader br) => this.EntryIndex = br.ReadInt32();
 
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.EntryIndex);
-        }
+        public override void Encode(BinaryWriter bw) => bw.Write(this.EntryIndex);
     }
 }

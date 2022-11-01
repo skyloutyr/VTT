@@ -13,7 +13,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Debug, "Client asked for more chat");
+                server.Logger.Log(Util.LogLevel.Debug, "Client asked for more chat");
                 if (this.Index > 0)
                 {
                     int chatIndex = this.Index;

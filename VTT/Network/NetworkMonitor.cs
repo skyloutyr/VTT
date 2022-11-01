@@ -5,7 +5,7 @@
     public class NetworkMonitor
     {
         public ulong LastValue { get; private set; }
-        private object _lock = new object();
+        private readonly object _lock = new object();
         private ulong _collected;
         private ulong _lastFrame;
 

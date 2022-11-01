@@ -100,7 +100,7 @@
                             GL.TexSubImage2D(selfTT, level, 0, y - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
                         }
 
-                        T* tOffsetB = pixelBuffer + ((y % 4) * img.Width);
+                        T* tOffsetB = pixelBuffer + (y % 4 * img.Width);
                         Span<T> s = new Span<T>(tOffsetB, img.Width);
                         rowSpan.CopyTo(s);
                     }
@@ -152,22 +152,9 @@
 
         private static PixelFormat GetFormatFromPixelType(Type t)
         {
-            if (t == typeof(Rgba32))
-            {
-                return PixelFormat.Rgba;
-            }
-
-            if (t == typeof(Rgba64))
-            {
-                return PixelFormat.RgbaInteger;
-            }
-
-            if (t == typeof(Rgb24))
-            {
-                return PixelFormat.Rgb;
-            }
-
-            return PixelFormat.DepthComponent;
+            return t == typeof(Rgba32)
+                ? PixelFormat.Rgba
+                : t == typeof(Rgba64) ? PixelFormat.RgbaInteger : t == typeof(Rgb24) ? PixelFormat.Rgb : PixelFormat.DepthComponent;
         }
 
         public void Dispose()

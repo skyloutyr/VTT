@@ -2,7 +2,6 @@
 {
     using ImGuiNET;
     using System;
-    using System.Linq;
     using System.Numerics;
     using VTT.Control;
     using VTT.GL;

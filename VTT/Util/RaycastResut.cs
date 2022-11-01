@@ -193,10 +193,6 @@
 
         public static unsafe void IterateTriangles(System.Numerics.Vector3* arrayPtr, Matrix4 mat, System.Numerics.Vector3 rOrigin, System.Numerics.Vector3 rDirection, int index, List<Vector3> hitPoints)
         {
-            //Vector3 t0 = (arrayPtr[index + 0] * mat).Xyz;
-            //Vector3 t1 = (arrayPtr[index + 1] * mat).Xyz;
-            //Vector3 t2 = (arrayPtr[index + 2] * mat).Xyz;
-
             System.Numerics.Vector3 t0 = arrayPtr[index + 0];
             System.Numerics.Vector3 t1 = arrayPtr[index + 1];
             System.Numerics.Vector3 t2 = arrayPtr[index + 2];
@@ -204,35 +200,6 @@
             System.Numerics.Vector3 t10 = t1 - t0;
             System.Numerics.Vector3 t20 = t2 - t0;
 
-            /*
-            System.Numerics.Vector3 pVec = System.Numerics.Vector3.Cross(rDirection, t20);
-            float det = System.Numerics.Vector3.Dot(t10, pVec);
-            if (det <= float.Epsilon)
-            {
-                return;
-            }
-
-            float invDet = 1.0f / det;
-            System.Numerics.Vector3 tVec = rOrigin - t0;
-            float u = System.Numerics.Vector3.Dot(tVec, pVec) * invDet;
-            if (u < 0 || u > 1)
-            {
-                return;
-            }
-
-            System.Numerics.Vector3 qVec = System.Numerics.Vector3.Cross(tVec, t10);
-            float v = System.Numerics.Vector3.Dot(rDirection, qVec) * invDet;
-            if (v < 0 || u + v > 1)
-            {
-                return;
-            }
-
-            float r = System.Numerics.Vector3.Dot(t20, qVec) * invDet;
-            System.Numerics.Vector3 hit = rOrigin + (rDirection * r);
-            Vector4 hit4 = new Vector4(hit.X, hit.Y, hit.Z, 1.0f) * mat;
-            hitPoints.Add(hit4.Xyz / hit4.W);
-            */
-
             System.Numerics.Vector3 tNormal = System.Numerics.Vector3.Cross(t10, t20);
             float d = System.Numerics.Vector3.Dot(tNormal, t0);
             float nd = System.Numerics.Vector3.Dot(tNormal, rDirection);
@@ -259,36 +226,6 @@
                     hitPoints.Add(hit4.Xyz / hit4.W);
                 }
             }
-
-            /*
-            System.Numerics.Vector3 tNormal = System.Numerics.Vector3.Cross(t10, t20);
-
-            float d = System.Numerics.Vector3.Dot(tNormal, t0);
-            float nd = System.Numerics.Vector3.Dot(tNormal, rDirection);
-            if (MathF.Abs(nd) > float.Epsilon)
-            {
-                System.Numerics.Vector3 hit = rOrigin + (rDirection * ((d - System.Numerics.Vector3.Dot(tNormal, rOrigin)) / nd));
-
-                System.Numerics.Vector3 v0 = t20;
-                System.Numerics.Vector3 v1 = t10;
-                System.Numerics.Vector3 v2 = hit - t0;
-
-                float dot00 = System.Numerics.Vector3.Dot(v0, v0);
-                float dot01 = System.Numerics.Vector3.Dot(v0, v1);
-                float dot02 = System.Numerics.Vector3.Dot(v0, v2);
-                float dot11 = System.Numerics.Vector3.Dot(v1, v1);
-                float dot12 = System.Numerics.Vector3.Dot(v1, v2);
-
-                float invDenom = 1 / ((dot00 * dot11) - (dot01 * dot01));
-                float u = ((dot11 * dot02) - (dot01 * dot12)) * invDenom;
-                float v = ((dot00 * dot12) - (dot01 * dot02)) * invDenom;
-                if ((u >= 0) && (v >= 0) && (u + v < 1))
-                {
-                    Vector4 hit4 = new Vector4(hit.X, hit.Y, hit.Z, 1.0f) * mat;
-                    hitPoints.Add(hit4.Xyz / hit4.W);
-                }
-            }
-            */
         }
 
         private static IEnumerable<GlbMesh> IterateGlbModel(MatrixStack stack, GlbObject o, GlbObjectType typeSeeked)

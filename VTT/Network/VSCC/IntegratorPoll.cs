@@ -1,7 +1,6 @@
 ﻿namespace VTT.Network.VSCC
 {
     using Newtonsoft.Json.Linq;
-    using System;
     public class IntegratorPoll : IIntegrator
     {
         public bool Accepts(string type) => type.Equals("poll") || type.Equals("listen_poll") || type.Equals("poll_listen");

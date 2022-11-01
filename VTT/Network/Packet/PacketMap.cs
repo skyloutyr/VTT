@@ -21,18 +21,15 @@
                 }
                 else
                 {
-                    client.DoTask(() =>
-                    {
-                        client.SetCurrentMap(this.Map, () =>
+                    client.DoTask(() => client.SetCurrentMap(this.Map, () =>
                         {
                             client.ClientInfos[client.ID].MapID = this.Map.ID;
                             PacketCommunique cp = new PacketCommunique() { Request = RequestType.ClientMapAck, RequestData = 0 };
                             cp.Send(client.NetClient); // Send Ack response, await object data
-                        });
-                    });
+                        }));
                 }
 
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got map from server, acknowledging");
+                client.Logger.Log(LogLevel.Debug, "Got map from server, acknowledging");
             }
         }
 

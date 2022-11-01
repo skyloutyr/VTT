@@ -64,7 +64,7 @@
                 }
                 else
                 {
-                    client.Logger.Log(VTT.Util.LogLevel.Warn, "Got asset name change packet for non-existing asset!");
+                    client.Logger.Log(LogLevel.Warn, "Got asset name change packet for non-existing asset!");
                 }
             }
         }

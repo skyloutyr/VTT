@@ -129,17 +129,32 @@
             }
 
             List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();
+            List<float> areaSums = new List<float>();
+            float areaSum = 0;
             for (int j = 0; j < indices.Length; j += 3)
             {
                 int index0 = (int)indices[j + 0];
                 int index1 = (int)indices[j + 1];
                 int index2 = (int)indices[j + 2];
-                simplifiedTriangles.Add(positions[index0].SystemVector());
-                simplifiedTriangles.Add(positions[index1].SystemVector());
-                simplifiedTriangles.Add(positions[index2].SystemVector());
+                System.Numerics.Vector3 a = positions[index0].SystemVector();
+                System.Numerics.Vector3 b = positions[index1].SystemVector();
+                System.Numerics.Vector3 c = positions[index2].SystemVector();
+                simplifiedTriangles.Add(a);
+                simplifiedTriangles.Add(b);
+                simplifiedTriangles.Add(c);
+                System.Numerics.Vector3 ab = b - a;
+                System.Numerics.Vector3 ac = c - a;
+                float l = System.Numerics.Vector3.Cross(ab, ac).Length() * 0.5f;
+                if (!float.IsNaN(l)) // Degenerate triangle
+                {
+                    areaSum += l;
+                }
+
+                areaSums.Add(areaSum);
             }
 
             glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
+            glbm.areaSums = areaSums.ToArray();
             glbm.Bounds = new AABox(new Vector3(-0.5f, -0.5f, -0.01f), new Vector3(0.5f, 0.5f, 0.01f));
             glbm.VertexBuffer = vBuffer;
             glbm.IndexBuffer = indices;
@@ -157,7 +172,7 @@
             ret.Meshes.Add(mesh);
             ret.RootObjects.Add(mesh);
 
-            GlbLight sunlight = new GlbLight() { Color = Vector4.One, Intensity = 10, LightType = KhrLight.LightTypeEnum.Directional };
+            GlbLight sunlight = new GlbLight(Vector4.One, 10, KhrLight.LightTypeEnum.Directional);
             sun.Scale = Vector3.One;
             sun.Rotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(179));
             sun.Position = Vector3.Zero;
@@ -174,7 +189,7 @@
             return ret;
         }
 
-        public static TextureData CreateDefaultFromImage(Image<Rgba32> clientImage, out byte[] selfBinary, out TextureData.Metadata meta)
+        public static TextureData CreateDefaultFromImage(Image<Rgba32> clientImage, out byte[] selfBinary, out Metadata meta)
         {
             MemoryStream ms = new MemoryStream();
             clientImage.SaveAsPng(ms);

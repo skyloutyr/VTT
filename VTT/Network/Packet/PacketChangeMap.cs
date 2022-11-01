@@ -32,7 +32,7 @@
                             server.Logger.Log(LogLevel.Debug, "Map change for " + sc.ID + " authorised");
                             sc.ClientMapID = this.NewMapID;
                             sc.SaveClientData();
-                            PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[0], IsServer = true, NewMapID = this.NewMapID, Session = sessionID };
+                            PacketChangeMap pcm = new PacketChangeMap() { Clients = Array.Empty<Guid>(), IsServer = true, NewMapID = this.NewMapID, Session = sessionID };
                             pcm.Send(sc);
                             new PacketClientData() { InfosToUpdate = new System.Collections.Generic.List<ClientInfo>() { sc.Info } }.Broadcast();
                         }
@@ -64,7 +64,7 @@
                     server.Logger.Log(LogLevel.Debug, "Map change committed");
                     senderSc.ClientMapID = this.NewMapID;
                     senderSc.SaveClientData();
-                    PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[0], IsServer = true, NewMapID = this.NewMapID, Session = sessionID };
+                    PacketChangeMap pcm = new PacketChangeMap() { Clients = Array.Empty<Guid>(), IsServer = true, NewMapID = this.NewMapID, Session = sessionID };
                     pcm.Send(senderSc);
                     new PacketClientData() { InfosToUpdate = new System.Collections.Generic.List<ClientInfo>() { senderSc.Info } }.Broadcast();
                 }
@@ -72,14 +72,11 @@
             else // Server asking the client to change map
             {
                 client.Logger.Log(LogLevel.Debug, "Server asking to change map, requesting new map data");
-                client.DoTask(() =>
-                {
-                    client.SetCurrentMap(null, () =>
+                client.DoTask(() => client.SetCurrentMap(null, () =>
                     {
                         PacketCommunique pc = new PacketCommunique() { IsServer = false, Request = RequestType.ClientMapAck, RequestData = 1, Session = sessionID }; // request data 1 resends the map data to the client
                         pc.Send(client.NetClient);
-                    });
-                });
+                    }));
             }
         }
 

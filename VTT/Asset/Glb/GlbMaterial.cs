@@ -32,9 +32,9 @@
         public float AlphaCutoff { get; set; }
         public bool CullFace { get; set; }
 
-        public static GlbMaterial lastMaterial;
-        public static double lastAnimationFrameIndex;
-        public static int lastProgram;
+        private static GlbMaterial lastMaterial;
+        private static double lastAnimationFrameIndex;
+        private static int lastProgram;
 
         public void Uniform(ShaderProgram shader, double textureAnimationFrameIndex)
         {
@@ -116,7 +116,7 @@
 
     public class TextureAnimation
     {
-        private uint _totalDuration;
+        private readonly uint _totalDuration;
         public Frame[] Frames { get; set; }
 
         public TextureAnimation(Frame[] frames)

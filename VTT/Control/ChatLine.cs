@@ -141,7 +141,6 @@
                     }
                 }
 
-                Vector2 cV = ImGui.GetCursorPos();
                 ImGui.PushStyleColor(ImGuiCol.Text, this.SenderColor.Abgr());
                 ImGui.TextUnformatted(this.SenderDisplayName);
                 ImGui.PopStyleColor();

@@ -312,7 +312,7 @@
 
             public AVFrame Convert(AVFrame sourceFrame)
             {
-                int ret = ffmpeg.sws_scale(_pConvertContext,
+                ffmpeg.sws_scale(_pConvertContext,
                     sourceFrame.data,
                     sourceFrame.linesize,
                     0,
@@ -344,9 +344,6 @@
             return message;
         }
 
-        public static int ThrowExceptionIfError(int error)
-        {
-            return error < 0 ? throw new ApplicationException(av_strerror(error)) : error;
-        }
+        public static int ThrowExceptionIfError(int error) => error < 0 ? throw new ApplicationException(av_strerror(error)) : error;
     }
 }

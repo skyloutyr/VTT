@@ -14,7 +14,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Got full explicit turn tracker synchronization command!");
+                server.Logger.Log(LogLevel.Info, "Got full explicit turn tracker synchronization command!");
                 this.Data = server.Maps[this.Sender.ClientMapID].TurnTracker.Serialize();
                 this.Broadcast(c => c.ClientMapID.Equals(this.Sender.ClientMapID));
             }
@@ -23,7 +23,7 @@
                 Map m = client.CurrentMap;
                 if (m == null)
                 {
-                    client.Logger.Log(VTT.Util.LogLevel.Warn, "Got turn tracker update packet for non-existing map.");
+                    client.Logger.Log(LogLevel.Warn, "Got turn tracker update packet for non-existing map.");
                     return;
                 }
 

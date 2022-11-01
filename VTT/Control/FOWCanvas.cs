@@ -36,15 +36,7 @@
         {
         }
 
-        internal Rgba64 GetPixel(int x, int y)
-        {
-            if (this.IsDeleted)
-            {
-                return default;
-            }
-
-            return this._img[x, y];
-        }
+        internal Rgba64 GetPixel(int x, int y) => this.IsDeleted ? default : this._img[x, y];
 
         internal void SetPixel(int x, int y, Rgba64 pixel)
         {
@@ -80,7 +72,7 @@
             this._cells = new FOWCell[w * h];
             for (int i = 0; i < w * h; ++i)
             {
-                this._cells[i] = new FOWCell(i % w, i / w, this);
+                this._cells[i] = new FOWCell(i % w, i / w);
             }
         }
 
@@ -150,7 +142,7 @@
                     foreach (FOWCellAction acts in actions)
                     {
                         int idx = (acts.Y * this.Width) + acts.X;
-                        result |= this._cells[idx].Mask(acts.Mask, acts.Action);
+                        result |= this._cells[idx].Mask(this, acts.Mask, acts.Action);
                     }
 
                     if (result)
@@ -328,22 +320,20 @@
         }
     }
 
-    public class FOWCell
+    public readonly struct FOWCell
     {
-        private int _x;
-        private int _y;
-        private FOWCanvas _canvas;
+        private readonly int _x;
+        private readonly int _y;
 
-        public FOWCell(int x, int y, FOWCanvas canvas)
+        public FOWCell(int x, int y)
         {
             this._x = x;
             this._y = y;
-            this._canvas = canvas;
         }
 
-        public bool Set(bool value, int x, int y)
+        public bool Set(FOWCanvas canvas, bool value, int x, int y)
         {
-            Rgba64 pixel = this._canvas.GetPixel(this._x, this._y);
+            Rgba64 pixel = canvas.GetPixel(this._x, this._y);
             ulong val = pixel.PackedValue;
             ulong mask = 1UL << (x & 7) << (y << 3);
             if (!value)
@@ -357,13 +347,13 @@
 
             bool r = pixel.PackedValue != val;
             pixel.PackedValue = val;
-            this._canvas.SetPixel(this._x, this._y, pixel);
+            canvas.SetPixel(this._x, this._y, pixel);
             return r;
         }
 
-        public bool Mask(ulong mask, bool action)
+        public bool Mask(FOWCanvas canvas, ulong mask, bool action)
         {
-            Rgba64 pixel = this._canvas.GetPixel(this._x, this._y);
+            Rgba64 pixel = canvas.GetPixel(this._x, this._y);
             ulong val = pixel.PackedValue;
             if (!action)
             {
@@ -376,7 +366,7 @@
 
             bool r = val != pixel.PackedValue;
             pixel.PackedValue = val;
-            this._canvas.SetPixel(this._x, this._y, pixel);
+            canvas.SetPixel(this._x, this._y, pixel);
             return r;
         }
     }

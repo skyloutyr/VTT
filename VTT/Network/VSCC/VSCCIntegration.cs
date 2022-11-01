@@ -29,14 +29,14 @@
 
         public void Create()
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Info, "Starting VSCC Integration");
+            Client.Instance.Logger.Log(Util.LogLevel.Info, "Starting VSCC Integration");
             this.SocketClient = new IntegrationClient(IPAddress.Loopback, 23521) { Container = this };
             this.SocketClient.ConnectAsync();
         }
 
         public void HandleMessage(string msgIn)
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Debug, "Got VSCC Integration message " + msgIn);
+            Client.Instance.Logger.Log(Util.LogLevel.Debug, "Got VSCC Integration message " + msgIn);
             if (Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnected)
             {
                 return;
@@ -48,8 +48,8 @@
             }
             catch (JsonException e)
             {
-                Client.Instance.Logger.Log(VTT.Util.LogLevel.Error, "Got malformed json from server!");
-                Client.Instance.Logger.Exception(VTT.Util.LogLevel.Error, e);
+                Client.Instance.Logger.Log(Util.LogLevel.Error, "Got malformed json from server!");
+                Client.Instance.Logger.Exception(Util.LogLevel.Error, e);
             }
         }
 
@@ -62,7 +62,7 @@
                 {
                     if (integrator.Accepts(t))
                     {
-                        Client.Instance.Logger.Log(VTT.Util.LogLevel.Debug, "Using integrator " + integrator.GetType().Name);
+                        Client.Instance.Logger.Log(Util.LogLevel.Debug, "Using integrator " + integrator.GetType().Name);
                         if (integrator.Process(json, msg, this))
                         {
                             break;
@@ -113,7 +113,7 @@
 
         public void Destroy()
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Info, "VSCC Integration destroyed");
+            Client.Instance.Logger.Log(Util.LogLevel.Info, "VSCC Integration destroyed");
             this.SocketClient.Disconnect();
             this.SocketClient.Dispose();
             this.SocketClient = null;
@@ -154,19 +154,19 @@
 
         protected override void OnError(SocketError error)
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Error, "VSCC integration socket error " + error);
+            Client.Instance.Logger.Log(Util.LogLevel.Error, "VSCC integration socket error " + error);
             this.Container.Destroy();
         }
 
         public override void OnWsError(SocketError error)
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Error, "VSCC integration socket error " + error);
+            Client.Instance.Logger.Log(Util.LogLevel.Error, "VSCC integration socket error " + error);
             this.Container.Destroy();
         }
 
         public override void OnWsError(string error)
         {
-            Client.Instance.Logger.Log(VTT.Util.LogLevel.Error, "VSCC integration socket error " + error);
+            Client.Instance.Logger.Log(Util.LogLevel.Error, "VSCC integration socket error " + error);
             this.Container.Destroy();
         }
 

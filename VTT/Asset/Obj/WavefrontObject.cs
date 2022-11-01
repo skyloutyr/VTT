@@ -10,9 +10,9 @@
 
     public class WavefrontObject
     {
-        private VertexArray _vao;
-        private GPUBuffer _vbo;
-        private int _numElements;
+        private readonly VertexArray _vao;
+        private readonly GPUBuffer _vbo;
+        private readonly int _numElements;
 
         public System.Numerics.Vector3[] triangles;
 
@@ -21,8 +21,6 @@
             List<Vector3> positions = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             List<Vector3> normals = new List<Vector3>();
-            List<Vector3> tangents = new List<Vector3>();
-            List<Vector3> binangents = new List<Vector3>();
 
             List<Vector3i> faces = new List<Vector3i>();
 
@@ -69,7 +67,7 @@
                         string[] dd = dt.Split('/');
                         int x = int.Parse(dd[0]);
                         int y = dd.Length == 2 ? -1 : int.Parse(dd[1]); // Format may be v1//vn1
-                        int z = dd.Length == 1 ? -1 : int.Parse(dd[dd.Length - 1]);
+                        int z = dd.Length == 1 ? -1 : int.Parse(dd[^1]);
                         faces.Add(new Vector3i(x, y, z));
                     }
 

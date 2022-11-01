@@ -631,7 +631,7 @@
 
                 if (ImGui.CollapsingHeader(lang.Translate("menu.settings") + "###Settings"))
                 {
-                    VTT.Render.MainMenu.MainMenuRenderer.DrawSettings(lang);
+                    MainMenu.MainMenuRenderer.DrawSettings(lang);
                 }
 
                 ImGui.EndPopup();
@@ -640,32 +640,32 @@
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.texture_properties") + "###Edit Texture"))
             {
                 AssetRef cRef = this._editedRef;
-                VTT.GL.WrapParam wrapS = this._editedTextureMetadataCopy.WrapS;
-                VTT.GL.WrapParam wrapT = this._editedTextureMetadataCopy.WrapT;
-                VTT.GL.FilterParam filterMin = this._editedTextureMetadataCopy.FilterMin;
-                VTT.GL.FilterParam filterMag = this._editedTextureMetadataCopy.FilterMag;
+                GL.WrapParam wrapS = this._editedTextureMetadataCopy.WrapS;
+                GL.WrapParam wrapT = this._editedTextureMetadataCopy.WrapT;
+                GL.FilterParam filterMin = this._editedTextureMetadataCopy.FilterMin;
+                GL.FilterParam filterMag = this._editedTextureMetadataCopy.FilterMag;
                 bool alpha = this._editedTextureMetadataCopy.EnableBlending;
                 bool compress = this._editedTextureMetadataCopy.Compress;
                 bool gamma = this._editedTextureMetadataCopy.GammaCorrect;
 
                 string[] wrapModes = { lang.Translate("ui.texture.wrap.repeat"), lang.Translate("ui.texture.wrap.mirror"), lang.Translate("ui.texture.wrap.clamp") };
                 string[] filterModes = { lang.Translate("ui.texture.filter.nearest"), lang.Translate("ui.texture.filter.linear"), lang.Translate("ui.texture.filter.linear_mipmaps_nearest"), lang.Translate("ui.texture.filter.linear_mipmaps_linear") };
-                int cWrapS = this._editedTextureMetadataCopy.WrapS == VTT.GL.WrapParam.Repeat ? 0 : this._editedTextureMetadataCopy.WrapS == VTT.GL.WrapParam.Mirror ? 1 : 2;
-                int cWrapT = this._editedTextureMetadataCopy.WrapT == VTT.GL.WrapParam.Repeat ? 0 : this._editedTextureMetadataCopy.WrapT == VTT.GL.WrapParam.Mirror ? 1 : 2;
-                int cfMin = this._editedTextureMetadataCopy.FilterMin == VTT.GL.FilterParam.Nearest ? 0 : this._editedTextureMetadataCopy.FilterMin == VTT.GL.FilterParam.Linear ? 1 : this._editedTextureMetadataCopy.FilterMin == VTT.GL.FilterParam.LinearMipmapNearest ? 2 : 3;
-                int cfMag = this._editedTextureMetadataCopy.FilterMag == VTT.GL.FilterParam.Nearest ? 0 : 1;
+                int cWrapS = this._editedTextureMetadataCopy.WrapS == GL.WrapParam.Repeat ? 0 : this._editedTextureMetadataCopy.WrapS == GL.WrapParam.Mirror ? 1 : 2;
+                int cWrapT = this._editedTextureMetadataCopy.WrapT == GL.WrapParam.Repeat ? 0 : this._editedTextureMetadataCopy.WrapT == GL.WrapParam.Mirror ? 1 : 2;
+                int cfMin = this._editedTextureMetadataCopy.FilterMin == GL.FilterParam.Nearest ? 0 : this._editedTextureMetadataCopy.FilterMin == GL.FilterParam.Linear ? 1 : this._editedTextureMetadataCopy.FilterMin == GL.FilterParam.LinearMipmapNearest ? 2 : 3;
+                int cfMag = this._editedTextureMetadataCopy.FilterMag == GL.FilterParam.Nearest ? 0 : 1;
 
                 ImGui.Text(lang.Translate("ui.texture.wrap_s"));
                 if (ImGui.Combo("##Wrap S", ref cWrapS, wrapModes, 3))
                 {
-                    wrapS = cWrapS == 0 ? VTT.GL.WrapParam.Repeat : cWrapS == 1 ? VTT.GL.WrapParam.Mirror : VTT.GL.WrapParam.ClampToEdge;
+                    wrapS = cWrapS == 0 ? GL.WrapParam.Repeat : cWrapS == 1 ? GL.WrapParam.Mirror : GL.WrapParam.ClampToEdge;
                     this._editedTextureMetadataCopy.WrapS = wrapS;
                 }
 
                 ImGui.Text(lang.Translate("ui.texture.wrap_t"));
                 if (ImGui.Combo("##Wrap T", ref cWrapT, wrapModes, 3))
                 {
-                    wrapT = cWrapT == 0 ? VTT.GL.WrapParam.Repeat : cWrapT == 1 ? VTT.GL.WrapParam.Mirror : VTT.GL.WrapParam.ClampToEdge;
+                    wrapT = cWrapT == 0 ? GL.WrapParam.Repeat : cWrapT == 1 ? GL.WrapParam.Mirror : GL.WrapParam.ClampToEdge;
                     this._editedTextureMetadataCopy.WrapT = wrapT;
                 }
 
@@ -673,15 +673,15 @@
                 if (ImGui.Combo("##Min Filter", ref cfMin, filterModes, 4))
                 {
                     this._editedTextureMetadataCopy.FilterMin = filterMin = 
-                        cfMin == 0 ? VTT.GL.FilterParam.Nearest : 
-                        cfMin == 1 ? VTT.GL.FilterParam.Linear : 
-                        cfMin == 2 ? VTT.GL.FilterParam.LinearMipmapNearest : VTT.GL.FilterParam.LinearMipmapLinear;
+                        cfMin == 0 ? GL.FilterParam.Nearest : 
+                        cfMin == 1 ? GL.FilterParam.Linear : 
+                        cfMin == 2 ? GL.FilterParam.LinearMipmapNearest : GL.FilterParam.LinearMipmapLinear;
                 }
 
                 ImGui.Text(lang.Translate("ui.texture.filter_mag"));
                 if (ImGui.Combo("##Mag Filter", ref cfMag, filterModes, 2))
                 {
-                    this._editedTextureMetadataCopy.FilterMag = filterMag = cfMag == 0 ? VTT.GL.FilterParam.Nearest : VTT.GL.FilterParam.Linear;
+                    this._editedTextureMetadataCopy.FilterMag = filterMag = cfMag == 0 ? GL.FilterParam.Nearest : GL.FilterParam.Linear;
                 }
 
                 if (ImGui.Checkbox(lang.Translate("ui.texture.blend"), ref alpha))

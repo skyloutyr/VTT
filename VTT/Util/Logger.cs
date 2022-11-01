@@ -36,45 +36,18 @@
 
         public static LogListener Console => (l, msg) =>
         {
-            ConsoleColor GetColor(LogLevel level)
+            static ConsoleColor GetColor(LogLevel level)
             {
-                switch (level)
+                return level switch
                 {
-                    case LogLevel.Off:
-                    {
-                        return ConsoleColor.Black;
-                    }
-
-                    case LogLevel.Debug:
-                    {
-                        return ConsoleColor.DarkGray;
-                    }
-
-                    case LogLevel.Info:
-                    {
-                        return ConsoleColor.White;
-                    }
-
-                    case LogLevel.Warn:
-                    {
-                        return ConsoleColor.Yellow;
-                    }
-
-                    case LogLevel.Error:
-                    {
-                        return ConsoleColor.Red;
-                    }
-
-                    case LogLevel.Fatal:
-                    {
-                        return ConsoleColor.DarkRed;
-                    }
-
-                    default:
-                    {
-                        return ConsoleColor.Black;
-                    }
-                }
+                    LogLevel.Off => ConsoleColor.Black,
+                    LogLevel.Debug => ConsoleColor.DarkGray,
+                    LogLevel.Info => ConsoleColor.White,
+                    LogLevel.Warn => ConsoleColor.Yellow,
+                    LogLevel.Error => ConsoleColor.Red,
+                    LogLevel.Fatal => ConsoleColor.DarkRed,
+                    _ => ConsoleColor.White
+                };
             }
 
             ConsoleColor clr = System.Console.ForegroundColor;
@@ -83,10 +56,7 @@
             System.Console.ForegroundColor = clr;
         };
 
-        public static LogListener Debug => (l, msg) =>
-        {
-            System.Diagnostics.Debugger.Log(0, null, msg + "\n");
-        };
+        public static LogListener Debug => (l, msg) => System.Diagnostics.Debugger.Log(0, null, msg + "\n");
 
         public class FileLogListener
         {

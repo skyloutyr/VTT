@@ -44,7 +44,7 @@
         public override void Decode(BinaryReader br)
         {
             this.Journal = new TextJournal();
-            this.Journal.Deserialize(new Util.DataElement(br));
+            this.Journal.Deserialize(new DataElement(br));
         }
 
         public override void Encode(BinaryWriter bw) => this.Journal.Serialize().Write(bw);

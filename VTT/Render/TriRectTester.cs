@@ -260,7 +260,7 @@
 
         public static bool Contains(in Vector2 pt, in Vector2 tp0, in Vector2 tp1, in Vector2 tp2)
         {
-            float sign(Vector2 p1, Vector2 p2, Vector2 p3) => (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
+            static float sign(Vector2 p1, Vector2 p2, Vector2 p3) => ((p1.X - p3.X) * (p2.Y - p3.Y)) - ((p2.X - p3.X) * (p1.Y - p3.Y));
 
             float d1, d2, d3;
             bool has_neg, has_pos;

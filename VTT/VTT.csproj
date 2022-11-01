@@ -94,12 +94,6 @@
     <None Remove="Embed\Lang\ru-RU.txt" />
     <None Remove="Embed\logo-alpha.png" />
     <None Remove="Embed\logo-alpha.xcf" />
-    <None Remove="Embed\Logo\alpha-hardhat-broken.png" />
-    <None Remove="Embed\Logo\alpha-hardhat.png" />
-    <None Remove="Embed\Logo\alpha-letters.png" />
-    <None Remove="Embed\Logo\alpha-mascot.png" />
-    <None Remove="Embed\Logo\alpha-sparks.png" />
-    <None Remove="Embed\Logo\alpha-thunk.png" />
     <None Remove="Embed\Logo\beta-letters-off.png" />
     <None Remove="Embed\Logo\beta-letters.png" />
     <None Remove="Embed\Logo\beta-light.png" />
@@ -107,10 +101,7 @@
     <None Remove="Embed\Logo\beta-switch-off.png" />
     <None Remove="Embed\Logo\beta-switch.png" />
     <None Remove="Embed\Logo\beta-wires.png" />
-    <None Remove="Embed\Logo\logo-alpha.png" />
     <None Remove="Embed\Logo\Logo-Main.png" />
-    <None Remove="Embed\Logo\Logo-NulEng-Anim.png" />
-    <None Remove="Embed\Logo\Logo-NulEng.png" />
     <None Remove="Embed\moverlay.frag" />
     <None Remove="Embed\moverlay.vert" />
     <None Remove="Embed\object.frag" />
@@ -213,12 +204,6 @@
     <EmbeddedResource Include="Embed\Lang\en-EN.txt" />
     <EmbeddedResource Include="Embed\logo-alpha.png" />
     <EmbeddedResource Include="Embed\logo-alpha.xcf" />
-    <EmbeddedResource Include="Embed\Logo\alpha-hardhat-broken.png" />
-    <EmbeddedResource Include="Embed\Logo\alpha-hardhat.png" />
-    <EmbeddedResource Include="Embed\Logo\alpha-letters.png" />
-    <EmbeddedResource Include="Embed\Logo\alpha-mascot.png" />
-    <EmbeddedResource Include="Embed\Logo\alpha-sparks.png" />
-    <EmbeddedResource Include="Embed\Logo\alpha-thunk.png" />
     <EmbeddedResource Include="Embed\Logo\beta-letters-off.png" />
     <EmbeddedResource Include="Embed\Logo\beta-letters.png" />
     <EmbeddedResource Include="Embed\Logo\beta-light.png" />
@@ -226,10 +211,7 @@
     <EmbeddedResource Include="Embed\Logo\beta-switch-off.png" />
     <EmbeddedResource Include="Embed\Logo\beta-switch.png" />
     <EmbeddedResource Include="Embed\Logo\beta-wires.png" />
-    <EmbeddedResource Include="Embed\Logo\logo-alpha.png" />
     <EmbeddedResource Include="Embed\Logo\logo-main.png" />
-    <EmbeddedResource Include="Embed\Logo\logo-nuleng-anim.png" />
-    <EmbeddedResource Include="Embed\Logo\Logo-NulEng.png" />
     <EmbeddedResource Include="Embed\moverlay.frag" />
     <EmbeddedResource Include="Embed\moverlay.vert" />
     <EmbeddedResource Include="Embed\icons8-cursor-40.png" />

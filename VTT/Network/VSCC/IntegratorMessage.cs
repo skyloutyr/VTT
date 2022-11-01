@@ -1,7 +1,6 @@
 ﻿namespace VTT.Network.VSCC
 {
     using Newtonsoft.Json.Linq;
-    using VTT.Network.Packet;
     using VTT.Render.Gui;
 
     public class IntegratorMessage : IIntegrator

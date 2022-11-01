@@ -8,7 +8,7 @@
         public Vector3 Start { get; set; }
         public Vector3 End { get; set; }
 
-        public Vector3 Center => this.Start + (this.End - this.Start) * 0.5f;
+        public Vector3 Center => this.Start + ((this.End - this.Start) * 0.5f);
 
         public Vector3 Size => this.End - this.Start;
         public Vector3[] Mesh => new Vector3[] {
@@ -39,7 +39,7 @@
 
         public AABox Scale(float by) => this.Scale(new Vector3(by));
         public AABox Scale(Vector3 by) => new AABox(this.Start * by, this.End * by);
-        public AABox Inflate(Vector3 by) => new AABox(this.Start - by / 2, this.End + by / 2);
+        public AABox Inflate(Vector3 by) => new AABox(this.Start - (by / 2), this.End + (by / 2));
         public AABox Union(AABox other) => new AABox(
             MathF.Min(this.Start.X, other.Start.X),
             MathF.Min(this.Start.Y, other.Start.Y),
@@ -94,21 +94,18 @@
             float t6 = (this.End.Z - ray.Origin.Z) * dirFract.Z;
             float tmin = MathF.Max(MathF.Max(MathF.Min(t1, t2), MathF.Min(t3, t4)), MathF.Min(t5, t6));
             float tmax = MathF.Min(MathF.Min(MathF.Max(t1, t2), MathF.Max(t3, t4)), MathF.Max(t5, t6));
-            float t = 0;
             if (tmax < 0)
             {
-                t = tmax;
                 return null;
             }
 
             // if tmin > tmax, ray doesn't intersect AABB
             if (tmin > tmax)
             {
-                t = tmax;
                 return null;
             }
 
-            t = tmin;
+            float t = tmin;
             return ray.Origin + (ray.Direction * t);
         }
 
@@ -134,5 +131,9 @@
         public static AABox operator +(AABox self, Vector3 by) => self.Offset(by);
 
         public static AABox operator -(AABox self, Vector3 by) => self.Offset(-by);
+
+        public static bool operator ==(AABox left, AABox right) => left.Equals(right);
+
+        public static bool operator !=(AABox left, AABox right) => !(left == right);
     }
 }

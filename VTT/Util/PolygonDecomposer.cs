@@ -56,8 +56,6 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsRightOn(Vector2 a, Vector2 b, Vector2 c) => TriangleArea(a, b, c) <= 0;
 
-        private static Vector2 tmpPoint1;
-        private static Vector2 tmpPoint2;
         private static bool Collinear(Vector2 a, Vector2 b, Vector2 c, float thresholdAngle)
         {
             if (FloatEquals(thresholdAngle, 0, float.Epsilon))
@@ -66,8 +64,8 @@
             }
             else
             {
-                Vector2 ab = tmpPoint1 = new Vector2(b.X - a.X, b.Y - a.Y);
-                Vector2 bc = tmpPoint2 = new Vector2(c.X - b.X, c.Y - b.Y);
+                Vector2 ab = new Vector2(b.X - a.X, b.Y - a.Y);
+                Vector2 bc = new Vector2(c.X - b.X, c.Y - b.Y);
                 float dot = (ab.X * bc.X) + (ab.Y * bc.Y);
                 float magA = MathF.Sqrt((ab.X * ab.X) + (ab.Y * ab.Y));
                 float magB = MathF.Sqrt((bc.X * bc.X) + (bc.Y * bc.Y));
@@ -107,8 +105,8 @@
 
         private static bool IsReflex(Vector2[] polygon, int i) => IsRight(PolygonAt(polygon, i - 1), PolygonAt(polygon, i), PolygonAt(polygon, i + 1));
 
-        private static Vector2[] tmpLine1 = new Vector2[2];
-        private static Vector2[] tmpLine2 = new Vector2[2];
+        private static readonly Vector2[] tmpLine1 = new Vector2[2];
+        private static readonly Vector2[] tmpLine2 = new Vector2[2];
         private static bool CanSee(Vector2[] polygon, int a, int b)
         {
             Vector2 p;
@@ -165,7 +163,7 @@
             return true;
         }
 
-        private static List<Vector2> p = new List<Vector2>();
+        private static readonly List<Vector2> p = new List<Vector2>();
         private static Vector2[] CopyPolygon(Vector2[] polygon, int i, int j)
         {
             p.Clear();
@@ -235,18 +233,11 @@
 
         public static Vector2[][] Decompose(Vector2[] polygon)
         {
-            var edges = GetCutEdges(polygon);
-            if (edges.Count > 0)
-            {
-                return Slice(polygon, edges.ToArray());
-            }
-            else
-            {
-                return new Vector2[][] { polygon };
-            }
+            List<Vector2[]> edges = GetCutEdges(polygon);
+            return edges.Count > 0 ? Slice(polygon, edges.ToArray()) : (new Vector2[][] { polygon });
         }
 
-        private static int PolygonIndexOf(Vector2[] polygon, Vector2 point) => Array.FindIndex(polygon, v => Vector2.Equals(v, point));
+        private static int PolygonIndexOf(Vector2[] polygon, Vector2 point) => Array.FindIndex(polygon, v => Equals(v, point));
 
         private static Vector2[][] Slice(Vector2[] polygon, Vector2[][] cutEdges)
         {
@@ -257,8 +248,10 @@
 
             if (cutEdges.Length > 1)
             {
-                List<Vector2[]> polys = new List<Vector2[]>();
-                polys.Add(polygon);
+                List<Vector2[]> polys = new List<Vector2[]>
+                {
+                    polygon
+                };
 
                 for (int i = 0; i < cutEdges.Length; i++)
                 {
@@ -309,7 +302,7 @@
             // Check the segment between the last and the first point to all others
             for (i = 1; i < polygon.Length - 2; i++)
             {
-                if (LineSegmentsIntersect(polygon[0], polygon[polygon.Length - 1], polygon[i], polygon[i + 1]))
+                if (LineSegmentsIntersect(polygon[0], polygon[^1], polygon[i], polygon[i + 1]))
                 {
                     return false;
                 }
@@ -330,30 +323,11 @@
             return !FloatEquals(det, 0, delta) ? new Vector2(((b2 * c1) - (b1 * c2)) / det, ((a1 * c2) - (a2 * c1)) / det) : Vector2.Zero;
         }
 
-        private static void AppendRange(List<Vector2[]> where, List<Vector2[]> what, int from, int to)
-        {
-            for (int i = from; i < to; i++)
-            {
-                where.Add(what[i]);
-            }
-        }
-
         private static void AppendRange<T>(List<T> where, T[] what, int from, int to)
         {
             for (int i = from; i < to; i++)
             {
                 where.Add(what[i]);
-            }
-        }
-
-        private static void AppendRange(ref Vector2[][] where, List<Vector2[]> what, int from, int to)
-        {
-            int amt = to - from;
-            int d = where.Length;
-            Array.Resize(ref where, where.Length + amt);
-            for (int i = from; i < to; i++)
-            {
-                where[d++] = what[i];
             }
         }
 
@@ -366,8 +340,6 @@
             Vector2 upperInt = Vector2.Zero;
             Vector2 lowerInt = Vector2.Zero;
             Vector2 p = Vector2.Zero; // Points
-
-            float upperDist = 0, lowerDist = 0, d = 0, closestDist = 0;
             int upperIndex = 0, lowerIndex = 0, closestIndex = 0; // Integers
             List<Vector2> lowerPoly = new List<Vector2>();
             List<Vector2> upperPoly = new List<Vector2>(); // polygons
@@ -391,7 +363,9 @@
                 if (IsReflex(poly, i))
                 {
                     reflexVertices.Add(poly[i]);
-                    upperDist = lowerDist = float.MaxValue;
+                    float lowerDist;
+                    float upperDist = lowerDist = float.MaxValue;
+                    float d;
                     for (var j = 0; j < polygon.Length; ++j)
                     {
                         if (IsLeft(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, j)) && IsRightOn(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, j - 1)))
@@ -471,7 +445,7 @@
                             upperIndex += polygon.Length;
                         }
 
-                        closestDist = float.MaxValue;
+                        float closestDist = float.MaxValue;
 
                         if (upperIndex < lowerIndex)
                         {

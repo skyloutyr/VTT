@@ -1,7 +1,6 @@
 ﻿namespace VTT.GL
 {
     using OpenTK.Graphics.OpenGL;
-    using System;
     using System.Runtime.InteropServices;
 
     public class VertexArray
@@ -35,7 +34,7 @@
             for (int i = 0; i < type.Rows; ++i)
             {
                 GL.EnableVertexAttribArray(this._currentLayoutIndex);
-                if (type.Type == VertexAttribPointerType.Int || type.Type == VertexAttribPointerType.UnsignedInt || type.Type == VertexAttribPointerType.Byte || type.Type == VertexAttribPointerType.Short || type.Type == VertexAttribPointerType.UnsignedShort)
+                if (type.Type is VertexAttribPointerType.Int or VertexAttribPointerType.UnsignedInt or VertexAttribPointerType.Byte or VertexAttribPointerType.Short or VertexAttribPointerType.UnsignedShort)
                 {
                     VertexAttribIntegerType vait = (VertexAttribIntegerType)type.Type;
                     GL.VertexAttribIPointer(this._currentLayoutIndex, type.Size, vait, this._stride, ref this._currentOffset);

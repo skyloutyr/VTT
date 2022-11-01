@@ -14,8 +14,6 @@
 
     public partial class GuiRenderer
     {
-
-
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
         {
             if (cMap != null && cMap.TurnTracker.Visible)
@@ -519,8 +517,8 @@
                                 }
                                 catch (Exception managedEx)
                                 {
-                                    Client.Instance.Logger.Log(VTT.Util.LogLevel.Fatal, "Could not handle unmanaged ImGui state - restart recommended!");
-                                    Client.Instance.Logger.Exception(VTT.Util.LogLevel.Fatal, managedEx);
+                                    Client.Instance.Logger.Log(LogLevel.Fatal, "Could not handle unmanaged ImGui state - restart recommended!");
+                                    Client.Instance.Logger.Exception(LogLevel.Fatal, managedEx);
                                 }
 
                                 ImGui.EndDragDropTarget();

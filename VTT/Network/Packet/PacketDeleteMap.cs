@@ -2,8 +2,6 @@
 {
     using System;
     using System.IO;
-    using VTT.Control;
-    using VTT.Util;
 
     public class PacketDeleteMap : PacketBase
     {
@@ -14,12 +12,12 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Got map deletion request");
+                server.Logger.Log(Util.LogLevel.Info, "Got map deletion request");
                 if (this.Sender.IsAdmin)
                 {
                     if (server.Settings.DefaultMapID.Equals(this.MapID))
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Error, "Can't delete a default map!");
+                        server.Logger.Log(Util.LogLevel.Error, "Can't delete a default map!");
                         return;
                     }
 
@@ -39,12 +37,12 @@
                         }
                     }
 
-                    server.Logger.Log(VTT.Util.LogLevel.Info, "Map deleted");
+                    server.Logger.Log(Util.LogLevel.Info, "Map deleted");
                     server.RemoveMap(this.MapID);
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "A client asked for map deletion without permissions!");
+                    server.Logger.Log(Util.LogLevel.Warn, "A client asked for map deletion without permissions!");
                 }
             }
         }

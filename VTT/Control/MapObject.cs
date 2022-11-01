@@ -253,10 +253,7 @@
             return ret;
         }
 
-        public bool CanEdit(Guid playerID)
-        {
-            return this.OwnerID.Equals(Guid.Empty) || playerID.Equals(this.OwnerID);
-        }
+        public bool CanEdit(Guid playerID) => this.OwnerID.Equals(Guid.Empty) || playerID.Equals(this.OwnerID);
 
         public void RecalculateModelMatrix()
         {

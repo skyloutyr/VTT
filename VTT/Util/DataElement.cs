@@ -520,7 +520,7 @@
             self.Set(name, e, overrideVals);
         }
 
-        public static void SetEnum<T>(this DataElement self, string name, T value, bool overrideVals = true) where T : struct, System.Enum => self.Set<int>(name, Convert.ToInt32(value), overrideVals);
+        public static void SetEnum<T>(this DataElement self, string name, T value, bool overrideVals = true) where T : struct, Enum => self.Set(name, Convert.ToInt32(value), overrideVals);
 
         public static Guid GetGuid(this DataElement self, string name, Guid defaultVal = default)
         {
@@ -598,10 +598,10 @@
             return defaultVal;
         }
 
-        public static T GetEnum<T>(this DataElement self, string name, T defaultVal = default) where T : struct, System.Enum
+        public static T GetEnum<T>(this DataElement self, string name, T defaultVal = default) where T : struct, Enum
         {
             int dVal = Convert.ToInt32(defaultVal);
-            int i = self.Get<int>(name, dVal);
+            int i = self.Get(name, dVal);
             return (T)Enum.ToObject(typeof(T), i);
         }
     }

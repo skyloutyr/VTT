@@ -12,7 +12,7 @@
         private long packet_read = 0; // READ
         private int packet_header_read = 0;
         private byte[] packet_header; // SIZE HEADER
-        private byte[] packet = new byte[0];        // PACKET
+        private byte[] packet = Array.Empty<byte>();        // PACKET
         private bool hasPacket;
 
         public IEnumerable<PacketBase> Receive(byte[] buffer, long offset, long size)

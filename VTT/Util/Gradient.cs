@@ -200,7 +200,7 @@
             int lastStart = (nextStart + 1) % collection.Count;
             GradientPoint<float> point = collection[closestStart];
             GradientPoint<float> next = collection[nextStart];
-            float aRel = System.Math.Abs((a - point.Key) / (next.Key - point.Key));
+            float aRel = Math.Abs((a - point.Key) / (next.Key - point.Key));
             return CubicInterpolation1(new float[] { collection[preStart].Color, point.Color, next.Color, collection[lastStart].Color }, 1, 2, aRel);
         }
 
@@ -230,7 +230,7 @@
             int lastStart = (nextStart + 1) % collection.Count;
             GradientPoint<Vector2> point = collection[closestStart];
             GradientPoint<Vector2> next = collection[nextStart];
-            float aRel = System.Math.Abs((a - point.Key) / (next.Key - point.Key));
+            float aRel = Math.Abs((a - point.Key) / (next.Key - point.Key));
             return CubicInterpolation2(new Vector2[] { collection[preStart].Color, point.Color, next.Color, collection[lastStart].Color }, 1, 2, aRel);
         }
 
@@ -260,7 +260,7 @@
             int lastStart = (nextStart + 1) % collection.Count;
             GradientPoint<Vector3> point = collection[closestStart];
             GradientPoint<Vector3> next = collection[nextStart];
-            float aRel = System.Math.Abs((a - point.Key) / (next.Key - point.Key));
+            float aRel = Math.Abs((a - point.Key) / (next.Key - point.Key));
             return CubicInterpolation3(new Vector3[] { collection[preStart].Color, point.Color, next.Color, collection[lastStart].Color }, 1, 2, aRel);
         }
 
@@ -290,7 +290,7 @@
             int lastStart = (nextStart + 1) % collection.Count;
             GradientPoint<Vector4> point = collection[closestStart];
             GradientPoint<Vector4> next = collection[nextStart];
-            float aRel = System.Math.Abs((a - point.Key) / (next.Key - point.Key));
+            float aRel = Math.Abs((a - point.Key) / (next.Key - point.Key));
             return CubicInterpolation4(new Vector4[] { collection[preStart].Color, point.Color, next.Color, collection[lastStart].Color }, 1, 2, aRel);
         }
     }

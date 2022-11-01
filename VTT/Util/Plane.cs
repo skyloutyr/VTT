@@ -32,12 +32,7 @@
             }
 
             float t = Vector3.Dot(planeCenter - r.Origin, Normal) / denom;
-            if (t <= float.Epsilon)
-            {
-                return null;
-            }
-
-            return r.Origin + t * r.Direction;
+            return t <= float.Epsilon ? null : r.Origin + (t * r.Direction);
         }
     }
 }

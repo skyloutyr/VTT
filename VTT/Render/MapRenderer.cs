@@ -1,16 +1,10 @@
 ﻿namespace VTT.Render
 {
-    using NetCoreServer;
-    using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using OpenTK.Windowing.Common;
     using OpenTK.Windowing.GraphicsLibraryFramework;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
-    using System.Collections.Generic;
     using System.Linq;
-    using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -128,15 +122,15 @@
             if (this.IsOrtho)
             {
                 float w = Client.Instance.Frontend.Width;
-                float mX = (Client.Instance.Frontend.MouseX - w * 0.5f) / (w * 0.5f);
+                float mX = (Client.Instance.Frontend.MouseX - (w * 0.5f)) / (w * 0.5f);
                 float h = Client.Instance.Frontend.Height;
-                float mY = -(Client.Instance.Frontend.MouseY - h * 0.5f) / (h * 0.5f);
+                float mY = -(Client.Instance.Frontend.MouseY - (h * 0.5f)) / (h * 0.5f);
                 float zoom = this.camera2dzoom;
                 Vector3 right = this.ClientCamera.Right;
                 Vector3 up = this.ClientCamera.Up;
-                float rX = mX * (w / 2) * zoom + this.ClientCamera.Position.X;
-                float rY = mY * (h / 2) * zoom + this.ClientCamera.Position.Y;
-                Vector3 pos = right * rX + up * rY + Vector3.UnitZ * (Client.Instance.CurrentMap?.Camera2DHeight ?? 5);
+                float rX = (mX * (w / 2) * zoom) + this.ClientCamera.Position.X;
+                float rY = (mY * (h / 2) * zoom) + this.ClientCamera.Position.Y;
+                Vector3 pos = (right * rX) + (up * rY) + (Vector3.UnitZ * (Client.Instance.CurrentMap?.Camera2DHeight ?? 5));
                 Vector3 dir = new Vector3(0.01f, 0.01f, -1).Normalized();
                 return new Ray(pos, dir);
             }
@@ -144,17 +138,7 @@
             return this.ClientCamera.RayFromCursor();
         }
 
-        public bool IsAABoxInFrustrum(AABox box, Vector3 offset)
-        {
-            if (this.IsOrtho)
-            {
-                return true;
-            }
-            else
-            {
-                return this.ClientCamera.IsAABoxInFrustrum(box, offset);
-            }
-        }
+        public bool IsAABoxInFrustrum(AABox box, Vector3 offset) => this.IsOrtho || this.ClientCamera.IsAABoxInFrustrum(box, offset);
 
         public void HandleKeys(KeyboardKeyEventArgs args)
         {
@@ -183,89 +167,106 @@
                 bool z = dotZ > dotX && dotZ > dotY;
                 bool y = dotY > dotX;
 
-                if (args.Key == Keys.Up || args.Key == Keys.KeyPad8)
+                switch (args.Key)
                 {
-                    if (!arrows)
+                    case Keys.Left or Keys.KeyPad8:
                     {
-                        gridMoveVec += new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f);
-                    }
-                    else
-                    {
-                        gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
-                    }
-                }
+                        if (!arrows)
+                        {
+                            gridMoveVec += new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f);
+                        }
+                        else
+                        {
+                            gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                        }
 
-                if (args.Key == Keys.Down || args.Key == Keys.KeyPad2)
-                {
-                    if (!arrows)
-                    {
-                        gridMoveVec -= new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f);
+                        break;
                     }
-                    else
-                    {
-                        gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
-                    }
-                }
 
-                if (args.Key == Keys.Left || args.Key == Keys.KeyPad4)
-                {
-                    gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
-                }
+                    case Keys.Down or Keys.KeyPad2:
+                    {
+                        if (!arrows)
+                        {
+                            gridMoveVec -= new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f);
+                        }
+                        else
+                        {
+                            gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                        }
 
-                if (args.Key == Keys.Right || args.Key == Keys.KeyPad6)
-                {
-                    gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
-                }
+                        break;
+                    }
 
-                if (args.Key == Keys.PageUp || args.Key == Keys.KeyPad9)
-                {
-                    if (!arrows && !this.IsOrtho)
+                    case Keys.Left or Keys.KeyPad4:
                     {
-                        gridMoveVec += Vector3.UnitZ * cmap.GridSize;
-                    }
-                    else
-                    {
-                        gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
-                        gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
-                    }
-                }
-
-                if (args.Key == Keys.PageDown || args.Key == Keys.KeyPad3)
-                {
-                    if (!arrows && !this.IsOrtho)
-                    {
-                        gridMoveVec -= Vector3.UnitZ * cmap.GridSize;
-                    }
-                    else
-                    {
-                        gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
-                        gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
-                    }
-                }
-
-                if (args.Key == Keys.Home || args.Key == Keys.KeyPad7)
-                {
-                    if (!arrows)
-                    {
-                        rot = -MathF.PI / 2f;
-                    }
-                    else
-                    {
-                        gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
                         gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        break;
                     }
-                }
 
-                if (args.Key == Keys.End || args.Key == Keys.KeyPad1)
-                {
-                    if (!arrows)
+                    case Keys.Right or Keys.KeyPad6:
                     {
-                        rot = MathF.PI / 2f;
+                        gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        break;
                     }
-                    else
+
+                    case Keys.PageUp or Keys.KeyPad9:
                     {
-                        gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
-                        gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        if (!arrows && !this.IsOrtho)
+                        {
+                            gridMoveVec += Vector3.UnitZ * cmap.GridSize;
+                        }
+                        else
+                        {
+                            gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                            gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        }
+
+                        break;
+                    }
+
+                    case Keys.PageDown or Keys.KeyPad3:
+                    {
+                        if (!arrows && !this.IsOrtho)
+                        {
+                            gridMoveVec -= Vector3.UnitZ * cmap.GridSize;
+                        }
+                        else
+                        {
+                            gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                            gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        }
+
+                        break;
+                    }
+
+                    case Keys.Home or Keys.KeyPad7:
+                    {
+                        if (!arrows)
+                        {
+                            rot = -MathF.PI / 2f;
+                        }
+                        else
+                        {
+                            gridMoveVec += z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                            gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        }
+
+                        break;
+                    }
+
+                    case Keys.End or Keys.KeyPad1:
+                    {
+                        if (!arrows)
+                        {
+                            rot = MathF.PI / 2f;
+                        }
+                        else
+                        {
+                            gridMoveVec -= z ? new Vector3(gridForward2D.X, gridForward2D.Y, 0.0f) : Vector3.UnitZ;
+                            gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
+                        }
+
+                        break;
                     }
                 }
 

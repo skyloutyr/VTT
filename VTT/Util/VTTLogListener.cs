@@ -1,6 +1,5 @@
 ﻿namespace VTT.Util
 {
-    using VTT.Util;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -18,46 +17,16 @@
         {
         }
 
-        public System.Numerics.Vector4 GetColor(LogLevel level)
-        {
-            switch (level)
-            {
-                case LogLevel.Off:
-                {
-                    return Color.Black.Vec4().SystemVector();
-                }
+        private static readonly System.Numerics.Vector4[] colors = {
+            Color.Black.Vec4().SystemVector(),
+            Color.DarkGray.Vec4().SystemVector(),
+            Color.White.Vec4().SystemVector(),
+            Color.Yellow.Vec4().SystemVector(),
+            Color.Red.Vec4().SystemVector(),
+            Color.DarkRed.Vec4().SystemVector()
+        };
 
-                case LogLevel.Debug:
-                {
-                    return Color.DarkGray.Vec4().SystemVector();
-                }
-
-                case LogLevel.Info:
-                {
-                    return Color.White.Vec4().SystemVector();
-                }
-
-                case LogLevel.Warn:
-                {
-                    return Color.Yellow.Vec4().SystemVector();
-                }
-
-                case LogLevel.Error:
-                {
-                    return Color.Red.Vec4().SystemVector();
-                }
-
-                case LogLevel.Fatal:
-                {
-                    return Color.DarkRed.Vec4().SystemVector();
-                }
-
-                default:
-                {
-                    return Color.Black.Vec4().SystemVector();
-                }
-            }
-        }
+        public System.Numerics.Vector4 GetColor(LogLevel level) => Enum.IsDefined(level) ? colors[(int)level] : colors[2];
 
         public void Write(LogLevel level, string text)
         {

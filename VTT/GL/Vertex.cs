@@ -88,7 +88,7 @@
             this.Elements = elements;
         }
 
-        private VertexData[] _constrStoredAdaptorArray;
+        private readonly VertexData[] _constrStoredAdaptorArray;
         public VertexFormat(VertexData[] orderedData, params VertexFormatElement[] elements)
         {
             this._constrStoredAdaptorArray = orderedData;
@@ -148,10 +148,7 @@
             }
         }
 
-        public void Append(float[] array, ref int index, Vertex v)
-        {
-            this.AppendAdaptor(this, v, array, ref index);
-        }
+        public void Append(float[] array, ref int index, Vertex v) => this.AppendAdaptor(this, v, array, ref index);
 
         public float[] ConvertElements(params object[] data)
         {
@@ -249,7 +246,14 @@
         IEnumerator IEnumerable.GetEnumerator() => this.vertexData.GetEnumerator();
 
         public virtual void Add(VertexData name, object value) => this.vertexData.Add(name, value);
-        public virtual void ClearData(params VertexData[] data) => data.Select(s => this.vertexData.Remove(s)).Sum(b => 0);
+        public virtual void ClearData(params VertexData[] data)
+        {
+            foreach (VertexData d in data)
+            {
+                this.vertexData.Remove(d);
+            }
+        }
+
         public virtual void Clear() => this.vertexData.Clear();
     }
 
@@ -258,10 +262,7 @@
         const int VertexDataLength = 8;
         private readonly object[] _backingArray;
 
-        public ArrayVertex() : base()
-        {
-            this._backingArray = new object[VertexDataLength];
-        }
+        public ArrayVertex() : base() => this._backingArray = new object[VertexDataLength];
 
         public ArrayVertex(IEnumerable<KeyValuePair<VertexData, object>> data) : this()
         {

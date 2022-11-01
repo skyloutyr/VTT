@@ -89,9 +89,9 @@
 
         public AssetRef FindRefForAsset(Asset asset) => this.Refs[asset.ID];
 
-        public AssetDirectory FindDirForRef(Guid refID) => this._FindDirForRefRecursive(this.Root, refID);
+        public AssetDirectory FindDirForRef(Guid refID) => this.InternalFindDirForRefRecursive(this.Root, refID);
 
-        private AssetDirectory _FindDirForRefRecursive(AssetDirectory self, Guid refID)
+        private AssetDirectory InternalFindDirForRefRecursive(AssetDirectory self, Guid refID)
         {
             foreach (AssetRef r in self.Refs)
             {
@@ -103,7 +103,7 @@
 
             foreach (AssetDirectory d in self.Directories)
             {
-                AssetDirectory r = this._FindDirForRefRecursive(d, refID);
+                AssetDirectory r = this.InternalFindDirForRefRecursive(d, refID);
                 if (r != null)
                 {
                     return r;
@@ -209,10 +209,9 @@
         public long LastPreviewRequestTime { get; set; }
         public int GlMaxTextureSize { get; set; }
 
-        private object _lock = new object();
-        private object _lock2 = new object();
+        private readonly object _lock = new object();
+        private readonly object _lock2 = new object();
 
-        private static HttpClient pooledClient = new HttpClient(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(2) });
         public AssetStatus GetWebImage(string url, out AssetPreview ap)
         {
             if (this.Container.WebPictures.ContainsKey(url))
@@ -248,7 +247,7 @@
                                 int wS = 0;
                                 int wM = 0;
                                 int hM = 0;
-                                foreach (ImageFrame<Rgba32> frame in ifc)
+                                foreach (ImageFrame<Rgba32> frame in ifc.Cast<ImageFrame<Rgba32>>())
                                 {
                                     if (wS + frame.Width > this.GlMaxTextureSize)
                                     {
@@ -501,13 +500,13 @@
                         this.LastPreviewRequestTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                         Guid id = this.PreviewRequestQueue.Dequeue();
                         this.ErroredPreviews[id] = AssetStatus.Await;
-                        this._RequestAssetPreview(id);
+                        this.InternalRequestAssetPreview(id);
                     }
                 }
             }
         }
 
-        private void _RequestAssetPreview(Guid guid)
+        private void InternalRequestAssetPreview(Guid guid)
         {
             // TODO request asset preview
             PacketAssetPreview pap = new PacketAssetPreview() { ID = guid, Session = Client.Instance.SessionID, IsServer = false };
@@ -526,13 +525,13 @@
                         Guid id = this.RequestQueue.Dequeue();
                         this.LastRequestTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                         this.ErroredAssets[id] = AssetStatus.Await;
-                        this._RequestAsset(id, this.RequestTypeQueue.Dequeue());
+                        this.InternalRequestAsset(id, this.RequestTypeQueue.Dequeue());
                     }
                 }
             }
         }
 
-        private void _RequestAsset(Guid assetID, AssetType aType)
+        private void InternalRequestAsset(Guid assetID, AssetType aType)
         {
             PacketAssetRequest par = new PacketAssetRequest() { AssetID = assetID, AssetType = aType, IsServer = false };
             par.Send(Client.Instance.NetClient);

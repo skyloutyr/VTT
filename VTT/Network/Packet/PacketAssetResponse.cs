@@ -17,7 +17,7 @@
         {
             if (!isServer)
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got asset response for " + this.AssetID + ", " + this.ResponseType);
+                client.Logger.Log(Util.LogLevel.Debug, "Got asset response for " + this.AssetID + ", " + this.ResponseType);
                 ClientAssetLibrary cal = client.AssetManager.ClientAssetLibrary;
                 if (this.ResponseType == AssetResponseType.Ok)
                 {

@@ -2,14 +2,11 @@
 {
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
-    using System;
     using System.Collections.Generic;
-    using System.Text;
 
     public readonly struct UniformManager
     {
-        private static UniformWrapper invalid = new UniformWrapper(-1);
-
+        private static readonly UniformWrapper invalid = new UniformWrapper(-1);
         private readonly Dictionary<string, UniformWrapper> _name2idMappings = new Dictionary<string, UniformWrapper>();
 
         public UniformManager()
@@ -22,8 +19,7 @@
             GL.GetProgram(pId, GetProgramParameterName.ActiveUniforms, out int count);
             for (int i = 0; i < count; ++i)
             {
-                string nameStr = "";
-                GL.GetActiveUniform(pId, i, 128, out int length, out int size, out ActiveUniformType type, out nameStr);
+                GL.GetActiveUniform(pId, i, 128, out _, out _, out _, out string nameStr);
                 if (nameStr.IndexOf('[') != -1)
                 {
                     int c = 0;
@@ -49,10 +45,7 @@
             }
         }
 
-        public UniformWrapper GetUniform(string name)
-        {
-            return this._name2idMappings.GetValueOrDefault(name, invalid);
-        }
+        public UniformWrapper GetUniform(string name) => this._name2idMappings.GetValueOrDefault(name, invalid);
 
         public Dictionary<string, UniformWrapper> Name2IDMappings => this._name2idMappings;
     }

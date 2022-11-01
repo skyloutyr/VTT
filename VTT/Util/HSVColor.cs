@@ -63,38 +63,15 @@
             p = self.Value * (1 - self.Saturation);
             q = self.Value * (1 - (self.Saturation * ff));
             t = self.Value * (1 - (self.Saturation * (1 - ff)));
-            switch (i)
+            return i switch
             {
-                case 0:
-                {
-                    return Extensions.FromArgb(1F, self.Value, t, p);
-                }
-
-                case 1:
-                {
-                    return Extensions.FromArgb(1F, q, self.Value, p);
-                }
-
-                case 2:
-                {
-                    return Extensions.FromArgb(1F, p, self.Value, t);
-                }
-
-                case 3:
-                {
-                    return Extensions.FromArgb(1F, p, q, self.Value);
-                }
-
-                case 4:
-                {
-                    return Extensions.FromArgb(1F, t, p, self.Value);
-                }
-
-                default:
-                {
-                    return Extensions.FromArgb(1F, self.Value, p, q);
-                }
-            }
+                0 => Extensions.FromArgb(1F, self.Value, t, p),
+                1 => Extensions.FromArgb(1F, q, self.Value, p),
+                2 => Extensions.FromArgb(1F, p, self.Value, t),
+                3 => Extensions.FromArgb(1F, p, q, self.Value),
+                4 => Extensions.FromArgb(1F, t, p, self.Value),
+                _ => Extensions.FromArgb(1F, self.Value, p, q)
+            };
         }
     }
 }

@@ -400,3 +400,5 @@ credits.msspecial=Microsoft за их прекрасную доккумента�
 credits.khronos=khronos group за OpenGL и OpenGL registry
 credits.you=Вам, за использование VTT!
 credits.atlas=Статус эффекты от Lorc, Delapouite & contributors
+turntracker.unknown=Неизвестно (отсудствует)
+turntracker.hidden=???

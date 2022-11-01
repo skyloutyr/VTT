@@ -3,17 +3,10 @@
     using ImGuiNET;
     using Newtonsoft.Json.Linq;
     using OpenTK.Mathematics;
-    using OpenTK.Windowing.Common;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
     using System.Linq;
-    using System.Runtime.InteropServices;
     using VTT.Asset;
-    using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;

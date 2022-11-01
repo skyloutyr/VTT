@@ -11,7 +11,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Debug, "Got turn tracker sort request");
+                server.Logger.Log(Util.LogLevel.Debug, "Got turn tracker sort request");
                 if (this.Sender.IsAdmin)
                 {
                     Map m = server.Maps[this.Sender.ClientMapID];
@@ -25,7 +25,7 @@
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client asked for turn tracker sorting without permissions!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client asked for turn tracker sorting without permissions!");
                 }
             }
         }

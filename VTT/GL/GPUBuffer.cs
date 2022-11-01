@@ -2,11 +2,7 @@
 {
     using OpenTK.Graphics.OpenGL;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Threading.Tasks;
 
     public readonly struct GPUBuffer
     {
@@ -74,9 +70,6 @@
             GL.GetBufferSubData(this._target, (IntPtr)(offset * size), length * size, dat);
         }
 
-        public void Dispose()
-        {
-            GL.DeleteBuffer(this._glID);
-        }
+        public void Dispose() => GL.DeleteBuffer(this._glID);
     }
 }

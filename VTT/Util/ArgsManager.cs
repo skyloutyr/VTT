@@ -7,7 +7,7 @@
 
     public static class ArgsManager
     {
-        public static Dictionary<string, object> Args = new Dictionary<string, object>();
+        private static readonly Dictionary<string, object> args = new Dictionary<string, object>();
 
         public static void Parse(string[] args)
         {
@@ -22,9 +22,9 @@
 
         public static bool TryGetValue<T>(string key, out T value)
         {
-            if (Args.ContainsKey(key))
+            if (args.ContainsKey(key))
             {
-                object o = Args[key];
+                object o = args[key];
                 if (o.GetType() == typeof(T))
                 {
                     value = (T)o;
@@ -42,8 +42,7 @@
             {
                 case "-debug":
                 {
-                    bool b;
-                    if (!bool.TryParse(value, out b))
+                    if (!bool.TryParse(value, out bool b))
                     {
                         if (int.TryParse(value, out int i))
                         {
@@ -51,7 +50,7 @@
                         }
                     }
 
-                    Args["debug"] = b;
+                    args["debug"] = b;
                     break;
                 }
 
@@ -59,7 +58,7 @@
                 {
                     if (int.TryParse(value, out int i))
                     {
-                        Args["server"] = i;
+                        args["server"] = i;
                     }
 
                     break;
@@ -67,8 +66,7 @@
 
                 case "-quick":
                 {
-                    bool b;
-                    if (!bool.TryParse(value, out b))
+                    if (!bool.TryParse(value, out bool b))
                     {
                         if (int.TryParse(value, out int i))
                         {
@@ -76,7 +74,7 @@
                         }
                     }
 
-                    Args["quick"] = b;
+                    args["quick"] = b;
                     break;
                 }
 
@@ -84,7 +82,7 @@
                 {
                     if(IPEndPoint.TryParse(value, out IPEndPoint ep) && ep != null)
                     {
-                        Args["connect"] = ep;
+                        args["connect"] = ep;
                     }
 
                     break;
@@ -94,7 +92,7 @@
                 {
                     if (Enum.TryParse(value, out LogLevel level))
                     {
-                        Args["loglevel"] = level;
+                        args["loglevel"] = level;
                     }
 
                     break;
@@ -102,7 +100,7 @@
 
                 case "-gldebug":
                 {
-                    Args["gldebug"] = value;
+                    args["gldebug"] = value;
                     break;
                 }
 
@@ -149,11 +147,11 @@
                         }
 
                         num *= mul;
-                        Args["timeout"] = num;
+                        args["timeout"] = num;
                     }
                     catch
                     {
-                        Args["timeout"] = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
+                        args["timeout"] = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
                     }
 
                     break;
@@ -173,10 +171,7 @@
             this.Value = value;
         }
 
-        public static ArgsData<T> ToData<T>(BaseArgsData self)
-        {
-            return new ArgsData<T>(self.Key, (T)self.Value);
-        }
+        public static ArgsData<T> ToData<T>(BaseArgsData self) => new ArgsData<T>(self.Key, (T)self.Value);
     }
 
     public readonly struct ArgsData<T>

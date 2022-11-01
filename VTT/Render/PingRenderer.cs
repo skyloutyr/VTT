@@ -196,10 +196,6 @@
                     continue;
                 }
 
-                Vector3 world = p.Position.SystemVector();
-                Vector3 screen = cam.ToScreenspace(p.Position).SystemVector();
-                Vector2 screenxy = new Vector2(screen.X, screen.Y);
-
                 float scale = MathF.Max(0.00001f, (((p.DeathTime - now) % 2000) - 500) / 500f);
                 float a = MathF.Min(1, MathF.Abs(1.0f / scale));
                 shader["model"].Set(OpenTK.Mathematics.Matrix4.CreateScale(scale) * OpenTK.Mathematics.Matrix4.CreateTranslation(p.Position));

@@ -2,10 +2,17 @@
 {
     using OpenTK.Mathematics;
 
-    public class GlbLight
+    public readonly struct GlbLight
     {
-        public Vector4 Color { get; set; }
-        public float Intensity { get; set; }
-        public KhrLight.LightTypeEnum LightType { get; set; }
+        public Vector4 Color { get; }
+        public float Intensity { get; }
+        public KhrLight.LightTypeEnum LightType { get; }
+
+        public GlbLight(Vector4 color, float intensity, KhrLight.LightTypeEnum lightType)
+        {
+            this.Color = color;
+            this.Intensity = intensity;
+            this.LightType = lightType;
+        }
     }
 }

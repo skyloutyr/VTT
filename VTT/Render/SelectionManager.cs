@@ -419,7 +419,7 @@
                             continue;
                         }
 
-                        if (Client.Instance.IsAdmin || (mo.CanEdit(Client.Instance.ID) || Client.Instance.IsObserver))
+                        if (Client.Instance.IsAdmin || mo.CanEdit(Client.Instance.ID) || Client.Instance.IsObserver)
                         {
                             AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
                             BBBox box = new BBBox(cBB.Start, cBB.End, mo.Rotation);
@@ -485,7 +485,7 @@
             this._lastLmbY = (int)Client.Instance.Frontend.MouseY;
         }
 
-        private static List<Vector3> hits = new List<Vector3>();
+        private static readonly List<Vector3> hits = new List<Vector3>();
 
         private static unsafe Vector3? TorusIntersects(Ray r, Matrix4 torusTransform, AABox bounds)
         {

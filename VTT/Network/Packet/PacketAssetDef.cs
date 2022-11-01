@@ -18,11 +18,11 @@
         {
             if (isServer) // Client request (request for what?)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Error, "Client sent a PacketAssetDef, not allowed!");
+                server.Logger.Log(LogLevel.Error, "Client sent a PacketAssetDef, not allowed!");
             }
             else // Client update
             {
-                client.Logger.Log(VTT.Util.LogLevel.Info, "AssetDef packet accepted, action: " + this.ActionType);
+                client.Logger.Log(LogLevel.Info, "AssetDef packet accepted, action: " + this.ActionType);
                 switch (this.ActionType)
                 {
                     case AssetDefActionType.Initialize:

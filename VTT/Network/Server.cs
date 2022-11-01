@@ -297,7 +297,7 @@
 
         public Guid GetAnyAdmin()
         {
-            if (!Guid.Equals(Guid.Empty, this.LocalAdminID))
+            if (!Equals(Guid.Empty, this.LocalAdminID))
             {
                 return this.LocalAdminID;
             }
@@ -620,7 +620,7 @@
             }
 
             bool aOld = this.IsAdmin;
-            this.IsAdmin = Guid.Equals(this.ID, Network.Server.Instance.LocalAdminID);
+            this.IsAdmin = Equals(this.ID, Network.Server.Instance.LocalAdminID);
             if (this.IsAdmin != aOld)
             {
                 this.SaveClientData();
@@ -658,7 +658,7 @@
             }
             catch
             {
-                Network.Server.Instance.Logger.Log(LogLevel.Warn, "Server settings don't exist, creating defaults");
+                Server.Instance.Logger.Log(LogLevel.Warn, "Server settings don't exist, creating defaults");
             }
 
             ServerSettings ret = new ServerSettings()
@@ -672,7 +672,7 @@
 
         public void Save()
         {
-            Network.Server.Instance.Logger.Log(LogLevel.Info, "Saved server settings");
+            Server.Instance.Logger.Log(LogLevel.Info, "Saved server settings");
             string expectedLocation = Path.Combine(IOVTT.ServerDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
         }

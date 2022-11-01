@@ -90,15 +90,7 @@
             return new OpenTK.Mathematics.Color4(v4.X, v4.Y, v4.Z, v4.W);
         }
 
-        public static string Capitalize(this string self)
-        {
-            if (string.IsNullOrEmpty(self))
-            {
-                return self;
-            }
-
-            return char.ToUpper(self[0]) + self[1..];
-        }
+        public static string Capitalize(this string self) => string.IsNullOrEmpty(self) ? self : char.ToUpper(self[0]) + self[1..];
 
         public static string CapitalizeWords(this string self)
         {
@@ -129,9 +121,9 @@
             }
 
             float a = 1.0f;
-            float r = 0;
-            float g = 0;
-            float b = 0;
+            float r;
+            float g;
+            float b;
             if (hex.Length == 8)
             {
                 a = byte.Parse(hex[0..2], System.Globalization.NumberStyles.HexNumber) / 255f;
@@ -164,46 +156,25 @@
         public static void Write(this BinaryWriter writer, Guid id) => writer.Write(id.ToByteArray());
         public static Color ReadColor(this BinaryReader reader) => FromArgb(reader.ReadUInt32());
         public static void Write(this BinaryWriter writer, Color c) => writer.Write(c.Argb());
-        public static T ReadEnumSmall<T>(this BinaryReader reader) where T : struct, System.Enum => (T)Enum.ToObject(typeof(T), reader.ReadByte());
-        public static T ReadEnum<T>(this BinaryReader reader) where T : struct, System.Enum => (T)Enum.ToObject(typeof(T), reader.ReadInt32());
-        public static void Write<T>(this BinaryWriter writer, T val) where T : struct, System.Enum => writer.Write(Convert.ToInt32(val));
-        public static void WriteEnumSmall<T>(this BinaryWriter writer, T val) where T : struct, System.Enum => writer.Write(Convert.ToByte(val));
+        public static T ReadEnumSmall<T>(this BinaryReader reader) where T : struct, Enum => (T)Enum.ToObject(typeof(T), reader.ReadByte());
+        public static T ReadEnum<T>(this BinaryReader reader) where T : struct, Enum => (T)Enum.ToObject(typeof(T), reader.ReadInt32());
+        public static void Write<T>(this BinaryWriter writer, T val) where T : struct, Enum => writer.Write(Convert.ToInt32(val));
+        public static void WriteEnumSmall<T>(this BinaryWriter writer, T val) where T : struct, Enum => writer.Write(Convert.ToByte(val));
 
-        public static void Write(this BinaryWriter bw, OpenTK.Mathematics.Vector2 vec)
+        public static void Write(this BinaryWriter bw, TKVec2 vec)
         {
             bw.Write(vec.X);
             bw.Write(vec.Y);
         }
 
-        public static void Write(this BinaryWriter bw, OpenTK.Mathematics.Vector3 vec)
-        {
-            bw.Write(vec.X);
-            bw.Write(vec.Y);
-            bw.Write(vec.Z);
-        }
-
-        public static void Write(this BinaryWriter bw, OpenTK.Mathematics.Vector4 vec)
-        {
-            bw.Write(vec.X);
-            bw.Write(vec.Y);
-            bw.Write(vec.Z);
-            bw.Write(vec.W);
-        }
-
-        public static void Write(this BinaryWriter bw, System.Numerics.Vector2 vec)
-        {
-            bw.Write(vec.X);
-            bw.Write(vec.Y);
-        }
-
-        public static void Write(this BinaryWriter bw, System.Numerics.Vector3 vec)
+        public static void Write(this BinaryWriter bw, TKVec3 vec)
         {
             bw.Write(vec.X);
             bw.Write(vec.Y);
             bw.Write(vec.Z);
         }
 
-        public static void Write(this BinaryWriter bw, System.Numerics.Vector4 vec)
+        public static void Write(this BinaryWriter bw, TKVec4 vec)
         {
             bw.Write(vec.X);
             bw.Write(vec.Y);
@@ -211,11 +182,32 @@
             bw.Write(vec.W);
         }
 
-        public static OpenTK.Mathematics.Vector2 ReadGlVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
-        public static OpenTK.Mathematics.Vector3 ReadGlVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static OpenTK.Mathematics.Vector4 ReadGlVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static System.Numerics.Vector2 ReadSysVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
-        public static System.Numerics.Vector3 ReadSysVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static System.Numerics.Vector4 ReadSysVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static void Write(this BinaryWriter bw, SVec2 vec)
+        {
+            bw.Write(vec.X);
+            bw.Write(vec.Y);
+        }
+
+        public static void Write(this BinaryWriter bw, SVec3 vec)
+        {
+            bw.Write(vec.X);
+            bw.Write(vec.Y);
+            bw.Write(vec.Z);
+        }
+
+        public static void Write(this BinaryWriter bw, SVec4 vec)
+        {
+            bw.Write(vec.X);
+            bw.Write(vec.Y);
+            bw.Write(vec.Z);
+            bw.Write(vec.W);
+        }
+
+        public static TKVec2 ReadGlVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
+        public static TKVec3 ReadGlVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static TKVec4 ReadGlVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static SVec2 ReadSysVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
+        public static SVec3 ReadSysVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static SVec4 ReadSysVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
     }
 }

@@ -2,7 +2,6 @@
 {
     using Newtonsoft.Json.Linq;
     using System;
-    using VTT.Network.Packet;
     using VTT.Render.Gui;
 
     public class IntegratorRoll : IIntegrator

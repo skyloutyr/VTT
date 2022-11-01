@@ -1,13 +1,7 @@
 ﻿namespace VTT.Network.Packet
 {
-    using NCalc;
-    using SixLabors.ImageSharp;
     using System;
-    using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
-    using System.Security.Cryptography;
-    using System.Text;
     using VTT.Control;
     using VTT.Util;
 

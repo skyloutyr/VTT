@@ -19,15 +19,7 @@
 
     public class MainMenuRenderer
     {
-        public Texture AlphaHardhat { get; set; }
-        public Texture AlphaLetters { get; set; }
-        public Texture AlphaMascot { get; set; }
-        public Texture AlphaSparks { get; set; }
         public Texture LogoMain { get; set; }
-        public Texture LogoNulEng { get; set; }
-        public Texture LogoAlpha { get; set; }
-        public Texture AlphaHardhatBroken { get; set; }
-        public Texture AlphaThunk { get; set; }
 
         public Texture BetaLetters { get; set; }
         public Texture BetaLettersOff { get; set; }
@@ -46,15 +38,7 @@
 
         public void Create()
         {
-            this.AlphaHardhat = OpenGLUtil.LoadUIImage("Logo.alpha-hardhat");
-            this.AlphaLetters = OpenGLUtil.LoadUIImage("Logo.alpha-letters");
-            this.AlphaMascot = OpenGLUtil.LoadUIImage("Logo.alpha-mascot");
-            this.AlphaSparks = OpenGLUtil.LoadUIImage("Logo.alpha-sparks");
             this.LogoMain = OpenGLUtil.LoadUIImage("Logo.logo-main");
-            this.LogoNulEng = OpenGLUtil.LoadUIImage("Logo.logo-nuleng-anim");
-            this.LogoAlpha = OpenGLUtil.LoadUIImage("Logo.logo-alpha");
-            this.AlphaHardhatBroken = OpenGLUtil.LoadUIImage("Logo.alpha-hardhat-broken");
-            this.AlphaThunk = OpenGLUtil.LoadUIImage("Logo.alpha-thunk");
 
             this.BetaLetters = OpenGLUtil.LoadUIImage("Logo.beta-letters");
             this.BetaLettersOff = OpenGLUtil.LoadUIImage("Logo.beta-letters-off");
@@ -110,38 +94,6 @@
 
                 #endregion
 
-                #region Alpha
-                /*
-                ImGui.SetCursorPos(new System.Numerics.Vector2((width / 2) - 320, 0));
-                ImGui.Image(this.LogoAlpha, new System.Numerics.Vector2(640, 240));
-
-                if (!this._hardhatBroken)
-                {
-                    ImGui.SetCursorPos(new System.Numerics.Vector2((width / 2) - 320 + 354, 87));
-                    ImGui.Image(this.AlphaHardhat, new System.Numerics.Vector2(144, 144));
-                }
-
-                float vMod = this._hardhatBroken ? 0.66666666f : this._mascotThunk % 90 < 20 ? 0.33333333f : 0;
-                vStart = 0 + vMod;
-                vEnd = 0.33333333f + vMod;
-
-                ImGui.SetCursorPos(new System.Numerics.Vector2((width / 2) - 320 + 490, 175));
-                ImGui.Image(this.AlphaMascot, new System.Numerics.Vector2(49, 64), new System.Numerics.Vector2(0, vStart), new System.Numerics.Vector2(1, vEnd));
-
-                this._hardhatParticle?.Draw();
-                foreach (SparkParticle spark in this._sparks)
-                {
-                    spark.Draw();
-                }
-
-                foreach (ThunkParticle thunk in this._thunks)
-                {
-                    thunk.Draw();
-                }
-                */
-                #endregion
-
-
                 string copyright = "SkyLouTyr MIT © 2022";
                 Vector2 cLen = ImGui.CalcTextSize(copyright);
                 ImGui.SetCursorPos(new Vector2(width, height) - new Vector2(8, 8) - cLen);
@@ -156,7 +108,7 @@
                         if (File.Exists(updater))
                         {
                             Client.Instance.Frontend.GameHandle.Close();
-                            System.Diagnostics.Process updaterProcess = new System.Diagnostics.Process();
+                            Process updaterProcess = new Process();
                             updaterProcess.StartInfo.FileName = updater;
                             updaterProcess.Start();
                         }
@@ -299,7 +251,7 @@
                 if (this.MenuMode == 4)
                 {
                     ImGui.SetCursorPos(new Vector2((width / 2) - 256, 500));
-                    if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar))
+                    if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
                     {
                         string sp = "    ";
                         ImGui.Text(lang.Translate("credits.dependencies"));
@@ -394,7 +346,7 @@
             ImGui.End();
 
             ImGui.SetNextWindowSize(new Vector2(400, 200), ImGuiCond.Appearing);
-            ImGui.SetNextWindowPos(new(ImGui.GetIO().DisplaySize.X * 0.5f - 200, ImGui.GetIO().DisplaySize.Y * 0.5f - 100), ImGuiCond.Appearing);
+            ImGui.SetNextWindowPos(new((ImGui.GetIO().DisplaySize.X * 0.5f) - 200, (ImGui.GetIO().DisplaySize.Y * 0.5f) - 100), ImGuiCond.Appearing);
             if (showDC)
             {
                 if (ImGui.Begin(lang.Translate("ui.disconnected") + "###Disconnected", ref showDC))
@@ -423,7 +375,7 @@
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
             if (ImGui.Button(text))
             {
-                System.Diagnostics.Process.Start(new ProcessStartInfo
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = url,
                     UseShellExecute = true
@@ -513,8 +465,8 @@
 
                     string[] vSync = { lang.Translate("menu.settings.vsync.off"), lang.Translate("menu.settings.vsync.on"), lang.Translate("menu.settings.vsync.adaptive") };
                     int vSyncIndex =
-                        Client.Instance.Settings.VSync == OpenTK.Windowing.Common.VSyncMode.On ? 1 :
-                        Client.Instance.Settings.VSync == OpenTK.Windowing.Common.VSyncMode.Off ? 0 : 2;
+                        Client.Instance.Settings.VSync == VSyncMode.On ? 1 :
+                        Client.Instance.Settings.VSync == VSyncMode.Off ? 0 : 2;
 
                     ImGui.Text(lang.Translate("menu.settings.vsync"));
                     if (ImGui.Combo("##VSync", ref vSyncIndex, vSync, 3))
@@ -756,409 +708,8 @@
             ImGui.EndChild();
         }
 
-        private List<SparkParticle> _sparks = new List<SparkParticle>();
-        private List<ThunkParticle> _thunks = new List<ThunkParticle>();
-
-        private Random _rand = new Random();
-        private int _fCount = 0;
-        private int _currentNulEngAnimFrame = 0;
-
-        private int[,] _frameData = new int[,] { 
-            { 0, 1 }, 
-            { 30, 2 }, 
-            { 60, 1 }, 
-            { 90, 2 }, 
-            { 120, 1 }, 
-            { 150, 2 }, 
-            { 180, 1 }, 
-            { 210, 2 }, 
-            { 240, 1 }, 
-            { 270, 2 }, 
-            { 300, 1 }, 
-            { 315, 3 }, 
-            { 330, 4 }, 
-            { 345, 5 }, 
-            { 360, 6 }, 
-            { 375, 7 }, 
-            { 390, 8 }, 
-            { 415, 9 }, 
-            { 430, 0 } 
-        };
-
         public void Update(double delta)
         {
-            if (Client.Instance.NetClient != null && Client.Instance.NetClient.IsConnected)
-            {
-                return;
-            }
-
-            this._fCount += 1;
-            int idx = 0;
-            while (true)
-            {
-                int c = this._frameData[idx, 0];
-                if (c >= this._fCount)
-                {
-                    break;
-                }
-
-                ++idx;
-                if (idx == this._frameData.GetLength(0))
-                {
-                    --idx;
-                    break;
-                }
-            }
-
-            this._currentNulEngAnimFrame = this._frameData[idx, 1];
-            if (this._currentNulEngAnimFrame == 0)
-            {
-                this._currentNulEngAnimFrame = this._fCount % 60 >= 30 ? 9 : 0;
-            }
-
-            #region Alpha
-            /*
-
-            if (!this._hardhatBroken && this._consecutiveThunks <= 0)
-            {
-                if ((++this._mascotThunk) % 90 == 3)
-                {
-                    for (int i = 0; i < this._rand.Next(4, 9); ++i)
-                    {
-                        System.Numerics.Vector2 vel = System.Numerics.Vector2.Normalize(new System.Numerics.Vector2(
-                            56 + this._rand.Next(0, 23) - this._rand.Next(0, 23),
-                            -32 + this._rand.Next(0, 12) - this._rand.Next(0, 12))) * (float)(1.0f + (this._rand.NextDouble() * 2.0f));
-
-                        System.Numerics.Vector2 pos = new System.Numerics.Vector2((width / 2) - 320 + 486, 182);
-                        SparkParticle sp = new SparkParticle() { Gravity = true, Size = 16, DrawTexture = this.AlphaSparks, Position = pos, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                        this._sparks.Add(sp);
-                    }
-                }
-            }
-
-            if (this._rand.NextDouble() < 0.02)
-            {
-                while (true)
-                {
-                    System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                            (float)((this._rand.NextDouble() * 4) - (this._rand.NextDouble() * 4)),
-                            -this._rand.Next(0, 12) / 5f);
-
-                    System.Numerics.Vector2 pos = new System.Numerics.Vector2((width / 2) - 320 + 604, 217);
-                    SparkParticle sp = new SparkParticle() { Gravity = true, Size = 12, DrawTexture = this.AlphaSparks, Position = pos, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                    this._sparks.Add(sp);
-                    if (this._rand.NextDouble() < 0.5)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            Vector2 cablePos1 = new Vector2((width / 2) - 320 + 377, 114);
-            Vector2 cablePos2 = new Vector2((width / 2) - 320 + 419, 84);
-            Vector2 cablePos3 = new Vector2((width / 2) - 320 + 452, 92);
-
-            if (this._hardhatBroken)
-            {
-                if (this._rand.NextDouble() < 0.02)
-                {
-                    while (true)
-                    {
-                        System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 4) - (this._rand.NextDouble() * 4)),
-                                -this._rand.Next(0, 12) / 5f);
-
-                        System.Numerics.Vector2 pos = new System.Numerics.Vector2((width / 2) - 320 + 604, 217);
-                        SparkParticle sp = new SparkParticle() { Gravity = true, Size = 12, DrawTexture = this.AlphaSparks, Position = cablePos1, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                        this._sparks.Add(sp);
-                        if (this._rand.NextDouble() < 0.5)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (this._rand.NextDouble() < 0.02)
-                {
-                    while (true)
-                    {
-                        System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 4) - (this._rand.NextDouble() * 4)),
-                                -this._rand.Next(0, 12) / 5f);
-
-                        System.Numerics.Vector2 pos = new System.Numerics.Vector2((width / 2) - 320 + 604, 217);
-                        SparkParticle sp = new SparkParticle() { Gravity = true, Size = 12, DrawTexture = this.AlphaSparks, Position = cablePos2, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                        this._sparks.Add(sp);
-                        if (this._rand.NextDouble() < 0.5)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (this._rand.NextDouble() < 0.02)
-                {
-                    while (true)
-                    {
-                        System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 4) - (this._rand.NextDouble() * 4)),
-                                -this._rand.Next(0, 12) / 5f);
-
-                        System.Numerics.Vector2 pos = new System.Numerics.Vector2((width / 2) - 320 + 604, 217);
-                        SparkParticle sp = new SparkParticle() { Gravity = true, Size = 12, DrawTexture = this.AlphaSparks, Position = cablePos3, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                        this._sparks.Add(sp);
-                        if (this._rand.NextDouble() < 0.5)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (!this._lmbDown && Game.Instance.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
-            {
-                this._lmbDown = true;
-                if (!this._hardhatBroken)
-                {
-                    Vector2 center = new System.Numerics.Vector2((width / 2) - 320 + 354 + 74, 87 + 74);
-                    Vector2 mouse = ImGui.GetIO().MousePos;
-                    float dist = (center - mouse).Length();
-                    if (dist <= 77f) // have thunk!
-                    {
-                        ThunkParticle tp = new ThunkParticle() { Angle = (float)this._rand.NextDouble() * MathF.PI * 2f, DrawTexture = this.AlphaThunk, Lifetime = 90, Position = mouse, Size = 32 };
-                        this._thunks.Add(tp);
-                        this._mascotThunk = 40;
-                        this._consecutiveThunks += 1;
-                        this._lastThunkTick = 180;
-                    }
-
-                    if (this._consecutiveThunks >= 10)
-                    {
-                        this._hardhatBroken = true;
-                        this._hardhatInHand = true;
-                        this._hardhatCursor2CenterWhenBroken = center - mouse;
-                        this._hardhatParticle = new HardhatParticle() { Rotation = 0, DrawTexture = this.AlphaHardhatBroken, Position = center, Size = 144, Velocity = Vector2.Zero };
-                        this._thunks.Clear();
-
-                        for (int i = 0; i < 100 + this._rand.Next(100); ++i)
-                        {
-                            System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 6) - (this._rand.NextDouble() * 6)),
-                                -this._rand.Next(0, 12));
-                            SparkParticle sp = new SparkParticle() { Gravity = true, Size = 16 + this._rand.Next(12), DrawTexture = this.AlphaSparks, Position = cablePos1, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                            this._sparks.Add(sp);
-                        }
-
-                        for (int i = 0; i < 100 + this._rand.Next(100); ++i)
-                        {
-                            System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 6) - (this._rand.NextDouble() * 6)),
-                                -this._rand.Next(0, 12));
-                            SparkParticle sp = new SparkParticle() { Gravity = true, Size = 16 + this._rand.Next(12), DrawTexture = this.AlphaSparks, Position = cablePos2, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                            this._sparks.Add(sp);
-                        }
-
-                        for (int i = 0; i < 100 + this._rand.Next(100); ++i)
-                        {
-                            System.Numerics.Vector2 vel = new System.Numerics.Vector2(
-                                (float)((this._rand.NextDouble() * 6) - (this._rand.NextDouble() * 6)),
-                                -this._rand.Next(0, 12));
-                            SparkParticle sp = new SparkParticle() { Gravity = true, Size = 16 + this._rand.Next(12), DrawTexture = this.AlphaSparks, Position = cablePos3, Rotation = (float)this._rand.NextDouble(), TextureIndex = this._rand.Next(4), Velocity = vel };
-                            this._sparks.Add(sp);
-                        }
-                    }
-                }
-            }
-
-            if (this._lmbDown && this._hardhatInHand)
-            {
-                this._hardhatParticle.Position = ImGui.GetIO().MousePos + this._hardhatCursor2CenterWhenBroken;
-                this._hardhatParticle.Velocity = Vector2.Zero;
-            }
-
-            if (this._lmbDown && !Game.Instance.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
-            {
-                this._lmbDown = false;
-                if (this._hardhatInHand)
-                {
-                    this._hardhatInHand = false;
-                    this._hardhatParticle.Velocity = ImGui.GetIO().MousePos - this._mouseLastUpdate;
-                    this._hardhatParticle.Rotation = MathF.PI * (float)this._rand.NextDouble();
-                }
-            }
-
-            if (--this._lastThunkTick <= 0)
-            {
-                this._consecutiveThunks = 0;
-            }
-
-            for (int i = this._sparks.Count - 1; i >= 0; i--)
-            {
-                SparkParticle spark = this._sparks[i];
-                spark.Update(delta);
-                if (spark.Size < 1.0f)
-                {
-                    this._sparks.RemoveAt(i);
-                }
-            }
-
-            for (int i = this._thunks.Count - 1; i >= 0; i--)
-            {
-                ThunkParticle tp = this._thunks[i];
-                if (--tp.Lifetime <= 0)
-                {
-                    this._thunks.Remove(tp);
-                }
-            }
-
-            this._hardhatParticle?.Update(delta);
-            this._mouseLastUpdate = ImGui.GetIO().MousePos;
-            */
-            #endregion
-        }
-    }
-
-    public class SparkParticle
-    {
-        public Vector2 Position { get; set; }
-        public int TextureIndex { get; set; }
-        public float Rotation { get; set; }
-        public Vector2 Velocity { get; set; }
-        public Texture DrawTexture { get; set; }
-        public float Size { get; set; }
-        public bool Gravity { get; set; }
-
-        public float CurrentRotation { get; set; }
-
-        public void Draw()
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            Vector2[] offsets = {
-                new Vector2(-0.5f, -0.5f),
-                new Vector2(0.5f, -0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(-0.5f, 0.5f)
-            };
-
-            float cos = MathF.Cos(this.CurrentRotation);
-            float sin = MathF.Sin(this.CurrentRotation);
-            for (int i = 0; i < 4; ++i)
-            {
-                Vector2 v = offsets[i];
-                float dX = (v.X * cos) - (v.Y * sin);
-                float dY = (v.X * sin) + (v.Y * cos);
-                offsets[i] = this.Position + (new Vector2(dX, dY) * this.Size);
-            }
-
-            Vector2 uv0 = new Vector2((this.TextureIndex % 2) * 0.5f, (this.TextureIndex / 2) * 0.5f);
-            Vector2 uv1 = uv0 + new Vector2(0.5f, 0);
-            Vector2 uv2 = uv0 + new Vector2(0.5f, 0.5f);
-            Vector2 uv3 = uv0 + new Vector2(0f, 0.5f);
-
-            drawList.AddImageQuad(this.DrawTexture, offsets[0], offsets[1], offsets[2], offsets[3], uv0, uv1, uv2, uv3);
-        }
-
-        public void Update(double delta)
-        {
-            this.Position += this.Velocity;
-            this.Size *= 0.95f;
-            this.Rotation *= 0.95f;
-            this.CurrentRotation += this.Rotation;
-            if (this.Gravity)
-            {
-                this.Velocity += new Vector2(0, 9.8f) * (float)delta;
-            }
-        }
-    }
-
-    public class ThunkParticle
-    {
-        public Vector2 Position { get; set; }
-        public int Lifetime { get; set; }
-        public float Angle { get; set; }
-        public float Size { get; set; }
-        public Texture DrawTexture { get; set; }
-
-        public void Draw()
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            Vector2[] offsets = {
-                new Vector2(-0.5f, -0.5f),
-                new Vector2(0.5f, -0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(-0.5f, 0.5f)
-            };
-
-            float cos = MathF.Cos(this.Angle);
-            float sin = MathF.Sin(this.Angle);
-
-            float x = 1.0f - (this.Lifetime / 90.0f);
-            float d = MathF.Max(0, MathF.Ceiling(0.41f - x));
-            float m = MathF.Sin((x + 5.1f) * 5) * 1.5f;
-            float aScale = (d * m) + ((-x + 1.4f) * (1.0f - d));
-            aScale *= this.Size;
-
-            for (int i = 0; i < 4; ++i)
-            {
-                Vector2 v = offsets[i];
-                float dX = (v.X * cos) - (v.Y * sin);
-                float dY = (v.X * sin) + (v.Y * cos);
-                offsets[i] = this.Position + (new Vector2(dX, dY) * aScale);
-            }
-
-            Vector2 uv0 = new Vector2(0, 0);
-            Vector2 uv1 = uv0 + new Vector2(1, 0);
-            Vector2 uv2 = uv0 + new Vector2(1, 1);
-            Vector2 uv3 = uv0 + new Vector2(0, 1);
-
-            drawList.AddImageQuad(this.DrawTexture, offsets[0], offsets[1], offsets[2], offsets[3], uv0, uv1, uv2, uv3);
-        }
-    }
-
-    public class HardhatParticle
-    {
-        public Vector2 Position { get; set; }
-        public Vector2 Velocity { get; set; }
-        public float Angle { get; set; }
-        public float Rotation { get; set; }
-        public Texture DrawTexture { get; set; }
-        public float Size { get; set; }
-
-        public void Draw()
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            Vector2[] offsets = {
-                new Vector2(-0.5f, -0.5f),
-                new Vector2(0.5f, -0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(-0.5f, 0.5f)
-            };
-
-            float cos = MathF.Cos(this.Angle);
-            float sin = MathF.Sin(this.Angle);
-
-            for (int i = 0; i < 4; ++i)
-            {
-                Vector2 v = offsets[i];
-                float dX = (v.X * cos) - (v.Y * sin);
-                float dY = (v.X * sin) + (v.Y * cos);
-                offsets[i] = this.Position + (new Vector2(dX, dY) * this.Size);
-            }
-
-            Vector2 uv0 = new Vector2(0, 0);
-            Vector2 uv1 = uv0 + new Vector2(1, 0);
-            Vector2 uv2 = uv0 + new Vector2(1, 1);
-            Vector2 uv3 = uv0 + new Vector2(0, 1);
-
-            drawList.AddImageQuad(this.DrawTexture, offsets[0], offsets[1], offsets[2], offsets[3], uv0, uv1, uv2, uv3);
-        }
-
-        public void Update(double delta)
-        {
-            this.Position += this.Velocity;
-            this.Rotation *= 0.975f;
-            this.Angle += this.Rotation;
-            this.Velocity += new Vector2(0, 9.8f) * (float)delta;
         }
     }
 }

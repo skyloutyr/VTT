@@ -228,7 +228,7 @@
                                 mdlTxt += aRef.Name;
                                 if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
                                 {
-                                    VTT.GL.Texture tex = ap.GetGLTexture();
+                                    GL.Texture tex = ap.GetGLTexture();
                                     if (tex != null)
                                     {
                                         drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
@@ -419,7 +419,7 @@
                                             mdlTxt += aRef.Name;
                                             if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
                                             {
-                                                VTT.GL.Texture tex = ap.GetGLTexture();
+                                                GL.Texture tex = ap.GetGLTexture();
                                                 if (tex != null)
                                                 {
                                                     drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));

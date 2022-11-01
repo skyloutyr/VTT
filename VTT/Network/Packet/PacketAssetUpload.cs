@@ -18,7 +18,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Asset upload packet received");
+                server.Logger.Log(LogLevel.Info, "Asset upload packet received");
                 if (this.Sender.IsAdmin)
                 {
                     AssetDirectory ad = server.AssetManager.GetDirAt(this.Path);
@@ -29,17 +29,17 @@
                     string previewDir = System.IO.Path.Combine(IOVTT.ServerDir, "Previews");
                     Directory.CreateDirectory(previewDir);
                     File.WriteAllBytes(System.IO.Path.Combine(previewDir, id.ToString() + ".png"), this.AssetPreview);
-                    server.Logger.Log(VTT.Util.LogLevel.Info, "Saved asset as " + path);
+                    server.Logger.Log(LogLevel.Info, "Saved asset as " + path);
                     AssetBinaryPointer abp = new AssetBinaryPointer() { FileLocation = path, PreviewPointer = id };
                     AssetRef aRef = new AssetRef() { AssetID = id, AssetPreviewID = id, IsServer = true, ServerPointer = abp, Meta = this.Meta };
                     ad.Refs.Add(aRef);
                     server.AssetManager.Refs[aRef.AssetID] = aRef;
-                    server.Logger.Log(VTT.Util.LogLevel.Info, "Asset reference added at " + ad.GetPath() + ":" + aRef.Name + ", id " + aRef.AssetID);
+                    server.Logger.Log(LogLevel.Info, "Asset reference added at " + ad.GetPath() + ":" + aRef.Name + ", id " + aRef.AssetID);
                     new PacketAssetDef() { ActionType = AssetDefActionType.Add, Root = this.Path, Ref = aRef }.Broadcast(c => c.IsAdmin);
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client " + this.Sender.ID + " attempted to upload an asset without being an administrator!");
+                    server.Logger.Log(LogLevel.Warn, "Client " + this.Sender.ID + " attempted to upload an asset without being an administrator!");
                 }
             }
         }

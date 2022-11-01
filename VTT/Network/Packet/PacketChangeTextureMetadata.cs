@@ -77,7 +77,7 @@
             this.RefID = br.ReadGuid();
             this.AssetID = br.ReadGuid();
             this.Metadata = new TextureData.Metadata();
-            this.Metadata.Deserialize(new Util.DataElement(br));
+            this.Metadata.Deserialize(new DataElement(br));
         }
 
         public override void Encode(BinaryWriter bw)

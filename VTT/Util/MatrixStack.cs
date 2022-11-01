@@ -5,7 +5,7 @@
 
     public class MatrixStack
     {
-        private List<Matrix4> _matStack = new List<Matrix4>();
+        private readonly List<Matrix4> _matStack = new List<Matrix4>();
         private Matrix4 _currentMat = Matrix4.Identity;
 
         public bool Reversed { get; set; }
@@ -33,7 +33,7 @@
             }
             else
             {
-                this._currentMat = this._matStack[this._matStack.Count - 1];
+                this._currentMat = this._matStack[^1];
                 this._matStack.RemoveAt(this._matStack.Count - 1);
             }
         }

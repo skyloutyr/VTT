@@ -121,7 +121,7 @@
                             try
                             {
                                 int i = 0;
-                                byte[] previewBinary = new byte[0];
+                                byte[] previewBinary = Array.Empty<byte>();
                                 List<TextureData.Frame> frames = new List<TextureData.Frame>();
                                 foreach (Image<Rgba32> img in Client.Instance.Frontend.FFmpegWrapper.DecodeAllFrames(s))
                                 {
@@ -450,7 +450,7 @@
             {
                 if (!ImGui.GetIO().WantCaptureMouse)
                 {
-                    if (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture)
+                    if (this._draggedRef.Type is AssetType.Model or AssetType.Texture)
                     {
                         Vector3? worldVec = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                         if (!worldVec.HasValue)
@@ -525,7 +525,6 @@
                     {
                         state.particleContainerHovered.SystemID = this._draggedRef.AssetID;
                         new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = state.particleContainerHovered.Serialize(), MapID = state.particleContainerHovered.Container.MapID, ObjectID = state.particleContainerHovered.Container.ID, ParticleID = state.particleContainerHovered.ID }.Send();
-                        haveResult = true;
                     }
                 }
 

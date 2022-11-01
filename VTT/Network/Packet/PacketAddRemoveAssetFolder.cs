@@ -22,7 +22,7 @@
                     if (this.Remove)
                     {
                         server.AssetManager.RecursivelyDeleteDirectory(dir);
-                        server.Logger.Log(VTT.Util.LogLevel.Info, "Deleting asset directory at " + dir.GetPath());
+                        server.Logger.Log(Util.LogLevel.Info, "Deleting asset directory at " + dir.GetPath());
                         new PacketAssetDef() { ActionType = AssetDefActionType.RemoveDir, Dir = dir, Root = this.Path }.Broadcast(c => c.IsAdmin);
                     }
                     else
@@ -31,14 +31,14 @@
                         dir.Directories.Add(newDir);
                         newDir.Parent = dir;
                         Directory.CreateDirectory(server.AssetManager.GetFSPath(newDir));
-                        server.Logger.Log(VTT.Util.LogLevel.Info, "Adding asset directory at " + newDir.GetPath());
-                        server.Logger.Log(VTT.Util.LogLevel.Debug, "FS path: " + server.AssetManager.GetFSPath(newDir));
+                        server.Logger.Log(Util.LogLevel.Info, "Adding asset directory at " + newDir.GetPath());
+                        server.Logger.Log(Util.LogLevel.Debug, "FS path: " + server.AssetManager.GetFSPath(newDir));
                         new PacketAssetDef() { ActionType = AssetDefActionType.AddDir, Dir = newDir, Root = this.Path }.Broadcast(c => c.IsAdmin);
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
                 }
             }
         }

@@ -13,7 +13,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Client " + this.Sender.ID + " asked for object data for " + this.ObjectID);
+                server.Logger.Log(Util.LogLevel.Info, "Client " + this.Sender.ID + " asked for object data for " + this.ObjectID);
                 Map m = server.Maps[this.Sender.ClientMapID];
                 if (m.GetObject(this.ObjectID, out MapObject mo))
                 {
@@ -22,7 +22,7 @@
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "The client requested data for a non-existing object!");
+                    server.Logger.Log(Util.LogLevel.Warn, "The client requested data for a non-existing object!");
                 }
             }
         }

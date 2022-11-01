@@ -881,8 +881,8 @@
                 return false;
             }
 
-            float cRad = (cDist / len) * rad;
-            float orthoDist = ((point - start) - cDist * dir).Length;
+            float cRad = cDist / len * rad;
+            float orthoDist = (point - start - (cDist * dir)).Length;
             return orthoDist < cRad;
         }
     }

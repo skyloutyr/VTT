@@ -20,7 +20,6 @@
 
         public override void ClearCache()
         {
-
         }
 
         public override unsafe void Render()

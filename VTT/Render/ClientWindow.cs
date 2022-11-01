@@ -37,7 +37,7 @@
 
         public ClientWindow()
         {
-            SixLabors.ImageSharp.Configuration.Default.PreferContiguousImageBuffers = true;
+            Configuration.Default.PreferContiguousImageBuffers = true;
             Image<Rgba32> icon = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-alpha.png");
             icon.DangerousTryGetSinglePixelMemory(out var imageSpan);
             byte[] imageBytes = MemoryMarshal.AsBytes(imageSpan.Span).ToArray();
@@ -56,15 +56,15 @@
             this.FFmpegWrapper = new FFmpegWrapper();
             this.FFmpegWrapper.Init();
             this.GameHandle = new GameWindow(
-                new OpenTK.Windowing.Desktop.GameWindowSettings()
+                new GameWindowSettings()
                 {
                     RenderFrequency = 0,
                     UpdateFrequency = 60
                 },
-                new OpenTK.Windowing.Desktop.NativeWindowSettings()
+                new NativeWindowSettings()
                 {
                     API = OpenTK.Windowing.Common.ContextAPI.OpenGL,
-                    APIVersion = new System.Version(3, 3),
+                    APIVersion = new Version(3, 3),
                     AutoLoadBindings = true,
                     Flags = winFlags,
                     IsEventDriven = false,
@@ -106,17 +106,10 @@
         }
 
         private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj) => this.Renderer?.MapRenderer?.HandleKeys(obj);
+        private void Instance_ScrollWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj) => this.Renderer.ScrollWheel(obj.OffsetX, obj.OffsetY);
+        private void Instance_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj) => this.Renderer.GuiRenderer.HandleFileDrop(obj);
 
-        private void Instance_ScrollWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj)
-        {
-            this.Renderer.ScrollWheel(obj.OffsetX, obj.OffsetY);
-        }
-
-        private void Instance_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj)
-        {
-            this.Renderer.GuiRenderer.HandleFileDrop(obj);
-        }
-
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0022:Use expression body for methods", Justification = "False positive - only applicable in DEBUG builds due to preprocessor directives")]
         public void Run()
         {
 #if DEBUG
@@ -138,10 +131,7 @@
 #endif
         }
 
-        private void Instance_MouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj)
-        {
-            this.GuiWrapper.MouseScroll(obj.Offset);
-        }
+        private void Instance_MouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj) => this.GuiWrapper.MouseScroll(obj.Offset);
 
         private void Instance_TextInput(OpenTK.Windowing.Common.TextInputEventArgs obj)
         {

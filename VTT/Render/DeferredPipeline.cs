@@ -143,13 +143,12 @@
             {
                 Client.Instance.Logger.Log(LogLevel.Fatal, "Could not complete deferred framebuffer!");
                 Client.Instance.Logger.Log(LogLevel.Fatal, "  " + fec);
-                throw new System.Exception("Framebuffer could not complete");
+                throw new Exception("Framebuffer could not complete");
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
-        private List<MapObject> _deferredRejects = new List<MapObject>();
         public void RenderScene(Map m)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -333,7 +332,7 @@
             {
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Fatal, "Could not compile shader!");
-                throw new System.Exception("Could not compile object shader");
+                throw new Exception("Could not compile object shader");
             }
 
             return sp;
@@ -345,7 +344,7 @@
             int idx = lines.IndexOf(r);
             if (idx != -1)
             {
-                lines.Remove(idx, lines.IndexOf('\n', idx) - idx - 1);
+                lines = lines.Remove(idx, lines.IndexOf('\n', idx) - idx - 1);
             }
         }
     }

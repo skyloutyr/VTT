@@ -164,10 +164,7 @@
                 this.Max = max;
             }
 
-            public Vector3 Value(float indexX, float indexY, float indexZ)
-            {
-                return this.Min + (this.Max - this.Min) * new Vector3(indexX, indexY, indexZ);
-            }
+            public Vector3 Value(float indexX, float indexY, float indexZ) => this.Min + ((this.Max - this.Min) * new Vector3(indexX, indexY, indexZ));
         }
 
         public enum EmissionMode
@@ -182,7 +179,7 @@
         }
     }
 
-    public unsafe class ParticleSystemInstance : IDisposable
+    public unsafe sealed class ParticleSystemInstance : IDisposable
     {
         public ParticleSystem Template { get; set; }
         public ParticleContainer Container { get; set; }
@@ -196,11 +193,11 @@
         private int _sizeInBytes;
         private int _emissionCd;
         private uint _frameAmount;
-        private Random _rand;
+        private readonly Random _rand;
 
         private float* _buffer;
         private GCHandle _bufferPtr;
-        private List<Particle> _sortedParticles = new List<Particle>();
+        private readonly List<Particle> _sortedParticles = new List<Particle>();
 
         public ParticleSystemInstance(ParticleSystem template, ParticleContainer container)
         {
@@ -257,7 +254,7 @@
             a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this.AllParticles.Length));
         }
 
-        private List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
+        private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
         public void Update(Vector3 cameraPosition)
         {
             int nActive = 0;
@@ -399,7 +396,7 @@
                                     {
                                         if (m.simplifiedTriangles != null && m.simplifiedTriangles.Length > 0)
                                         {
-                                            this._meshRefs.Add(new WeightedItem<GlbMesh>(m, m.simplifiedTriangles.Length));
+                                            this._meshRefs.Add(new WeightedItem<GlbMesh>(m, (int)MathF.Ceiling(m.areaSums[^1])));
                                         }
                                     }
                                 }
@@ -411,7 +408,7 @@
                                 {
                                     if (m.simplifiedTriangles != null && m.simplifiedTriangles.Length > 0)
                                     {
-                                        this._meshRefs.Add(new WeightedItem<GlbMesh>(m, m.simplifiedTriangles.Length));
+                                        this._meshRefs.Add(new WeightedItem<GlbMesh>(m, (int)MathF.Ceiling(m.areaSums[^1])));
                                     }
                                 }
                             }

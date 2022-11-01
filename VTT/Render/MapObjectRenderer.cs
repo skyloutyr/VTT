@@ -55,7 +55,7 @@
             this._noAssetEbo = new GPUBuffer(BufferTarget.ElementArrayBuffer);
             this._noAssetVao.Bind();
             this._noAssetVbo.Bind();
-            this._noAssetVbo.SetData<float>(new float[] {
+            this._noAssetVbo.SetData(new float[] {
                 0.5f, 0.5f, -0.5f, 0, 0,
                 0.5f,-0.5f, -0.5f, 0, 0,
                 0.5f, 0.5f,  0.5f, 0, 0,
@@ -231,7 +231,7 @@
             {
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Fatal, "Could not compile shader!");
-                throw new System.Exception("Could not compile object shader");
+                throw new Exception("Could not compile object shader");
             }
 
             this.RenderShader = sp;
@@ -252,7 +252,7 @@
             int idx = lines.IndexOf(r);
             if (idx != -1)
             {
-                lines.Remove(idx, lines.IndexOf('\n', idx) - idx - 1);
+                lines = lines.Remove(idx, lines.IndexOf('\n', idx) - idx - 1);
             }
         }
 
@@ -358,7 +358,6 @@
             }
         }
 
-        private List<string> _debugRemove = new List<string>();
         public void RenderDebug(Map m)
         {
         }
@@ -451,8 +450,6 @@
                         {
                             if (is2d)
                             {
-                                Matrix4 viewProj = cam.ViewProj;
-                                Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
                                 Matrix4 modelMatrix;
                                 this.OverlayShader.Bind();
                                 this.OverlayShader["view"].Set(cam.View);
@@ -525,8 +522,6 @@
                     {
                         if (is2d)
                         {
-                            Matrix4 viewProj = cam.ViewProj;
-                            Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
                             Matrix4 modelMatrix;
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
@@ -603,8 +598,6 @@
                     {
                         if (is2d)
                         {
-                            Matrix4 viewProj = cam.ViewProj;
-                            Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
                             Matrix4 modelMatrix = Matrix4.CreateScale(220f * orthozoom) * Matrix4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
@@ -728,9 +721,9 @@
 
                         if (mo.ID.Equals(selfDarkvision))
                         {
-                            plr.AddLightCandidate(new LightShadow.PointLight(
+                            plr.AddLightCandidate(new PointLight(
                                 mo.Position + (a?.Model.GLMdl?.CombinedBounds.Center ?? Vector3.Zero),
-                                Vector3.One, 0, mo, true, false, new VTT.Asset.Glb.GlbLight() { Color = Vector4.One, Intensity = dvLuma, LightType = VTT.Asset.Glb.KhrLight.LightTypeEnum.Point }));
+                                Vector3.One, 0, mo, true, false, new VTT.Asset.Glb.GlbLight(Vector4.One, dvLuma, VTT.Asset.Glb.KhrLight.LightTypeEnum.Point)));
                         }
                     }
                 }
@@ -1114,8 +1107,8 @@
             GL.Disable(EnableCap.Multisample);
         }
 
-        private List<MapObject> _auraCollection = new List<MapObject>();
-        private List<(float, Color)> _auraL = new List<(float, Color)>();
+        private readonly List<MapObject> _auraCollection = new List<MapObject>();
+        private readonly List<(float, Color)> _auraL = new List<(float, Color)>();
         private void RenderAuras(Map m)
         {
             this._auraCollection.Clear();

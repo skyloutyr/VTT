@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using System;
     using System.Numerics;
 
     public static class UISkins

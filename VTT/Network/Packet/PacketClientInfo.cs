@@ -14,7 +14,7 @@
         {
             if (!isServer)
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Server handshake complete, got - A:" + this.IsAdmin + ", O:" + this.IsObserver);
+                client.Logger.Log(Util.LogLevel.Debug, "Server handshake complete, got - A:" + this.IsAdmin + ", O:" + this.IsObserver);
                 client.IsAdmin = this.IsAdmin;
                 client.IsObserver = this.IsObserver;
 

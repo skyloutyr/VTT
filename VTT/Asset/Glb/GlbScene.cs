@@ -11,7 +11,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Threading;
     using VTT.GL;
     using VTT.Network;
     using VTT.Render.LightShadow;
@@ -36,9 +35,9 @@
 
         public volatile bool glReady;
 
-        private bool _createdOnGlThread;
+        private readonly bool _createdOnGlThread;
         private volatile int _glRequestsTodo;
-        private volatile bool _checkGlRequests;
+        private readonly bool _checkGlRequests;
 
         public GlbScene()
         {
@@ -90,7 +89,7 @@
                     {
                         if (mp.Mode != MeshPrimitive.ModeEnum.TRIANGLES)
                         {
-                            throw new System.Exception("Model is not defined as an array of triangles, triangulate before export!");
+                            throw new Exception("Model is not defined as an array of triangles, triangulate before export!");
                         }
 
                         GlbMesh glbm = new GlbMesh();
@@ -452,51 +451,32 @@
                         }
 
                         List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();
+                        List<float> areaSums = new List<float>();
+                        float areaSum = 0f;
                         for (int j = 0; j < indices.Length; j += 3)
                         {
                             int index0 = (int)indices[j + 0];
                             int index1 = (int)indices[j + 1];
                             int index2 = (int)indices[j + 2];
-                            simplifiedTriangles.Add(positions[index0].SystemVector());
-                            simplifiedTriangles.Add(positions[index1].SystemVector());
-                            simplifiedTriangles.Add(positions[index2].SystemVector());
+                            System.Numerics.Vector3 a = positions[index0].SystemVector();
+                            System.Numerics.Vector3 b = positions[index1].SystemVector();
+                            System.Numerics.Vector3 c = positions[index2].SystemVector();
+                            simplifiedTriangles.Add(a);
+                            simplifiedTriangles.Add(b);
+                            simplifiedTriangles.Add(c);
+                            System.Numerics.Vector3 ab = b - a;
+                            System.Numerics.Vector3 ac = c - a;
+                            float l = System.Numerics.Vector3.Cross(ab, ac).Length() * 0.5f;
+                            if (!float.IsNaN(l)) // Degenerate triangle
+                            {
+                                areaSum += l;
+                            }
+
+                            areaSums.Add(areaSum);
                         }
 
                         glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
-
-                        /*
-                        int[] triangles = new int[indices.Length];
-                        for (int j = 0; j < indices.Length; ++j)
-                        {
-                            triangles[j] = (int)indices[j];
-                        }
-
-                        ConnectedMesh mesh = new SharedMesh() { triangles = triangles, positions = positions.ToArray() }.ToConnectedMesh();
-                        mesh.MergePositions();
-                        mesh.Compact();
-                        DecimateModifier decimate = new DecimateModifier();
-                        decimate.Initialize(mesh);
-                        decimate.DecimateToError(0.1f);
-                        SharedMesh processed = mesh.ToSharedMesh();
-
-                        if (processed.triangles.Length == 0)
-                        {
-                            System.Diagnostics.Debugger.Break();
-                        }
-
-                        List<Vector4> simplifiedTriangles = new List<Vector4>();
-                        for (int j = 0; j < processed.triangles.Length; j += 3)
-                        {
-                            int index0 = processed.triangles[j + 0];
-                            int index1 = processed.triangles[j + 1];
-                            int index2 = processed.triangles[j + 2];
-                            simplifiedTriangles.Add(new Vector4(processed.positions[index0], 1));
-                            simplifiedTriangles.Add(new Vector4(processed.positions[index1], 1));
-                            simplifiedTriangles.Add(new Vector4(processed.positions[index2], 1));
-                        }
-
-                        glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
-                        */
+                        glbm.areaSums = areaSums.ToArray();
                         Matrix4 mat = this.LookupChildMatrix(o);
                         Vector3 oTrans = mat.ExtractTranslation();
                         glbm.Bounds = new AABox(posMin + oTrans, posMax + oTrans); // TODO bounds rotation + translation + scale
@@ -591,10 +571,12 @@
                     for (int i = 0; i < kls.Length; ++i)
                     {
                         KhrLight kl = kls[i];
-                        GlbLight glbl = new GlbLight();
-                        glbl.Color = new Vector4(kl.Color[0], kl.Color[1], kl.Color[2], kl.Color.Length == 4 ? kl.Color[3] : 1.0f);
-                        glbl.Intensity = kl.Intensity;
-                        glbl.LightType = kl.Type;
+                        GlbLight glbl = new GlbLight(
+                            new Vector4(kl.Color[0], kl.Color[1], kl.Color[2], kl.Color.Length == 4 ? kl.Color[3] : 1.0f),
+                            kl.Intensity,
+                            kl.Type
+                        );
+
                         lights.Add(glbl);
                     }
                 }
@@ -640,7 +622,7 @@
 
         private VTT.GL.Texture LoadBaseTexture(Rgba32 color)
         {
-            SixLabors.ImageSharp.Image<Rgba32> img = new SixLabors.ImageSharp.Image<Rgba32>(1, 1);
+            Image<Rgba32> img = new Image<Rgba32>(1, 1);
             img[0, 0] = color;
             VTT.GL.Texture tex = this.LoadGLTexture(img, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT });
             return tex;
@@ -674,7 +656,6 @@
             sGltf.Position = 0;
             modelStream.Close();
             modelStream.Dispose();
-
             g = Interface.LoadModel(sCopy);
             bin = Interface.LoadBinaryBuffer(sGltf);
             sCopy.Dispose();
@@ -686,8 +667,7 @@
             // All images are present and refer to the same internal image, assume compressed rgb imgage, read and pass along as independant
             if (ao != null && m != null && r != null && ao.Value == m.Value && m.Value == r.Value)
             {
-                return this.LoadIndependentTextureFromBinary(g, ao, bin, default, PixelInternalFormat.Rgba, i => { // Fix the M and R values being flipped internally
-                    i.ProcessPixelRows(a =>
+                return this.LoadIndependentTextureFromBinary(g, ao, bin, default, PixelInternalFormat.Rgba, i => i.ProcessPixelRows(a =>
                     {
                         for (int r = 0; r < a.Height; ++r)
                         {
@@ -698,11 +678,10 @@
                                 span[t] = new Rgba32(cc.R, cc.B, cc.G, cc.A);
                             }
                         }
-                    });
-                });
+                    }));
             }
 
-            SixLabors.ImageSharp.Image<Rgba32> imgb;
+            Image<Rgba32> imgb;
             // We have the following possibilities:
             // No textures defined, return white canvas.
             // Metallic defined, others undefined
@@ -717,18 +696,18 @@
 
             if (ao == null && m == null && r == null) // No textures defined, return whitepixel by spec
             {
-                imgb = new SixLabors.ImageSharp.Image<Rgba32>(1, 1);
+                imgb = new Image<Rgba32>(1, 1);
                 imgb[0, 0] = new Rgba32(1, 1, 1, 1f);
                 VTT.GL.Texture texb = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT });
                 return texb;
             }
 
-            SixLabors.ImageSharp.Image<Rgba32> imgAO = ao.HasValue ? this.LoadBinaryImage(g, bin, ao.Value) : new SixLabors.ImageSharp.Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
-            SixLabors.ImageSharp.Image<Rgba32> imgM = m.HasValue ? this.LoadBinaryImage(g, bin, m.Value) : new SixLabors.ImageSharp.Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
-            SixLabors.ImageSharp.Image<Rgba32> imgR = r.HasValue ? this.LoadBinaryImage(g, bin, r.Value) : new SixLabors.ImageSharp.Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgAO = ao.HasValue ? this.LoadBinaryImage(g, bin, ao.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgM = m.HasValue ? this.LoadBinaryImage(g, bin, m.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgR = r.HasValue ? this.LoadBinaryImage(g, bin, r.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
             int w = Math.Max(Math.Max(imgAO.Width, imgM.Width), imgR.Width);
             int h = Math.Max(Math.Max(imgAO.Height, imgM.Height), imgR.Height);
-            imgb = new SixLabors.ImageSharp.Image<Rgba32>(w, h);
+            imgb = new Image<Rgba32>(w, h);
             for (int x = 0; x < w; ++x)
             {
                 for (int y = 0; y < h; ++y)
@@ -759,7 +738,7 @@
         {
             if (tIndex == null) // No independent texture present
             {
-                SixLabors.ImageSharp.Image<Rgba32> imgb = new SixLabors.ImageSharp.Image<Rgba32>(1, 1);
+                Image<Rgba32> imgb = new Image<Rgba32>(1, 1);
                 imgb[0, 0] = defaultValue;
                 processor?.Invoke(imgb);
                 VTT.GL.Texture texb = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT });
@@ -767,7 +746,7 @@
             }
 
             glTFLoader.Schema.Texture tex = g.Textures[tIndex.Value];
-            SixLabors.ImageSharp.Image<Rgba32> img = this.LoadBinaryImage(g, bin, tex.Source.Value);
+            Image<Rgba32> img = this.LoadBinaryImage(g, bin, tex.Source.Value);
             processor?.Invoke(img);
             Sampler s = tex.Sampler.HasValue
                 ? g.Samplers[tex.Sampler.Value]
@@ -776,7 +755,7 @@
             return glTex;
         }
 
-        private SixLabors.ImageSharp.Image<Rgba32> LoadBinaryImage(Gltf g, byte[] bin, int id)
+        private Image<Rgba32> LoadBinaryImage(Gltf g, byte[] bin, int id)
         {
             glTFLoader.Schema.Image refImg = g.Images[id];
             if (refImg.BufferView == null)
@@ -787,11 +766,11 @@
             BufferView bv = g.BufferViews[refImg.BufferView.Value];
             byte[] imgData = new byte[bv.ByteLength];
             Array.Copy(bin, bv.ByteOffset, imgData, 0, bv.ByteLength);
-            SixLabors.ImageSharp.Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(imgData);
+            Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(imgData);
             return img;
         }
 
-        private MatrixStack _modelStack = new MatrixStack() { Reversed = true };
+        private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
         public void Render(ShaderProgram shader, Matrix4 baseMatrix, Matrix4 projection, Matrix4 view, double textureAnimationIndex, Action<GlbMesh> renderer = null)
         {
             if (!this.glReady)
@@ -808,7 +787,7 @@
             this._modelStack.Pop();
         }
 
-        public SixLabors.ImageSharp.Image<Rgba32> CreatePreview(ShaderProgram shader, int width, int height, Vector4 clearColor, bool portrait = false)
+        public Image<Rgba32> CreatePreview(ShaderProgram shader, int width, int height, Vector4 clearColor, bool portrait = false)
         {
             // Create camera
             glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera.Camera) : this.Camera.Camera;
@@ -817,20 +796,20 @@
             Quaternion q = mat.ExtractRotation();
             Vector3 camLook = (q * new Vector4(0, 0, -1, 1)).Xyz.Normalized();
             Vector3 camPos = mat.ExtractTranslation();
-            VTT.Util.Camera camera = new VTT.Util.VectorCamera(camPos, camLook);
+            Util.Camera camera = new VectorCamera(camPos, camLook);
             camera.Projection = Matrix4.CreatePerspectiveFieldOfView(sceneCamera.Perspective.Yfov, (float)width / height, sceneCamera.Perspective.Znear, 100f);
             camera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
 
             // Create sun
             DirectionalLight sun;
-            GlbLight sceneSun = this.DirectionalLight?.Light;
+            GlbLight? sceneSun = this.DirectionalLight?.Light;
             if (sceneSun != null)
             {
                 mat = this.LookupChildMatrix(this.DirectionalLight);
                 q = mat.ExtractRotation();
                 Vector3 lightDir = new Vector3(0, 0, -1);
                 lightDir = (q * new Vector4(lightDir, 1.0f)).Xyz;
-                sun = new DirectionalLight(lightDir.Normalized(), sceneSun.Color.Xyz);
+                sun = new DirectionalLight(lightDir.Normalized(), sceneSun.Value.Color.Xyz);
             }
             else
             {
@@ -914,7 +893,7 @@
 
             GL.ActiveTexture(TextureUnit.Texture0);
             tex.Bind();
-            SixLabors.ImageSharp.Image<Rgba32> retImg = tex.GetImage<Rgba32>();
+            Image<Rgba32> retImg = tex.GetImage<Rgba32>();
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DeleteFramebuffer(fbo);
@@ -948,10 +927,7 @@
 
         private void LoadMeshGl(GlbMesh mesh)
         {
-            void LoadMesh()
-            {
-                mesh.CreateGl();
-            }
+            void LoadMesh() => mesh.CreateGl();
 
             if (this._createdOnGlThread)
             {
@@ -972,20 +948,23 @@
             }
         }
 
-        private VTT.GL.Texture LoadGLTexture<TPixel>(SixLabors.ImageSharp.Image<TPixel> img, Sampler s) where TPixel : unmanaged, IPixel<TPixel>
+        private VTT.GL.Texture LoadGLTexture<TPixel>(Image<TPixel> img, Sampler s) where TPixel : unmanaged, IPixel<TPixel>
         {
             void LoadTexture(VTT.GL.Texture glTex)
             {
                 glTex.Bind();
-                WrapParam ws = s.WrapS == Sampler.WrapSEnum.MIRRORED_REPEAT || s.WrapS == Sampler.WrapSEnum.REPEAT ? WrapParam.Repeat : WrapParam.ClampToEdge;
-                WrapParam wt = s.WrapT == Sampler.WrapTEnum.MIRRORED_REPEAT || s.WrapT == Sampler.WrapTEnum.REPEAT ? WrapParam.Repeat : WrapParam.ClampToEdge;
+                WrapParam ws = s.WrapS is Sampler.WrapSEnum.MIRRORED_REPEAT or Sampler.WrapSEnum.REPEAT ? WrapParam.Repeat : WrapParam.ClampToEdge;
+                WrapParam wt = s.WrapT is Sampler.WrapTEnum.MIRRORED_REPEAT or Sampler.WrapTEnum.REPEAT ? WrapParam.Repeat : WrapParam.ClampToEdge;
                 glTex.SetWrapParameters(ws, wt, wt);
-                FilterParam fMin =
-                    s.MinFilter == Sampler.MinFilterEnum.LINEAR ? FilterParam.Linear :
-                    s.MinFilter == Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR ? FilterParam.LinearMipmapLinear :
-                    s.MinFilter == Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST ? FilterParam.LinearMipmapNearest : FilterParam.Nearest;
-                FilterParam fMag =
-                    s.MagFilter == Sampler.MagFilterEnum.LINEAR ? FilterParam.Linear : FilterParam.Nearest;
+                FilterParam fMin = s.MinFilter switch
+                {
+                    Sampler.MinFilterEnum.LINEAR => FilterParam.Linear,
+                    Sampler.MinFilterEnum.LINEAR_MIPMAP_LINEAR => FilterParam.LinearMipmapLinear,
+                    Sampler.MinFilterEnum.LINEAR_MIPMAP_NEAREST => FilterParam.LinearMipmapNearest,
+                    _ => FilterParam.Nearest
+                };
+
+                FilterParam fMag = s.MagFilter == Sampler.MagFilterEnum.LINEAR ? FilterParam.Linear : FilterParam.Nearest;
                 glTex.SetFilterParameters(fMin, fMag);
                 glTex.SetImage(img, PixelInternalFormat.Rgba);
                 if (fMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest)
@@ -1006,7 +985,8 @@
             {
                 VTT.GL.Texture glTex = new VTT.GL.Texture(TextureTarget.Texture2D, false);
                 ++this._glRequestsTodo;
-                Client.Instance.Frontend.EnqueueOrExecuteTask(() => {
+                Client.Instance.Frontend.EnqueueOrExecuteTask(() => 
+                {
                     glTex.Allocate();
                     LoadTexture(glTex);
                     --this._glRequestsTodo;

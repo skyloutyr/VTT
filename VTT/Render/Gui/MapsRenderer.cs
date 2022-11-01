@@ -251,7 +251,6 @@
 
                     if (ImGui.InputInt(lang.Translate("ui.maps.fow_size") + "###FOW size", ref fowSizeX, 32, 32, ImGuiInputTextFlags.EnterReturnsTrue))
                     {
-                        bool focused = ImGui.IsItemFocused();
                         if (fowSizeX is >= 32 and <= 4096)
                         {
                             PacketEnableDisableFow pedf = new PacketEnableDisableFow() { Status = mEnableFow, Size = new Vector2(fowSizeX) };
@@ -457,7 +456,7 @@
                                 if (ImGui.Combo("##DarkvisionObject_" + j, ref oIdx, this._objects, this._objects.Length))
                                 {
                                     string selected = this._objects[oIdx];
-                                    Guid nId = Guid.Parse(selected.Substring(selected.LastIndexOf('(') + 1, 36));
+                                    Guid nId = Guid.Parse(selected.AsSpan(selected.LastIndexOf('(') + 1, 36));
                                     new PacketDarkvisionData() { Deletion = false, MapID = state.clientMap.ID, ObjectID = nId, PlayerID = darkvisionData.Key, Value = darkvisionData.Value.Item2 }.Send();
                                 }
 

@@ -19,7 +19,7 @@
                     Map m = client.CurrentMap;
                     if (m == null)
                     {
-                        client.Logger.Log(VTT.Util.LogLevel.Error, "Got map object packet but the client is not on a map!");
+                        client.Logger.Log(LogLevel.Error, "Got map object packet but the client is not on a map!");
                         client.NetworkStateCorrupted = true;
                         return;
                     }
@@ -39,14 +39,14 @@
                     }
                 });
 
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got object data for " + this.Obj.ID);
+                client.Logger.Log(LogLevel.Debug, "Got object data for " + this.Obj.ID);
             }
             else // Client wants to add a new object
             {
                 ServerClient sc = this.Sender;
                 if (!sc.IsAdmin)
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client " + sc.ID + " attempted to add a new object while not being an administrator!");
+                    server.Logger.Log(LogLevel.Warn, "Client " + sc.ID + " attempted to add a new object while not being an administrator!");
                 }
                 else
                 {
@@ -63,7 +63,7 @@
                     }
                     else
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Error, "Client " + sc.ID + " attempted to add a new object to a non-existing map!");
+                        server.Logger.Log(LogLevel.Error, "Client " + sc.ID + " attempted to add a new object to a non-existing map!");
                     }
                 }
             }

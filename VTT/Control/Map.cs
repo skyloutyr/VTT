@@ -163,19 +163,19 @@
         {
             this.ID = e.GetGuid("ID");
             this.Name = e.Get<string>("Name");
-            this.Folder = e.Get<string>("Folder", string.Empty);
+            this.Folder = e.Get("Folder", string.Empty);
             this.GridEnabled = e.Get<bool>("GridEnabled");
             this.GridDrawn = e.Get<bool>("GridDrawn");
             this.GridSize = e.Get<float>("GridSize");
-            this.GridUnit = e.Get<float>("GridUnit", 5.0f);
+            this.GridUnit = e.Get("GridUnit", 5.0f);
             this.GridColor = e.GetColor("GridColor");
             this.BackgroundColor = e.GetColor("BackgroundColor");
             this.AmbientColor = e.GetColor("AmbientColor", new Color(new Rgba32(0.03f, 0.03f, 0.03f, 0.03f)));
-            this.SunEnabled = e.Get<bool>("SunEnabled", true);
+            this.SunEnabled = e.Get("SunEnabled", true);
             this.SunYaw = e.Get<float>("SunYaw");
             this.SunPitch = e.Get<float>("SunPitch");
             this.SunIntensity = e.Get<float>("SunIntensity");
-            this.AmbietIntensity = e.Get<float>("AmbietIntensity", 1.0f);
+            this.AmbietIntensity = e.Get("AmbietIntensity", 1.0f);
             this.TurnTracker.Deserialize(e.Get("TurnTracker", new DataElement()));
             this.EnableShadows = e.Get<bool>("EnableShadows");
             this.EnableDirectionalShadows = e.Get<bool>("EnableDirectionalShadows");
@@ -201,8 +201,8 @@
                 return ri;
             }, Array.Empty<RulerInfo>()));
 
-            this.Is2D = e.Get<bool>("Is2D", false);
-            this.Camera2DHeight = e.Get<float>("Camera2DHeight", 5.0f);
+            this.Is2D = e.Get("Is2D", false);
+            this.Camera2DHeight = e.Get("Camera2DHeight", 5.0f);
             if (this.IsServer)
             {
                 this.Objects.AddRange(e.GetArray("Objects", (name, elem) =>
@@ -210,7 +210,7 @@
                     MapObject r = new MapObject() { Container = this };
                     r.Deserialize(elem.Get<DataElement>(name));
                     return r;
-                }, new MapObject[0]));
+                }, Array.Empty<MapObject>()));
 
                 foreach (MapObject mo in this.Objects)
                 {

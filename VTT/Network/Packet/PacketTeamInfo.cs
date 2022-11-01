@@ -19,7 +19,7 @@
             Logger l = isServer ? server.Logger : client.Logger;
             l.Log(LogLevel.Debug, "Got team info packet");
             Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
-            bool canChange = isServer ? this.Sender.IsAdmin : true;
+            bool canChange = !isServer || this.Sender.IsAdmin;
             if (!canChange)
             {
                 l.Log(LogLevel.Warn, "Client asked for team data change without permissions!");

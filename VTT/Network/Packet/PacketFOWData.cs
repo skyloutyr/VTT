@@ -17,7 +17,7 @@
         {
             if (!isServer) // Client got server fow data
             {
-                client.Logger.Log(VTT.Util.LogLevel.Debug, "Got FOW packet");
+                client.Logger.Log(Util.LogLevel.Debug, "Got FOW packet");
                 if (client.CurrentMap?.ID.Equals(this.MapID) ?? false)
                 {
                     if (this.Status)
@@ -32,7 +32,7 @@
                 }
                 else
                 {
-                    client.Logger.Log(VTT.Util.LogLevel.Warn, "Got fow data for non-loaded map, discarding.");
+                    client.Logger.Log(Util.LogLevel.Warn, "Got fow data for non-loaded map, discarding.");
                 }
             }
         }

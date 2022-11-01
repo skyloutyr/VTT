@@ -14,7 +14,7 @@
         {
             if (isServer)
             {
-                server.Logger.Log(VTT.Util.LogLevel.Info, "Got an asset preview request for " + this.ID + " by " + this.Sender.ID);
+                server.Logger.Log(Util.LogLevel.Info, "Got an asset preview request for " + this.ID + " by " + this.Sender.ID);
                 if (this.Sender.IsAdmin)
                 {
                     try
@@ -25,22 +25,22 @@
                     }
                     catch (Exception e)
                     {
-                        server.Logger.Log(VTT.Util.LogLevel.Error, "Could not locate preview for id " + this.ID);
-                        server.Logger.Exception(VTT.Util.LogLevel.Error, e);
-                        PacketAssetPreview pap = new PacketAssetPreview() { ID = this.ID, IsServer = true, ImageBinary = new byte[0], Session = sessionID, Response = AssetResponseType.NoAsset };
+                        server.Logger.Log(Util.LogLevel.Error, "Could not locate preview for id " + this.ID);
+                        server.Logger.Exception(Util.LogLevel.Error, e);
+                        PacketAssetPreview pap = new PacketAssetPreview() { ID = this.ID, IsServer = true, ImageBinary = Array.Empty<byte>(), Session = sessionID, Response = AssetResponseType.NoAsset };
                         pap.Send(this.Sender);
                     }
                 }
                 else
                 {
-                    server.Logger.Log(VTT.Util.LogLevel.Warn, "Client " + this.Sender.ID + " requested an asset preview without being an administrator!");
-                    PacketAssetPreview pap = new PacketAssetPreview() { ID = this.ID, IsServer = true, ImageBinary = new byte[0], Session = sessionID, Response = AssetResponseType.InternalError };
+                    server.Logger.Log(Util.LogLevel.Warn, "Client " + this.Sender.ID + " requested an asset preview without being an administrator!");
+                    PacketAssetPreview pap = new PacketAssetPreview() { ID = this.ID, IsServer = true, ImageBinary = Array.Empty<byte>(), Session = sessionID, Response = AssetResponseType.InternalError };
                     pap.Send(this.Sender);
                 }
             }
             else
             {
-                client.Logger.Log(VTT.Util.LogLevel.Info, "Got asset preview for id " + this.ID + ", result " + this.Response);
+                client.Logger.Log(Util.LogLevel.Info, "Got asset preview for id " + this.ID + ", result " + this.Response);
                 client.AssetManager.ClientAssetLibrary.ReceivePreview(this.ID, this.Response, this.ImageBinary);
             }
         }

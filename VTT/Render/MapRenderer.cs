@@ -169,7 +169,7 @@
 
                 switch (args.Key)
                 {
-                    case Keys.Left or Keys.KeyPad8:
+                    case Keys.Up or Keys.KeyPad8:
                     {
                         if (!arrows)
                         {

@@ -93,7 +93,6 @@
     <None Remove="Embed\Lang\en-EN.txt" />
     <None Remove="Embed\Lang\ru-RU.txt" />
     <None Remove="Embed\logo-alpha.png" />
-    <None Remove="Embed\logo-alpha.xcf" />
     <None Remove="Embed\Logo\beta-letters-off.png" />
     <None Remove="Embed\Logo\beta-letters.png" />
     <None Remove="Embed\Logo\beta-light.png" />
@@ -203,7 +202,6 @@
     <EmbeddedResource Include="Embed\Lang\ru-RU.txt" />
     <EmbeddedResource Include="Embed\Lang\en-EN.txt" />
     <EmbeddedResource Include="Embed\logo-alpha.png" />
-    <EmbeddedResource Include="Embed\logo-alpha.xcf" />
     <EmbeddedResource Include="Embed\Logo\beta-letters-off.png" />
     <EmbeddedResource Include="Embed\Logo\beta-letters.png" />
     <EmbeddedResource Include="Embed\Logo\beta-light.png" />

@@ -12,7 +12,7 @@ uniform mat4 model;
 
 void main()
 {
-	f_world_pos = (model * vec4(v_pos, 1.0f)).xyz;
+	f_world_pos = (model * vec4(v_pos, 1.0)).xyz;
 	f_texture = v_texture;
-	gl_Position = projection * view * model * vec4(v_pos, 1.0f);
+	gl_Position = projection * view * model * vec4(v_pos, 1.0);
 }

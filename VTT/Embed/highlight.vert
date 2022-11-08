@@ -12,7 +12,7 @@ uniform vec3 bounds;
 
 void main()
 {
-	vec3 bounds_modified_pos = v_pos + ((vec3(1.0f) - bounds) / 2.0f * v_pos_offset_mul);
-	f_world_pos = (model * vec4(bounds_modified_pos, 1.0f)).xyz;
-	gl_Position = projection * view * model * vec4(bounds_modified_pos, 1.0f);
+	vec3 bounds_modified_pos = v_pos + ((vec3(1.0) - bounds) / 2.0 * v_pos_offset_mul);
+	f_world_pos = (model * vec4(bounds_modified_pos, 1.0)).xyz;
+	gl_Position = projection * view * model * vec4(bounds_modified_pos, 1.0);
 }

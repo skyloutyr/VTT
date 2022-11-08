@@ -33,16 +33,16 @@ out vec4 f_sun_coord;
 
 void main()
 {
-	vec3 world_tan = normalize(vec3(model * vec4(v_tangent, 0.0f)));
-	vec3 world_bitan = normalize(vec3(model * vec4(v_bitangent, 0.0f)));
-	vec3 world_normal = normalize(vec3(model * vec4(v_normal, 0.0f)));
+	vec3 world_tan = normalize(vec3(model * vec4(v_tangent, 0.0)));
+	vec3 world_bitan = normalize(vec3(model * vec4(v_bitangent, 0.0)));
+	vec3 world_normal = normalize(vec3(model * vec4(v_normal, 0.0)));
 	f_tbn = mat3(world_tan, world_bitan, world_normal);
-	f_world_position = vec3(model * vec4(v_position, 1.0f));
+	f_world_position = vec3(model * vec4(v_position, 1.0));
 	f_color = v_color;
 	f_texture = v_texture;
 	f_normal = v_normal;
 	f_tangent = v_tangent;
 	f_bitangent = v_bitangent;
 	f_sun_coord = sun_projection * sun_view * vec4(f_world_position, 1.0);
-	gl_Position = mvp * vec4(v_position, 1.0f);
+	gl_Position = mvp * vec4(v_position, 1.0);
 }

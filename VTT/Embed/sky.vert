@@ -10,5 +10,5 @@ out vec3 f_data_pos;
 void main()
 {
 	f_data_pos = v_pos;
-	gl_Position = projection * view * model * vec4(v_pos, 1.0f);
+	gl_Position = projection * view * model * vec4(v_pos, 1.0);
 }

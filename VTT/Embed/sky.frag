@@ -7,8 +7,8 @@ out vec4 color;
 
 void main()
 {
-    float x = 1.0f - length(f_data_pos);
-    float m = min(1.0f, max(0.4f, pow(x + 0.51f, 10)) - 0.4f);
-    float d = (1.0f / (1.0f + x) * m + (x / 2.0f));
+    float x = 1.0 - length(f_data_pos);
+    float m = min(1.0, max(0.4, pow(x + 0.51, 10)) - 0.4);
+    float d = (1.0 / (1.0 + x) * m + (x / 2.0));
     color = vec4(1, 1, 1, d);
 }

@@ -13,6 +13,6 @@ uniform float g_size;
 
 void main()
 {
-	f_world_pos = (model * vec4(v_pos, 1.0f)).xyz;
-	gl_Position = projection * view * model * vec4(v_pos, 1.0f);
+	f_world_pos = (model * vec4(v_pos, 1.0)).xyz;
+	gl_Position = projection * view * model * vec4(v_pos, 1.0);
 }

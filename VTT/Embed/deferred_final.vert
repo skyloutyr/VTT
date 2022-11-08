@@ -8,6 +8,6 @@ uniform sampler2D g_positions;
 
 void main()
 {
-	f_texture = v_position * 0.5f + 0.5f;
-	gl_Position = vec4(v_position, 0.0f, 1.0f);
+	f_texture = v_position * 0.5 + 0.5;
+	gl_Position = vec4(v_position, 0.0, 1.0);
 }

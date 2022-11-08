@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.1.8",
+  "version": "1.1.9",
   "link": "",
   "changelog": {
     "1.0.0": "Initial alpha release",
@@ -11,6 +11,7 @@
     "1.1.5": "Added credits. Status effects are now always drawn for object owners. Asset uploading will not crash the app anymore. Fixed %s and other c++ formatting crashing the client in UI text. Fixed UI texture border issues. Fixed crash when changing maps while manipulating objects. Fixed server crash on client-server version mismatch. Fixed previews not generated for image assets.",
     "1.1.6": "Fixed compressed image uploading causing heap corruption. Roll tooltip generator now generates tooltips for compound rolls. Camera snap/default position now includes 2d zoom level. Added network timeout handling.",
     "1.1.7": "Fixed texture compression parameter not applying. Added a d10 option to rolls. Fixed a crash with changing object properties on a different map than other clients.",
-    "1.1.8": "Major code refactoring and some optimizations. Particle surface emission is now weighted based on the total triangle area for a mesh, not just the number of triangles. Potentially fixed UI issues by making ImGui calls consistent. Fixed shader recompilation issues."
+    "1.1.8": "Major code refactoring and some optimizations. Particle surface emission is now weighted based on the total triangle area for a mesh, not just the number of triangles. Potentially fixed UI issues by making ImGui calls consistent. Fixed shader recompilation issues.",
+    "1.1.9": "Fixed the hotkeys for movement being broken"
   }
 }

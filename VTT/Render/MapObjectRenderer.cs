@@ -227,11 +227,11 @@
                 this.RenderShader.Dispose();
             }
 
-            if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag))
+            if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))
             {
                 Logger l = Client.Instance.Logger;
-                l.Log(LogLevel.Fatal, "Could not compile shader!");
-                throw new Exception("Could not compile object shader");
+                l.Log(LogLevel.Fatal, "Could not compile shader! Shader error was " + err);
+                throw new Exception("Could not compile object shader! Shader error was " + err);
             }
 
             this.RenderShader = sp;

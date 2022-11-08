@@ -14,13 +14,13 @@
             this.UniformManager = new UniformManager();
         }
 
-        public static bool TryCompile(out ShaderProgram sp, string vertCode, string geomCode, string fragCode)
+        public static bool TryCompile(out ShaderProgram sp, string vertCode, string geomCode, string fragCode, out string error)
         {
             int vShader = -1;
             int gShader = -1;
             int fShader = -1;
 
-            static bool CompileShader(ShaderType sType, ref int s, string code)
+            static bool CompileShader(ShaderType sType, ref int s, string code, out string lerror)
             {
                 s = GL.CreateShader(sType);
                 GL.ShaderSource(s, code);
@@ -29,25 +29,30 @@
                 bool ret = result == 1;
                 if (!ret)
                 {
+                    GL.GetShaderInfoLog(s, out lerror);
                     GL.DeleteShader(s);
+                }
+                else
+                {
+                    lerror = string.Empty;
                 }
 
                 return ret;
             }
 
-            if (!string.IsNullOrEmpty(vertCode) && !CompileShader(ShaderType.VertexShader, ref vShader, vertCode))
+            if (!string.IsNullOrEmpty(vertCode) && !CompileShader(ShaderType.VertexShader, ref vShader, vertCode, out error))
             {
                 sp = default;
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(geomCode) && !CompileShader(ShaderType.GeometryShader, ref gShader, geomCode))
+            if (!string.IsNullOrEmpty(geomCode) && !CompileShader(ShaderType.GeometryShader, ref gShader, geomCode, out error))
             {
                 sp = default;
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(fragCode) && !CompileShader(ShaderType.FragmentShader, ref fShader, fragCode))
+            if (!string.IsNullOrEmpty(fragCode) && !CompileShader(ShaderType.FragmentShader, ref fShader, fragCode, out error))
             {
                 sp = default;
                 return false;
@@ -76,6 +81,7 @@
             {
                 GL.DeleteProgram(pId);
                 sp = default;
+                GL.GetProgramInfoLog(pId, out error);
                 return false;
             }
 
@@ -99,6 +105,7 @@
 
             sp = ret;
             ret.UniformManager.InitUniforms(ret);
+            error = string.Empty;
             return true;
         }
 

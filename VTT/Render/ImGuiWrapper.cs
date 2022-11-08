@@ -67,9 +67,9 @@ void main()
 
         private void SetupGl()
         {
-            if (!ShaderProgram.TryCompile(out this._shader, ImGuiVertexSource, null, ImGuiFragmentSource))
+            if (!ShaderProgram.TryCompile(out this._shader, ImGuiVertexSource, null, ImGuiFragmentSource, out string err))
             {
-                throw new Exception("Shader could not compile!");
+                throw new Exception("Shader could not compile! Shader error was " + err);
             }
 
             ImGui.GetIO().BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;

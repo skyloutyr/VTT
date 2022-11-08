@@ -38,11 +38,12 @@
             }
 
             Client.Instance.Logger.Log(LogLevel.Debug, "Loading shader VTT.Embed." + name + ".vert");
-            if (!ShaderProgram.TryCompile(out ShaderProgram sp, vSh, gSh, fSh))
+            if (!ShaderProgram.TryCompile(out ShaderProgram sp, vSh, gSh, fSh, out string err))
             {
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Fatal, "Could not compile shader!");
-                throw new System.Exception("Could not compile shader " + name);
+                l.Log(LogLevel.Fatal, err);
+                throw new System.Exception("Could not compile shader " + name + "! Shader error was " + err);
             }
 
             return sp;

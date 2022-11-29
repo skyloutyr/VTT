@@ -33,6 +33,6 @@
             }
         }
 
-        public string Translate(string sIn) => this.Language.ContainsKey(sIn) ? this.Language[sIn] : sIn;
+        public string Translate(string sIn) => this.Language.TryGetValue(sIn, out string sVal) ? sVal : sIn;
     }
 }

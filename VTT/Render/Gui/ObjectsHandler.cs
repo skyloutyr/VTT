@@ -212,36 +212,7 @@
 
                         if (isAdmin)
                         {
-                            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                            var imScreenPos = ImGui.GetCursorScreenPos();
-                            var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
-                            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                            uint bClr = mouseOver ? this._draggedRef != null && (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture) ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                            drawList.AddRect(imScreenPos, rectEnd, bClr);
-                            drawList.AddImage(this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
-                            Guid aId = mo.AssetID;
-                            string mdlTxt = "";
-                            int mdlTxtOffset = 0;
-                            if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-                            {
-                                AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                                mdlTxt += aRef.Name;
-                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                                {
-                                    GL.Texture tex = ap.GetGLTexture();
-                                    if (tex != null)
-                                    {
-                                        drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
-                                        mdlTxtOffset += 20;
-                                    }
-                                }
-                            }
-
-                            mdlTxt += " (" + aId.ToString() + ")\0";
-                            drawList.PushClipRect(imScreenPos, rectEnd);
-                            drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                            drawList.PopClipRect();
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                            bool mouseOver = DrawObjectAssetRecepticle(mo, mo.AssetID, () => this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture);
                             if (mouseOver && this._draggedRef != null && (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture))
                             {
                                 state.objectModelHovered = mo;
@@ -250,6 +221,29 @@
                             if (mouseOver)
                             {
                                 ImGui.SetTooltip(lang.Translate("ui.properties.model.tt"));
+                            }
+
+                            bool mHasCustomNameplate = mo.HasCustomNameplate;
+                            if (ImGui.Checkbox(lang.Translate("ui.properties.has_custom_nameplate") + "###Has Custom Nameplate", ref mHasCustomNameplate))
+                            {
+                                mo.HasCustomNameplate = mHasCustomNameplate;
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.HasCustomNameplate, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mHasCustomNameplate) } }.Send();
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.properties.has_custom_nameplate.tt"));
+                            }
+
+                            mouseOver = DrawObjectAssetRecepticle(mo, mo.CustomNameplateID, () => this._draggedRef.Type == AssetType.Texture);
+                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                            {
+                                state.objectCustomNameplateHovered = mo;
+                            }
+
+                            if (mouseOver)
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.properties.custom_nameplate.tt"));
                             }
                         }
 
@@ -561,6 +555,40 @@
 
                 ImGui.End();
             }
+
+            unsafe bool DrawObjectAssetRecepticle(MapObject mo, Guid aId, Func<bool> assetEval)
+            {
+                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                var imScreenPos = ImGui.GetCursorScreenPos();
+                var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+                uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+                drawList.AddRect(imScreenPos, rectEnd, bClr);
+                drawList.AddImage(this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                string mdlTxt = "";
+                int mdlTxtOffset = 0;
+                if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
+                {
+                    AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
+                    mdlTxt += aRef.Name;
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                    {
+                        GL.Texture tex = ap.GetGLTexture();
+                        if (tex != null)
+                        {
+                            drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                            mdlTxtOffset += 20;
+                        }
+                    }
+                }
+
+                mdlTxt += " (" + aId.ToString() + ")\0";
+                drawList.PushClipRect(imScreenPos, rectEnd);
+                drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                drawList.PopClipRect();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                return mouseOver;
+            }
         }
 
         private unsafe void RenderObjectsList(GuiState state, SimpleLanguage lang)
@@ -701,7 +729,8 @@
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) : 
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
 
-                    float tX = ImGui.CalcTextSize(mo.Name).X;
+                    float nS = ImGui.CalcTextSize(mo.Name).X;
+                    float tX = nS;
                     tX = MathF.Max(128, tX + 16);
                     int h = (renderName ? 32 : 8) + ((renderBars ? mo.Bars.Count : 0) * 16);
                     ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings;
@@ -713,14 +742,47 @@
 
                     ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h));
                     ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tX / 2), screen.Y - h));
+                    System.Numerics.Vector2 customPadding = ImGui.GetStyle().WindowPadding;
+                    bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
+                    if (hasNp)
+                    {
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
+                    }
+
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
+                    if (hasNp)
+                    {
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture)
+                        {
+                            System.Numerics.Vector2 cPn = ImGui.GetCursorPos();
+                            ImDrawListPtr backList = ImGui.GetWindowDrawList();
+                            System.Numerics.Vector2 oPs = ImGui.GetStyle().WindowPadding;
+                            GL.Texture tex = a.Texture.GetOrCreateGLTexture(out VTT.Asset.Glb.TextureAnimation anim);
+                            VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
+                            System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
+                            float miw = MathF.Max(tex.Size.Width, tX);
+                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(miw, tex.Size.Height), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Zw.SystemVector());
+                            ImGui.SetCursorPos(cPn + customPadding);
+                        }
+                    }
+
                     if (renderName)
                     {
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + tX * 0.5f - nS * 0.5f);
                         ImGui.TextUnformatted(mo.Name);
                     }
 
                     if (renderBars)
                     {
+                        if (hasNp)
+                        {
+                            if (hasNp)
+                            {
+                                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + customPadding.Y);
+                            }
+                        }
+
                         for (int i = 0; i < mo.Bars.Count; i++)
                         {
                             DisplayBar db = mo.Bars[i];
@@ -729,6 +791,11 @@
                             {
                                 ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (System.Numerics.Vector4)db.DrawColor);
                                 ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)db.DrawColor.ContrastBlackOrWhite());
+                                if (hasNp)
+                                {
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + customPadding.X);
+                                }
+
                                 ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 12), db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.PopStyleColor();
                                 ImGui.PopStyleColor();
@@ -739,8 +806,9 @@
                                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5);
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 7);
                                 float tW = ImGui.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW);
+                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW + (hasNp ? customPadding.X : 0));
                                 ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
+                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
                                 ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 4));
                                 ImGui.PopStyleVar();
@@ -750,6 +818,11 @@
                     }
 
                     ImGui.End();
+                    if (hasNp)
+                    {
+                        ImGui.PopStyleVar();
+                        ImGui.PopStyleVar();
+                    }
                 }
             }
 

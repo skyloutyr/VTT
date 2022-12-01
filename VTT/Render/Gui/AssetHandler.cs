@@ -515,6 +515,13 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.objectCustomNameplateHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                    {
+                        state.objectCustomNameplateHovered.CustomNameplateID = this._draggedRef.AssetID;
+                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CustomNameplateID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomNameplateHovered.MapID, state.objectCustomNameplateHovered.ID, this._draggedRef.AssetID) } }.Send(); 
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.particleModelHovered != null && Client.Instance.IsAdmin)
                     {
                         state.particleModelHovered.AssetID = this._draggedRef.AssetID;

@@ -403,3 +403,6 @@ credits.you=Вам, за использование VTT!
 credits.atlas=Статус эффекты от Lorc, Delapouite & contributors
 turntracker.unknown=Неизвестно (отсудствует)
 turntracker.hidden=???
+ui.properties.has_custom_nameplate=Пользовательская Полоса Имени
+ui.properties.has_custom_nameplate.tt=Управляет отображением пользовательского заднего фона для полосы имени этого объекта.
+ui.properties.custom_nameplate.tt=Управляет изображением (Ресурс) заднего фона для полосы имени этого объекта.\nПринимает только изображения.\nРесурсы можно перенести в это поле.

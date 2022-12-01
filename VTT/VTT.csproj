@@ -265,4 +265,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Asset\Shader\" />
+  </ItemGroup>
+
 </Project>

@@ -79,6 +79,9 @@
         public bool LightsCastShadows { get; set; }
         public bool SelfCastsShadow { get; set; }
 
+        public bool HasCustomNameplate { get; set; }
+        public Guid CustomNameplateID { get; set; }
+
         #region Client Data
         public AABox ClientBoundingBox
         {
@@ -155,6 +158,8 @@
             });
 
             ret.SetArray("Particles", this.ParticleContainers.Values.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
+            ret.Set("HasCustomNameplate", this.HasCustomNameplate);
+            ret.SetGuid("CustomNameplate", this.CustomNameplateID);
             ret.Set("Props", this.CustomProperties);
             return ret;
         }
@@ -213,6 +218,8 @@
                 this.ParticleContainers[c.ID] = c;
             }
 
+            this.HasCustomNameplate = e.Get<bool>("HasCustomNameplate", false);
+            this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
             this.CustomProperties = e.Get<DataElement>("Props");
         }
 

@@ -97,6 +97,18 @@
                             d.Item2.IsCrossedOut = (bool)d.Item3;
                             break;
                         }
+
+                        case DataType.HasCustomNameplate:
+                        {
+                            d.Item2.HasCustomNameplate = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.CustomNameplateID:
+                        {
+                            d.Item2.CustomNameplateID = (Guid)d.Item3;
+                            break;
+                        }
                     }
 
                     d.Item1.NeedsSave = true;
@@ -133,6 +145,7 @@
                     case DataType.LightsCastShadows:
                     case DataType.SelfCastsShadow:
                     case DataType.IsCrossedOut:
+                    case DataType.HasCustomNameplate:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -152,6 +165,7 @@
                     }
 
                     case DataType.Owner:
+                    case DataType.CustomNameplateID:
                     {
                         o = new Guid(br.ReadBytes(16));
                         break;
@@ -191,6 +205,7 @@
                     case DataType.LightsCastShadows:
                     case DataType.SelfCastsShadow:
                     case DataType.IsCrossedOut:
+                    case DataType.HasCustomNameplate:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -210,6 +225,7 @@
                     }
 
                     case DataType.Owner:
+                    case DataType.CustomNameplateID:
                     {
                         bw.Write(((Guid)d.Item3).ToByteArray());
                         break;
@@ -288,6 +304,8 @@
             SelfCastsShadow,
             TintColor,
             IsCrossedOut,
+            HasCustomNameplate,
+            CustomNameplateID,
             Properties
         }
     }

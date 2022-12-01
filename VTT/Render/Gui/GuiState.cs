@@ -28,6 +28,7 @@
         public bool mouseOverMoveUp = false;
         public AssetDirectory dirHovered = null;
         public MapObject objectModelHovered = null;
+        public MapObject objectCustomNameplateHovered = null;
         public ParticleSystem particleModelHovered = null;
         public ParticleContainer particleContainerHovered = null;
         public bool editParticleSystemPopup = false;
@@ -58,6 +59,7 @@
             mouseOverMoveUp = false;
             dirHovered = null;
             objectModelHovered = null;
+            objectCustomNameplateHovered = null;
             editParticleSystemPopup = false;
             particleModelHovered = null;
             changeParticleColorPopup = false;

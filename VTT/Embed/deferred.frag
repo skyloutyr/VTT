@@ -12,6 +12,7 @@ in vec2 f_texture;
 
 uniform uint frame;
 uniform uint update;
+const float alpha = 1.0;
 
 uniform vec3 camera_position;
 
@@ -40,9 +41,14 @@ out vec4 g_albedo;
 out vec4 g_aomrg;
 out vec4 g_emission;
 
+vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
+{
+    return texture(sampler, uvs * frameData.zw + frameData.xy);
+}
+
 vec4 sampleMap(sampler2D sampler, vec4 frameData)
 {
-    return texture(sampler, f_texture * frameData.zw + frameData.xy);
+    return sampleMapCustom(sampler, f_texture, frameData);
 }
 
 vec3 getNormalFromMap()

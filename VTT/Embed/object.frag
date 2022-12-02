@@ -12,6 +12,7 @@ in vec3 f_normal;
 in vec3 f_tangent;
 in vec3 f_bitangent;
 in vec3 f_world_position;
+in vec3 f_position;
 in vec4 f_color;
 in vec2 f_texture;
 in vec4 f_sun_coord;
@@ -72,9 +73,14 @@ const vec3 surface_reflection_for_dielectrics = vec3(0.04);
 const float PI = 3.14159265359;
 const float eff_epsilon = 0.00001;
 
+vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
+{
+    return texture(sampler, uvs * frameData.zw + frameData.xy);
+}
+
 vec4 sampleMap(sampler2D sampler, vec4 frameData)
 {
-    return texture(sampler, f_texture * frameData.zw + frameData.xy);
+    return sampleMapCustom(sampler, f_texture, frameData);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)

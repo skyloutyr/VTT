@@ -27,6 +27,7 @@ out vec3 f_normal;
 out vec3 f_tangent;
 out vec3 f_bitangent;
 out vec3 f_world_position;
+out vec3 f_position;
 out vec4 f_color;
 out vec2 f_texture;
 out vec4 f_sun_coord;
@@ -37,6 +38,7 @@ void main()
 	vec3 world_bitan = normalize(vec3(model * vec4(v_bitangent, 0.0)));
 	vec3 world_normal = normalize(vec3(model * vec4(v_normal, 0.0)));
 	f_tbn = mat3(world_tan, world_bitan, world_normal);
+	f_position = v_position;
 	f_world_position = vec3(model * vec4(v_position, 1.0));
 	f_color = v_color;
 	f_texture = v_texture;

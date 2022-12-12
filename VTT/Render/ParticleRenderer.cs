@@ -109,43 +109,47 @@
         public void Update()
         {
             particleSecondaryMutex.WaitOne();
-            Map m = Client.Instance.CurrentMap;
-            if (m != null)
+            if (Client.Instance.Settings.ParticlesEnabled)
             {
-                foreach (MapObject mo in m.IterateObjects(null))
+                Map m = Client.Instance.CurrentMap;
+                if (m != null)
                 {
-                    lock (mo.Lock)
+                    foreach (MapObject mo in m.IterateObjects(null))
                     {
-                        foreach (ParticleContainer pc in mo.ParticleContainers.Values)
+                        lock (mo.Lock)
                         {
-                            pc.UpdateBufferState();
-                            containers.Add(pc);
-                        }
-                    }
-                }
-            }
-
-            if (this._disposeQueue.Count > 0)
-            {
-                foreach (Map map in this._disposeQueue)
-                {
-                    if (map != null)
-                    {
-                        foreach (MapObject mo in map.IterateObjects(null))
-                        {
-                            lock (mo.Lock)
+                            foreach (ParticleContainer pc in mo.ParticleContainers.Values)
                             {
-                                foreach (ParticleContainer pc in mo.ParticleContainers.Values)
-                                {
-                                    pc.IsActive = false;
-                                    pc.DisposeInternal();
-                                }
+                                pc.UpdateBufferState();
+                                containers.Add(pc);
                             }
                         }
                     }
                 }
 
-                this._disposeQueue.Clear();
+                if (this._disposeQueue.Count > 0)
+                {
+                    foreach (Map map in this._disposeQueue)
+                    {
+                        if (map != null)
+                        {
+                            foreach (MapObject mo in map.IterateObjects(null))
+                            {
+                                lock (mo.Lock)
+                                {
+                                    foreach (ParticleContainer pc in mo.ParticleContainers.Values)
+                                    {
+                                        pc.IsActive = false;
+                                        pc.DisposeInternal();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    this._disposeQueue.Clear();
+                }
+
             }
 
             particleMutex.Set();
@@ -156,12 +160,16 @@
             while (true)
             {
                 particleMutex.WaitOne();
-                foreach (ParticleContainer pc in containers)
+                if (Client.Instance.Settings.ParticlesEnabled)
                 {
-                    pc.Update();
+                    foreach (ParticleContainer pc in containers)
+                    {
+                        pc.Update();
+                    }
+
+                    containers.Clear();
                 }
 
-                containers.Clear();
                 particleSecondaryMutex.Set();
             }
         }
@@ -173,6 +181,11 @@
         {
             Map m = Client.Instance.CurrentMap;
             if (m == null)
+            {
+                return;
+            }
+
+            if (!Client.Instance.Settings.ParticlesEnabled)
             {
                 return;
             }

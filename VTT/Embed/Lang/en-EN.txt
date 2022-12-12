@@ -406,3 +406,5 @@ turntracker.hidden=???
 ui.properties.has_custom_nameplate=Custom Nameplate Enabled
 ui.properties.has_custom_nameplate.tt=Controls whether the custom nameplate asset is used to render this object's nameplate.
 ui.properties.custom_nameplate.tt=Controls the displayed image (asset) of the object's custom nameplate.\nCan be changed by drag'n'dropping an asset (Image) from the asset browser.
+menu.settings.enable_particles=Enable Particles
+menu.settings.enable_particles.tt=Controls whether particles are enabled and drawn.

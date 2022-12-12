@@ -404,6 +404,10 @@
         public float Sensitivity { get; set; }
         public float ChatBackgroundBrightness { get; set; }
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool ParticlesEnabled { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -438,7 +442,8 @@
                 RaycastMultithreading = RaycastMultithreadingType.Eager,
                 LastConnectIPAddress = string.Empty,
                 LastConnectPort = string.Empty,
-                DebugSettingsEnabled = false
+                DebugSettingsEnabled = false,
+                ParticlesEnabled = true
             };
 
             ret.Save();

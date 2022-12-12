@@ -569,6 +569,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.point_shadow_quality.tt"));
                     }
 
+                    bool sParticles = Client.Instance.Settings.ParticlesEnabled;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_particles") + "###Enable Particles", ref sParticles))
+                    {
+                        Client.Instance.Settings.ParticlesEnabled = sParticles;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_particles.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

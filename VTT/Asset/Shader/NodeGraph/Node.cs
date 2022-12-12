@@ -2,6 +2,7 @@
 {
     using OpenTK.Mathematics;
     using System;
+    using System.Collections.Generic;
 
     public class Node
     {
@@ -15,6 +16,11 @@
 
         public NodeInput[] ConnectedIns { get; set; }
         public NodeOutput[] ConnectedOuts { get; set; }
+    }
+
+    public class NodeGraph
+    {
+        public List<Node> Nodes { get; } = new List<Node>();
     }
 
     public readonly struct NodeTemplate

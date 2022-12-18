@@ -4,7 +4,6 @@
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections.Generic;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;

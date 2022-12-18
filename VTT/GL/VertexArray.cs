@@ -53,7 +53,7 @@
         public void Dispose() => GL.DeleteVertexArray(this._glId);
     }
 
-    public struct ElementType
+    public readonly struct ElementType
     {
         private readonly int byteSize;
 

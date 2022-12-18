@@ -3,9 +3,7 @@
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
     using System;
-    using System.Buffers.Text;
     using System.IO;
-    using System.Text;
     using VTT.Util;
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Used for automatic json property parsing and conversion through C# property system (see impl)")]

@@ -295,7 +295,7 @@
         }
     }
 
-    public struct GradientPoint<T> : IComparable<GradientPoint<T>>
+    public readonly struct GradientPoint<T> : IComparable<GradientPoint<T>>
     {
         public GradientPoint(float key, T color)
         {

@@ -486,10 +486,7 @@
         {
             this.running = false;
             this.Logger.Log(LogLevel.Info, "Server shut down");
-            if (this.WaitHandle != null)
-            {
-                this.WaitHandle.Set();
-            }
+            this.WaitHandle?.Set();
         }
 
         protected override void OnError(SocketError error)

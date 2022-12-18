@@ -50,7 +50,7 @@
         public Dictionary<string, UniformWrapper> Name2IDMappings => this._name2idMappings;
     }
 
-    public struct UniformWrapper
+    public readonly struct UniformWrapper
     {
         private readonly int _id;
 

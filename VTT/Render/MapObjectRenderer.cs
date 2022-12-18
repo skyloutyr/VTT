@@ -222,10 +222,7 @@
                 RemoveDefine(ref lineFrag, "BRANCHING");
             }
 
-            if (this.RenderShader != null)
-            {
-                this.RenderShader.Dispose();
-            }
+            this.RenderShader?.Dispose();
 
             if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))
             {

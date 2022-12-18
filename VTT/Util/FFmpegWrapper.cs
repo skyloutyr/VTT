@@ -335,7 +335,7 @@
             }
         }
 
-        public static unsafe string av_strerror(int error)
+        public static unsafe string GetAVError(int error)
         {
             var bufferSize = 1024;
             var buffer = stackalloc byte[bufferSize];
@@ -344,6 +344,6 @@
             return message;
         }
 
-        public static int ThrowExceptionIfError(int error) => error < 0 ? throw new ApplicationException(av_strerror(error)) : error;
+        public static int ThrowExceptionIfError(int error) => error < 0 ? throw new ApplicationException(GetAVError(error)) : error;
     }
 }

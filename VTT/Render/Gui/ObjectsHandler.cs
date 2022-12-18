@@ -212,7 +212,7 @@
 
                         if (isAdmin)
                         {
-                            bool mouseOver = DrawObjectAssetRecepticle(mo, mo.AssetID, () => this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture);
+                            bool mouseOver = DrawObjectAssetRecepticle(mo, mo.AssetID, () => this._draggedRef.Type is AssetType.Model or AssetType.Texture);
                             if (mouseOver && this._draggedRef != null && (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture))
                             {
                                 state.objectModelHovered = mo;
@@ -769,7 +769,7 @@
 
                     if (renderName)
                     {
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + tX * 0.5f - nS * 0.5f);
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + (tX * 0.5f) - (nS * 0.5f));
                         ImGui.TextUnformatted(mo.Name);
                     }
 

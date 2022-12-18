@@ -2,8 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
-    using System.Runtime.Intrinsics.Arm;
     using System.Security.Cryptography;
 
     public static class IDUtil

@@ -111,7 +111,7 @@
                 this.TimeoutInterval = ti;
             }
 
-            this.Logger = new Logger() { Prefix = "Client", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
+            this.Logger = new Logger() { Prefix = "Server", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
             this.Logger.OnLog += Logger.Debug;
             Logger.FileLogListener fll = new Logger.FileLogListener(IOVTT.OpenLogFile(true));

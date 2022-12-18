@@ -84,7 +84,7 @@
             this.Logger.OnLog += fll.WriteLine;
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;
             this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH:mm:ss GMT"));
-            this.ID = IDUtil.GetDeviceID();
+            this.ID = IDUtil.GetDeviceID(this.Logger);
             this.Logger.Log(LogLevel.Info, "Self-assigned id is " + this.ID.ToString());
             this.Settings = ClientSettings.Load();
             if (this.Settings.Sensitivity is < 0.1f or > 10f)
@@ -298,7 +298,7 @@
             this.Container.NetworkStateCorrupted = false;
             this.PacketNetworkManager = new PacketNetworkManager() { IsServer = false };
             Client.Instance.Logger.Log(LogLevel.Info, "Server connection estabilished with connection id " + this.Id);
-            new PacketHandshake() { ClientID = this.Container.ID, Session = this.Id, IsServer = false, ClientVersion = Program.GetVersionBytes() }.Send(this);
+            new PacketHandshake() { ClientID = this.Container.ID, Session = this.Id, IsServer = false, ClientVersion = Program.GetVersionBytes(), ClientSecret = IDUtil.GetSecret() }.Send(this);
             Client.Instance.Logger.Log(LogLevel.Info, "Sending handshake");
             this.Container.SessionID = this.Id;
             this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();

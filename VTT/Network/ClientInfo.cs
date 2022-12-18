@@ -3,7 +3,9 @@
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
     using System;
+    using System.Buffers.Text;
     using System.IO;
+    using System.Text;
     using VTT.Util;
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Used for automatic json property parsing and conversion through C# property system (see impl)")]
@@ -28,6 +30,13 @@
         {
             get => this.MapID.ToString();
             set => this.MapID = Guid.Parse(value);
+        }
+
+        [JsonProperty(PropertyName = "Secret")]
+        private string SecretBytes
+        {
+            get => this.Secret == null ? null : Convert.ToBase64String(this.Secret);
+            set => this.Secret = string.IsNullOrEmpty(value) ? null : Convert.FromBase64String(value);
         }
 
         public static ClientInfo Empty { get; } = new ClientInfo()
@@ -64,6 +73,9 @@
         public bool IsLoggedOn { get; set; }
 
         public bool IsBanned { get; set; }
+
+        [JsonIgnore]
+        public byte[] Secret { get; set; }
 
         public void Write(BinaryWriter bw)
         {

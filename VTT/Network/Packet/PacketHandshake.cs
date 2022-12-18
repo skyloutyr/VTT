@@ -3,12 +3,15 @@
     using System;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketHandshake : PacketBase
     {
         public Guid ClientID { get; set; }
         public ulong ClientVersion { get; set; }
+        public byte[] ClientSecret { get; set; }
         public override uint PacketID => 0;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
@@ -36,12 +39,46 @@
                     return;
                 }
 
+                if (this.ClientSecret == null)
+                {
+                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret not specified!");
+                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
+                    sc.Disconnect();
+                    return;
+                }
+
                 if (ci.IsBanned)
                 {
                     server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client is banned on this server!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(sc);
                     sc.Disconnect();
                     return;
+                }
+
+                if (ci.Secret != null)
+                {
+                    if (ci.Secret.Length != 32 || this.ClientSecret.Length != 32)
+                    {
+                        server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret format incorrect!");
+                        new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
+                        sc.Disconnect();
+                        return;
+                    }
+
+                    for (int i = 0; i < 32; ++i)
+                    {
+                        if (ci.Secret[i] != this.ClientSecret[i])
+                        {
+                            server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret mismatch!");
+                            new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
+                            sc.Disconnect();
+                            return;
+                        }
+                    }
+                }
+                else // No secret for a client, assume benign first connection and authorise
+                {
+                    ci.Secret = this.ClientSecret; // Save happens later, may as well just set the data
                 }
 
                 server.ClientInfos[ci.ID] = ci;
@@ -103,14 +140,19 @@
 
         public override void Decode(BinaryReader br)
         {
-            this.ClientID = new Guid(br.ReadBytes(16));
+            this.ClientID = br.ReadGuid();
             this.ClientVersion = br.ReadUInt64();
+            if (br.BaseStream.CanRead)
+            {
+                this.ClientSecret = br.ReadBytes(32);
+            }
         }
 
         public override void Encode(BinaryWriter bw)
         {
-            bw.Write(this.ClientID.ToByteArray());
+            bw.Write(this.ClientID);
             bw.Write(this.ClientVersion);
+            bw.Write(this.ClientSecret);
         }
     }
 

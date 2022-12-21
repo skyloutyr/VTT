@@ -329,16 +329,53 @@
         {
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
             string expectedFile = Path.Combine(chatLoc, "log.bin");
-            if (File.Exists(expectedFile))
+            bool TryLoadChat(string path, out List<ChatLine> outLst)
             {
-                using (BinaryReader br = new BinaryReader(File.OpenRead(expectedFile)))
+                List<ChatLine> ret = new List<ChatLine>();
+                outLst = ret;
+                if (File.Exists(path))
                 {
-                    int idx = 0;
-                    while (br.BaseStream.Position < br.BaseStream.Length - 1)
+                    try
                     {
-                        ChatLine cl = new ChatLine() { Index = idx++ };
-                        cl.Read(br);
-                        this.ServerChat.Add(cl);
+                        using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
+                        {
+                            if (br.BaseStream.CanRead && br.BaseStream.Length > 0)
+                            {
+                                int idx = 0;
+                                while (br.BaseStream.Position < br.BaseStream.Length - 1)
+                                {
+                                    ChatLine cl = new ChatLine() { Index = idx++ };
+                                    cl.Read(br);
+                                    ret.Add(cl);
+                                }
+
+                                return true;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.Log(LogLevel.Error, "Could not load server chat!");
+                        this.Logger.Exception(LogLevel.Error, e);
+                    }
+                }
+
+                return false;
+            }
+
+            if (TryLoadChat(expectedFile, out List<ChatLine> lines))
+            {
+                this.ServerChat.AddRange(lines);
+            }
+            else
+            {
+                string pathBak = expectedFile + ".bak";
+                if (File.Exists(pathBak))
+                {
+                    File.Move(pathBak, expectedFile, true);
+                    if (TryLoadChat(expectedFile, out lines))
+                    {
+                        this.ServerChat.AddRange(lines);
                     }
                 }
             }
@@ -352,6 +389,10 @@
             if (!File.Exists(expectedFile))
             {
                 File.Create(expectedFile).Dispose();
+            }
+            else
+            {
+                File.Copy(expectedFile, expectedFile + ".bak", true);
             }
 
             using (FileStream fs = new FileStream(expectedFile, FileMode.Append))

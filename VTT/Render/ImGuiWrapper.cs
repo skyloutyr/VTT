@@ -60,7 +60,8 @@ void main()
 			ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
 			ImGui.GetIO().ConfigWindowsResizeFromEdges = true;
 			ImGui.GetIO().ConfigDockingWithShift = true;
-			this.SetupGl();
+            ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2(1, 1);
+            this.SetupGl();
         }
 
         public void ChangeSkin(ClientSettings.UISkin skin) => this._skinChangeTo = skin;
@@ -364,7 +365,6 @@ void main()
         public void Resize(int w, int h)
         {
             ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(w, h);
-            ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2(1, 1);
         }
 
 		void SetupRenderState(ImDrawDataPtr drawData, int fbWidth, int fbHeight)

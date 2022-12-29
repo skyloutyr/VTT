@@ -527,11 +527,11 @@
                         PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
                         pdmo.Send();
                     }
-                }
 
-                if (!Client.Instance.IsAdmin)
-                {
-                    ImGui.EndDisabled();
+                    if (!Client.Instance.IsAdmin)
+                    {
+                        ImGui.EndDisabled();
+                    }
                 }
 
                 if (mouseOver != null && (Client.Instance.IsAdmin || mouseOver.IsNameVisible || mouseOver.CanEdit(Client.Instance.ID)))

@@ -98,9 +98,9 @@ void main()
 			// NOOP
 		}
 
-        public void PressChar(char keyChar)
+        public void PressChar(uint keyChar)
         {
-			ImGui.GetIO().AddInputCharacterUTF16(keyChar);
+			ImGui.GetIO().AddInputCharacter(keyChar);
         }
 
 		private readonly Dictionary<Keys, ImGuiKey> _keyMappings = new Dictionary<Keys, ImGuiKey>();
@@ -344,6 +344,7 @@ void main()
 							break;
 						}
 
+						
 						builder.AddChar((ushort)start++);
 						if (start > end)
 						{

@@ -153,10 +153,10 @@
 
         private void Instance_TextInput(OpenTK.Windowing.Common.TextInputEventArgs obj)
         {
-            string s = obj.AsString;
-            if (!string.IsNullOrEmpty(s))
+            unsafe
             {
-                this.GuiWrapper.PressChar(s[0]);
+                int uni = obj.Unicode;
+                this.GuiWrapper.PressChar(*(uint*)&uni);
             }
         }
 

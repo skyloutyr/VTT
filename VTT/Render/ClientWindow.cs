@@ -87,10 +87,20 @@
             this.GameHandle.Load += this.Instance_SetupHander;
             this.GameHandle.TextInput += this.Instance_TextInput;
             this.GameHandle.MouseWheel += this.Instance_MouseWheel;
+            this.GameHandle.MouseMove += this.Instance_MouseMove;
             this.GameHandle.FileDrop += this.Instance_FileDrop;
-            this.GameHandle.MouseWheel += this.Instance_ScrollWheel;
             this.GameHandle.KeyDown += this.Instance_KeyDown;
+            this.GameHandle.KeyUp += this.Instance_KeyUp;
+            this.GameHandle.MouseDown += this.Instance_MouseDown;
+            this.GameHandle.MouseUp += this.Instance_MouseUp;
+            this.GameHandle.FocusedChanged += this.Instance_Focus;
         }
+
+        private void Instance_Focus(OpenTK.Windowing.Common.FocusedChangedEventArgs obj) => this.GuiWrapper.Focus(obj.IsFocused);
+        private void Instance_MouseDown(OpenTK.Windowing.Common.MouseButtonEventArgs obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Modifiers, false);
+        private void Instance_MouseUp(OpenTK.Windowing.Common.MouseButtonEventArgs obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Modifiers, true);
+        private void Instance_MouseMove(OpenTK.Windowing.Common.MouseMoveEventArgs obj) => this.GuiWrapper.MouseMove(obj.Position);
+        private void Instance_KeyUp(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj) => this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, true);
 
         private readonly ConcurrentQueue<Action> _gpuReqs = new ConcurrentQueue<Action>();
         public void EnqueueOrExecuteTask(Action a)
@@ -105,8 +115,12 @@
             }
         }
 
-        private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj) => this.Renderer?.MapRenderer?.HandleKeys(obj);
-        private void Instance_ScrollWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj) => this.Renderer.ScrollWheel(obj.OffsetX, obj.OffsetY);
+        private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj)
+        {
+            this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, false);
+            this.Renderer?.MapRenderer?.HandleKeys(obj);
+        }
+
         private void Instance_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj) => this.Renderer.GuiRenderer.HandleFileDrop(obj);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0022:Use expression body for methods", Justification = "False positive - only applicable in DEBUG builds due to preprocessor directives")]
@@ -131,7 +145,11 @@
 #endif
         }
 
-        private void Instance_MouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj) => this.GuiWrapper.MouseScroll(obj.Offset);
+        private void Instance_MouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj)
+        {
+            this.GuiWrapper.MouseScroll(obj.Offset);
+            this.Renderer.ScrollWheel(obj.OffsetX, obj.OffsetY);
+        }
 
         private void Instance_TextInput(OpenTK.Windowing.Common.TextInputEventArgs obj)
         {

@@ -92,16 +92,61 @@ void main()
             this._vertexArrayObject.PushElement(new ElementType(4, VertexAttribPointerType.UnsignedByte, sizeof(byte)), true);
         }
 
-        public void Update(double time) => this.UpdateImGuiInput(Client.Instance.Frontend.GameHandle);
+        public void Update(double time)
+		{
+			// NOOP
+		}
 
-        private readonly List<char> PressedChars = new List<char>();
-        public void PressChar(char keyChar) => this.PressedChars.Add(keyChar);
+        public void PressChar(char keyChar)
+        {
+			ImGui.GetIO().AddInputCharacterUTF16(keyChar);
+        }
+
+		private readonly Dictionary<Keys, ImGuiKey> _keyMappings = new Dictionary<Keys, ImGuiKey>();
+
+		public void KeyEvent(Keys key, int scan, KeyModifiers mods, bool isRepeat, bool release)
+        {
+            this.UpdateModifiers(mods);
+            if (this._keyMappings.TryGetValue(key, out ImGuiKey val))
+			{
+				ImGui.GetIO().AddKeyEvent(val, !release);
+				ImGui.GetIO().SetKeyEventNativeData(val, (int)key, scan);
+            }
+        }
+
+		private void UpdateModifiers(KeyModifiers mods)
+		{
+			ImGuiIOPtr io = ImGui.GetIO();
+			io.AddKeyEvent(ImGuiKey.ModCtrl, mods.HasFlag(KeyModifiers.Control));
+			io.AddKeyEvent(ImGuiKey.ModShift, mods.HasFlag(KeyModifiers.Shift));
+			io.AddKeyEvent(ImGuiKey.ModAlt, mods.HasFlag(KeyModifiers.Alt));
+			io.AddKeyEvent(ImGuiKey.ModSuper, mods.HasFlag(KeyModifiers.Super));
+		}
 
         public void MouseScroll(Vector2 offset)
 		{
-			ImGuiIOPtr io = ImGui.GetIO();
-			io.MouseWheel = offset.Y;
-			io.MouseWheelH = offset.X;
+            ImGui.GetIO().AddMouseWheelEvent(offset.X, offset.Y);
+		}
+
+		public void MouseMove(Vector2 pos)
+		{
+			ImGui.GetIO().AddMousePosEvent(pos.X, pos.Y);
+		}
+
+		public void MouseKey(MouseButton btn, KeyModifiers mods, bool release)
+		{
+			int mb = (int)btn;
+			if (mb is >= 0 and < ((int)ImGuiMouseButton.COUNT))
+			{
+				ImGui.GetIO().AddMouseButtonEvent((int)btn, !release);
+			}
+
+			this.UpdateModifiers(mods);
+		}
+
+		public void Focus(bool focused)
+		{
+			ImGui.GetIO().AddFocusEvent(focused);
 		}
 
         private void InitKeyMap()
@@ -110,21 +155,33 @@ void main()
             foreach (ImGuiKey igk in Enum.GetValues(typeof(ImGuiKey)))
             {
                 string name = Enum.GetName(igk);
-                if (!Enum.TryParse(name, out Keys k))
+                if (Enum.TryParse(name, out Keys k))
                 {
-					// NOOP
-                }
-                else
-                {
-                    io.KeyMap[(int)igk] = (int)k;
+                    this._keyMappings[k] = igk;
                 }
             }
 
-            io.KeyMap[(int)ImGuiKey.LeftArrow] = (int)Keys.Left;
-            io.KeyMap[(int)ImGuiKey.RightArrow] = (int)Keys.Right;
-            io.KeyMap[(int)ImGuiKey.UpArrow] = (int)Keys.Up;
-            io.KeyMap[(int)ImGuiKey.DownArrow] = (int)Keys.Down;
-            io.KeyMap[(int)ImGuiKey.KeypadEnter] = (int)Keys.KeyPadEnter;
+			this._keyMappings[Keys.Left] = ImGuiKey.LeftArrow;
+			this._keyMappings[Keys.Right] = ImGuiKey.RightArrow;
+			this._keyMappings[Keys.Up] = ImGuiKey.UpArrow;
+			this._keyMappings[Keys.Down] = ImGuiKey.DownArrow;
+			this._keyMappings[Keys.KeyPad0] = ImGuiKey.Keypad0;
+			this._keyMappings[Keys.KeyPad1] = ImGuiKey.Keypad1;
+			this._keyMappings[Keys.KeyPad2] = ImGuiKey.Keypad2;
+			this._keyMappings[Keys.KeyPad3] = ImGuiKey.Keypad3;
+			this._keyMappings[Keys.KeyPad4] = ImGuiKey.Keypad4;
+			this._keyMappings[Keys.KeyPad5] = ImGuiKey.Keypad5;
+			this._keyMappings[Keys.KeyPad6] = ImGuiKey.Keypad6;
+			this._keyMappings[Keys.KeyPad7] = ImGuiKey.Keypad7;
+			this._keyMappings[Keys.KeyPad8] = ImGuiKey.Keypad8;
+			this._keyMappings[Keys.KeyPad9] = ImGuiKey.Keypad9;
+			this._keyMappings[Keys.KeyPadDivide] = ImGuiKey.KeypadDivide;
+			this._keyMappings[Keys.KeyPadMultiply] = ImGuiKey.KeypadMultiply;
+			this._keyMappings[Keys.KeyPadSubtract] = ImGuiKey.KeypadSubtract;
+			this._keyMappings[Keys.KeyPadAdd] = ImGuiKey.KeypadAdd;
+			this._keyMappings[Keys.KeyPadEnter] = ImGuiKey.KeypadEnter;
+			this._keyMappings[Keys.KeyPadEqual] = ImGuiKey.KeypadEqual;
+			this._keyMappings[Keys.KeyPadDecimal] = ImGuiKey.KeypadDecimal;
         }
 
         public void Render(double time)
@@ -309,45 +366,6 @@ void main()
             ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(w, h);
             ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2(1, 1);
         }
-
-		private readonly Keys[] allKeys = Enum.GetValues<Keys>();
-		private void UpdateImGuiInput(GameWindow wnd)
-		{
-			ImGuiIOPtr io = ImGui.GetIO();
-
-			MouseState MouseState = wnd.MouseState;
-			KeyboardState KeyboardState = wnd.KeyboardState;
-
-			io.MouseDown[0] = MouseState[MouseButton.Left];
-			io.MouseDown[1] = MouseState[MouseButton.Right];
-			io.MouseDown[2] = MouseState[MouseButton.Middle];
-
-			var screenPoint = new Vector2i((int)MouseState.X, (int)MouseState.Y);
-			var point = screenPoint;//wnd.PointToClient(screenPoint);
-			io.MousePos = new System.Numerics.Vector2(point.X, point.Y);
-
-			foreach (Keys key in allKeys)
-			{
-				if (key == Keys.Unknown)
-				{
-					continue;
-				}
-
-				io.KeysDown[(int)key] = KeyboardState.IsKeyDown(key);
-			}
-
-			foreach (var c in PressedChars)
-			{
-				io.AddInputCharacter(c);
-			}
-
-			PressedChars.Clear();
-
-			io.KeyCtrl = KeyboardState.IsKeyDown(Keys.LeftControl) || KeyboardState.IsKeyDown(Keys.RightControl);
-			io.KeyAlt = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
-			io.KeyShift = KeyboardState.IsKeyDown(Keys.LeftShift) || KeyboardState.IsKeyDown(Keys.RightShift);
-			io.KeySuper = KeyboardState.IsKeyDown(Keys.LeftSuper) || KeyboardState.IsKeyDown(Keys.RightSuper);
-		}
 
 		void SetupRenderState(ImDrawDataPtr drawData, int fbWidth, int fbHeight)
 		{

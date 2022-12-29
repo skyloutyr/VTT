@@ -59,7 +59,7 @@
                     }
 
                     ImGui.Text(lang.Translate("ui.network.id_client_mappings"));
-                    if (ImGui.BeginTable("TableClientMapping", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
+                    if (ImGui.BeginTable("TableClientMapping", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
                     {
                         foreach (ClientInfo ci in Client.Instance.ClientInfos.Values)
                         {
@@ -70,10 +70,12 @@
 
                             ImGui.TableNextRow();
                             ImGui.TableSetColumnIndex(0);
-                            ImGui.Text(ci.ID.ToString());
+                            ImGui.ColorButton("##ClrClient_" + ci.ID, ((System.Numerics.Vector4)ci.Color));
                             ImGui.TableSetColumnIndex(1);
-                            ImGui.TextUnformatted(ci.Name.ToString());
+                            ImGui.Text(ci.ID.ToString());
                             ImGui.TableSetColumnIndex(2);
+                            ImGui.TextUnformatted(ci.Name.ToString());
+                            ImGui.TableSetColumnIndex(3);
                             if (ci.IsLoggedOn)
                             {
                                 ImGui.TextColored(((System.Numerics.Vector4)Color.Green), lang.Translate("ui.network.online"));

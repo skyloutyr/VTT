@@ -468,24 +468,19 @@
 
                                 ImGui.SameLine();
                                 ImGui.PopItemWidth();
-                                ImGui.PushID("btnDeleteDarkvision_" + j);
-                                if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                                if (ImGui.ImageButton("btnDeleteDarkvision_" + j, this.DeleteIcon, Vec12x12))
                                 {
                                     new PacketDarkvisionData() { Deletion = true, MapID = cMap.ID, PlayerID = darkvisionData.Key }.Send();
                                 }
 
-                                ImGui.PopID();
                                 ImGui.EndChild();
                                 ++j;
                             }
 
-                            ImGui.PushID("btnNewDarkvision");
-                            if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                            if (ImGui.ImageButton("btnNewDarkvision", this.AddIcon, Vec12x12))
                             {
                                 new PacketDarkvisionData() { MapID = state.clientMap.ID, ObjectID = Guid.Empty, PlayerID = Guid.Empty, Value = 0 }.Send();
                             }
-
-                            ImGui.PopID();
                         }
                     }
                     #endregion
@@ -521,8 +516,7 @@
                                             ImGui.PopStyleColor();
                                         }
 
-                                        ImGui.PushID("moveToBtn_" + mDat.Item1.ToString());
-                                        if (ImGui.ImageButton(this.MoveToIcon, Vec12x12))
+                                        if (ImGui.ImageButton("moveToBtn_" + mDat.Item1.ToString(), this.MoveToIcon, Vec12x12))
                                         {
                                             PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[1] { Client.Instance.ID }, NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
                                             pcm.Send();
@@ -534,10 +528,8 @@
                                             ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_to"));
                                         }
 
-                                        ImGui.PopID();
                                         ImGui.SameLine();
-                                        ImGui.PushID("moveAllToBtn_" + mDat.Item1.ToString());
-                                        if (ImGui.ImageButton(this.MoveAllToIcon, Vec12x12))
+                                        if (ImGui.ImageButton("moveAllToBtn_" + mDat.Item1.ToString(), this.MoveAllToIcon, Vec12x12))
                                         {
                                             PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
                                             pcm.Send();
@@ -549,10 +541,8 @@
                                             ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_all"));
                                         }
 
-                                        ImGui.PopID();
                                         ImGui.SameLine();
-                                        ImGui.PushID("deleteMapBtn_" + mDat.Item1.ToString());
-                                        if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                                        if (ImGui.ImageButton("deleteMapBtn_" + mDat.Item1.ToString(), this.DeleteIcon, Vec12x12))
                                         {
                                             state.deleteMapPopup = true;
                                             this._deletedMapId = mDat.Item1;
@@ -564,7 +554,6 @@
                                             ImGui.SetTooltip(lang.Translate("ui.maps.nav.delete"));
                                         }
 
-                                        ImGui.PopID();
                                         ImGui.SameLine();
                                         ImGui.TextUnformatted(mDat.Item2 + "(" + mDat.Item1.ToString() + ")");
 
@@ -591,7 +580,7 @@
                             }
                         }
 
-                        if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                        if (ImGui.ImageButton("btnNewMap", this.AddIcon, Vec12x12))
                         {
                             PacketCreateMap pcm = new PacketCreateMap();
                             pcm.Send();

@@ -37,7 +37,7 @@
                             ImGui.BeginDisabled();
                         }
 
-                        if (ImGui.ImageButton(this.DeleteIcon, new System.Numerics.Vector2(16, 16)) && canEdit)
+                        if (ImGui.ImageButton("btnDeleteObject", this.DeleteIcon, new System.Numerics.Vector2(16, 16)) && canEdit)
                         {
                             List<(Guid, Guid)> l = new List<(Guid, Guid)>() { (mo.MapID, mo.ID) };
                             PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = l, SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
@@ -260,8 +260,7 @@
                                 float cVal = db.CurrentValue;
                                 float mVal = db.MaxValue;
                                 bool compact = db.Compact;
-                                ImGui.PushID("##BarDeleteBtn_" + i);
-                                if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                                if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
                                 {
                                     PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
                                     pmob.Send();
@@ -272,7 +271,6 @@
                                     ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
                                 }
 
-                                ImGui.PopID();
                                 ImGui.SameLine();
                                 ImGui.PushItemWidth(100);
                                 if (ImBarInput("##DBValue_" + i, ref cVal, 0, db.MaxValue))
@@ -316,7 +314,7 @@
 
                             }
 
-                            if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                            if (ImGui.ImageButton("btnAddBar", this.AddIcon, Vec12x12))
                             {
                                 Random rand = new Random();
                                 Color hsv = (Color)new HSVColor((float)(rand.NextDouble() * 360), 1, 1);
@@ -343,8 +341,7 @@
                                     float aRange = aura.Item1;
                                     Color aClr = aura.Item2;
 
-                                    ImGui.PushID("##AuraDeleteBtn_" + i);
-                                    if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                                    if (ImGui.ImageButton("##AuraDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
                                     {
                                         new PacketAura() { ActionType = PacketAura.Action.Delete, Index = i, MapID = mo.MapID, ObjectID = mo.ID }.Send();
                                     }
@@ -354,7 +351,6 @@
                                         ImGui.SetTooltip(lang.Translate("ui.auras.delete"));
                                     }
 
-                                    ImGui.PopID();
                                     ImGui.SameLine();
                                     ImGui.PushItemWidth(100);
                                     if (ImGui.InputFloat("##AUValue_" + i, ref aRange))
@@ -374,7 +370,7 @@
                                 }
                             }
 
-                            if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                            if (ImGui.ImageButton("btnAddAura", this.AddIcon, Vec12x12))
                             {
                                 Random rand = new Random();
                                 Color hsv = (Color)new HSVColor((float)(rand.NextDouble() * 360), 1, 1);
@@ -483,7 +479,7 @@
                                     }
                                 }
 
-                                if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                                if (ImGui.ImageButton("btnAddParticleContainer", this.AddIcon, Vec12x12))
                                 {
                                     ParticleContainer pc = new ParticleContainer(mo);
                                     new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Add, MapID = mo.MapID, ObjectID = mo.ID, Container = pc.Serialize() }.Send();
@@ -518,14 +514,12 @@
                             foreach (KeyValuePair<string, (float, float)> kv in mo.StatusEffects)
                             {
                                 ImGui.SetCursorPos(cursorNow + new System.Numerics.Vector2(cX, cY));
-                                ImGui.PushID("##BtnRemoveStatus_" + kv.Key);
                                 System.Numerics.Vector2 st = new System.Numerics.Vector2(kv.Value.Item1, kv.Value.Item2);
-                                if (ImGui.ImageButton(this.StatusAtlas, Vec24x24, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
+                                if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
                                 {
                                     new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = mo.ID, EffectName = kv.Key, Remove = true }.Send();
                                 }
 
-                                ImGui.PopID();
                                 cX += 40;
                                 if (cX + 40 > aW)
                                 {
@@ -536,14 +530,12 @@
                         }
 
                         ImGui.SetCursorPos(cursorNow + new System.Numerics.Vector2(cX, cY));
-                        ImGui.PushID("##BtnAddStatus");
-                        if (ImGui.ImageButton(this.AddIcon, Vec24x24))
+                        if (ImGui.ImageButton("##BtnAddStatus", this.AddIcon, Vec24x24))
                         {
                             this._editedMapObject = mo;
                             state.newStatusEffectPopup = true;
                         }
 
-                        ImGui.PopID();
                         ImGui.EndChild();
 
                         if (!canEdit)
@@ -617,7 +609,7 @@
 
                         ImGui.BeginChild("objNav_" + mo.ID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
                         ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                        if (ImGui.ImageButton(this.GotoIcon, new System.Numerics.Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
+                        if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new System.Numerics.Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
                         {
                             Vector3 p = mo.Position;
                             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;

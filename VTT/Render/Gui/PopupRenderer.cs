@@ -552,13 +552,11 @@
                 {
                     ImGui.SetCursorPos(cursorStart + new System.Numerics.Vector2(cX, cY));
                     System.Numerics.Vector2 st = new System.Numerics.Vector2(btn.Item2, btn.Item3);
-                    ImGui.PushID("##BtnStatus_" + btn.Item1);
-                    if (ImGui.ImageButton(this.StatusAtlas, Vec32x32, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
+                    if (ImGui.ImageButton("##BtnStatus_" + btn.Item1, this.StatusAtlas, Vec32x32, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
                     {
                         new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = this._editedMapObject.ID, EffectName = btn.Item1, S = btn.Item2, T = btn.Item3, Remove = false }.Send();
                     }
 
-                    ImGui.PopID();
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(btn.Item1);

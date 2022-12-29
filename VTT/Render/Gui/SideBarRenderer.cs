@@ -30,7 +30,7 @@
                         ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                     }
 
-                    if (ImGui.ImageButton(_modeTextures[i], Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                    if (ImGui.ImageButton("btnMode_" + i, _modeTextures[i], Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                     {
                         mor.EditMode = (EditMode)i;
                     }
@@ -65,7 +65,7 @@
                     }
 
                     bool sto = this._showingTurnOrder;
-                    if (ImGui.ImageButton(this.ToggleTurnOrder, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                    if (ImGui.ImageButton("btnOpenTurnTracker", this.ToggleTurnOrder, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                     {
                         this._showingTurnOrder = !this._showingTurnOrder;
                     }
@@ -124,7 +124,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.FOWRevealIcon, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnFowControls", this.FOWRevealIcon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     fowr.CanvasMode = FOWRenderer.RevealMode.Reveal;
                 }
@@ -146,7 +146,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.FOWHideIcon, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnFowHide", this.FOWHideIcon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     fowr.CanvasMode = FOWRenderer.RevealMode.Hide;
                 }
@@ -167,7 +167,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.FOWModeBox, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnFowBox", this.FOWModeBox, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     fowr.PaintMode = FOWRenderer.SelectionMode.Box;
                 }
@@ -189,7 +189,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.FOWModePolygon, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnFowPoly", this.FOWModePolygon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     fowr.PaintMode = FOWRenderer.SelectionMode.Polygon;
                 }
@@ -212,7 +212,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.FOWModeBrush, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnFowBrush", this.FOWModeBrush, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     fowr.PaintMode = FOWRenderer.SelectionMode.Brush;
                 }
@@ -336,7 +336,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.MoveArrows, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnMoveArrows", this.MoveArrows, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows = true;
                 }
@@ -358,7 +358,7 @@
                     ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                 }
 
-                if (ImGui.ImageButton(this.MoveGizmo, Vec32x32, Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnMoveGizmo", this.MoveGizmo, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows = false;
                 }
@@ -386,9 +386,7 @@
                 ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
             }
 
-            ImGui.PushID(id);
-            bool ret = ImGui.ImageButton(image, size, Vector2.Zero, Vector2.One, 0, Vector4.Zero);
-            ImGui.PopID();
+            bool ret = ImGui.ImageButton(id, image, size, Vector2.Zero, Vector2.One, Vector4.Zero);
 
             if (border)
             {

@@ -200,7 +200,7 @@
                     this._mouseOverAssets = ImGui.IsWindowHovered();
 
                     ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                    if (ImGui.ImageButton(this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
+                    if (ImGui.ImageButton("btn_asset_back", this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
                     {
                         state.moveTo = this.CurrentFolder.Parent;
                     }
@@ -215,7 +215,7 @@
                     ImGui.SameLine();
 
                     ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                    if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                    if (ImGui.ImageButton("btn_asset_add_folder", this.AddIcon, Vec12x12))
                     {
                         state.openNewFolderPopup = true;
                     }
@@ -226,7 +226,7 @@
                     }
 
                     ImGui.SameLine();
-                    if (ImGui.ImageButton(this.AssetParticleIcon, Vec12x12))
+                    if (ImGui.ImageButton("btn_asset_add_particle", this.AssetParticleIcon, Vec12x12))
                     {
                         ParticleSystem ps = new ParticleSystem();
                         AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem };

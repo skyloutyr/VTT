@@ -27,7 +27,7 @@
                     }
 
                     ImGui.PushID("BtnDeleteJournal_" + tj.SelfID.ToString());
-                    if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                    if (ImGui.ImageButton("BtnDeleteJournal_" + tj.SelfID.ToString(), this.DeleteIcon, Vec12x12))
                     {
                         new PacketDeleteJournal() { JournalID = tj.SelfID }.Send();
                     }
@@ -41,7 +41,7 @@
                     ImGui.SameLine();
                     ImGui.SetCursorPosX(wC.X - 32 - 56);
                     ImGui.PushID("BtnEditJournal_" + tj.SelfID.ToString());
-                    if (ImGui.ImageButton(this.JournalEdit, Vec12x12))
+                    if (ImGui.ImageButton("BtnEditJournal_" + tj.SelfID.ToString(), this.JournalEdit, Vec12x12))
                     {
                         state.journalPopup = true;
                         this._editedJournal = tj;
@@ -60,7 +60,7 @@
                 }
 
                 ImGui.PushID("btnNewJournal");
-                if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                if (ImGui.ImageButton("btnNewJournal", this.AddIcon, Vec12x12))
                 {
                     if (Client.Instance.IsAdmin)
                     {

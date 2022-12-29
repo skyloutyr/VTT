@@ -89,7 +89,7 @@
                     ImGui.SetCursorPos(imPos);
                     ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
                     Texture btnTex = this.IsPaused ? Client.Instance.Frontend.Renderer.GuiRenderer.PlayIcon : Client.Instance.Frontend.Renderer.GuiRenderer.PauseIcon;
-                    if (ImGui.ImageButton(btnTex, new Vector2(20, 20), Vector2.Zero, Vector2.One, 4, Vector4.Zero))
+                    if (ImGui.ImageButton("btnPauseChatAnimation_" + this.Container.Index, btnTex, new Vector2(20, 20), Vector2.Zero, Vector2.One, Vector4.Zero))
                     {
                         this.IsPaused = !this.IsPaused;
                         this.PauseFrame = Client.Instance.Frontend.UpdatesExisted;

@@ -107,21 +107,21 @@
 
                 ImGui.SameLine();
                 float bscX = ImGui.GetCursorPosX();
-                if (ImGui.ImageButton(this.ChatLinkImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0))
+                if (ImGui.ImageButton("btnChatLinkImage", this.ChatLinkImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
                 {
                     state.linkPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cwSize.Y - 82);
-                if (ImGui.ImageButton(this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0))
+                if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
                 {
                     state.rollPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cwSize.Y - 36);
-                sendSignal |= ImGui.ImageButton(this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f), 0);
+                sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f));
                 ImGui.SetCursorPosY(cwB.Y);
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));

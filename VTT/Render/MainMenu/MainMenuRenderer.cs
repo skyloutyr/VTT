@@ -79,7 +79,7 @@
                 ImGui.Image(this.BetaMascot, new Vector2(49, 59));
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 320 + 624, 159));
-                if (ImGui.ImageButton(this._betaSwitchOff ? this.BetaSwitchOff : this.BetaSwitch, new Vector2(14, 19), Vector2.Zero, Vector2.One, 0, Vector4.Zero))
+                if (ImGui.ImageButton("btnBetaSwitch", this._betaSwitchOff ? this.BetaSwitchOff : this.BetaSwitch, new Vector2(14, 19), Vector2.Zero, Vector2.One, Vector4.Zero))
                 {
                     this._betaSwitchOff = !this._betaSwitchOff;
                 }

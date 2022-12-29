@@ -250,8 +250,7 @@
                             }
 
                             ImGui.SameLine();
-                            ImGui.PushID("TeamDeleteButton_" + i);
-                            if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                            if (ImGui.ImageButton("TeamDeleteButton_" + i, this.DeleteIcon, Vec12x12))
                             {
                                 PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.Delete, Name = t.Name };
                                 pti.Send();
@@ -262,15 +261,13 @@
                                 ImGui.SetTooltip(lang.Translate("ui.teams.delete"));
                             }
 
-                            ImGui.PopID();
-
                             if (i == 0)
                             {
                                 ImGui.EndDisabled();
                             }
                         }
 
-                        if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                        if (ImGui.ImageButton("btnAddTeam", this.AddIcon, Vec12x12))
                         {
                             PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.Add, Color = Color.White, Name = "New Team " + cMap.TurnTracker.Teams.Count };
                             pti.Send();
@@ -303,8 +300,7 @@
                             ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)Color.RoyalBlue);
                         }
 
-                        ImGui.PushID("TurnTrackerVisibilityButton");
-                        if (ImGui.ImageButton(this.FOWRevealIcon, Vec12x12))
+                        if (ImGui.ImageButton("TurnTrackerVisibilityButton", this.FOWRevealIcon, Vec12x12))
                         {
                             PacketToggleTurnTrackerVisibility ptttv = new PacketToggleTurnTrackerVisibility() { Action = !cMap.TurnTracker.Visible };
                             ptttv.Send();
@@ -315,15 +311,13 @@
                             ImGui.SetTooltip(lang.Translate("ui.turn_tracker.visible"));
                         }
 
-                        ImGui.PopID();
                         ImGui.SameLine();
                         if (ttVisible)
                         {
                             ImGui.PopStyleColor();
                         }
 
-                        ImGui.PushID("TurnTrackerAddSelectedButton");
-                        if (ImGui.ImageButton(this.AddIcon, Vec12x12))
+                        if (ImGui.ImageButton("TurnTrackerAddSelectedButton", this.AddIcon, Vec12x12))
                         {
                             for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count; i++)
                             {
@@ -337,7 +331,6 @@
                             ImGui.SetTooltip(lang.Translate("ui.turn_tracker.add_selected"));
                         }
 
-                        ImGui.PopID();
                         ImGui.PopStyleVar();
                         ImGui.SameLine();
 
@@ -423,8 +416,7 @@
                                 ImGui.EndDragDropSource();
                             }
 
-                            ImGui.PushID("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString());
-                            if (ImGui.ImageButton(this.GotoIcon, Vec12x12))
+                            if (ImGui.ImageButton("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString(), this.GotoIcon, Vec12x12))
                             {
                                 if (haveObject)
                                 {
@@ -445,10 +437,8 @@
                                 ImGui.SetTooltip(lang.Translate("ui.turn_tracker.goto"));
                             }
 
-                            ImGui.PopID();
                             ImGui.SameLine();
-                            ImGui.PushID("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString());
-                            if (ImGui.ImageButton(this.MoveToIcon, Vec12x12))
+                            if (ImGui.ImageButton("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString(), this.MoveToIcon, Vec12x12))
                             {
                                 new PacketMoveTurnToIndex() { Index = i }.Send();
                             }
@@ -457,8 +447,6 @@
                             {
                                 ImGui.SetTooltip(lang.Translate("ui.turn_tracker.set_turn"));
                             }
-
-                            ImGui.PopID();
 
                             ImGui.SameLine();
                             int tIdx = cMap.TurnTracker.Teams.IndexOf(e.Team);
@@ -486,8 +474,7 @@
 
                             ImGui.PopItemWidth();
                             ImGui.SameLine();
-                            ImGui.PushID("DeleteTurnEntry" + i + "_" + e.ObjectID);
-                            if (ImGui.ImageButton(this.DeleteIcon, Vec12x12))
+                            if (ImGui.ImageButton("DeleteTurnEntry" + i + "_" + e.ObjectID, this.DeleteIcon, Vec12x12))
                             {
                                 new PacketDeleteTurnEntry() { EntryIndex = i }.Send();
                             }
@@ -497,7 +484,6 @@
                                 ImGui.SetTooltip(lang.Translate("ui.turn_tracker.delete"));
                             }
 
-                            ImGui.PopID();
                             ImGui.SameLine();
                             ImGui.TextUnformatted(oName);
                             ImGui.SameLine();

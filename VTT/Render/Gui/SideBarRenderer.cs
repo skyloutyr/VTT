@@ -379,6 +379,88 @@
             }
         }
 
+        private unsafe void RenderCameraControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        {
+            if (mor.EditMode == EditMode.Select)
+            {
+                ImGui.SetNextWindowBgAlpha(0.35f);
+                ImGui.SetNextWindowPos(Vec56x70);
+                ImGui.Begin("##CameraMoveControls", window_flags);
+
+                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+
+                CameraControlMode ccm = Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode;
+                if (ccm == CameraControlMode.Standard)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                }
+
+                if (ImGui.ImageButton("btnSelectCameraStd", this.Select, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Standard;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.camera.standard"));
+                }
+
+                if (ccm == CameraControlMode.Standard)
+                {
+                    ImGui.PopStyleColor();
+                }
+
+                ImGui.SameLine();
+
+                if (ccm == CameraControlMode.Move)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                }
+
+                if (ImGui.ImageButton("btnSelectCameraMove", this.CameraMove, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Move;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.camera.move"));
+                }
+
+                if (ccm == CameraControlMode.Move)
+                {
+                    ImGui.PopStyleColor();
+                }
+
+                ImGui.SameLine();
+
+                if (ccm == CameraControlMode.Rotate)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                }
+
+                if (ImGui.ImageButton("btnSelectCameraRotate", this.CameraRotate, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Rotate;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.camera.rotate"));
+                }
+
+                if (ccm == CameraControlMode.Rotate)
+                {
+                    ImGui.PopStyleColor();
+                }
+
+                ImGui.PopStyleColor();
+                ImGui.PopStyleVar();
+                ImGui.End();
+            }
+        }
+
         private static bool ImImageButton(string id, Texture image, Vector2 size, bool border)
         {
             if (border)

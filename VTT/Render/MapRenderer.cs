@@ -23,6 +23,7 @@
 
         public int CurrentLayer { get; set; }
         public float ZoomOrtho => this.camera2dzoom;
+        public CameraControlMode CameraControlMode { get; set; } = CameraControlMode.Standard;
 
         public void Update(double time) => this.HandleCamera(time);
 
@@ -319,6 +320,11 @@
             }
         }
 
+        public bool IsCameraMMBDown()
+        {
+            return Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) || (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && this.CameraControlMode != CameraControlMode.Standard);
+        }
+
         public void HandleCamera(double time)
         {
             bool mouseCap = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
@@ -424,10 +430,10 @@
                 }
             }
 
-            if (!drag && !mouseCap && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) && !this._mmbPressed)
+            if (!drag && !mouseCap && this.IsCameraMMBDown() && !this._mmbPressed)
             {
                 this._mmbPressed = true;
-                this._cameraBeingMoved = this.IsOrtho || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift);
+                this._cameraBeingMoved = this.IsOrtho || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || this.CameraControlMode == CameraControlMode.Move || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift);
                 this._cameraBeingRotated = !this._cameraBeingMoved;
                 if (this._cameraBeingRotated)
                 {
@@ -550,7 +556,7 @@
                 this._mouseWheelDY = 0;
             }
 
-            if (!mouseCap && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) && this._mmbPressed)
+            if (!mouseCap && !this.IsCameraMMBDown() && this._mmbPressed)
             {
                 this._mmbPressed = this._cameraBeingMoved = this._cameraBeingRotated = false;
             }
@@ -592,5 +598,12 @@
 
             return ret;
         }
+    }
+
+    public enum CameraControlMode
+    {
+        Standard,
+        Move,
+        Rotate
     }
 }

@@ -72,7 +72,7 @@
                 }
             }
 
-            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure))
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
                 bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
                 if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
@@ -607,7 +607,7 @@
 
         private void HandleMovementGizmo()
         {
-            if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lbmDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale))
+            if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lbmDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
                 if (this._moveMode == 4)
                 {

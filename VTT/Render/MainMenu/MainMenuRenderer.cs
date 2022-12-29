@@ -322,6 +322,7 @@
                         ImGui.Text("    trash-can");
                         ImGui.Text("    vertical-line");
                         ImGui.Text("    visialy-impared");
+                        ImGui.Text("    video-camera");
                         ImGui.NewLine();
                         ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
                         ImGui.NewLine();

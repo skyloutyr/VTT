@@ -86,6 +86,9 @@
         public Texture NetworkIn { get; set; }
         public Texture NetworkOut { get; set; }
 
+        public Texture CameraMove { get; set; }
+        public Texture CameraRotate { get; set; }
+
         public int LoadingSpinnerFrames { get; set; }
         #endregion
 
@@ -241,6 +244,9 @@
             this.NetworkIn = OpenGLUtil.LoadUIImage("icons8-incoming-data-40");
             this.NetworkOut = OpenGLUtil.LoadUIImage("icons8-outgoing-data-40");
 
+            this.CameraMove = OpenGLUtil.LoadUIImage("icons8-video-camera-move-40");
+            this.CameraRotate = OpenGLUtil.LoadUIImage("icons8-video-camera-rotate-40");
+
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
@@ -294,6 +300,7 @@
             this.RenderDebugInfo(time, window_flags);
             this.RenderFOWControls(mor, lang, window_flags);
             this.RenderTranslationControls(mor, lang, window_flags);
+            this.RenderCameraControls(mor, lang, window_flags);
             this.RenderMeasureControls(mor, lang, window_flags);
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);

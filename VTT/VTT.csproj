@@ -89,6 +89,8 @@
     <None Remove="Embed\icons8-thinking-male-40.png" />
     <None Remove="Embed\icons8-trash-can-40.png" />
     <None Remove="Embed\icons8-vertical-line-40.png" />
+    <None Remove="Embed\icons8-video-camera-move-40.png" />
+    <None Remove="Embed\icons8-video-camera-rotate-40.png" />
     <None Remove="Embed\icons8-visualy-impaired-40.png" />
     <None Remove="Embed\Lang\en-EN.txt" />
     <None Remove="Embed\Lang\ru-RU.txt" />
@@ -198,6 +200,8 @@
     <EmbeddedResource Include="Embed\icons8-thinking-male-40.png" />
     <EmbeddedResource Include="Embed\icons8-trash-can-40.png" />
     <EmbeddedResource Include="Embed\icons8-vertical-line-40.png" />
+    <EmbeddedResource Include="Embed\icons8-video-camera-move-40.png" />
+    <EmbeddedResource Include="Embed\icons8-video-camera-rotate-40.png" />
     <EmbeddedResource Include="Embed\icons8-visualy-impaired-40.png" />
     <EmbeddedResource Include="Embed\Lang\ru-RU.txt" />
     <EmbeddedResource Include="Embed\Lang\en-EN.txt" />

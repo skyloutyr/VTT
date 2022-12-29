@@ -25,8 +25,8 @@
                 {
                     if (m.Is2D)
                     {
-                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = new Vector3(this.CameraDirection.X, this.CameraDirection.Y, m.Camera2DHeight);
-                        Client.Instance.Frontend.Renderer.MapRenderer.ChangeFOVOrZoom(this.CameraDirection.Z);
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = new Vector3(this.CameraPosition.X, this.CameraPosition.Y, m.Camera2DHeight);
+                        Client.Instance.Frontend.Renderer.MapRenderer.ChangeFOVOrZoom(this.CameraPosition.Z);
                     }
                     else
                     {

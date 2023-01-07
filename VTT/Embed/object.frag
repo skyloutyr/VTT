@@ -2,6 +2,7 @@
 
 #define SHADOW_BIAS_MAX 0.01
 #define SHADOW_BIAS_MIN 0.0005
+#define PCF_ITERATIONS 2
 
 #define HAS_POINT_SHADOWS
 #define HAS_DIRECTIONAL_SHADOWS
@@ -54,7 +55,7 @@ uniform vec4 m_aomr_frame;
 uniform vec4 tint_color;
 
 // Directional light
-uniform sampler2DShadow dl_shadow_map;
+uniform sampler2D dl_shadow_map;
 
 // Point lights
 uniform vec3 pl_position[16];
@@ -63,7 +64,7 @@ uniform vec2 pl_cutout[16];
 uniform int pl_index[16];
 
 uniform int pl_num;
-uniform sampler2DArrayShadow pl_shadow_maps;
+uniform sampler2DArray pl_shadow_maps;
 
 // fow
 uniform usampler2D fow_texture;
@@ -146,6 +147,42 @@ float gaSchlickGGX(float cosLi, float cosLo, float roughness)
 	return gaSchlickG1(cosLi, k) * gaSchlickG1(cosLo, k);
 }
 
+float getShadowDepth2DArray(sampler2DArray sampler, vec3 coords, float depth)
+{
+    float pcf_itr_con = 0;
+    float shadow = 0.0;
+    vec2 mOffset = vec2(1.0, 1.0) / textureSize(sampler, 0).xy;
+    for (int y = -PCF_ITERATIONS; y <= PCF_ITERATIONS; ++y)
+    {
+        for (int x = -PCF_ITERATIONS; x <= PCF_ITERATIONS; ++x)
+        {
+            vec2 offset = vec2(x, y) * mOffset;
+            shadow += texture(sampler, coords + vec3(offset, 0.0)).r < depth ? 0.0 : 1.0;
+            ++pcf_itr_con;
+        }
+    }
+
+    return shadow / pcf_itr_con;
+}
+
+float getShadowDepth2D(sampler2D sampler, vec2 coords, float depth)
+{
+    float pcf_itr_con = 0;
+    float shadow = 0.0;
+    vec2 mOffset = vec2(1.0, 1.0) / textureSize(sampler, 0).xy;
+    for (int y = -PCF_ITERATIONS; y <= PCF_ITERATIONS; ++y)
+    {
+        for (int x = -PCF_ITERATIONS; x <= PCF_ITERATIONS; ++x)
+        {
+            vec2 offset = vec2(x, y) * mOffset;
+            shadow += texture(sampler, coords + offset).r < depth ? 0.0 : 1.0;
+            ++pcf_itr_con;
+        }
+    }
+
+    return shadow / pcf_itr_con;
+}
+
 #ifndef BRANCHING
 vec2 project2CubemapTexture(vec3 vec, int side)
 {
@@ -165,8 +202,9 @@ float computeShadowForSide(int light, vec3 light2frag, vec3 norm, int side, int 
 	vec2 coords = project2CubemapTexture(light2frag, side);
 	float current_depth = length(light2frag) / pl_cutout[light].x;
 	float bias = 0;  
-	float shadow_depth = texture(pl_shadow_maps, vec4(coords.x, coords.y, offset + side, current_depth - bias));
-	return clamp(shadow_depth * pl_cutout[light].y, 0, 1);
+	//float shadow_depth = texture(pl_shadow_maps, vec4(coords.x, coords.y, offset + side, current_depth - bias));
+    float shadow_depth = getShadowDepth2DArray(pl_shadow_maps, vec3(coords.x, coords.y, offset + side), current_depth - bias);
+    return clamp(shadow_depth * pl_cutout[light].y, 0, 1);
 }
 
 float computeShadow(int light, vec3 light2frag, vec3 norm)
@@ -212,7 +250,8 @@ float texCubemap(vec3 uvw, float offset, float currentDepth)
 {
     vec3 st = cubemap(uvw);
     st.z += offset;
-    return texture(pl_shadow_maps, vec4(st, currentDepth));
+    //return texture(pl_shadow_maps, vec4(st, currentDepth));
+    return getShadowDepth2DArray(pl_shadow_maps, st, currentDepth);
 }
 
 float computeShadow(int light, vec3 light2frag, vec3 norm)
@@ -270,7 +309,8 @@ float calcDirectionalShadows(vec3 surface_normal)
     float currentDepth = proj_coords.z;    
     float cosTheta = dot(surface_normal, -dl_direction);
     float bias = clamp(0.003 * tan(acos(cosTheta)), 0.0, 0.01);
-    float result = texture(dl_shadow_map, vec3(proj_coords.xy, currentDepth - bias));
+    //float result = texture(dl_shadow_map, vec3(proj_coords.xy, currentDepth - bias));
+    float result = getShadowDepth2D(dl_shadow_map, proj_coords.xy, currentDepth - bias);
     return result;
 #else
     return 1.0;

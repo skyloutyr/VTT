@@ -227,6 +227,8 @@
                 RemoveDefine(ref lineFrag, "BRANCHING");
             }
 
+            lineFrag = lineFrag.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
+
             this.RenderShader?.Dispose();
 
             if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))

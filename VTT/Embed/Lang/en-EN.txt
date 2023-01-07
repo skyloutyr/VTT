@@ -411,3 +411,5 @@ menu.settings.enable_particles.tt=Controls whether particles are enabled and dra
 ui.camera.standard=Camera mode: Selection\nIn this mode the left mouse button acts as a tool for object selection and manipulation.
 ui.camera.move=Camera mode: Move\nIn this mode the left mouse button acts as a tool for camera movement.
 ui.camera.rotate=Camera mode: Move\nIn this mode the left mouse button acts as a tool for camera rotation.
+menu.settings.pcf_quality=Shadow Filtering
+menu.settings.pcf_quality.tt=Controls the smoothness of shadows at the cost of performance.

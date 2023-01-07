@@ -408,6 +408,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool ParticlesEnabled { get; set; } = true;
 
+        [DefaultValue(2)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int ShadowsPCF { get; set; } = 2;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -443,7 +447,8 @@
                 LastConnectIPAddress = string.Empty,
                 LastConnectPort = string.Empty,
                 DebugSettingsEnabled = false,
-                ParticlesEnabled = true
+                ParticlesEnabled = true,
+                ShadowsPCF = 2
             };
 
             ret.Save();

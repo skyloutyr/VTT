@@ -79,10 +79,10 @@
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
             GL.TexImage3D(TextureTarget.Texture2DArray, 0, PixelInternalFormat.DepthComponent, ShadowMapResolution, ShadowMapResolution, 6 * MaxLightsNum, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
-            this.DepthMap.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+            this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
-            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
+            //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
+            //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
 
             this.FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO);
@@ -105,10 +105,10 @@
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
             GL.TexImage3D(TextureTarget.Texture2DArray, 0, PixelInternalFormat.DepthComponent, resolution, resolution, 6 * MaxLightsNum, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
-            this.DepthMap.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+            this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
-            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
+            //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
+            //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
             if (this.FBO != 0)
             {
                 GL.DeleteFramebuffer(this.FBO);

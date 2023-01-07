@@ -582,6 +582,21 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.enable_particles.tt"));
                     }
 
+                    int sPcfQ = Client.Instance.Settings.ShadowsPCF;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.pcf_quality"));
+                    ImGui.SameLine();
+                    if (ImGui.SliderInt("###PCF Quality", ref sPcfQ, 1, 5))
+                    {
+                        Client.Instance.Settings.ShadowsPCF = sPcfQ;
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches);
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.pcf_quality.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

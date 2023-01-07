@@ -26,11 +26,11 @@
         {
             this._sunDepthTexture = new Texture(TextureTarget.Texture2D);
             this._sunDepthTexture.Bind();
-            this._sunDepthTexture.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+            this._sunDepthTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._sunDepthTexture.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
+            //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
+            //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent, ShadowMapResolution, ShadowMapResolution, 0, PixelFormat.DepthComponent, PixelType.Float, System.IntPtr.Zero);
 
             this._sunFbo = GL.GenFramebuffer();

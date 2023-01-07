@@ -7,20 +7,28 @@ layout (location = 3) in vec3 v_tangent;
 layout (location = 4) in vec3 v_bitangent;
 layout (location = 5) in vec4 v_color;
 
+layout (std140) uniform FrameData {
+	mat4 view;
+	mat4 projection;
+	mat4 sun_view;
+	mat4 sun_projection;
+	vec3 camera_position;
+	vec3 camera_direction;
+	vec3 dl_direction;
+	vec3 dl_color;
+	vec3 al_color;
+	vec3 sky_color;
+	vec3 cursor_position;
+	vec4 grid_color;
+	vec4 dv_data;
+	uint frame;
+	uint update;
+	float grid_size;
+};
+
 // Camera
 uniform mat4 model;
 uniform mat4 mvp;
-
-// Sun Shadows
-uniform mat4 sun_view;
-uniform mat4 sun_projection;
-
-// Scene data
-uniform uint frame;
-uniform uint update;
-
-// Lights data
-// TODO lights
 
 out mat3 f_tbn;
 out vec3 f_normal;

@@ -58,6 +58,11 @@
             GL.BufferSubData(this._target, (IntPtr)(size * offset), size * length, dat);
         }
 
+        public void SetSubData(IntPtr dat, int length, int offset)
+        {
+            GL.BufferSubData(this._target, (IntPtr)(offset), length, dat);
+        }
+
         public void GetSubData<T>(T[] dat, int offset) where T : struct
         {
             int size = Marshal.SizeOf(typeof(T));

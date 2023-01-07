@@ -10,11 +10,26 @@ in vec3 f_world_position;
 in vec4 f_color;
 in vec2 f_texture;
 
-uniform uint frame;
-uniform uint update;
-const float alpha = 1.0;
+layout (std140) uniform FrameData {
+	mat4 view;
+	mat4 projection;
+	mat4 sun_view;
+	mat4 sun_projection;
+	vec3 camera_position;
+	vec3 camera_direction;
+	vec3 dl_direction;
+	vec3 dl_color;
+	vec3 al_color;
+	vec3 sky_color;
+	vec3 cursor_position;
+	vec4 grid_color;
+	vec4 dv_data;
+	uint frame;
+	uint update;
+	float grid_size;
+};
 
-uniform vec3 camera_position;
+const float alpha = 1.0;
 
 uniform vec4 m_diffuse_color;
 uniform float m_metal_factor;
@@ -32,8 +47,6 @@ uniform vec4 m_aomr_frame;
 uniform vec4 tint_color;
 
 uniform float grid_alpha;
-uniform float grid_size;
-uniform vec3 cursor_position;
 
 out vec4 g_position;
 out vec4 g_normal;

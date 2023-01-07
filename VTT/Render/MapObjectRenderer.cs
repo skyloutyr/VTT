@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Asset.Obj;
     using VTT.Control;
@@ -112,6 +113,8 @@
             {
                 this.DeferredPipeline.Create();
             }
+
+            this.FrameUBOManager = new FrameUBOManager();
         }
 
         #region Hightlight Box
@@ -200,6 +203,8 @@
             new Vector3(1f, 1f, 1f),
         };
 
+        public FrameUBOManager FrameUBOManager { get; private set; }
+
         public void ReloadObjectShader(bool dirShadows, bool pointShadows, bool noBranches)
         {
             string lineVert = IOVTT.ResourceToString("VTT.Embed.object.vert");
@@ -233,10 +238,13 @@
 
             this.RenderShader = sp;
             this.RenderShader.Bind();
+            this.RenderShader.BindUniformBlock("FrameData", 1);
             this.RenderShader["m_texture_diffuse"].Set(0);
             this.RenderShader["m_texture_normal"].Set(1);
             this.RenderShader["m_texture_emissive"].Set(2);
             this.RenderShader["m_texture_aomr"].Set(3);
+            this.RenderShader["pl_shadow_maps"].Set(13);
+            this.RenderShader["dl_shadow_map"].Set(14);
             if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Deferred)
             {
                 this.DeferredPipeline?.RecompileShaders(dirShadows, pointShadows, noBranches);
@@ -341,6 +349,7 @@
             if (m != null)
             {
                 this.DirectionalLightRenderer.Render(m, delta);
+                this.UpdateUBO(m);
                 if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Forward)
                 {
                     this.RenderForward(m);
@@ -891,6 +900,45 @@
             GL.Enable(EnableCap.CullFace);
         }
 
+        private void UpdateUBO(Map m)
+        {
+            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+            Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
+            Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
+            Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
+            Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
+
+            this.FrameUBOManager.memory.view = cam.View;
+            this.FrameUBOManager.memory.projection = cam.Projection;
+            this.FrameUBOManager.memory.frame = (uint)Client.Instance.Frontend.FramesExisted;
+            this.FrameUBOManager.memory.update = (uint)Client.Instance.Frontend.UpdatesExisted;
+            this.FrameUBOManager.memory.camera_position = cam.Position;
+            this.FrameUBOManager.memory.camera_direction = cam.Direction;
+            this.FrameUBOManager.memory.dl_direction = sunDir;
+            this.FrameUBOManager.memory.dl_color = sunColor.Vec3() * m.SunIntensity;
+            this.FrameUBOManager.memory.al_color = ambientColor * m.AmbietIntensity;
+            this.FrameUBOManager.memory.sun_view = this.DirectionalLightRenderer.SunView;
+            this.FrameUBOManager.memory.sun_projection = this.DirectionalLightRenderer.SunProjection;
+            this.FrameUBOManager.memory.sky_color = skyColor.Vec3();
+            this.FrameUBOManager.memory.grid_color = m.GridColor.Vec4();
+            this.FrameUBOManager.memory.grid_size = m.GridSize;
+            this.FrameUBOManager.memory.cursor_position = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero;
+            this.FrameUBOManager.memory.dv_data = Vector4.Zero;
+            if (m.EnableDarkvision)
+            {
+                if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
+                {
+                    if (m.GetObject(kv.Item1, out MapObject mo))
+                    {
+                        this.FrameUBOManager.memory.dv_data = new Vector4(mo.Position, kv.Item2 / m.GridUnit);
+                    }
+                }
+            }
+
+            this.FrameUBOManager.Upload();
+            this.FrameUBOManager.Bind(1);
+        }
+
         private void UniformCommonData(Map m)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -902,20 +950,8 @@
 
             ShaderProgram shader = this.RenderShader;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-            shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-            shader["camera_position"].Set(cam.Position);
-            shader["camera_direction"].Set(cam.Direction);
-            shader["dl_direction"].Set(sunDir);
-            shader["dl_color"].Set(sunColor.Vec3() * m.SunIntensity);
-            shader["al_color"].Set(ambientColor * m.AmbietIntensity);
-            shader["sun_view"].Set(this.DirectionalLightRenderer.SunView);
-            shader["sun_projection"].Set(this.DirectionalLightRenderer.SunProjection);
-            shader["sky_color"].Set(skyColor.Vec3());
+           
             GL.ActiveTexture(TextureUnit.Texture14);
-            shader["dl_shadow_map"].Set(14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
             {
                 this.DirectionalLightRenderer.DepthTexture.Bind();
@@ -926,22 +962,7 @@
             }
 
             GL.ActiveTexture(TextureUnit.Texture13);
-            shader["pl_shadow_maps"].Set(13);
             plr.DepthMap.Bind();
-            shader["grid_color"].Set(m.GridColor.Vec4());
-            shader["grid_size"].Set(m.GridSize);
-            shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
-            shader["dv_data"].Set(Vector4.Zero);
-            if (m.EnableDarkvision)
-            {
-                if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                {
-                    if (m.GetObject(kv.Item1, out MapObject mo))
-                    {
-                        shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2));
-                    }
-                }
-            }
 
             GL.ActiveTexture(TextureUnit.Texture0);
             plr.UniformLights(shader);
@@ -1162,5 +1183,59 @@
         Scale,
         FOW,
         Measure
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 412, Pack = 0)]
+    public unsafe struct FrameUBO
+    {
+        [FieldOffset(0)] public Matrix4 view;
+        [FieldOffset(64)] public Matrix4 projection;
+        [FieldOffset(128)] public Matrix4 sun_view;
+        [FieldOffset(192)] public Matrix4 sun_projection;
+        [FieldOffset(256)] public Vector3 camera_position;
+        [FieldOffset(272)] public Vector3 camera_direction;
+        [FieldOffset(288)] public Vector3 dl_direction;
+        [FieldOffset(304)] public Vector3 dl_color;
+        [FieldOffset(320)] public Vector3 al_color;
+        [FieldOffset(336)] public Vector3 sky_color;
+        [FieldOffset(352)] public Vector3 cursor_position;
+        [FieldOffset(368)] public Vector4 grid_color;
+        [FieldOffset(384)] public Vector4 dv_data;
+        [FieldOffset(400)] public uint frame;
+        [FieldOffset(404)] public uint update;
+        [FieldOffset(408)] public float grid_size;
+    }
+
+    public class FrameUBOManager
+    {
+        public FrameUBO memory;
+
+        private readonly GPUBuffer _ubo;
+
+        public FrameUBOManager()
+        {
+            this.memory = new FrameUBO();
+            this._ubo = new GPUBuffer(BufferTarget.UniformBuffer, BufferUsageHint.StreamDraw);
+            this._ubo.Bind();
+            this._ubo.SetData(IntPtr.Zero, 412);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 1, this._ubo);
+        }
+
+        public void Bind(int bindingPoint)
+        {
+            //GL.BindBufferBase(BufferRangeTarget.UniformBuffer, bindingPoint, this._ubo);
+        }
+
+        public unsafe void Upload()
+        {
+            this._ubo.Bind();
+            fixed (FrameUBO* str = &this.memory)
+            {
+                this._ubo.SetSubData((IntPtr)str, 412, 0);
+            }
+
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+        }
     }
 }

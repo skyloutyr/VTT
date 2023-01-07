@@ -57,51 +57,54 @@
     {
         private readonly int byteSize;
 
-        public ElementType(int size, VertexAttribPointerType type, int byteSize)
+        public ElementType(int size, int std140machineSize, VertexAttribPointerType type, int byteSize)
         {
             this.Size = size;
+            this.MachineSize = std140machineSize;
             this.Type = type;
             this.byteSize = byteSize;
             this.Rows = 1;
         }
 
-        public ElementType(int size, VertexAttribPointerType type, int byteSize, int rows)
+        public ElementType(int size, int std140machineSize, VertexAttribPointerType type, int byteSize, int rows)
         {
             this.Size = size;
+            this.MachineSize = std140machineSize;
             this.Type = type;
             this.byteSize = byteSize;
             this.Rows = rows;
         }
 
-        public static ElementType SByte { get; } = new ElementType(1, VertexAttribPointerType.Byte, sizeof(byte));
-        public static ElementType Byte { get; } = new ElementType(1, VertexAttribPointerType.UnsignedByte, sizeof(byte));
-        public static ElementType Short { get; } = new ElementType(1, VertexAttribPointerType.Short, sizeof(short));
-        public static ElementType UShort { get; } = new ElementType(1, VertexAttribPointerType.UnsignedShort, sizeof(ushort));
-        public static ElementType Int { get; } = new ElementType(1, VertexAttribPointerType.Int, sizeof(int));
-        public static ElementType UInt { get; } = new ElementType(1, VertexAttribPointerType.UnsignedInt, sizeof(uint));
-        public static ElementType Float { get; } = new ElementType(1, VertexAttribPointerType.Float, sizeof(float));
-        public static ElementType Double { get; } = new ElementType(1, VertexAttribPointerType.Double, sizeof(double));
-        public static ElementType HalfFloat { get; } = new ElementType(1, VertexAttribPointerType.HalfFloat, 2);
-        public static ElementType Int2101010Rev { get; } = new ElementType(1, VertexAttribPointerType.Int2101010Rev, 4);
-        public static ElementType UInt2101010Rev { get; } = new ElementType(1, VertexAttribPointerType.UnsignedInt2101010Rev, 4);
-        public static ElementType Vec2 { get; } = new ElementType(2, VertexAttribPointerType.Float, sizeof(float));
-        public static ElementType Vec3 { get; } = new ElementType(3, VertexAttribPointerType.Float, sizeof(float));
-        public static ElementType Vec4 { get; } = new ElementType(4, VertexAttribPointerType.Float, sizeof(float));
-        public static ElementType Mat2 { get; } = new ElementType(2, VertexAttribPointerType.Float, sizeof(float), 2);
-        public static ElementType Mat3 { get; } = new ElementType(3, VertexAttribPointerType.Float, sizeof(float), 3);
-        public static ElementType Mat4 { get; } = new ElementType(4, VertexAttribPointerType.Float, sizeof(float), 4);
-        public static ElementType Vec2d { get; } = new ElementType(2, VertexAttribPointerType.Double, sizeof(double));
-        public static ElementType Vec3d { get; } = new ElementType(3, VertexAttribPointerType.Double, sizeof(double));
-        public static ElementType Vec4d { get; } = new ElementType(4, VertexAttribPointerType.Double, sizeof(double));
-        public static ElementType Mat2d { get; } = new ElementType(2, VertexAttribPointerType.Double, sizeof(double), 2);
-        public static ElementType Mat3d { get; } = new ElementType(3, VertexAttribPointerType.Double, sizeof(double), 3);
-        public static ElementType Mat4d { get; } = new ElementType(4, VertexAttribPointerType.Double, sizeof(double), 4);
-        public static ElementType Vec2h { get; } = new ElementType(2, VertexAttribPointerType.HalfFloat, sizeof(ushort));
-        public static ElementType Vec3h { get; } = new ElementType(3, VertexAttribPointerType.HalfFloat, sizeof(ushort));
-        public static ElementType Vec4h { get; } = new ElementType(4, VertexAttribPointerType.HalfFloat, sizeof(ushort));
+        public static ElementType SByte { get; } = new ElementType(1, 4, VertexAttribPointerType.Byte, sizeof(byte));
+        public static ElementType Byte { get; } = new ElementType(1, 4, VertexAttribPointerType.UnsignedByte, sizeof(byte));
+        public static ElementType Short { get; } = new ElementType(1, 4, VertexAttribPointerType.Short, sizeof(short));
+        public static ElementType UShort { get; } = new ElementType(1, 4, VertexAttribPointerType.UnsignedShort, sizeof(ushort));
+        public static ElementType Int { get; } = new ElementType(1, 4, VertexAttribPointerType.Int, sizeof(int));
+        public static ElementType UInt { get; } = new ElementType(1, 4, VertexAttribPointerType.UnsignedInt, sizeof(uint));
+        public static ElementType Float { get; } = new ElementType(1, 4, VertexAttribPointerType.Float, sizeof(float));
+        public static ElementType Double { get; } = new ElementType(1, 8, VertexAttribPointerType.Double, sizeof(double));
+        public static ElementType HalfFloat { get; } = new ElementType(1, 4, VertexAttribPointerType.HalfFloat, 2);
+        public static ElementType Int2101010Rev { get; } = new ElementType(1, 4, VertexAttribPointerType.Int2101010Rev, 4);
+        public static ElementType UInt2101010Rev { get; } = new ElementType(1, 4, VertexAttribPointerType.UnsignedInt2101010Rev, 4);
+        public static ElementType Vec2 { get; } = new ElementType(2, 8, VertexAttribPointerType.Float, sizeof(float));
+        public static ElementType Vec3 { get; } = new ElementType(3, 16, VertexAttribPointerType.Float, sizeof(float));
+        public static ElementType Vec4 { get; } = new ElementType(4, 16, VertexAttribPointerType.Float, sizeof(float));
+        public static ElementType Mat2 { get; } = new ElementType(2, 32, VertexAttribPointerType.Float, sizeof(float), 2);
+        public static ElementType Mat3 { get; } = new ElementType(3, 64, VertexAttribPointerType.Float, sizeof(float), 3);
+        public static ElementType Mat4 { get; } = new ElementType(4, 64, VertexAttribPointerType.Float, sizeof(float), 4);
+        public static ElementType Vec2d { get; } = new ElementType(2, 16, VertexAttribPointerType.Double, sizeof(double));
+        public static ElementType Vec3d { get; } = new ElementType(3, 32, VertexAttribPointerType.Double, sizeof(double));
+        public static ElementType Vec4d { get; } = new ElementType(4, 32, VertexAttribPointerType.Double, sizeof(double));
+        public static ElementType Mat2d { get; } = new ElementType(2, 64, VertexAttribPointerType.Double, sizeof(double), 2);
+        public static ElementType Mat3d { get; } = new ElementType(3, 128, VertexAttribPointerType.Double, sizeof(double), 3);
+        public static ElementType Mat4d { get; } = new ElementType(4, 128, VertexAttribPointerType.Double, sizeof(double), 4);
+        public static ElementType Vec2h { get; } = new ElementType(2, 8, VertexAttribPointerType.HalfFloat, sizeof(ushort));
+        public static ElementType Vec3h { get; } = new ElementType(3, 16, VertexAttribPointerType.HalfFloat, sizeof(ushort));
+        public static ElementType Vec4h { get; } = new ElementType(4, 16, VertexAttribPointerType.HalfFloat, sizeof(ushort));
 
         public int Rows { get; }
         public int Size { get; }
+        public int MachineSize { get; }
         public int MarshalSize => this.byteSize * this.Size;
         public VertexAttribPointerType Type { get; }
     }

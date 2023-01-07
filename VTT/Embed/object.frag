@@ -17,12 +17,26 @@ in vec4 f_color;
 in vec2 f_texture;
 in vec4 f_sun_coord;
 
-uniform uint frame;
-uniform uint update;
-uniform float alpha;
+layout (std140) uniform FrameData {
+	mat4 view;
+	mat4 projection;
+	mat4 sun_view;
+	mat4 sun_projection;
+	vec3 camera_position;
+	vec3 camera_direction;
+	vec3 dl_direction;
+	vec3 dl_color;
+	vec3 al_color;
+	vec3 sky_color;
+	vec3 cursor_position;
+	vec4 grid_color;
+	vec4 dv_data;
+	uint frame;
+	uint update;
+	float grid_size;
+};
 
-uniform vec3 camera_position;
-uniform vec3 camera_direction;
+uniform float alpha;
 
 uniform vec4 m_diffuse_color;
 uniform float m_metal_factor;
@@ -40,9 +54,6 @@ uniform vec4 m_aomr_frame;
 uniform vec4 tint_color;
 
 // Directional light
-uniform vec3 dl_direction;
-uniform vec3 dl_color;
-uniform vec3 al_color;
 uniform sampler2DShadow dl_shadow_map;
 
 // Point lights
@@ -59,13 +70,9 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
-uniform vec3 sky_color;
 
 // grid
-uniform vec4 grid_color;
 uniform float grid_alpha;
-uniform float grid_size;
-uniform vec3 cursor_position;
 
 out vec4 g_color;
 

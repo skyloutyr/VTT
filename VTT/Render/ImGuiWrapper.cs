@@ -90,7 +90,7 @@ void main()
             this._vertexArrayObject.SetVertexSize<float>(5);
             this._vertexArrayObject.PushElement(ElementType.Vec2);
             this._vertexArrayObject.PushElement(ElementType.Vec2);
-            this._vertexArrayObject.PushElement(new ElementType(4, VertexAttribPointerType.UnsignedByte, sizeof(byte)), true);
+            this._vertexArrayObject.PushElement(new ElementType(4, 4, VertexAttribPointerType.UnsignedByte, sizeof(byte)), true);
         }
 
         public void Update(double time)

@@ -111,6 +111,11 @@
 
         public void Bind() => GL.UseProgram(this._glID);
         public void Dispose() => GL.DeleteProgram(this._glID);
+        public void BindUniformBlock(string blockName, int slot)
+        {
+            int index = GL.GetUniformBlockIndex(this._glID, blockName);
+            GL.UniformBlockBinding((int)this._glID, index, slot);
+        }
 
         public static implicit operator uint(ShaderProgram self) => self._glID;
         public static implicit operator int(ShaderProgram self) => (int)self._glID;

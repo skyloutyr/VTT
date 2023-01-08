@@ -68,6 +68,32 @@
             GL.ActiveTexture(TextureUnit.Texture0);
         }
 
+        public int FindAreaSumIndex(float aSumValue)
+        {
+            int l = 0;
+            int r = this.areaSums.Length - 1;
+            while (l <= r)
+            {
+                int m = (int)Math.Floor((l + r) * 0.5f);
+                float cSum = this.areaSums[m];
+                float pSum = m == 0 ? 0 : this.areaSums[m - 1];
+                if (cSum < aSumValue)
+                {
+                    l = m + 1;
+                }
+                else if (pSum > aSumValue)
+                {
+                    r = m - 1;
+                }
+                else
+                {
+                    return m;
+                }
+            }
+
+            return 0;
+        }
+
         public void Dispose()
         {
             GL.DeleteVertexArray(this._vao);

@@ -496,7 +496,11 @@
                             if (this._meshRefs.Count > 0)
                             {
                                 GlbMesh sMesh = WeightedRandom.GetWeightedItem(this._meshRefs, this._rand).Item;
-                                int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;
+                                float totalArea = sMesh.areaSums[^1];
+                                float rArea = this._rand.NextSingle() * totalArea;
+                                //int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;
+                                int rIdx = sMesh.FindAreaSumIndex(rArea);
+                                rIdx *= 3;
                                 System.Numerics.Vector3 v1 = sMesh.simplifiedTriangles[rIdx + 0];
                                 System.Numerics.Vector3 v2 = sMesh.simplifiedTriangles[rIdx + 1];
                                 System.Numerics.Vector3 v3 = sMesh.simplifiedTriangles[rIdx + 2];

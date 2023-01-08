@@ -20,6 +20,7 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
+uniform bool billboard;
 
 out vec4 f_color;
 out vec2 f_texture;
@@ -74,10 +75,10 @@ void main()
 	float inst_clr = v1.y;
 	float inst_frame = v1.z;
 	inst_color = decodeMColor(inst_clr);
-	vec4 viewPos = view * model * vec4(inst_x, inst_y, inst_z, 1.0);
+	vec4 viewPos = view * model * (billboard ? vec4(inst_x, inst_y, inst_z, 1.0) : vec4((v_position * inst_w) + vec3(inst_x, inst_y, inst_z), 1.0));
 	f_color = v_color;
 	f_texture = v_texture;
 	f_frame = int(floatBitsToUint(inst_frame));
 	float fow_mul = mix(getFowMultiplier(vec3(inst_x, inst_y, inst_z)), 1.0, 1.0 - fow_mod);
-	gl_Position = (inst_w < 0.001 || fow_mul <= 0.001) ? vec4(0.0, 0.0, 0.0, -1.0) : projection * (viewPos + vec4(v_position * inst_w, 0.0));
+	gl_Position = (inst_w < 0.001 || fow_mul <= 0.001) ? vec4(0.0, 0.0, 0.0, -1.0) : projection * (viewPos + vec4((billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0)), 0.0));
 }

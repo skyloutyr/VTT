@@ -194,6 +194,19 @@
                             pr.CurrentlyEditedSystemInstance.Resize();
                         }
 
+                        ImGui.Text(lang.Translate("ui.particle.billboard"));
+                        ImGui.SameLine();
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.particle.billboard.tt"));
+                        }
+
+                        bool pBillboard = pr.CurrentlyEditedSystem.DoBillboard;
+                        if (ImGui.Checkbox("##DoBillboard", ref pBillboard))
+                        {
+                            pr.CurrentlyEditedSystem.DoBillboard = pBillboard;
+                        }
+
                         ImGui.Text(lang.Translate("ui.particle.velocity"));
                         System.Numerics.Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min.SystemVector();
                         if (ImGui.DragFloat3("##VelMin", ref vVec, 0.01f))
@@ -263,9 +276,10 @@
                     bool bo = ImGui.Button(lang.Translate("ui.generic.ok"));
                     if (bo)
                     {
+                        AssetRef aRef = Client.Instance.AssetManager.FindRefForAsset(a);
                         using MemoryStream ms = new MemoryStream();
                         using BinaryWriter bw = new BinaryWriter(ms);
-                        pr.CurrentlyEditedSystem.Write(bw);
+                        pr.CurrentlyEditedSystem.WriteV2(bw);
                         byte[] abin = a.ToBinary(ms.ToArray());
                         pr.RenderTexture.Bind();
                         using Image<Rgba32> img = pr.RenderTexture.GetImage<Rgba32>();
@@ -274,6 +288,12 @@
                         using MemoryStream ms2 = new MemoryStream();
                         img.SaveAsPng(ms2);
                         byte[] pbin = ms2.ToArray();
+                        if (aRef != null && aRef.Meta.Version == 1)
+                        {
+                            aRef.Meta.Version = 2;
+                            new PacketChangeAssetMetadata() { AssetID = a.ID, RefID = aRef.AssetID, NewMeta = aRef.Meta }.Send();
+                        }
+
                         new PacketAssetUpdate() { AssetID = a.ID, NewBinary = abin, NewPreviewBinary = pbin }.Send();
                     }
 

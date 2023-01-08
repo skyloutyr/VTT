@@ -608,7 +608,15 @@
 
                         using MemoryStream ms = new MemoryStream(rawBinary);
                         using BinaryReader br = new BinaryReader(ms);
-                        a.ParticleSystem.Read(br);
+                        if (meta.Version == 2)
+                        {
+                            a.ParticleSystem.ReadV2(br);
+                        }
+                        else
+                        {
+                            a.ParticleSystem.ReadV1(br);
+                        }
+
                         break;
                     }
                 }

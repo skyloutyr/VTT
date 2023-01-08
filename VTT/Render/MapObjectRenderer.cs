@@ -946,10 +946,6 @@
         private void UniformCommonData(Map m)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
-            Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
-            Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
-            Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
 
             ShaderProgram shader = this.RenderShader;

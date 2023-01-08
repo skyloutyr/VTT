@@ -229,10 +229,10 @@
                     if (ImGui.ImageButton("btn_asset_add_particle", this.AssetParticleIcon, Vec12x12))
                     {
                         ParticleSystem ps = new ParticleSystem();
-                        AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem };
+                        AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem, Version = 2 };
                         using MemoryStream ms = new MemoryStream();
                         using BinaryWriter bw = new BinaryWriter(ms);
-                        ps.Write(bw);
+                        ps.WriteV2(bw);
                         using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
                         using MemoryStream imgMs = new MemoryStream();
                         img.SaveAsPng(imgMs);

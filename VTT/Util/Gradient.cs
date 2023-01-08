@@ -30,6 +30,7 @@
 
         public Gradient(Gradient<T> copyFrom) : this()
         {
+            this.Keys.Clear();
             foreach (GradientPoint<T> key in copyFrom.Keys)
             {
                 this.Keys.Add(new GradientPoint<T>(key.Key, key.Color));

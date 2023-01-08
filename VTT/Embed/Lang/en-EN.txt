@@ -413,3 +413,5 @@ ui.camera.move=Camera mode: Move\nIn this mode the left mouse button acts as a t
 ui.camera.rotate=Camera mode: Move\nIn this mode the left mouse button acts as a tool for camera rotation.
 menu.settings.pcf_quality=Shadow Filtering
 menu.settings.pcf_quality.tt=Controls the smoothness of shadows at the cost of performance.
+ui.particle.billboard=Billboard Particles: 
+ui.particle.billboard.tt=Particles that are 'billboarded' always face the camera.\nParticles that are not have their rotation match to that of the model.

@@ -25,6 +25,7 @@
         public RangeSingle ScaleVariation { get; set; } = new RangeSingle(1, 1);
 
         public int MaxParticles { get; set; }
+        public bool DoBillboard { get; set; } = true;
 
         public RangeVector3 InitialVelocity { get; set; } = new RangeVector3(Vector3.Zero, Vector3.Zero);
         public float InitialVelocityRandomAngle { get; set; } = 0f;
@@ -36,7 +37,7 @@
 
         public Guid AssetID { get; set; }
 
-        public void Write(BinaryWriter bw)
+        public void WriteV1(BinaryWriter bw)
         {
             bw.WriteEnumSmall(this.EmissionType);
             bw.Write(this.EmissionRadius);
@@ -73,7 +74,83 @@
             bw.Write(this.AssetID);
         }
 
-        public void Read(BinaryReader br)
+        public void WriteV2(BinaryWriter bw)
+        {
+            DataElement ret = new DataElement();
+            ret.SetEnum("EmissionType", this.EmissionType);
+            ret.Set("EmissionRadius", this.EmissionRadius);
+            ret.SetVec3("EmissionVolume", this.EmissionVolume);
+            ret.Set("EmissionChance", this.EmissionChance);
+            ret.Set("EmissionAmountLo", this.EmissionAmount.Min);
+            ret.Set("EmissionAmountHi", this.EmissionAmount.Max);
+            ret.Set("EmissionCooldownLo", this.EmissionCooldown.Min);
+            ret.Set("EmissionCooldownHi", this.EmissionCooldown.Max);
+            ret.Set("LifetimeLo", this.Lifetime.Min);
+            ret.Set("LifetimeHi", this.Lifetime.Max);
+            ret.Set("ScaleVariationLo", this.ScaleVariation.Min);
+            ret.Set("ScaleVariationHi", this.ScaleVariation.Max);
+            ret.Set("MaxParticles", this.MaxParticles);
+            ret.SetVec3("InitialVelocityLo", this.InitialVelocity.Min);
+            ret.SetVec3("InitialVelocityHi", this.InitialVelocity.Max);
+            ret.Set("InitialVelocityRandomAngle", this.InitialVelocityRandomAngle);
+            ret.SetVec3("Gravity", this.Gravity);
+            ret.Set("VelocityDampenFactor", this.VelocityDampenFactor);
+            ret.SetArray("ColorOverLifetime", this.ColorOverLifetime.Select(x =>
+            {
+                DataElement ret = new DataElement();
+                ret.Set("k", x.Key);
+                ret.SetVec4("v", x.Value);
+                return ret;
+            }).ToArray(), (n, c, e) => c.Set(n, e));
+
+            ret.SetArray("ScaleOverLifetime", this.ScaleOverLifetime.Select(x =>
+            {
+                DataElement ret = new DataElement();
+                ret.Set("k", x.Key);
+                ret.Set("v", x.Value);
+                return ret;
+            }).ToArray(), (n, c, e) => c.Set(n, e));
+
+            ret.SetGuid("AssetID", this.AssetID);
+            ret.Set("DoBillboard", this.DoBillboard);
+            ret.Write(bw);
+        }
+
+        public void ReadV2(BinaryReader br)
+        {
+            DataElement de = new DataElement(br);
+            this.EmissionType = de.GetEnum<EmissionMode>("EmissionType");
+            this.EmissionRadius = de.Get<float>("EmissionRadius");
+            this.EmissionVolume = de.GetVec3("EmissionVolume");
+            this.EmissionChance = de.Get<float>("EmissionChance");
+            this.EmissionAmount = new RangeInt(de.Get<int>("EmissionAmountLo"), de.Get<int>("EmissionAmountHi"));
+            this.EmissionCooldown = new RangeInt(de.Get<int>("EmissionCooldownLo"), de.Get<int>("EmissionCooldownHi"));
+            this.Lifetime = new RangeInt(de.Get<int>("LifetimeLo"), de.Get<int>("LifetimeHi"));
+            this.ScaleVariation = new RangeSingle(de.Get<float>("ScaleVariationLo"), de.Get<float>("ScaleVariationHi"));
+            this.MaxParticles = de.Get<int>("MaxParticles");
+            this.InitialVelocity = new RangeVector3(de.GetVec3("InitialVelocityLo"), de.GetVec3("InitialVelocityHi"));
+            this.InitialVelocityRandomAngle = de.Get<float>("InitialVelocityRandomAngle");
+            this.Gravity = de.GetVec3("Gravity");
+            this.VelocityDampenFactor = de.Get<float>("VelocityDampenFactor");
+            DataElement[] col = de.GetArray("ColorOverLifetime", (n, c) => c.Get<DataElement>(n), Array.Empty<DataElement>());
+            this.ColorOverLifetime.Clear();
+            foreach (DataElement e in col)
+            {
+                this.ColorOverLifetime[e.Get<float>("k")] = e.GetVec4("v");
+            }
+
+            col = de.GetArray("ScaleOverLifetime", (n, c) => c.Get<DataElement>(n), Array.Empty<DataElement>());
+            this.ScaleOverLifetime.Clear();
+            foreach (DataElement e in col)
+            {
+                this.ScaleOverLifetime[e.Get<float>("k")] = e.Get<float>("v");
+            }
+
+            this.AssetID = de.GetGuid("AssetID");
+            this.DoBillboard = de.Get<bool>("DoBillboard", true);
+        }
+
+        public void ReadV1(BinaryReader br)
         {
             this.EmissionType = br.ReadEnumSmall<EmissionMode>();
             this.EmissionRadius = br.ReadSingle();
@@ -103,6 +180,7 @@
             }
 
             this.AssetID = br.ReadGuid();
+            this.DoBillboard = true;
         }
 
         public ParticleSystem Copy() => new ParticleSystem() 
@@ -122,7 +200,8 @@
             VelocityDampenFactor = this.VelocityDampenFactor,
             ColorOverLifetime = new Gradient<Vector4>(this.ColorOverLifetime),
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
-            AssetID = this.AssetID
+            AssetID = this.AssetID,
+            DoBillboard = this.DoBillboard
         };
 
         public class RangeInt
@@ -247,6 +326,7 @@
                 return;
             }
 
+            particleShader["billboard"].Set(this.Template.DoBillboard);
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
             GL.ActiveTexture(TextureUnit.Texture14);
             GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);

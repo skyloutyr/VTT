@@ -14,6 +14,7 @@
         public AssetType Type { get; set; }
 
         public string Name { get; set; }
+        public int Version { get; set; }
 
         public TextureData.Metadata TextureInfo { get; set; }
 
@@ -37,6 +38,7 @@
         {
             this.Type = e.GetEnum<AssetType>("Type");
             this.Name = e.Get<string>("Name");
+            this.Version = e.Get<int>("Version", 1);
             if (e.Has("TextureInfo", DataType.Map))
             {
                 this.TextureInfo = new TextureData.Metadata();
@@ -49,6 +51,7 @@
             DataElement ret = new DataElement();
             ret.Set("Name", this.Name);
             ret.SetEnum("Type", this.Type);
+            ret.Set("Version", this.Version);
             if (this.TextureInfo != null)
             {
                 ret.Set("TextureInfo", this.TextureInfo.Serialize());

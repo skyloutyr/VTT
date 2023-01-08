@@ -745,7 +745,7 @@
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
                     if (hasNp)
                     {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture)
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null)
                         {
                             System.Numerics.Vector2 cPn = ImGui.GetCursorPos();
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();

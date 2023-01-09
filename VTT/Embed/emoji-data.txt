@@ -1292,6 +1292,22 @@ E0020..E007F  ; Emoji_Component      # E0.0  [96] (󠀠..󠁿)      tag space..c
 1FAF7..1FAFF  ; Extended_Pictographic# E0.0   [9] (🫷..🫿)    <reserved-1FAF7>..<reserved-1FAFF>
 1FC00..1FFFD  ; Extended_Pictographic# E0.0[1022] (🰀..🿽)    <reserved-1FC00>..<reserved-1FFFD>
 
+2B00..2BFF ; Misc symbols and arrows
+2200..22FF ; Mathematical Operators
+27C0..27EF ; Misc Mathematical Symbols-A
+2980..29FF ; Misc Mathematical Symbols-B
+2150..218F ; Number Forms
+2190..21FF ; Arrows
+2300..23FF ; Miscellaneous Technical
+2A00..2AFF ; Supplemental Mathematical Operators
+
+2500..257F ; Box Drawing
+2580..259F ; Block Elements
+25A0..25FF ; Geometric Shapes
+2600..26FF ; Misc Symbols
+2700..27BF ; Dingbats
+
+
 # Total elements: 3537
 
 #EOF

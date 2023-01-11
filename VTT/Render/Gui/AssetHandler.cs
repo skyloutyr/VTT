@@ -16,6 +16,7 @@
     using SixLabors.ImageSharp.Processing;
     using System.Collections.Generic;
     using VTT.GL;
+    using VTT.Asset.Shader.NodeGraph;
 
     public partial class GuiRenderer
     {
@@ -245,6 +246,27 @@
                         ImGui.SetTooltip(lang.Translate("ui.assets.add_particle"));
                     }
 
+                    ImGui.SameLine();
+                    if (ImGui.ImageButton("BtnAssetAddShader", this.AssetShaderIcon, Vec12x12))
+                    {
+                        ShaderGraph sn = new ShaderGraph();
+                        sn.FillDefaultLayout();
+                        AssetMetadata metadata = new AssetMetadata() { Name = "New Shader", Type = AssetType.Shader, Version = 1 };
+                        using MemoryStream ms = new MemoryStream();
+                        using BinaryWriter bw = new BinaryWriter(ms);
+                        sn.Serialize().Write(bw);
+                        using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                        using MemoryStream imgMs = new MemoryStream();
+                        img.SaveAsPng(imgMs);
+                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                        pau.Send(Client.Instance.NetClient);
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.assets.add_shader"));
+                    }
+
                     ImGui.PopStyleColor();
                     ImGui.SameLine();
 
@@ -360,7 +382,15 @@
                         {
                             ImGui.SetCursorPosX(44);
                             ImGui.SetCursorPosY(44);
-                            ImGui.Image(aRef.Type == AssetType.Model ? this.AssetModelIcon : aRef.Type == AssetType.ParticleSystem ? this.AssetParticleIcon : this.AssetImageIcon, new System.Numerics.Vector2(16, 16));
+                            Texture aRefIcon = aRef.Type switch
+                            {
+                                AssetType.Model => this.AssetModelIcon,
+                                AssetType.ParticleSystem => this.AssetParticleIcon,
+                                AssetType.Shader => this.AssetShaderIcon,
+                                _ => this.AssetImageIcon
+                            };
+
+                            ImGui.Image(aRefIcon, new System.Numerics.Vector2(16, 16));
                         }
 
                         ImGui.SetCursorPosX(32 - (label_size.X / 2));
@@ -411,6 +441,16 @@
                                         this._editedParticleSystemId = aRef.AssetID;
                                         Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystem = null;
                                         Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystemInstance = null;
+                                    }
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Shader)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit_shader") + "###Edit Shader"))
+                                    {
+                                        state.editShaderPopup = true;
+                                        this._editedShaderId = aRef.AssetID;
+                                        // TODO shader node graph editor
                                     }
                                 }
 

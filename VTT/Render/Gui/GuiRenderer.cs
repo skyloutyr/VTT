@@ -114,6 +114,7 @@
 
         private AssetRef _editedRef;
         private Guid _editedParticleSystemId;
+        private Guid _editedShaderId;
 
         private Guid _deletedMapId;
         private string _chatString = string.Empty;
@@ -177,6 +178,7 @@
 
         public MainMenuRenderer MainMenuRenderer { get; set; }
         public ParticleEditorRenderer ParticleEditorRenderer { get; set; }
+        public ShaderGraphEditorRenderer ShaderEditorRenderer { get; set; }
         public bool DebugEnabled { get; set; }
 
         public void Create()
@@ -205,6 +207,7 @@
 
             this.AssetModelIcon = OpenGLUtil.LoadUIImage("icons8-3d-64");
             this.AssetImageIcon = OpenGLUtil.LoadUIImage("icons8-picture-40");
+            this.AssetShaderIcon = OpenGLUtil.LoadUIImage("icons8-color-swatch-40");
             this.AssetParticleIcon = OpenGLUtil.LoadUIImage("icons8-particle-40");
 
             this.Select = OpenGLUtil.LoadUIImage("icons8-cursor-40");
@@ -254,6 +257,7 @@
             this.MainMenuRenderer = new MainMenuRenderer();
             this.MainMenuRenderer.Create();
             this.ParticleEditorRenderer = new ParticleEditorRenderer();
+            this.ShaderEditorRenderer = new ShaderGraphEditorRenderer();
             this.DebugEnabled = ArgsManager.TryGetValue<bool>("debug", out _);
             this.LoadStatuses();
         }
@@ -310,6 +314,7 @@
             this.RenderAssets(lang, this.FrameState);
             this.RenderNetworkAdminPanel(lang, this.FrameState);
             this.ParticleEditorRenderer.Render(this._editedParticleSystemId, this._draggedRef, this.FrameState);
+            this.ShaderEditorRenderer.Render(this._editedShaderId, this._draggedRef, this.FrameState);
             this.RenderLogs(lang);
             this.RenderTurnTrackerControls(cMap, lang, this.FrameState);
             this.RenderTurnTrackerOverlay(cMap, window_flags);

@@ -1,6 +1,7 @@
 ﻿namespace VTT.Render.Gui
 {
     using VTT.Asset;
+    using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
     using VTT.Network;
 
@@ -33,6 +34,7 @@
         public ParticleContainer particleContainerHovered = null;
         public bool editParticleSystemPopup = false;
         public bool changeParticleColorPopup = false;
+        public bool editShaderPopup = false;
         public Map clientMap = null;
     
         public void Reset()
@@ -65,6 +67,7 @@
             changeParticleColorPopup = false;
             particleContainerHovered = null;
             clientMap = Client.Instance.CurrentMap;
+            editShaderPopup = false;
         }
     }
 }

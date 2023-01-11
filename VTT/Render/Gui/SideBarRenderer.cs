@@ -11,6 +11,11 @@
     {
         private unsafe void RenderSidebar(SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             ImGui.SetNextWindowBgAlpha(0.35f);
             ImGui.SetNextWindowPos(Vector2.Zero);
             if (ImGui.Begin("Mode Controls", window_flags))
@@ -90,6 +95,11 @@
 
         private unsafe void RenderDebugInfo(double time, ImGuiWindowFlags window_flags)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             ImGui.SetNextWindowBgAlpha(0.35f);
             ImGui.SetNextWindowPos(Vec56x0);
             if (DebugEnabled)
@@ -108,6 +118,11 @@
         }
         private unsafe void RenderFOWControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             if (mor.EditMode == EditMode.FOW && Client.Instance.IsAdmin)
             {
                 FOWRenderer fowr = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer;
@@ -247,6 +262,11 @@
 
         private unsafe void RenderMeasureControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             if (mor.EditMode == EditMode.Measure)
             {
                 ImGui.SetNextWindowBgAlpha(0.35f);
@@ -321,6 +341,11 @@
 
         private unsafe void RenderTranslationControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             if (mor.EditMode == EditMode.Translate)
             {
                 ImGui.SetNextWindowBgAlpha(0.35f);
@@ -381,6 +406,11 @@
 
         private unsafe void RenderCameraControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
         {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             if (mor.EditMode == EditMode.Select)
             {
                 ImGui.SetNextWindowBgAlpha(0.35f);

@@ -152,6 +152,22 @@
             return yiq >= 128 ? Color.Black : Color.White;
         }
 
+        public static Color Darker(this Color self, float darkenBy = 0.15f)
+        {
+            SVec4 sV = ((SVec4)self);
+            float b = 1.0f - darkenBy;
+            sV *= new SVec4(b, b, b, 1.0f);
+            return new Color(sV);
+        }
+
+        public static Color Mix(this Color self, Color other, float a)
+        {
+            SVec4 sV = (SVec4)self;
+            SVec4 oV = (SVec4)other;
+            SVec4 r = SVec4.Lerp(sV, oV, a);
+            return new Color(r);
+        }
+
         public static Guid ReadGuid(this BinaryReader reader) => new Guid(reader.ReadBytes(16));
         public static void Write(this BinaryWriter writer, Guid id) => writer.Write(id.ToByteArray());
         public static Color ReadColor(this BinaryReader reader) => FromArgb(reader.ReadUInt32());

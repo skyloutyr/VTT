@@ -39,6 +39,7 @@
     <None Remove="Embed\icons8-block-40.png" />
     <None Remove="Embed\icons8-box-important-80.png" />
     <None Remove="Embed\icons8-closed-eye-40.png" />
+    <None Remove="Embed\icons8-color-swatch-40.png" />
     <None Remove="Embed\icons8-cube-40.png" />
     <None Remove="Embed\icons8-cursor-40.png" />
     <None Remove="Embed\icons8-curved-arrow-40.png" />
@@ -160,6 +161,7 @@
     <EmbeddedResource Include="Embed\icons8-block-40.png" />
     <EmbeddedResource Include="Embed\icons8-box-important-80.png" />
     <EmbeddedResource Include="Embed\icons8-closed-eye-40.png" />
+    <EmbeddedResource Include="Embed\icons8-color-swatch-40.png" />
     <EmbeddedResource Include="Embed\icons8-cube-40.png" />
     <EmbeddedResource Include="Embed\icons8-curved-arrow-40.png" />
     <EmbeddedResource Include="Embed\icons8-day-camera-40.png" />

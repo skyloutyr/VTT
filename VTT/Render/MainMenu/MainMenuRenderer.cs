@@ -273,6 +273,7 @@
                         ImGui.Text("    block");
                         ImGui.Text("    box-important");
                         ImGui.Text("    closed-eye");
+                        ImGui.Text("    color-swatch");
                         ImGui.Text("    cube");
                         ImGui.Text("    cursor");
                         ImGui.Text("    curved-arrow");

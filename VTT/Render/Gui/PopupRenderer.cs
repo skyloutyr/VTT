@@ -820,6 +820,12 @@
             {
                 this.ParticleEditorRenderer.popupState = true;
             }
+
+            if (state.editShaderPopup && !this.ShaderEditorRenderer.popupState)
+            {
+                this.ShaderEditorRenderer.popupState = true;
+                this.ShaderEditorRenderer.EditedGraph = null;
+            }
         }
     }
 }

@@ -13,6 +13,7 @@
     using System.IO;
     using System.Net;
     using VTT.Asset;
+    using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
     using VTT.Network.Packet;
     using VTT.Network.VSCC;
@@ -93,6 +94,7 @@
             }
 
             this.Lang.LoadFile(this.Settings.Language ?? "en-EN");
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ShaderNodeTemplate).TypeHandle);
             this.Frontend = new ClientWindow();
         }
 

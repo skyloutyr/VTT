@@ -1,6 +1,8 @@
 ﻿#version 330 core
 #define BRANCHING
 
+#undef NODEGRAPH
+
 in mat3 f_tbn;
 in vec3 f_position;
 in vec3 f_normal;
@@ -103,16 +105,34 @@ float getGrid()
 	return max(0, (gmx * grid_alpha * d) - world_distance_to_cursor_effect);
 }
 
+void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float ao, out float m, out float r, out float a)
+{
+#ifndef NODEGRAPH
+    vec4 albedo_tex = sampleMap(m_texture_diffuse, m_diffuse_frame);
+    albedo = albedo_tex.rgb * tint_color.rgb;
+    normal = getNormalFromMap();
+    vec3 aomr = sampleMap(m_texture_aomr, m_aomr_frame).rgb;
+    emissive = sampleMap(m_texture_emissive, m_emissive_frame).rgb;
+    ao = aomr.r;
+    m = aomr.g;
+    r = aomr.b;
+    a = alpha * tint_color.a * albedo_tex.a;
+#else
+#pragma ENTRY_NODEGRAPH
+#endif
+}
+
 void main()
 {
     vec3 world_to_camera = normalize(camera_position - f_world_position);
-    vec3 albedo = sampleMap(m_texture_diffuse, m_diffuse_frame).rgb * tint_color.rgb;
-    vec3 normal = getNormalFromMap();
-    vec3 aomr = sampleMap(m_texture_aomr, m_aomr_frame).rgb;
-    vec3 emissive = sampleMap(m_texture_emissive, m_emissive_frame).rgb;
-    float ao = aomr.r;
-    float m = aomr.g;
-    float r = aomr.b;
+    vec3 albedo = vec3(0.0, 0.0, 0.0);
+    vec3 normal = vec3(0.0, 0.0, 0.0);
+    vec3 emissive = vec3(0.0, 0.0, 0.0);
+    float ao = 0.0;
+    float m = 0.0;
+    float r = 0.0;
+    float l_a = 0.0;
+    shaderGraph(albedo, normal, emissive, ao, m, r, l_a);
     float g = 0;
 
 #ifndef BRANCHING
@@ -128,5 +148,5 @@ void main()
     g_normal = vec4(normal, 1.0);
     g_albedo = vec4(albedo, 1.0);
     g_aomrg = vec4(ao, m, r, g);
-    g_emission = sampleMap(m_texture_emissive, m_emissive_frame);
+    g_emission = vec4(emissive, 1.0);
 }

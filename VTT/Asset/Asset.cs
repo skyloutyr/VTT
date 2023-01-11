@@ -3,6 +3,8 @@
     using System;
     using System.IO;
     using VTT.Asset.Glb;
+    using VTT.Asset.Shader.NodeGraph;
+    using VTT.Util;
 
     /*
      * Asset primer:
@@ -75,8 +77,15 @@
 
     public class ShaderData : IAssetData
     {
+        public ShaderGraph NodeGraph { get; set; }
+
         public void Accept(byte[] binary)
         {
+            using MemoryStream ms = new MemoryStream(binary);
+            using BinaryReader br = new BinaryReader(ms);
+            DataElement de = new DataElement(br);
+            this.NodeGraph = new ShaderGraph();
+            this.NodeGraph.Deserialize(de);
         }
 
         public void Dispose()

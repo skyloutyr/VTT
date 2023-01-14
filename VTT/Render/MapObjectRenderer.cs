@@ -13,6 +13,7 @@
     using VTT.Network;
     using VTT.Render.LightShadow;
     using VTT.Util;
+    using static OpenTK.Graphics.OpenGL.GL;
 
     public class MapObjectRenderer
     {
@@ -900,6 +901,31 @@
             this._boxVao.Bind();
             GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
             GL.Enable(EnableCap.CullFace);
+        }
+
+        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor)
+        {
+            unsafe
+            {
+                this.FrameUBOManager.memory->view = cam.View;
+                this.FrameUBOManager.memory->projection = cam.Projection;
+                this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
+                this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
+                this.FrameUBOManager.memory->camera_position = cam.Position;
+                this.FrameUBOManager.memory->camera_direction = cam.Direction;
+                this.FrameUBOManager.memory->dl_direction = sun.Direction.Normalized();
+                this.FrameUBOManager.memory->dl_color = sun.Color;
+                this.FrameUBOManager.memory->al_color = new Vector3(0.03f);
+                this.FrameUBOManager.memory->sun_view = Matrix4.Identity;
+                this.FrameUBOManager.memory->sun_projection = Matrix4.Identity;
+                this.FrameUBOManager.memory->sky_color = clearColor.Xyz;
+                this.FrameUBOManager.memory->grid_color = Vector4.Zero;
+                this.FrameUBOManager.memory->grid_size = 1.0f;
+                this.FrameUBOManager.memory->cursor_position = Vector3.Zero;
+                this.FrameUBOManager.memory->dv_data = Vector4.Zero;
+            }
+
+            this.FrameUBOManager.Upload();
         }
 
         private void UpdateUBO(Map m)

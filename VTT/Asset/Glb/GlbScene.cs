@@ -841,20 +841,8 @@
             GL.GetInteger(GetPName.Viewport, data);
 
             shader.Bind();
-            shader["view"].Set(camera.View);
-            shader["projection"].Set(camera.Projection);
-            shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-            shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-            shader["camera_position"].Set(camera.Position);
-            shader["camera_direction"].Set(camera.Direction);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor);
             shader["ambient_intensity"].Set(0.03f);
-
-            shader["dl_direction"].Set(sun.Direction.Normalized());
-            shader["dl_color"].Set(sun.Color);
-            shader["al_color"].Set(new Vector3(0.03f));
-            shader["sun_view"].Set(Matrix4.Identity);
-            shader["sun_projection"].Set(Matrix4.Identity); 
-            shader["sky_color"].Set(clearColor.Xyz);
 
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             plr.Clear();
@@ -871,13 +859,7 @@
             GL.ActiveTexture(TextureUnit.Texture0);
 
             shader["alpha"].Set(1.0f);
-
-            shader["grid_color"].Set(Vector4.Zero);
-            shader["grid_alpha"].Set(0.0f);
-            shader["grid_size"].Set(1.0f);
-            shader["cursor_position"].Set(Vector3.Zero);
             shader["tint_color"].Set(Vector4.One);
-            shader["dv_data"].Set(Vector4.Zero);
 
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
 

@@ -211,7 +211,7 @@
             {
                 try
                 {
-                    this.NetClient?.Disconnect();
+                    this.NetClient?.DisconnectAsync();
                     this.NetClient?.Dispose();
                 }
                 finally
@@ -309,7 +309,7 @@
         protected override void OnError(System.Net.Sockets.SocketError error)
         {
             Client.Instance.Logger.Log(LogLevel.Error, "NetSocket error " + error);
-            this.Disconnect();
+            this.DisconnectAsync();
             this.Container.Disconnect(error switch
             {
                 System.Net.Sockets.SocketError.TimedOut => DisconnectReason.Timeout,
@@ -345,7 +345,7 @@
             if (this.Container.NetworkStateCorrupted)
             {
                 this.Container.Logger.Log(LogLevel.Error, "Network state got corrupted!");
-                this.Disconnect();
+                this.DisconnectAsync();
                 this.Container.Disconnect(DisconnectReason.NetworkStateCorrupted);
             }
         }

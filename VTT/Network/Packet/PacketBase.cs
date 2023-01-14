@@ -61,7 +61,7 @@
             this.Encode(bw);
             byte[] arr = ms.ToArray();
             Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
-            client.Send(arr);
+            client.SendAsync(arr);
         }
 
         public void Broadcast(Predicate<ServerClient> predicate = null)
@@ -87,7 +87,7 @@
             this.Encode(bw);
             byte[] arr = ms.ToArray();
             Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
-            sc.Send(arr);
+            sc.SendAsync(arr);
         }
 
         public Logger GetContextLogger() => this.IsServer ? Server.Instance.Logger : Client.Instance.Logger;

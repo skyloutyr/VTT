@@ -869,7 +869,6 @@
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
             //GL.ClearColor(0.03f, 0.03f, 0.03f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Enable(EnableCap.FramebufferSrgb);
 
             this.Render(shader, Matrix4.Identity, camera.Projection, camera.View, 0);
 
@@ -883,7 +882,6 @@
             GL.DeleteRenderbuffer(rbo);
             GL.Viewport(data[0], data[1], data[2], data[3]);
 
-            GL.Disable(EnableCap.FramebufferSrgb);
             retImg.Mutate(x => x.Flip(FlipMode.Vertical));
             return retImg;
         }

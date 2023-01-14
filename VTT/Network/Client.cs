@@ -414,6 +414,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int ShadowsPCF { get; set; } = 2;
 
+        [DefaultValue(2.2f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float Gamma { get; set; } = 2.2f;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -450,7 +454,8 @@
                 LastConnectPort = string.Empty,
                 DebugSettingsEnabled = false,
                 ParticlesEnabled = true,
-                ShadowsPCF = 2
+                ShadowsPCF = 2,
+                Gamma = 2.2f
             };
 
             ret.Save();

@@ -76,7 +76,6 @@
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Enable(EnableCap.FramebufferSrgb);
             Map m = Client.Instance.CurrentMap;
             if (m != null)
             {
@@ -85,19 +84,18 @@
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Enable(EnableCap.FramebufferSrgb);
             this.ParticleShader.Bind();
             this.ParticleShader["view"].Set(this._cam.View);
             this.ParticleShader["projection"].Set(this._cam.Projection);
             this.ParticleShader["model"].Set(Matrix4.Identity);
             this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+            this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
             this.ParticleShader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(this.ParticleShader);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
             GL.Disable(EnableCap.Blend);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboID);
-            GL.Disable(EnableCap.FramebufferSrgb);
             GL.Viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
         }
 
@@ -201,6 +199,7 @@
             this.ParticleShader["model"].Set(Matrix4.Identity);
             this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+            this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
             this.ParticleShader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.ParticleShader);
             GL.ActiveTexture(TextureUnit.Texture0);

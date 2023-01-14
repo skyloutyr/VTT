@@ -51,6 +51,7 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
+uniform float gamma_factor;
 
 out vec4 g_color;
 
@@ -381,4 +382,6 @@ void main()
         g_color = vec4(color, world_position.a);
     }
 #endif
+
+    g_color.rgb = pow(g_color.rgb, vec3(1.0/gamma_factor));
 }

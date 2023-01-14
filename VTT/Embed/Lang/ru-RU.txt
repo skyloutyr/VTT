@@ -418,3 +418,5 @@ ui.particle.billboard.tt=Если этот параметр включён, то
 ui.assets.add_shader=Новый Шейдер
 ui.assets.edit_shader=Редактировать Шейдер
 ui.shader.title=Редактор Шейдера
+menu.settings.gamma=Гамма
+menu.settings.gamma.tt=Большие значения увеличивают яркость и контрастность, меньшие - наоборот.

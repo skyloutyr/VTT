@@ -133,7 +133,6 @@
                 return;
             }
 
-            GL.Disable(EnableCap.FramebufferSrgb);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(cam.Position.Z < 0 ? CullFaceMode.Front : CullFaceMode.Back);
             GL.Enable(EnableCap.Blend);

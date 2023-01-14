@@ -13,7 +13,6 @@
     using VTT.Network;
     using VTT.Render.LightShadow;
     using VTT.Util;
-    using static OpenTK.Graphics.OpenGL.GL;
 
     public class MapObjectRenderer
     {
@@ -754,7 +753,6 @@
 
             this.UniformCommonData(m);
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
-            GL.Enable(EnableCap.FramebufferSrgb);
             for (int i = -2; i <= maxLayer; ++i)
             {
                 ShaderProgram shader = this.RenderShader;
@@ -882,8 +880,8 @@
                     }
                 }
             }
+
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.Disable(EnableCap.FramebufferSrgb);
         }
 
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
@@ -976,6 +974,7 @@
 
             ShaderProgram shader = this.RenderShader;
             shader.Bind();
+            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
            
             GL.ActiveTexture(TextureUnit.Texture14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
@@ -1002,7 +1001,6 @@
         private void RenderForward(Map m)
         {
             GL.Enable(EnableCap.Multisample);
-            GL.Enable(EnableCap.FramebufferSrgb);
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
@@ -1147,7 +1145,6 @@
             }
 
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.Disable(EnableCap.FramebufferSrgb);
             GL.Disable(EnableCap.Multisample);
         }
 

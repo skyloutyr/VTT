@@ -11,6 +11,7 @@ uniform uint update;
 uniform vec4 m_diffuse_color;
 uniform sampler2D m_texture_diffuse;
 uniform vec4 m_diffuse_frame;
+uniform float gamma_factor;
 
 out vec4 g_color;
 
@@ -26,4 +27,5 @@ vec4 sampleMap()
 void main()
 {
 	g_color = sampleMap() * f_color * inst_color;
+	g_color.rgb = pow(g_color.rgb, vec3(1.0/gamma_factor));
 }

@@ -598,6 +598,20 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.pcf_quality.tt"));
                     }
 
+                    float sGamma = Client.Instance.Settings.Gamma;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.gamma"));
+                    ImGui.SameLine();
+                    if (ImGui.SliderFloat("###Gamma", ref sGamma, 0.96f, 5.0f))
+                    {
+                        Client.Instance.Settings.Gamma = sGamma;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.gamma.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

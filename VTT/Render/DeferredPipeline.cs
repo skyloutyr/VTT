@@ -168,7 +168,6 @@
             GL.DepthMask(true);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
-            GL.Disable(EnableCap.FramebufferSrgb);
 
             for (int i = -2; i <= 0; ++i)
             {
@@ -209,9 +208,9 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.Enable(EnableCap.FramebufferSrgb);
             shader = this.FinalPass;
             shader.Bind();
+            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
             GL.ActiveTexture(TextureUnit.Texture12);
             this.PositionTex.Bind();
             GL.ActiveTexture(TextureUnit.Texture11);
@@ -246,7 +245,6 @@
             GL.Disable(EnableCap.Blend);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
-            GL.Disable(EnableCap.FramebufferSrgb);
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, this.FBO.Value);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);

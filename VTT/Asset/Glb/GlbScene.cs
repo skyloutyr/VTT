@@ -841,7 +841,7 @@
             GL.GetInteger(GetPName.Viewport, data);
 
             shader.Bind();
-            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader);
             shader["ambient_intensity"].Set(0.03f);
 
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;

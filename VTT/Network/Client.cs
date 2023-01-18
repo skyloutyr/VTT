@@ -418,6 +418,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float Gamma { get; set; } = 2.2f;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool UseUBO { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -455,7 +459,8 @@
                 DebugSettingsEnabled = false,
                 ParticlesEnabled = true,
                 ShadowsPCF = 2,
-                Gamma = 2.2f
+                Gamma = 2.2f,
+                UseUBO = true
             };
 
             ret.Save();

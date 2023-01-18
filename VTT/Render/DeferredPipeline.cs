@@ -158,8 +158,20 @@
             Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
             SunShadowRenderer dlRenderer = Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
+            bool useUBO = Client.Instance.Settings.UseUBO;
 
             shader.Bind();
+            if (!useUBO)
+            {
+                shader["view"].Set(cam.View);
+                shader["projection"].Set(cam.Projection);
+                shader["camera_position"].Set(cam.Position);
+                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader["grid_size"].Set(m.GridSize);
+                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+            }
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO.Value);
             GL.ClearColor(0, 0, 0, 0);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -221,6 +233,32 @@
             this.MRAOGTex.Bind();
             GL.ActiveTexture(TextureUnit.Texture8);
             this.EmissionTex.Bind();
+            if (!useUBO)
+            {
+                shader["g_emission"].Set(8);
+                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader["camera_position"].Set(cam.Position);
+                shader["dl_direction"].Set(sunDir);
+                shader["dl_color"].Set(sunColor.Vec3() * m.SunIntensity);
+                shader["al_color"].Set(ambientColor * m.AmbietIntensity);
+                shader["sun_view"].Set(dlRenderer.SunView);
+                shader["sun_projection"].Set(dlRenderer.SunProjection);
+                shader["sky_color"].Set(skyColor.Vec3());
+                shader["grid_color"].Set(m.GridColor.Vec4());
+                shader["dv_data"].Set(Vector4.Zero);
+                if (m.EnableDarkvision)
+                {
+                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
+                    {
+                        if (m.GetObject(kv.Item1, out MapObject mo))
+                        {
+                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2 / m.GridUnit));
+                        }
+                    }
+                }
+            }
+
             GL.ActiveTexture(TextureUnit.Texture14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
             {

@@ -420,3 +420,5 @@ ui.particle.billboard.tt=Particles that are 'billboarded' always face the camera
 ui.shader.title=Shader Node Graph Editor
 menu.settings.gamma=Gamma
 menu.settings.gamma.tt=Higher values correlate to higher brightness and contrast, while lower values do the opposite.
+menu.settings.use_ubo=Use UBO
+menu.settings.use_ubo.tt=UBOs allow for shared GPU shader data, enabling rendering optimizations.\nOn older or integrated GPUs this had been reported to cause driver hault.\nDisable if you experience issues with the application haulting.

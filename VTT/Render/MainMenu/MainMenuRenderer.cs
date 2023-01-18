@@ -726,6 +726,7 @@
                     bool sNoBranches = Client.Instance.Settings.DisableShaderBranching;
                     bool sShadowsSun = Client.Instance.Settings.EnableSunShadows;
                     bool sShadowsDir = Client.Instance.Settings.EnableDirectionalShadows;
+                    bool sUseUBO = Client.Instance.Settings.UseUBO;
                     if (ImGui.Checkbox(lang.Translate("menu.settings.disable_branching") + "###Disable Shader Branching", ref sNoBranches))
                     {
                         Client.Instance.Settings.DisableShaderBranching = sNoBranches;
@@ -736,6 +737,17 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.disable_branching.tt"));
+                    }
+
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.use_ubo") + "###Use UBO", ref sUseUBO))
+                    {
+                        Client.Instance.Settings.UseUBO = sUseUBO;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.use_ubo.tt"));
                     }
 
                     if (!bDebug)

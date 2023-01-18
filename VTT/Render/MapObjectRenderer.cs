@@ -901,70 +901,96 @@
             GL.Enable(EnableCap.CullFace);
         }
 
-        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor)
+        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor, ShaderProgram shader)
         {
-            unsafe
+            if (shader != null)
             {
-                this.FrameUBOManager.memory->view = cam.View;
-                this.FrameUBOManager.memory->projection = cam.Projection;
-                this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
-                this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                this.FrameUBOManager.memory->camera_position = cam.Position;
-                this.FrameUBOManager.memory->camera_direction = cam.Direction;
-                this.FrameUBOManager.memory->dl_direction = sun.Direction.Normalized();
-                this.FrameUBOManager.memory->dl_color = sun.Color;
-                this.FrameUBOManager.memory->al_color = new Vector3(0.03f);
-                this.FrameUBOManager.memory->sun_view = Matrix4.Identity;
-                this.FrameUBOManager.memory->sun_projection = Matrix4.Identity;
-                this.FrameUBOManager.memory->sky_color = clearColor.Xyz;
-                this.FrameUBOManager.memory->grid_color = Vector4.Zero;
-                this.FrameUBOManager.memory->grid_size = 1.0f;
-                this.FrameUBOManager.memory->cursor_position = Vector3.Zero;
-                this.FrameUBOManager.memory->dv_data = Vector4.Zero;
+                shader["view"].Set(cam.View);
+                shader["projection"].Set(cam.Projection);
+                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader["camera_position"].Set(cam.Position);
+                shader["camera_direction"].Set(cam.Direction);
+                shader["dl_direction"].Set(sun.Direction.Normalized());
+                shader["dl_color"].Set(sun.Color);
+                shader["al_color"].Set(new Vector3(0.03f));
+                shader["sun_view"].Set(Matrix4.Identity);
+                shader["sun_projection"].Set(Matrix4.Identity);
+                shader["sky_color"].Set(clearColor.Xyz);
+                shader["grid_color"].Set(Vector4.Zero);
+                shader["grid_alpha"].Set(0.0f);
+                shader["grid_size"].Set(1.0f);
+                shader["cursor_position"].Set(Vector3.Zero);
+                shader["dv_data"].Set(Vector4.Zero);
             }
+            else
+            {
+                unsafe
+                {
+                    this.FrameUBOManager.memory->view = cam.View;
+                    this.FrameUBOManager.memory->projection = cam.Projection;
+                    this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
+                    this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
+                    this.FrameUBOManager.memory->camera_position = cam.Position;
+                    this.FrameUBOManager.memory->camera_direction = cam.Direction;
+                    this.FrameUBOManager.memory->dl_direction = sun.Direction.Normalized();
+                    this.FrameUBOManager.memory->dl_color = sun.Color;
+                    this.FrameUBOManager.memory->al_color = new Vector3(0.03f);
+                    this.FrameUBOManager.memory->sun_view = Matrix4.Identity;
+                    this.FrameUBOManager.memory->sun_projection = Matrix4.Identity;
+                    this.FrameUBOManager.memory->sky_color = clearColor.Xyz;
+                    this.FrameUBOManager.memory->grid_color = Vector4.Zero;
+                    this.FrameUBOManager.memory->grid_size = 1.0f;
+                    this.FrameUBOManager.memory->cursor_position = Vector3.Zero;
+                    this.FrameUBOManager.memory->dv_data = Vector4.Zero;
+                }
 
-            this.FrameUBOManager.Upload();
+                this.FrameUBOManager.Upload();
+            }
         }
 
         private void UpdateUBO(Map m)
         {
-            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
-            Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
-            Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
-            Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
-
-            unsafe
+            if (Client.Instance.Settings.UseUBO)
             {
-                this.FrameUBOManager.memory->view = cam.View;
-                this.FrameUBOManager.memory->projection = cam.Projection;
-                this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
-                this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                this.FrameUBOManager.memory->camera_position = cam.Position;
-                this.FrameUBOManager.memory->camera_direction = cam.Direction;
-                this.FrameUBOManager.memory->dl_direction = sunDir;
-                this.FrameUBOManager.memory->dl_color = sunColor.Vec3() * m.SunIntensity;
-                this.FrameUBOManager.memory->al_color = ambientColor * m.AmbietIntensity;
-                this.FrameUBOManager.memory->sun_view = this.DirectionalLightRenderer.SunView;
-                this.FrameUBOManager.memory->sun_projection = this.DirectionalLightRenderer.SunProjection;
-                this.FrameUBOManager.memory->sky_color = skyColor.Vec3();
-                this.FrameUBOManager.memory->grid_color = m.GridColor.Vec4();
-                this.FrameUBOManager.memory->grid_size = m.GridSize;
-                this.FrameUBOManager.memory->cursor_position = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero;
-                this.FrameUBOManager.memory->dv_data = Vector4.Zero;
-                if (m.EnableDarkvision)
+                Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+                Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
+                Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
+                Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
+                Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
+
+                unsafe
                 {
-                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
+                    this.FrameUBOManager.memory->view = cam.View;
+                    this.FrameUBOManager.memory->projection = cam.Projection;
+                    this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
+                    this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
+                    this.FrameUBOManager.memory->camera_position = cam.Position;
+                    this.FrameUBOManager.memory->camera_direction = cam.Direction;
+                    this.FrameUBOManager.memory->dl_direction = sunDir;
+                    this.FrameUBOManager.memory->dl_color = sunColor.Vec3() * m.SunIntensity;
+                    this.FrameUBOManager.memory->al_color = ambientColor * m.AmbietIntensity;
+                    this.FrameUBOManager.memory->sun_view = this.DirectionalLightRenderer.SunView;
+                    this.FrameUBOManager.memory->sun_projection = this.DirectionalLightRenderer.SunProjection;
+                    this.FrameUBOManager.memory->sky_color = skyColor.Vec3();
+                    this.FrameUBOManager.memory->grid_color = m.GridColor.Vec4();
+                    this.FrameUBOManager.memory->grid_size = m.GridSize;
+                    this.FrameUBOManager.memory->cursor_position = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero;
+                    this.FrameUBOManager.memory->dv_data = Vector4.Zero;
+                    if (m.EnableDarkvision)
                     {
-                        if (m.GetObject(kv.Item1, out MapObject mo))
+                        if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
                         {
-                            this.FrameUBOManager.memory->dv_data = new Vector4(mo.Position, kv.Item2 / m.GridUnit);
+                            if (m.GetObject(kv.Item1, out MapObject mo))
+                            {
+                                this.FrameUBOManager.memory->dv_data = new Vector4(mo.Position, kv.Item2 / m.GridUnit);
+                            }
                         }
                     }
                 }
-            }
 
-            this.FrameUBOManager.Upload();
+                this.FrameUBOManager.Upload();
+            }
         }
 
         private void UniformCommonData(Map m)
@@ -974,6 +1000,41 @@
 
             ShaderProgram shader = this.RenderShader;
             shader.Bind();
+            if (!Client.Instance.Settings.UseUBO)
+            {
+                Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
+                Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
+                Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
+                Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
+
+                shader["view"].Set(cam.View);
+                shader["projection"].Set(cam.Projection);
+                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader["camera_position"].Set(cam.Position);
+                shader["camera_direction"].Set(cam.Direction);
+                shader["dl_direction"].Set(sunDir);
+                shader["dl_color"].Set(sunColor.Vec3() * m.SunIntensity);
+                shader["al_color"].Set(ambientColor * m.AmbietIntensity);
+                shader["sun_view"].Set(this.DirectionalLightRenderer.SunView);
+                shader["sun_projection"].Set(this.DirectionalLightRenderer.SunProjection);
+                shader["sky_color"].Set(skyColor.Vec3());
+                shader["grid_color"].Set(m.GridColor.Vec4());
+                shader["grid_size"].Set(m.GridSize);
+                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                shader["dv_data"].Set(Vector4.Zero);
+                if (m.EnableDarkvision)
+                {
+                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
+                    {
+                        if (m.GetObject(kv.Item1, out MapObject mo))
+                        {
+                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2));
+                        }
+                    }
+                }
+            }
+
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
            
             GL.ActiveTexture(TextureUnit.Texture14);

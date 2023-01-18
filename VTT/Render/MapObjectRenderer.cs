@@ -1269,7 +1269,7 @@
         Measure
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 412, Pack = 0)]
+    [StructLayout(LayoutKind.Explicit, Size = 416, Pack = 0)]
     public unsafe struct FrameUBO
     {
         [FieldOffset(0)] public Matrix4 view;
@@ -1288,6 +1288,7 @@
         [FieldOffset(400)] public uint frame;
         [FieldOffset(404)] public uint update;
         [FieldOffset(408)] public float grid_size;
+        [FieldOffset(412)] public int _padding;
     }
 
     public unsafe class FrameUBOManager
@@ -1301,7 +1302,7 @@
             this.memory = (FrameUBO*)Marshal.AllocHGlobal(sizeof(FrameUBO));
             this._ubo = new GPUBuffer(BufferTarget.UniformBuffer, BufferUsageHint.StreamDraw);
             this._ubo.Bind();
-            this._ubo.SetData(IntPtr.Zero, 412);
+            this._ubo.SetData(IntPtr.Zero, 416);
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
             GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 1, this._ubo);
         }
@@ -1315,7 +1316,7 @@
         public unsafe void Upload()
         {
             this._ubo.Bind();
-            this._ubo.SetSubData((IntPtr)this.memory, 412, 0);
+            this._ubo.SetSubData((IntPtr)this.memory, 416, 0);
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
         }
     }

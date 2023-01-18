@@ -214,16 +214,15 @@
 
         public AssetStatus GetWebImage(string url, out AssetPreview ap)
         {
-            if (this.Container.WebPictures.ContainsKey(url))
+            if (this.Container.WebPictures.TryGetValue(url, out ap))
             {
-                ap = this.Container.WebPictures[url];
                 return AssetStatus.Return;
             }
 
             ap = null;
-            if (this.ErroredWebImages.ContainsKey(url))
+            if (this.ErroredWebImages.TryGetValue(url, out AssetStatus ret))
             {
-                return this.ErroredWebImages[url];
+                return ret;
             }
 
             HttpClient client = new HttpClient();
@@ -372,16 +371,15 @@
 
         public AssetStatus GetOrCreatePortrait(Guid aID, out AssetPreview ap)
         {
-            if (this.Container.Portraits.ContainsKey(aID))
+            if (this.Container.Portraits.TryGetValue(aID, out ap))
             {
-                ap = this.Container.Portraits[aID];
                 return AssetStatus.Return;
             }
 
             ap = null;
-            if (this.ErroredAssets.ContainsKey(aID))
+            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
             {
-                return this.ErroredAssets[aID];
+                return ret;
             }
 
             if (this.RequestQueue.Contains(aID))
@@ -433,16 +431,20 @@
 
         public AssetStatus GetOrRequestPreview(Guid aID, out AssetPreview ap)
         {
-            if (this.Container.Previews.ContainsKey(aID))
+            if (this.Container.Previews.TryGetValue(aID, out ap))
             {
-                ap = this.Container.Previews[aID];
                 return AssetStatus.Return;
             }
 
             ap = null;
-            if (this.ErroredAssets.ContainsKey(aID) || this.ErroredPreviews.ContainsKey(aID))
+            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus retEA))
             {
-                return this.ErroredAssets.ContainsKey(aID) ? this.ErroredAssets.GetValueOrDefault(aID, AssetStatus.Error) : this.ErroredPreviews.GetValueOrDefault(aID, AssetStatus.Error);
+                return retEA;
+            }
+
+            if (this.ErroredPreviews.TryGetValue(aID, out AssetStatus retEP))
+            {
+                return retEP;
             }
 
             if (this.PreviewRequestQueue.Contains(aID))
@@ -457,9 +459,8 @@
 
         public AssetStatus GetOrRequestAsset(Guid aID, AssetType aType, out Asset a)
         {
-            if (this.Container.Assets.ContainsKey(aID))
+            if (this.Container.Assets.TryGetValue(aID, out a))
             {
-                a = this.Container.Assets[aID];
                 if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
                 {
                     Glb.GlbScene mdl = a.Texture.ToGlbModel();
@@ -470,9 +471,9 @@
             }
 
             a = null;
-            if (this.ErroredAssets.ContainsKey(aID))
+            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
             {
-                return this.ErroredAssets[aID];
+                return ret;
             }
 
             if (this.RequestQueue.Contains(aID))

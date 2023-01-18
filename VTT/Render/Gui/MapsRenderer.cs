@@ -283,6 +283,7 @@
                     System.Numerics.Vector4 mGridColor = (System.Numerics.Vector4)state.clientMap.GridColor;
                     System.Numerics.Vector4 mSkyColor = (System.Numerics.Vector4)state.clientMap.BackgroundColor;
                     System.Numerics.Vector4 mAmbientColor = (System.Numerics.Vector4)state.clientMap.AmbientColor;
+                    System.Numerics.Vector4 mSunColor = (System.Numerics.Vector4)state.clientMap.SunColor;
                     ImGui.Text(lang.Translate("ui.maps.grid_color"));
                     ImGui.SameLine();
                     if (ImGui.ColorButton("##GridColor", mGridColor))
@@ -318,6 +319,20 @@
                     {
                         this._editedMapColor = mAmbientColor;
                         this._editedMapColorIndex = 2;
+                        state.changeMapColorPopup = true;
+                    }
+
+                    ImGui.Text(lang.Translate("ui.maps.sun_color"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.sun_color.tt"));
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.ColorButton("##SunColor", mSunColor))
+                    {
+                        this._editedMapColor = mSunColor;
+                        this._editedMapColorIndex = 3;
                         state.changeMapColorPopup = true;
                     }
 

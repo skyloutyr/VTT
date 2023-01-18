@@ -35,11 +35,11 @@
 
             GlbMaterial mat = new GlbMaterial();
             mat.AlphaMode = this.Meta.EnableBlending ? glTFLoader.Schema.Material.AlphaModeEnum.BLEND : glTFLoader.Schema.Material.AlphaModeEnum.OPAQUE;
-            mat.NormalTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 255, 255));
+            mat.NormalTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0.5f, 0.5f, 1f, 1f));
             mat.NormalAnimation = new TextureAnimation(null);
             mat.EmissionTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 0));
             mat.EmissionAnimation = new TextureAnimation(null);
-            mat.OcclusionMetallicRoughnessTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(255, 0, 255, 255));
+            mat.OcclusionMetallicRoughnessTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(1f, 0, 1f, 1f));
             mat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
             mat.RoughnessFactor = 1f;
             mat.AlphaCutoff = 0f;

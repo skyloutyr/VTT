@@ -93,6 +93,12 @@
                         break;
                     }
 
+                    case DataType.SunColor:
+                    {
+                        m.SunColor = (Color)this.Data;
+                        break;
+                    }
+
                     case DataType.SunEnabled:
                     {
                         m.SunEnabled = (bool)this.Data;
@@ -228,6 +234,7 @@
                 case DataType.GridColor:
                 case DataType.SkyColor:
                 case DataType.AmbientColor:
+                case DataType.SunColor:
                 {
                     uint v = br.ReadUInt32();
                     this.Data = Extensions.FromArgb(v);
@@ -283,6 +290,7 @@
                 case DataType.GridColor:
                 case DataType.SkyColor:
                 case DataType.AmbientColor:
+                case DataType.SunColor:
                 {
                     Color c = (Color)this.Data;
                     uint v = c.Argb();
@@ -324,7 +332,8 @@
             CameraDirection,
             DarkvisionEnabled,
             Is2D,
-            Camera2DHeight
+            Camera2DHeight,
+            SunColor
         }
     }
 }

@@ -141,7 +141,7 @@
             this._vao.PushElement(ElementType.Vec3);
         }
 
-        public Vector3 GetCurrentSunDirection() => this.GetSunDirection(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1);
+        public Vector3 GetCurrentSunDirection() => Client.Instance.CurrentMap.SunEnabled ? this.GetSunDirection(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1) : -Vector3.UnitZ;
         public Vector3 GetCurrentSunUp() => this.GetSunUp(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1);
 
         public Vector3 GetSunDirection(float yaw, float pitch)
@@ -220,7 +220,7 @@
 
             if (!map.SunEnabled)
             {
-                return Color.Black;
+                return map.SunColor;
             }
 
             float pitch = map.SunPitch + MathF.PI;

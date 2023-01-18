@@ -127,6 +127,12 @@
                             state.clientMap.AmbientColor = c;
                             break;
                         }
+
+                        case 3:
+                        {
+                            state.clientMap.SunColor = c;
+                            break;
+                        }
                     }
                 }
 
@@ -140,7 +146,19 @@
 
                 if (bo)
                 {
-                    PacketChangeMapData pcmd = new PacketChangeMapData() { Data = Extensions.FromVec4(this._editedMapColor.GLVector()), IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = this._editedMapColorIndex == 0 ? PacketChangeMapData.DataType.GridColor : this._editedMapColorIndex == 1 ? PacketChangeMapData.DataType.SkyColor : PacketChangeMapData.DataType.AmbientColor };
+                    PacketChangeMapData pcmd = new PacketChangeMapData() 
+                    { 
+                        Data = Extensions.FromVec4(this._editedMapColor.GLVector()), 
+                        MapID = state.clientMap.ID, 
+                        Type = this._editedMapColorIndex switch
+                        {
+                            0 => PacketChangeMapData.DataType.GridColor,
+                            1 => PacketChangeMapData.DataType.SkyColor,
+                            2 => PacketChangeMapData.DataType.AmbientColor,
+                            _ => PacketChangeMapData.DataType.SunColor
+                        }
+                    };
+
                     pcmd.Send();
                 }
 

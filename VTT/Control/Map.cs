@@ -25,6 +25,7 @@
         public Color GridColor { get; set; }
         public Color BackgroundColor { get; set; }
         public Color AmbientColor { get; set; }
+        public Color SunColor { get; set; }
 
         public bool SunEnabled { get; set; } = true;
         public float SunYaw { get; set; }
@@ -170,6 +171,7 @@
             this.GridUnit = e.Get("GridUnit", 5.0f);
             this.GridColor = e.GetColor("GridColor");
             this.BackgroundColor = e.GetColor("BackgroundColor");
+            this.SunColor = e.GetColor("SunColor", new Color(new Rgba32(0.2f, 0.2f, 0.2f, 1.0f)));
             this.AmbientColor = e.GetColor("AmbientColor", new Color(new Rgba32(0.03f, 0.03f, 0.03f, 0.03f)));
             this.SunEnabled = e.Get("SunEnabled", true);
             this.SunYaw = e.Get<float>("SunYaw");
@@ -247,6 +249,7 @@
             ret.SetColor("GridColor", this.GridColor);
             ret.SetColor("BackgroundColor", this.BackgroundColor);
             ret.SetColor("AmbientColor", this.AmbientColor);
+            ret.SetColor("SunColor", this.SunColor);
             ret.Set("SunEnabled", this.SunEnabled);
             ret.Set("SunYaw", this.SunYaw);
             ret.Set("SunPitch", this.SunPitch);

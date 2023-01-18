@@ -422,3 +422,5 @@ menu.settings.gamma=Gamma
 menu.settings.gamma.tt=Higher values correlate to higher brightness and contrast, while lower values do the opposite.
 menu.settings.use_ubo=Use UBO
 menu.settings.use_ubo.tt=UBOs allow for shared GPU shader data, enabling rendering optimizations.\nOn older or integrated GPUs this had been reported to cause driver hault.\nDisable if you experience issues with the application haulting.
+ui.maps.sun_color=Sun Color
+ui.maps.sun_color.tt=The color of the sunlight. Only applicable when the sun is disabled.

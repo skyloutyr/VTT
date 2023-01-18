@@ -79,8 +79,9 @@
                         IProgress<float> p = new Progress<float>(f => WriteProgressBar(f));
                         await HttpClientHelper.DownloadAsync(client.Value, $"https://github.com/skyloutyr/VSCC/releases/download/{remote.version}/VTT.zip", ms, p);
                         WriteStatusString("Extracting");
-                        ms.Position = 0;
-                        ZipArchive za = new ZipArchive(ms);
+                        byte[] msBytes = ms.ToArray();
+                        MemoryStream aMs = new MemoryStream(msBytes);
+                        ZipArchive za = new ZipArchive(aMs, ZipArchiveMode.Read, true);
                         int pEntries = 0;
                         int tEntries = za.Entries.Count;
                         ClearProgressBar();

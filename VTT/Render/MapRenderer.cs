@@ -54,7 +54,7 @@
             else
             {
                 float zoom = this.camera2dzoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -50, 100);
+                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -10, 10);
             }
 
             this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
@@ -89,7 +89,7 @@
             if (b)
             {
                 this.camera2dzoom = zoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -50, 100);
+                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -10, 10);
                 this.ClientCamera.Direction = new Vector3(0, 0.001f, -1).Normalized();
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);

@@ -380,6 +380,7 @@
 
                         ImGui.PopItemWidth();
                         System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                        ImGui.BeginChild("##TirnTrackerInnerEntryList");
                         for (int i = 0; i < cMap.TurnTracker.Entries.Count; i++)
                         {
                             TurnTracker.Entry e = cMap.TurnTracker.Entries[i];
@@ -516,6 +517,8 @@
                                 ImGui.PopStyleColor();
                             }
                         }
+
+                        ImGui.EndChild();
                     }
 
                     ImGui.End();

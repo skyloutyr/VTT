@@ -12,6 +12,7 @@
         public Guid MapID { get; set; }
         public Image<Rgba64> Image { get; set; }
         public override uint PacketID => 37;
+        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

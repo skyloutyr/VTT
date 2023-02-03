@@ -9,6 +9,7 @@
     {
         public DataElement Data { get; set; }
         public override uint PacketID => 40;
+        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

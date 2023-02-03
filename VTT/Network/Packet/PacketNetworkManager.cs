@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.IO.Compression;
 
     public class PacketNetworkManager
     {
@@ -73,10 +74,22 @@
                         // The total message has been received and will be processed within HandlePacket(byte[] data)... 
                         using MemoryStream ms = new MemoryStream(packet);
                         using BinaryReader br = new BinaryReader(ms);
-                        uint id = br.ReadUInt32();
+                        ushort id = br.ReadUInt16();
                         PacketBase pb = (PacketBase)Activator.CreateInstance(PacketBase.PacketsByID[id]);
+                        byte compressedFlag = br.ReadByte();
                         pb.IsServer = this.IsServer;
-                        pb.Decode(br);
+                        if ((compressedFlag & 1) == 1)
+                        {
+                            using MemoryStream ms2 = new MemoryStream(packet, 3, packet.Length - 3);
+                            using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Decompress);
+                            using BinaryReader br2 = new BinaryReader(ds);
+                            pb.Decode(br2);
+                        }
+                        else
+                        {
+                            pb.Decode(br);
+                        }
+
                         if (this.IsServer)
                         {
                             pb.Server = Server.Instance;

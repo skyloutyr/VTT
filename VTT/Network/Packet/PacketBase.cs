@@ -3,13 +3,14 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.IO.Compression;
     using System.Reflection;
     using VTT.Util;
 
     public abstract class PacketBase
     {
-        public static Dictionary<uint, Type> PacketsByID { get; } = new Dictionary<uint, Type>();
-        public static Dictionary<Type, uint> IDByPacketType { get; } = new Dictionary<Type, uint>();
+        public static Dictionary<ushort, Type> PacketsByID { get; } = new Dictionary<ushort, Type>();
+        public static Dictionary<Type, ushort> IDByPacketType { get; } = new Dictionary<Type, ushort>();
 
         static PacketBase()
         {
@@ -26,7 +27,7 @@
             foreach (Type t in pbTypes)
             {
                 PacketBase pb = (PacketBase)Activator.CreateInstance(t);
-                uint idx = pb.PacketID;
+                ushort idx = (ushort)pb.PacketID;
                 if (PacketsByID.ContainsKey(idx))
                 {
                     throw new Exception($"Packet with ID {idx} is already registered by {PacketsByID[idx].Name} while attempting to register {t.Name}!");
@@ -40,6 +41,7 @@
         public Guid Session { get; set; }
         public bool IsServer { get; set; }
         public abstract uint PacketID { get; }
+        public virtual bool Compressed => false;
 
         public Server Server { get; set; }
         public Client Client { get; set; }
@@ -58,7 +60,21 @@
             using BinaryWriter bw = new BinaryWriter(ms);
             bw.Write((int)0);
             bw.Write(IDByPacketType[this.GetType()]);
-            this.Encode(bw);
+            bw.Write((byte)(this.Compressed ? 1 : 0));
+            if (this.Compressed)
+            {
+                using MemoryStream ms2 = new MemoryStream();
+                using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Compress);
+                using BinaryWriter bw2 = new BinaryWriter(ds);
+                this.Encode(bw2);
+                ds.Close();
+                bw.Write(ms2.ToArray());
+            }
+            else
+            {
+                this.Encode(bw);
+            }
+
             byte[] arr = ms.ToArray();
             Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
             client.SendAsync(arr);
@@ -84,7 +100,21 @@
             this.IsServer = true;
             bw.Write((int)0);
             bw.Write(IDByPacketType[this.GetType()]);
-            this.Encode(bw);
+            bw.Write((byte)(this.Compressed ? 1 : 0));
+            if (this.Compressed)
+            {
+                using MemoryStream ms2 = new MemoryStream();
+                using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Compress);
+                using BinaryWriter bw2 = new BinaryWriter(ds);
+                this.Encode(bw2);
+                ds.Close();
+                bw.Write(ms2.ToArray());
+            }
+            else
+            {
+                this.Encode(bw);
+            }
+
             byte[] arr = ms.ToArray();
             Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
             sc.SendAsync(arr);

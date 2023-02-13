@@ -414,10 +414,14 @@
                         int vBufIndex = 0;
                         Vector3 posMin = default;
                         Vector3 posMax = default;
+                        Matrix4 mat = this.LookupChildMatrix(o);
                         for (int j = 0; j < positions.Count; ++j)
                         {
-                            posMin = Vector3.ComponentMin(posMin, positions[j]);
-                            posMax = Vector3.ComponentMax(posMax, positions[j]);
+                            Vector4 mpos = new Vector4(positions[j], 0.0f);
+                            mpos = mpos * mat;
+
+                            posMin = Vector3.ComponentMin(posMin, mpos.Xyz);
+                            posMax = Vector3.ComponentMax(posMax, mpos.Xyz);
                             // vec3 pos
                             // vec2 uv
                             // vec3 norm
@@ -477,9 +481,7 @@
 
                         glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
                         glbm.areaSums = areaSums.ToArray();
-                        Matrix4 mat = this.LookupChildMatrix(o);
-                        Vector3 oTrans = mat.ExtractTranslation();
-                        glbm.Bounds = new AABox(posMin + oTrans, posMax + oTrans); // TODO bounds rotation + translation + scale
+                        glbm.Bounds = new AABox(posMin, posMax); // Bounds generated from transformed positions
                         glbm.VertexBuffer = vBuffer;
                         glbm.IndexBuffer = indices;
                         glbm.Material = mp.Material != null ? this.Materials[mp.Material.Value] : this.DefaultMaterial;

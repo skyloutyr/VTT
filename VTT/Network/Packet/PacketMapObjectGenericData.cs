@@ -109,6 +109,12 @@
                             d.Item2.CustomNameplateID = (Guid)d.Item3;
                             break;
                         }
+
+                        case DataType.ShaderID:
+                        {
+                            d.Item2.ShaderID = (Guid)d.Item3;
+                            break;
+                        }
                     }
 
                     d.Item1.NeedsSave = true;
@@ -166,6 +172,7 @@
 
                     case DataType.Owner:
                     case DataType.CustomNameplateID:
+                    case DataType.ShaderID:
                     {
                         o = new Guid(br.ReadBytes(16));
                         break;
@@ -226,6 +233,7 @@
 
                     case DataType.Owner:
                     case DataType.CustomNameplateID:
+                    case DataType.ShaderID:
                     {
                         bw.Write(((Guid)d.Item3).ToByteArray());
                         break;
@@ -306,7 +314,8 @@
             IsCrossedOut,
             HasCustomNameplate,
             CustomNameplateID,
-            Properties
+            Properties,
+            ShaderID
         }
     }
 }

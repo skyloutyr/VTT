@@ -30,6 +30,7 @@
         public AssetDirectory dirHovered = null;
         public MapObject objectModelHovered = null;
         public MapObject objectCustomNameplateHovered = null;
+        public MapObject objectCustomShaderHovered = null;
         public ParticleSystem particleModelHovered = null;
         public ParticleContainer particleContainerHovered = null;
         public bool editParticleSystemPopup = false;
@@ -62,6 +63,7 @@
             dirHovered = null;
             objectModelHovered = null;
             objectCustomNameplateHovered = null;
+            objectCustomShaderHovered = null;
             editParticleSystemPopup = false;
             particleModelHovered = null;
             changeParticleColorPopup = false;

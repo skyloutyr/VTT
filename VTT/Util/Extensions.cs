@@ -225,5 +225,7 @@
         public static SVec2 ReadSysVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
         public static SVec3 ReadSysVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
         public static SVec4 ReadSysVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+
+        public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);
     }
 }

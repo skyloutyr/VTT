@@ -352,40 +352,12 @@
         {
             if (this._glTex == null)
             {
-                TextureAnimation.Frame[] allFrames = new TextureAnimation.Frame[this.Frames.Length];
-                
-                RectangleF[] positions = new RectangleF[this.Frames.Length];
-                int imgW = 0, imgH = 0;
-                int cX = 0, cY = 0;
-                int lH = 0;
-                int maxS = Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize;
-                for (int i = 0; i < this.Frames.Length; ++i)
-                {
-                    Frame f = this.Frames[i];
-                    IImageInfo ii = Image.Identify(f.ImageBinary);
-                    lH = Math.Max(ii.Height, lH);
-                    if (cX + ii.Width > maxS)
-                    {
-                        imgW = Math.Max(cX, imgW);
-                        imgH += lH;
-                        cX = 0;
-                        cY += lH;
-                        lH = ii.Height;
-                    }
-
-                    RectangleF p = new RectangleF(cX, cY, ii.Width, ii.Height);
-                    positions[i] = p;
-                    cX += ii.Width;
-                }
-
-                imgW = Math.Max(cX, imgW);
-                imgH += lH;
-                bool mayBeContinuous = ((long)imgW * (long)imgH * 4L) < int.MaxValue; // 32bpp
+                using Image<Rgba32> img = this.CompoundImage();
 
                 this._glTex = new Texture(TextureTarget.Texture2D);
                 this._glTex.Bind();
-                PixelInternalFormat pif = 
-                    this.Meta.Compress ? 
+                PixelInternalFormat pif =
+                    this.Meta.Compress ?
                         this.Meta.GammaCorrect ? PixelInternalFormat.CompressedSrgbAlpha :
                     PixelInternalFormat.CompressedRgba :
                 this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha :
@@ -393,24 +365,7 @@
 
                 this._glTex.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
                 this._glTex.SetWrapParameters(this.Meta.WrapS, this.Meta.WrapT, WrapParam.Repeat);
-                Configuration cfg = Configuration.Default.Clone();
-                cfg.PreferContiguousImageBuffers = mayBeContinuous;
-                using Image<Rgba32> img = new Image<Rgba32>(cfg, imgW, imgH);
-                GraphicsOptions go = new GraphicsOptions() { Antialias = false, BlendPercentage = 1, ColorBlendingMode = PixelColorBlendingMode.Normal };
-                for (int i = 0; i < this.Frames.Length; ++i)
-                {
-                    Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
-                    RectangleF r = positions[i];
-                    allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
-                    img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
-                    f.Dispose();
-                    this.Frames[i] = this.Frames[i].ClearBinary();
-                }
-
-                this._cachedAnim = new TextureAnimation(allFrames);
                 this._glTex.SetImage(img, pif);
-                
-
                 if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
                 {
                     this._glTex.GenerateMipMaps();
@@ -419,6 +374,56 @@
 
             animationData = this._cachedAnim;
             return this._glTex;
+        }
+
+        public TextureAnimation CachedAnimation => this._cachedAnim;
+
+        public Image<Rgba32> CompoundImage()
+        {
+            TextureAnimation.Frame[] allFrames = new TextureAnimation.Frame[this.Frames.Length];
+            RectangleF[] positions = new RectangleF[this.Frames.Length];
+            int imgW = 0, imgH = 0;
+            int cX = 0, cY = 0;
+            int lH = 0;
+            int maxS = Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize;
+            for (int i = 0; i < this.Frames.Length; ++i)
+            {
+                Frame f = this.Frames[i];
+                IImageInfo ii = Image.Identify(f.ImageBinary);
+                lH = Math.Max(ii.Height, lH);
+                if (cX + ii.Width > maxS)
+                {
+                    imgW = Math.Max(cX, imgW);
+                    imgH += lH;
+                    cX = 0;
+                    cY += lH;
+                    lH = ii.Height;
+                }
+
+                RectangleF p = new RectangleF(cX, cY, ii.Width, ii.Height);
+                positions[i] = p;
+                cX += ii.Width;
+            }
+
+            imgW = Math.Max(cX, imgW);
+            imgH += lH;
+            bool mayBeContinuous = ((long)imgW * (long)imgH * 4L) < int.MaxValue; // 32bpp
+            Configuration cfg = Configuration.Default.Clone();
+            cfg.PreferContiguousImageBuffers = mayBeContinuous;
+            Image<Rgba32> img = new Image<Rgba32>(cfg, imgW, imgH);
+            GraphicsOptions go = new GraphicsOptions() { Antialias = false, BlendPercentage = 1, ColorBlendingMode = PixelColorBlendingMode.Normal };
+            for (int i = 0; i < this.Frames.Length; ++i)
+            {
+                Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
+                RectangleF r = positions[i];
+                allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
+                img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
+                f.Dispose();
+                this.Frames[i] = this.Frames[i].ClearBinary();
+            }
+
+            this._cachedAnim = new TextureAnimation(allFrames);
+            return img;
         }
 
         public void Dispose()

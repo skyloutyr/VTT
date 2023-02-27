@@ -37,6 +37,7 @@ layout (std140) uniform FrameData {
 	uint frame;
 	uint update;
 	float grid_size;
+    float frame_delta;
 };
 
 uniform float alpha;
@@ -78,6 +79,11 @@ uniform float gamma_factor;
 // grid
 uniform float grid_alpha;
 
+// extra textures for custom shaders
+uniform sampler2DArray unifiedTexture;
+uniform vec2 unifiedTextureData[64];
+uniform vec4 unifiedTextureFrames[64];
+
 out vec4 g_color;
 
 const vec3 surface_reflection_for_dielectrics = vec3(0.04);
@@ -92,6 +98,15 @@ vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 vec4 sampleMap(sampler2D sampler, vec4 frameData)
 {
     return sampleMapCustom(sampler, f_texture, frameData);
+}
+
+vec4 sampleExtraTexture(int layer, vec2 uvs)
+{
+    ivec3 ts = textureSize(unifiedTexture, 0);
+    vec2 f_uvs = uvs * unifiedTextureData[layer] / vec2(ts.x, ts.y);
+    vec4 frameData = unifiedTextureFrames[layer];
+    f_uvs = f_uvs * frameData.zw + frameData.xy;
+    return texture(unifiedTexture, vec3(f_uvs, layer));
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
@@ -328,6 +343,12 @@ vec3 calcDirectionalLight(vec3 world_to_camera, vec3 albedo, vec3 normal, float 
 vec3 getNormalFromMap()
 {
     vec3 tangentNormal = sampleMap(m_texture_normal, m_normal_frame).xyz * 2.0 - 1.0;
+    return normalize(f_tbn * tangentNormal);
+}
+
+vec3 getNormalFromMapCustom(vec2 uvs)
+{
+    vec3 tangentNormal = sampleMapCustom(m_texture_normal, uvs, m_normal_frame).xyz * 2.0 - 1.0;
     return normalize(f_tbn * tangentNormal);
 }
 

@@ -562,6 +562,12 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.objectCustomShaderHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
+                    {
+                        new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomShaderHovered.MapID, state.objectCustomShaderHovered.ID, this._draggedRef.AssetID) } }.Send(); 
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.particleModelHovered != null && Client.Instance.IsAdmin)
                     {
                         state.particleModelHovered.AssetID = this._draggedRef.AssetID;

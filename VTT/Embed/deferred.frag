@@ -29,6 +29,7 @@ layout (std140) uniform FrameData {
 	uint frame;
 	uint update;
 	float grid_size;
+    float frame_delta;
 };
 
 const float alpha = 1.0;
@@ -69,6 +70,12 @@ vec4 sampleMap(sampler2D sampler, vec4 frameData)
 vec3 getNormalFromMap()
 {
     vec3 tangentNormal = sampleMap(m_texture_normal, m_normal_frame).xyz * 2.0 - 1.0;
+    return normalize(f_tbn * tangentNormal);
+}
+
+vec3 getNormalFromMapCustom(vec2 uvs)
+{
+    vec3 tangentNormal = sampleMapCustom(m_texture_normal, uvs, m_normal_frame).xyz * 2.0 - 1.0;
     return normalize(f_tbn * tangentNormal);
 }
 

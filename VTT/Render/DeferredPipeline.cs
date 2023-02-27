@@ -200,7 +200,7 @@
                             continue;
                         }
 
-                        if (a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon))
+                        if (a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon) || !mo.ShaderID.IsEmpty())
                         {
                             mo.ClientDeferredRejectThisFrame = true;
                             continue;

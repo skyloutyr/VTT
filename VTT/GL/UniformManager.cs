@@ -19,7 +19,7 @@
             GL.GetProgram(pId, GetProgramParameterName.ActiveUniforms, out int count);
             for (int i = 0; i < count; ++i)
             {
-                GL.GetActiveUniform(pId, i, 128, out _, out _, out _, out string nameStr);
+                GL.GetActiveUniform(pId, i, 128, out int len, out int size, out ActiveUniformType uType, out string nameStr);
                 if (nameStr.IndexOf('[') != -1)
                 {
                     int c = 0;

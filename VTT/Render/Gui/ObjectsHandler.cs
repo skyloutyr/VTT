@@ -235,7 +235,7 @@
                                 ImGui.SetTooltip(lang.Translate("ui.properties.has_custom_nameplate.tt"));
                             }
 
-                            mouseOver = DrawObjectAssetRecepticle(mo, mo.CustomNameplateID, () => this._draggedRef.Type == AssetType.Texture);
+                            mouseOver = DrawObjectAssetRecepticle(mo, mo.CustomNameplateID, () => this._draggedRef.Type == AssetType.Texture, this.AssetImageIcon);
                             if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
                             {
                                 state.objectCustomNameplateHovered = mo;
@@ -244,6 +244,23 @@
                             if (mouseOver)
                             {
                                 ImGui.SetTooltip(lang.Translate("ui.properties.custom_nameplate.tt"));
+                            }
+
+                            mouseOver = DrawObjectAssetRecepticle(mo, mo.ShaderID, () => this._draggedRef.Type == AssetType.Shader, this.AssetShaderIcon);
+                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
+                            {
+                                state.objectCustomShaderHovered = mo;
+                            }
+
+                            if (mouseOver)
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.properties.custom_shader.tt"));
+                            }
+
+                            if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
+                            {
+                                mo.ShaderID = Guid.Empty;
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, Guid.Empty) } }.Send();
                             }
                         }
 
@@ -548,7 +565,7 @@
                 ImGui.End();
             }
 
-            unsafe bool DrawObjectAssetRecepticle(MapObject mo, Guid aId, Func<bool> assetEval)
+            unsafe bool DrawObjectAssetRecepticle(MapObject mo, Guid aId, Func<bool> assetEval, GL.Texture iconTex = null)
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                 var imScreenPos = ImGui.GetCursorScreenPos();
@@ -556,7 +573,7 @@
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                 uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                 drawList.AddRect(imScreenPos, rectEnd, bClr);
-                drawList.AddImage(this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
                 string mdlTxt = "";
                 int mdlTxtOffset = 0;
                 if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -574,7 +591,15 @@
                     }
                 }
 
-                mdlTxt += " (" + aId.ToString() + ")\0";
+                if (Guid.Equals(Guid.Empty, aId))
+                {
+                    mdlTxt = lang.Translate("generic.none");
+                }
+                else
+                {
+                    mdlTxt += " (" + aId.ToString() + ")\0";
+                }
+
                 drawList.PushClipRect(imScreenPos, rectEnd);
                 drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                 drawList.PopClipRect();

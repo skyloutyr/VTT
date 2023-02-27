@@ -424,3 +424,7 @@ menu.settings.use_ubo=Использовать UBO
 menu.settings.use_ubo.tt=UBO позволяют шейдерам иметь единый буффер данных, позволяя оптимизировать отрисовку.\nНа старых и интегрированых видеокартах этот функционал может вызывать зависания драйвера.\nОтключите, если у вас есть ошибки с зависанием приложения.
 ui.maps.sun_color=Цвет Солнца
 ui.maps.sun_color.tt=Цвет солнечного света. Применимо только если солнце отключено.
+generic.none=Отсутствует
+ui.properties.custom_shader=Шейдер
+ui.properties.custom_shader.tt=Сюда можно перенести шейдер
+ui.properties.custom_shader.delete=Убрать шейдер

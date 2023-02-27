@@ -24,6 +24,7 @@ layout (std140) uniform FrameData {
 	uint frame;
 	uint update;
 	float grid_size;
+    float frame_delta;
 };
 
 // Camera

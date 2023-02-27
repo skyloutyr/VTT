@@ -8,11 +8,15 @@
         public UniformManager UniformManager { get; }
         public UniformWrapper this[string name] => this.UniformManager.GetUniform(name);
 
+        private static uint _lastProgramID;
+
         public ShaderProgram()
         {
             this._glID = (uint)GL.CreateProgram();
             this.UniformManager = new UniformManager();
         }
+
+        public static bool IsLastShaderSame(ShaderProgram currentShader) => currentShader._glID == _lastProgramID;
 
         public static bool TryCompile(out ShaderProgram sp, string vertCode, string geomCode, string fragCode, out string error)
         {
@@ -109,7 +113,12 @@
             return true;
         }
 
-        public void Bind() => GL.UseProgram(this._glID);
+        public void Bind()
+        {
+            GL.UseProgram(this._glID);
+            _lastProgramID = this._glID;
+        }
+
         public void Dispose() => GL.DeleteProgram(this._glID);
         public void BindUniformBlock(string blockName, int slot)
         {

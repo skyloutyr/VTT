@@ -14,6 +14,7 @@
     using VTT.Network.Packet;
     using VTT.Util;
     using SVec2 = System.Numerics.Vector2;
+    using SVec3 = System.Numerics.Vector3;
     using SVec4 = System.Numerics.Vector4;
 
     public class ShaderGraphEditorRenderer
@@ -87,9 +88,8 @@
                                     }
                                 }
 
-                                drawPtr.AddRectFilled(screenPos, screenPos + n.Size.SystemVector(), nodeBack.Abgr());
-                                drawPtr.AddRectFilled(screenPos, screenPos + new SVec2(n.Size.X, 20), mOverHeader ? nodeHeaderHover.Abgr() : nodeHeader.Abgr());
-                                drawPtr.AddRect(screenPos, screenPos + n.Size.SystemVector(), mOver ? nodeBorderHover.Abgr() : nodeBorder.Abgr());
+                                drawPtr.ChannelsSplit(2);
+                                drawPtr.ChannelsSetCurrent(1);
                                 drawPtr.AddText(screenPos + new SVec2(8, 0), Color.White.Abgr(), n.Name);
                                 if (n.Deletable)
                                 {
@@ -133,6 +133,100 @@
                                             this.ShaderLine(drawPtr, oSPos, data.Item2.SelfType, iSPos, xOffset, ni.SelfType, mOver || mOverInput || mOverOutput);
                                         }
                                     }
+                                    else
+                                    {
+                                        SVec2 cPos = ImGui.GetCursorPos();
+                                        ImGui.SetCursorPos(nSPos + new SVec2(8, yOffset + 8));
+                                        string igbid = "##tInS" + ni.ID.ToString();
+
+                                        if (n.TemplateID.Equals(ShaderNodeTemplate.ConstructColor4.ID)) // Color picker is special
+                                        {
+                                            SVec4 clr = ni.CurrentValue is Vector4 v4 ? v4.SystemVector() : SVec4.Zero;
+                                            ImGui.SetNextItemWidth(200 - 16);
+                                            if (ImGui.ColorPicker4(igbid, ref clr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoSmallPreview | ImGuiColorEditFlags.NoLabel | ImGuiColorEditFlags.NoBorder | ImGuiColorEditFlags.NoDragDrop | ImGuiColorEditFlags.NoTooltip))
+                                            {
+                                                ni.CurrentValue = clr.GLVector();
+                                            }
+
+                                            yOffset += 220;
+                                        }
+                                        else
+                                        {
+                                            ImGui.SetNextItemWidth(200 - 16);
+                                            switch (ni.SelfType)
+                                            {
+                                                case NodeValueType.Bool:
+                                                {
+                                                    bool b = ni.CurrentValue is bool boolean && boolean;
+                                                    if (ImGui.Checkbox(igbid, ref b))
+                                                    {
+                                                        ni.CurrentValue = b;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                case NodeValueType.Int:
+                                                case NodeValueType.UInt:
+                                                {
+                                                    int b = ni.CurrentValue is int @int ? @int : ni.CurrentValue is uint int1 ? (int)int1 : 0;
+                                                    if (ImGui.InputInt(igbid, ref b))
+                                                    {
+                                                        ni.CurrentValue = ni.SelfType == NodeValueType.UInt ? (uint)b : b;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                case NodeValueType.Float:
+                                                {
+                                                    float f = ni.CurrentValue is float f1 ? f1 : 0;
+                                                    if (ImGui.InputFloat(igbid, ref f))
+                                                    {
+                                                        ni.CurrentValue = f;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                case NodeValueType.Vec2:
+                                                {
+                                                    SVec2 sv2 = ni.CurrentValue is Vector2 v2 ? v2.SystemVector() : SVec2.Zero;
+                                                    if (ImGui.InputFloat2(igbid, ref sv2))
+                                                    {
+                                                        ni.CurrentValue = sv2.GLVector();
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                case NodeValueType.Vec3:
+                                                {
+                                                    SVec3 sv3 = ni.CurrentValue is Vector3 v3 ? v3.SystemVector() : SVec3.Zero;
+                                                    if (ImGui.InputFloat3(igbid, ref sv3))
+                                                    {
+                                                        ni.CurrentValue = sv3.GLVector();
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                case NodeValueType.Vec4:
+                                                {
+                                                    SVec4 sv4 = ni.CurrentValue is Vector4 v4 ? v4.SystemVector() : SVec4.Zero;
+                                                    if (ImGui.InputFloat4(igbid, ref sv4))
+                                                    {
+                                                        ni.CurrentValue = sv4.GLVector();
+                                                    }
+
+                                                    break;
+                                                }
+                                            }
+                                            yOffset += 20;
+                                        }
+
+                                        ImGui.SetCursorPos(cPos);
+                                    }
 
                                     yOffset += 20;
                                     ++iIndex;
@@ -153,6 +247,14 @@
                                     drawPtr.AddText(nSPos + new SVec2(-12 - ts.X, yOffset - 10), Color.White.Abgr(), no.Name);
                                     yOffset += 20;
                                 }
+
+                                SVec2 aSize = new SVec2(200, yOffset);
+                                n.Size = new Vector2(aSize.X, aSize.Y);
+                                drawPtr.ChannelsSetCurrent(0);
+                                drawPtr.AddRectFilled(screenPos, screenPos + aSize, nodeBack.Abgr());
+                                drawPtr.AddRectFilled(screenPos, screenPos + new SVec2(aSize.X, 20), mOverHeader ? nodeHeaderHover.Abgr() : nodeHeader.Abgr());
+                                drawPtr.AddRect(screenPos, screenPos + aSize, mOver ? nodeBorderHover.Abgr() : nodeBorder.Abgr());
+                                drawPtr.ChannelsMerge();
                             }
                         }
 

@@ -2558,6 +2558,20 @@ $OUTPUT@3$ = $INPUT@0$.w;
 "
         );
 
+        public static ShaderNodeTemplate FloatREq { get; } = new ShaderNodeTemplate(Guid.Parse("1861fa12-f135-44ef-ac0d-b231e8a210a0"), ShaderTemplateCategory.LogicFloat, "Roughly Equals", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0.001f, Name = "Allowed Deviation", SelfType = NodeValueType.Float },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = abs($INPUT@0$ - $INPUT@1$) <= $INPUT@2$;
+"
+        );
+
         public static ShaderNodeTemplate FloatNEq { get; } = new ShaderNodeTemplate(Guid.Parse("5dbf310a-2e68-49c1-903b-224901b0dc5a"), ShaderTemplateCategory.LogicFloat, "Not Equal", true,
                 new NodeInput[] {
                     new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
@@ -2659,6 +2673,70 @@ $OUTPUT@3$ = $INPUT@0$.w;
                     new NodeOutput() { SelfType = NodeValueType.Float },
                },
 @"$OUTPUT@0$ = $INPUT@0$ ? 1.0 : 0.0;
+"
+        );
+
+        public static ShaderNodeTemplate BoolInverse { get; } = new ShaderNodeTemplate(Guid.Parse("1b6077f5-7608-46a9-a73b-4c25e4910373"), ShaderTemplateCategory.Logic, "Not", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = !$INPUT@0$;
+"
+        );
+
+        public static ShaderNodeTemplate BoolAnd { get; } = new ShaderNodeTemplate(Guid.Parse("21cd5531-4dec-4803-9e3f-40c315134edd"), ShaderTemplateCategory.Logic, "And", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 1", SelfType = NodeValueType.Bool },
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 2", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ && $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate BoolOr { get; } = new ShaderNodeTemplate(Guid.Parse("ff0a341b-e2fa-4c30-b21c-844ca8f05860"), ShaderTemplateCategory.Logic, "Or", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 1", SelfType = NodeValueType.Bool },
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 2", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ || $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate BoolXor { get; } = new ShaderNodeTemplate(Guid.Parse("477b3509-0037-446f-a508-0159169d08c0"), ShaderTemplateCategory.Logic, "Exclusive Or", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 1", SelfType = NodeValueType.Bool },
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 2", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = ($INPUT@0$ || $INPUT@1$) && !($INPUT@0$ && $INPUT@1$);
+"
+        );
+
+        public static ShaderNodeTemplate BoolNand { get; } = new ShaderNodeTemplate(Guid.Parse("d7bdd24f-fb9e-403d-a67d-21d713bb2c61"), ShaderTemplateCategory.Logic, "Sheffer Stroke", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 1", SelfType = NodeValueType.Bool },
+                    new NodeInput(){ CurrentValue = false, Name = "Logic 2", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = !($INPUT@0$ && $INPUT@1$);
 "
         );
 

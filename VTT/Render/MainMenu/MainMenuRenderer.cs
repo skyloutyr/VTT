@@ -612,6 +612,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.gamma.tt"));
                     }
 
+                    bool sCustomShaders = Client.Instance.Settings.EnableCustomShaders;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_custom_shaders") + "###Enable Custom Shaders", ref sCustomShaders))
+                    {
+                        Client.Instance.Settings.EnableCustomShaders = sCustomShaders;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_custom_shaders.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

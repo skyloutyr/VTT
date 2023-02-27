@@ -422,6 +422,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UseUBO { get; set; } = true;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableCustomShaders { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -460,7 +464,8 @@
                 ParticlesEnabled = true,
                 ShadowsPCF = 2,
                 Gamma = 2.2f,
-                UseUBO = true
+                UseUBO = true,
+                EnableCustomShaders = true
             };
 
             ret.Save();

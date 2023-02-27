@@ -428,3 +428,5 @@ generic.none=Отсутствует
 ui.properties.custom_shader=Шейдер
 ui.properties.custom_shader.tt=Сюда можно перенести шейдер
 ui.properties.custom_shader.delete=Убрать шейдер
+menu.settings.enable_custom_shaders=Вкл. Пользовательские Шейдеры
+menu.settings.enable_custom_shaders.tt=Стоит ли использовать пользовательские шейдеры когда объект имеет таковые?\nПользовательские шейдеры оказывают значимое влияние на производительность, если их много.

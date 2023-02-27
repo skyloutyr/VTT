@@ -428,3 +428,5 @@ generic.none=None
 ui.properties.custom_shader=Custom Shader
 ui.properties.custom_shader.tt=A shader asset can be drag'n'dropped here.
 ui.properties.custom_shader.delete=Clear custom shader
+menu.settings.enable_custom_shaders=Custom Shaders Enabled
+menu.settings.enable_custom_shaders.tt=Controls whether to use custom shaders when provided by objects.\nCustom shaders have a noticeable impact on performance if there are many of them.

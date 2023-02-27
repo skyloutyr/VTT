@@ -14,6 +14,11 @@
         public static bool Render(Guid shaderAssetID, Map m, ShaderContainerLocalPassthroughData passthroughData, double textureAnimationIndex, double delta, out ShaderProgram shader)
         {
             shader = null;
+            if (!Client.Instance.Settings.EnableCustomShaders)
+            {
+                return false;
+            }
+
             if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
             {
                 shader = a.Shader.NodeGraph.GetGLShader();

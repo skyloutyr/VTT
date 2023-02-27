@@ -603,7 +603,8 @@
                 glmat.MetallicFactor = mat.PbrMetallicRoughness.MetallicFactor;
                 glmat.OcclusionMetallicRoughnessTexture = this.LoadAOMRTextureFromBinary(g, mat.OcclusionTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, bin); ;
                 glmat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
-                glmat.Name = glmat.Name;
+                glmat.Name = mat.Name;
+                glmat.Index = (uint)i;
                 glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0, 1, 0, 1f));
                 glmat.NormalAnimation = new TextureAnimation(null);
                 glmat.RoughnessFactor = mat.PbrMetallicRoughness.RoughnessFactor;

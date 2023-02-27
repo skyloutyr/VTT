@@ -2257,6 +2257,11 @@ r = $INPUT@6$;
                 SelfType = NodeValueType.Float,
                 Name = "Material Roughness"
             },
+
+            new NodeOutput(){
+                SelfType = NodeValueType.UInt,
+                Name = "Material Index"
+            },
         },
 
 @"vec4 $TEMP@0$ = sampleMap(m_texture_diffuse, m_diffuse_frame);
@@ -2273,6 +2278,7 @@ $OUTPUT@7$ = m_diffuse_color.rgb;
 $OUTPUT@8$ = m_diffuse_color.a;
 $OUTPUT@9$ = m_metal_factor;
 $OUTPUT@10$ = m_roughness_factor;
+$OUTPUT@11$ = material_index;
 ");
         
         public static ShaderNodeTemplate MaterialAlpha = new ShaderNodeTemplate(Guid.Parse("ce7189b5-c66d-4836-9cd4-e5c8937c32d0"), ShaderTemplateCategory.Inputs, "User Alpha", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },

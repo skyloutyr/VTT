@@ -54,6 +54,7 @@ uniform vec4 m_diffuse_frame;
 uniform vec4 m_normal_frame;
 uniform vec4 m_emissive_frame;
 uniform vec4 m_aomr_frame;
+uniform uint material_index;
 
 uniform vec4 tint_color;
 

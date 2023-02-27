@@ -12,6 +12,7 @@
     public class GlbMaterial
     {
         public string Name { get; set; }
+        public uint Index { get; set; }
         public Vector4 BaseColorFactor { get; set; }
         public float MetallicFactor { get; set; }
         public float RoughnessFactor { get; set; }
@@ -81,6 +82,8 @@
                     shader["m_aomr_frame"].Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                 }
             }
+
+            shader["material_index"].Set(this.Index);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             this.BaseColorTexture.Bind();

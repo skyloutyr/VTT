@@ -2450,6 +2450,220 @@ $OUTPUT@3$ = $INPUT@0$.w;
 
         #endregion
 
+        #region Logic
+
+        public static ShaderNodeTemplate IntEq { get; } = new ShaderNodeTemplate(Guid.Parse("d11e45e0-96c6-45fa-b8a8-429b94cf7819"), ShaderTemplateCategory.LogicInt, "Equals", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ == $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntNEq { get; } = new ShaderNodeTemplate(Guid.Parse("84338ece-1f10-4d72-9e6d-dc9c830c8b85"), ShaderTemplateCategory.LogicInt, "Not Equal", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ != $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntGr { get; } = new ShaderNodeTemplate(Guid.Parse("90f2a168-11eb-4040-85e5-174bd648dadd"), ShaderTemplateCategory.LogicInt, "Greater", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ > $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntGrEq { get; } = new ShaderNodeTemplate(Guid.Parse("08149435-4af8-47ba-9aa4-fa8f4a09d411"), ShaderTemplateCategory.LogicInt, "Greater or Equal", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ >= $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntLess { get; } = new ShaderNodeTemplate(Guid.Parse("e7ecf128-e03b-4684-898b-9708a2ffa979"), ShaderTemplateCategory.LogicInt, "Less", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ < $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntLEq { get; } = new ShaderNodeTemplate(Guid.Parse("63583b40-278f-4199-a1a8-0fbdf2d8b780"), ShaderTemplateCategory.LogicInt, "Less or Equal", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 2", SelfType = NodeValueType.Int },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ <= $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate IntBounds { get; } = new ShaderNodeTemplate(Guid.Parse("98ec85c6-5632-42a0-a81f-897dfceb7e2e"), ShaderTemplateCategory.LogicInt, "Is in bounds", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0, Name = "Value 1", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Min", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = 0, Name = "Max", SelfType = NodeValueType.Int },
+                    new NodeInput(){ CurrentValue = false, Name = "Inclusive", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@3$ ? $INPUT@0$ >= $INPUT@1$ && $INPUT@0$ <= $INPUT@2$ : $INPUT@0$ > $INPUT@1$ && $INPUT@0$ < $INPUT@2$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatEq { get; } = new ShaderNodeTemplate(Guid.Parse("5ca94b7b-8a9e-4a45-8ec9-96356119525f"), ShaderTemplateCategory.LogicFloat, "Equals", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = abs($INPUT@0$ - $INPUT@1$) <= eff_epsilon;
+"
+        );
+
+        public static ShaderNodeTemplate FloatNEq { get; } = new ShaderNodeTemplate(Guid.Parse("5dbf310a-2e68-49c1-903b-224901b0dc5a"), ShaderTemplateCategory.LogicFloat, "Not Equal", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ != $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatGr { get; } = new ShaderNodeTemplate(Guid.Parse("8a7f33e6-6b88-44a4-a4ad-b4b7b1909b5f"), ShaderTemplateCategory.LogicFloat, "Greater", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ > $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatGrEq { get; } = new ShaderNodeTemplate(Guid.Parse("8d3e1a06-505f-4589-b9b2-3b689455a470"), ShaderTemplateCategory.LogicFloat, "Greater or Equal", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ >= $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatLess { get; } = new ShaderNodeTemplate(Guid.Parse("a9b4da5f-cb87-41ab-9717-fa5dc180b6ae"), ShaderTemplateCategory.LogicFloat, "Less", true,
+                new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+                },
+
+                new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                },
+@"$OUTPUT@0$ = $INPUT@0$ < $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatLEq { get; } = new ShaderNodeTemplate(Guid.Parse("0bdab4c9-fa03-4229-ba64-ea7afce91485"), ShaderTemplateCategory.LogicFloat, "Less or Equal", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 2", SelfType = NodeValueType.Float },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ <= $INPUT@1$;
+"
+        );
+
+        public static ShaderNodeTemplate FloatBounds { get; } = new ShaderNodeTemplate(Guid.Parse("f3182bad-4d9d-4aeb-84f0-8d87f8c19733"), ShaderTemplateCategory.LogicFloat, "Is in bounds", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = 0f, Name = "Value 1", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Min", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = 0f, Name = "Max", SelfType = NodeValueType.Float },
+                    new NodeInput(){ CurrentValue = false, Name = "Inclusive", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Bool },
+               },
+@"$OUTPUT@0$ = $INPUT@3$ ? $INPUT@0$ >= $INPUT@1$ && $INPUT@0$ <= $INPUT@2$ : $INPUT@0$ > $INPUT@1$ && $INPUT@0$ < $INPUT@2$;
+"
+        );
+
+        public static ShaderNodeTemplate Bool2Int { get; } = new ShaderNodeTemplate(Guid.Parse("79974674-fcf3-4021-ba37-e0e48b3e9ed4"), ShaderTemplateCategory.Logic, "Logic to Int", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Int },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ ? 1 : 0;
+"
+        );
+
+        public static ShaderNodeTemplate Bool2Float { get; } = new ShaderNodeTemplate(Guid.Parse("51b0296b-936d-43d9-b164-0030f67ce5d6"), ShaderTemplateCategory.Logic, "Logic to Float", true,
+               new NodeInput[] {
+                    new NodeInput(){ CurrentValue = false, Name = "Logic", SelfType = NodeValueType.Bool },
+               },
+
+               new NodeOutput[] {
+                    new NodeOutput() { SelfType = NodeValueType.Float },
+               },
+@"$OUTPUT@0$ = $INPUT@0$ ? 1.0 : 0.0;
+"
+        );
+
+        #endregion
+
         public ShaderNodeTemplate(Guid id, ShaderTemplateCategory cat, string v, bool deletable, NodeInput[] nodeInputs, NodeOutput[] nodeOutputs, string code)
         {
             this.Name = v;
@@ -2503,6 +2717,9 @@ $OUTPUT@3$ = $INPUT@0$.w;
         public static ShaderTemplateCategory MathVec4 { get; } = new ShaderTemplateCategory("Vec4", Math);
         public static ShaderTemplateCategory VectorC { get; } = new ShaderTemplateCategory("Vector Data");
         public static ShaderTemplateCategory Samplers { get; } = new ShaderTemplateCategory("Samplers", Inputs);
+        public static ShaderTemplateCategory Logic { get; } = new ShaderTemplateCategory("Logic");
+        public static ShaderTemplateCategory LogicInt { get; } = new ShaderTemplateCategory("Int", Logic);
+        public static ShaderTemplateCategory LogicFloat { get; } = new ShaderTemplateCategory("Float", Logic);
 
         public ShaderTemplateCategory ParentCategory { get; set; }
         public string Name { get; set; }

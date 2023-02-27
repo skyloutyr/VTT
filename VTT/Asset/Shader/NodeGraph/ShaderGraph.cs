@@ -241,50 +241,60 @@
 
             string code = template.Code;
             int i = 0;
-            while (true)
+            try
             {
-                int c = 0;
-                string cTemp = "$TEMP@" + i + "$";
-                string cOut = "$OUTPUT@" + i + "$";
-                string cIn = "$INPUT@" + i + "$";
-                if (code.IndexOf(cTemp) != -1)
+                while (true)
                 {
-                    string tV = "temp_" + nodeFrom.NodeID.ToString("N") + "_" + i;
-                    code = code.Replace(cTemp, tV);
-                    c++;
-                }
-
-                if (code.IndexOf(cOut) != -1)
-                {
-                    NodeOutput no = nodeFrom.Outputs[i];
-                    string tV = this.Prefix(no.SelfType) + " out_" + nodeFrom.Outputs[i].ID.ToString("N");
-                    code = code.Replace(cOut, tV);
-                    c++;
-                }
-
-                if (code.IndexOf(cIn) != -1)
-                {
-                    NodeInput ni = nodeFrom.Inputs[i];
-                    if (!ni.ConnectedOutput.IsEmpty())
+                    int c = 0;
+                    string cTemp = "$TEMP@" + i + "$";
+                    string cOut = "$OUTPUT@" + i + "$";
+                    string cIn = "$INPUT@" + i + "$";
+                    if (code.IndexOf(cTemp) != -1)
                     {
-                        NodeOutput no = this.AllOutputsById[ni.ConnectedOutput].Item2;
-                        string outPtr = "out_" + ni.ConnectedOutput.ToString("N");
-                        code = code.Replace(cIn, this.Convert(no.SelfType, ni.SelfType, outPtr));
-                    }
-                    else
-                    {
-                        code = code.Replace(cIn, this.CreateValue(ni.SelfType, ni.CurrentValue));
+                        string tV = "temp_" + nodeFrom.NodeID.ToString("N") + "_" + i;
+                        code = code.Replace(cTemp, tV);
+                        c++;
                     }
 
-                    c++;
-                }
+                    if (code.IndexOf(cOut) != -1)
+                    {
+                        NodeOutput no = nodeFrom.Outputs[i];
+                        string tV = this.Prefix(no.SelfType) + " out_" + nodeFrom.Outputs[i].ID.ToString("N");
+                        code = code.Replace(cOut, tV);
+                        c++;
+                    }
 
-                if (c == 0)
-                {
-                    break; // Found no inputs, outputs or temps to replace
-                }
+                    if (code.IndexOf(cIn) != -1)
+                    {
+                        NodeInput ni = nodeFrom.Inputs[i];
+                        if (!ni.ConnectedOutput.IsEmpty())
+                        {
+                            NodeOutput no = this.AllOutputsById[ni.ConnectedOutput].Item2;
+                            string outPtr = "out_" + ni.ConnectedOutput.ToString("N");
+                            code = code.Replace(cIn, this.Convert(no.SelfType, ni.SelfType, outPtr));
+                        }
+                        else
+                        {
+                            code = code.Replace(cIn, this.CreateValue(ni.SelfType, ni.CurrentValue));
+                        }
 
-                i++;
+                        c++;
+                    }
+
+                    if (c == 0)
+                    {
+                        break; // Found no inputs, outputs or temps to replace
+                    }
+
+                    i++;
+                }
+            }
+            catch (Exception e)
+            {
+                Client.Instance.Logger.Log(LogLevel.Error, "Fatal exception while compiling shader! Likely the shader template backend was changed!");
+                Client.Instance.Logger.Exception(LogLevel.Error, e);
+                cascadeFail = true;
+                return;
             }
 
             emitted.Add(nodeFrom);

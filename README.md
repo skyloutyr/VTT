@@ -83,6 +83,47 @@ You can import any 3d model that is a .glb _embedded_ file format. However to di
 
 ---
 
+## Custom Shaders
+VTT now supports custom material shaders with nodegraph editor!
+[![shadergraph.jpg](https://i.postimg.cc/nL3HgRC6/shadergraph.jpg)](https://postimg.cc/kVt3tyNc)
+
+A custom shader allows you to finely control the output parameters for your material and make them as dynamic as you want.
+If you are familiar with nodegraph editors then this system should be intuitive.
+
+Hold left click and move the cursor to move the graph. Hold left click over a header of a node to move that specific node. Press the X in the node header to delete it and all its connections. Right-click anywhere that isn't a node to add a new one.
+To connect inputs and outputs hold left click on either and drag the line to the connection you want to make. Inputs can only have one connection to them, but a single output can connect to different inputs.
+If the input is not connected you can manualy edit the values of said input, making it a constant.
+
+The main node is the PBR Output. It can't be deleted and there is only one per material. It has the following inputs:
+
+* Albedo - the color of the pixel, before light calculations.
+* Normal - the normal vector of the pixel, used for calculating reflections and specular highlights.
+* Emission - the additive color of the pixel **after** light calculation.
+* Alpha - the transparency of the pixel.
+* Ambient Occlusion - the multiplier to ambient lighting for the pixel.
+* Metallic - a value indicating whether a given pixel is metal or not. Metals have different reflective properties to non-metals.
+* Roughness - a surface roughness indicator for a given pixel, controling specular highlight.
+
+You can read more about PBR [here](https://substance3d.adobe.com/tutorials/courses/the-pbr-guide-part-1) (though this guide is very technical).
+
+### Node In/Out colors, and on conversions
+Certain inputs expect a certain value - a pixel albedo value is a combination of 3 float values, each controling the Red, Green and Blue channels. To help distinguish different required values VTT uses colors.
+
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NIO7vqPwAGVwLdh0OFRAAAAABJRU5ErkJggg==" width="12"> A boolean value
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12Ow2Vz4HwAE7wJgOnTs/wAAAABJRU5ErkJggg==" width="12"> An integer value
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12Ng+DXrPwAFJgKU8sMxDAAAAABJRU5ErkJggg==" width="12"> An unsigned integer value
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12MwOmv0HwAElwIx0ewwSgAAAABJRU5ErkJggg==" width="12"> A float (number with a decimal point) value
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P48KznPwAIjgNiBMwsygAAAABJRU5ErkJggg==" width="12"> A 2D vector (2 floats)
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P4f53hPwAHhQLWFrY87gAAAABJRU5ErkJggg==" width="12"> A 3D vector (3 floats)
+* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12O4tVThPwAGmwKfYQj+rwAAAABJRU5ErkJggg==" width="12"> A 4D vector (4 floats)
+
+If a wrong output type is connected to the input it will automatically convert. Note that some data may be lost (a 4d vector converting to a 3d one drops the 4th component entirely). This will also show a warning at the bottom-left of the node graph editor.
+
+### On performance
+Custom shaders are by their nature not friendly to performance. They will require the application to switch between shaders on the fly, which is costly. If UBOs are enabled in the setting (on by default) the switch is much cheaper than with them disabled. Try to avoid having many different custom shaders in a given scene.
+
+---
+
 ## Setting up animated sprites
 VTT supports webm animated sprites for 2D images (and technically 3D model textures). However before such sprite may be used 3rd party libraries must be installed.
 * Download full [FFmpeg](https://ffmpeg.org/) binaries. The ones that include both the .exe and .dll files are required (specifically, the following files must be present:)
@@ -147,14 +188,14 @@ These are the features currently missing that are planned to be implemented:
 - [ ] In app asset deletion
 - [ ] Better asset management interface
 - [ ] Sounds (in app and assets)
-- [ ] Custom material shaders
+- [x] Custom material shaders
 - [ ] Moving away from imgui to a custom interface library
 
 If you have any suggestions on what you would like to see implemented, please leave them in the issues tracker here.
 ### The following features will probably never be implemented:
 - **Voice chat client**: There are enough dedicated VC clients like Discord that have already perfected VC. A dedicated VC would take a lot of effort to develop and maintain, while adding very little to the overall application.
 - **Webcam feed**: Similar to the VC it would take a lot of effort, reduce the portability of the app, and significantly load the network for relatively little gain.
-- **Fully-fledged document editor**: While journals are intended to store text data, they are not intended to be a fully-fledged document editor. There are great online document editors such as goggle drive that are intended for this exact purpose.
+- **Fully-fledged document editor**: While journals are intended to store text data, they are not intended to be a fully-fledged document editor. There are great online document editors such as google drive that are intended for this exact purpose.
 - **Character sheets**: VTT is intended to be a general-purpose application, that can be used for virtually any system. Character sheets are usually very specific to their system (dnd, pathfinder, vtm, etc) and introducing them would break the general-purpose nature of VTT.
 - **Dedicated servers**: VTT is currently self-hosted by users who press the Host button. It runs a dedicated server in the background to which all (including the host) connect. While VTT is able to run in a host-less environment (with the -server console parameter) setting up and maintaining dedicated servers is too costly for me at the moment. In addition, VTT was designed with the concept of being self-hosted. At most the dedicated server could serve as a hub for players to see each other's games and connect to them.
 

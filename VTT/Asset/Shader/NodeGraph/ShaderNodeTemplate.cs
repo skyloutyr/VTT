@@ -2304,7 +2304,8 @@ $OUTPUT@1$ = update;
                 new NodeOutput() { Name = "Geometry Tangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Geometry Bitangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Geometry Normal", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Geometry Position", SelfType = NodeValueType.Vec3 }
+                new NodeOutput() { Name = "Geometry Position", SelfType = NodeValueType.Vec3 },
+                new NodeOutput() { Name = "Screen Position", SelfType = NodeValueType.Vec3 }
             },
 @"$OUTPUT@0$ = f_tbn[0];
 $OUTPUT@1$ = f_tbn[1];
@@ -2314,10 +2315,19 @@ $OUTPUT@4$ = f_tangent;
 $OUTPUT@5$ = f_bitangent;
 $OUTPUT@6$ = f_normal;
 $OUTPUT@7$ = f_position;
+$OUTPUT@8$ = gl_FragCoord.xyz;
 ");
 
         public static ShaderNodeTemplate Mapping = new ShaderNodeTemplate(Guid.Parse("a278f63a-57f0-4aa0-b10c-f65b5d248739"), ShaderTemplateCategory.Inputs, "Texture Coordinates", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Geometry UVs", SelfType = NodeValueType.Vec2 }},
 @"$OUTPUT@0$ = f_texture;
+");
+
+        public static ShaderNodeTemplate CursorLocation = new ShaderNodeTemplate(Guid.Parse("9d52d71d-117b-4bb3-8949-48e85f57bf35"), ShaderTemplateCategory.Inputs, "Cursor Position", true, new NodeInput[0], new NodeOutput[] { 
+            new NodeOutput() { Name = "Worldspace", SelfType = NodeValueType.Vec3 },
+            new NodeOutput() { Name = "Screenspace", SelfType = NodeValueType.Vec2 }
+        },
+@"$OUTPUT@0$ = cursor_position;
+$OUTPUT@1$ = (projection * view * vec4(cursor_position, 1.0)).xy;
 ");
 
         #endregion

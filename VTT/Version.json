@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.2.0",
+  "version": "1.2.1",
   "link": "",
   "changelog": {
     "1.0.0": "Initial alpha release",
@@ -18,6 +18,7 @@
     "1.1.12": "Fixed preview generation not using UBOs. Switched both server and client to use SendAsync. Moved from hardware gamma correction to explicit and allowed for its adjustment in the settings.",
     "1.1.13": "Made the updater use a new stream explicitly, may fix the corrupted directory issue. Fixed an issue with the asset browser crashing in rare circumstances. Added settings to enable/disable UBOs for old graphics cards. Padded the UBO to 416 bytes per NVidia driver complaint. Added a sun light color property.",
     "1.1.14": "Changed the turn tracker controls to render entries in a child element. Changed the camera for 2D maps to use less Z depth. Added compression for network packets.",
-    "1.2.0": "Object bounding boxes now take model node rotation into account. Fully implemented custom shaders and nodegraph editor. Updated the readme to include a guide on custom shaders. Added a setting to disable custom shaders."
+    "1.2.0": "Object bounding boxes now take model node rotation into account. Fully implemented custom shaders and nodegraph editor. Updated the readme to include a guide on custom shaders. Added a setting to disable custom shaders.",
+    "1.2.1": "Added a material index to shadergraph. Added logic shader nodes. Added a shader compilation error handler. Added more various shader graph nodes. Increased the shader depth limit."
   }
 }

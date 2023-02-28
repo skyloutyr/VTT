@@ -673,7 +673,7 @@
 
         private bool TraverseAllInputsRecursive(ShaderNode nodeToTravers, List<ShaderNode> traversed, int depth)
         {
-            if (depth >= 64) // Too deep, recursion may not be present but chain too long either way
+            if (depth >= 256) // Too deep, recursion may not be present but chain too long either way
             {
                 return true;
             }

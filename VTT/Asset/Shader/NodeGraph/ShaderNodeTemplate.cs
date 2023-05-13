@@ -2384,6 +2384,20 @@ $OUTPUT@1$ = $TEMP@0$.g;
 $OUTPUT@2$ = $TEMP@0$.b;
 ");
 
+        public static ShaderNodeTemplate SampleCustomTexture = new ShaderNodeTemplate(Guid.Parse("924608ae-46d5-4b05-ab4d-7cbbaa23cdbc"), ShaderTemplateCategory.Samplers, "Custom Sampler", true,
+            new NodeInput[] {
+                new NodeInput(){ Name = "Texture Index", SelfType = NodeValueType.Int, CurrentValue = 0 },
+                new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
+            },
+            new NodeOutput[] {
+                new NodeOutput(){ Name = "Color", SelfType = NodeValueType.Vec3 },
+                new NodeOutput(){ Name = "Alpha", SelfType = NodeValueType.Float }
+            },
+@"vec4 $TEMP@0$ = sampleExtraTexture($INPUT@0$, $INPUT@1$);
+$OUTPUT@0$ = $TEMP@0$.rgb;
+$OUTPUT@1$ = $TEMP@0$.a;
+");
+
         #endregion
 
         #region Vector Decomposition and Composition
@@ -2469,7 +2483,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ == $INPUT@1$;
 "
@@ -2482,7 +2496,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ != $INPUT@1$;
 "
@@ -2495,7 +2509,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ > $INPUT@1$;
 "
@@ -2508,7 +2522,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ >= $INPUT@1$;
 "
@@ -2521,7 +2535,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ < $INPUT@1$;
 "
@@ -2534,7 +2548,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ <= $INPUT@1$;
 "
@@ -2549,7 +2563,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@3$ ? $INPUT@0$ >= $INPUT@1$ && $INPUT@0$ <= $INPUT@2$ : $INPUT@0$ > $INPUT@1$ && $INPUT@0$ < $INPUT@2$;
 "
@@ -2562,7 +2576,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = abs($INPUT@0$ - $INPUT@1$) <= eff_epsilon;
 "
@@ -2576,7 +2590,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result",  SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = abs($INPUT@0$ - $INPUT@1$) <= $INPUT@2$;
 "
@@ -2589,7 +2603,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ != $INPUT@1$;
 "
@@ -2602,7 +2616,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ > $INPUT@1$;
 "
@@ -2615,7 +2629,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ >= $INPUT@1$;
 "
@@ -2628,7 +2642,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 },
 
                 new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                 },
 @"$OUTPUT@0$ = $INPUT@0$ < $INPUT@1$;
 "
@@ -2641,7 +2655,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ <= $INPUT@1$;
 "
@@ -2656,7 +2670,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@3$ ? $INPUT@0$ >= $INPUT@1$ && $INPUT@0$ <= $INPUT@2$ : $INPUT@0$ > $INPUT@1$ && $INPUT@0$ < $INPUT@2$;
 "
@@ -2668,7 +2682,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Int },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Int },
                },
 @"$OUTPUT@0$ = $INPUT@0$ ? 1 : 0;
 "
@@ -2680,7 +2694,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Float },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Float },
                },
 @"$OUTPUT@0$ = $INPUT@0$ ? 1.0 : 0.0;
 "
@@ -2692,7 +2706,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = !$INPUT@0$;
 "
@@ -2705,7 +2719,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ && $INPUT@1$;
 "
@@ -2718,7 +2732,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = $INPUT@0$ || $INPUT@1$;
 "
@@ -2731,7 +2745,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = ($INPUT@0$ || $INPUT@1$) && !($INPUT@0$ && $INPUT@1$);
 "
@@ -2744,7 +2758,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                },
 
                new NodeOutput[] {
-                    new NodeOutput() { SelfType = NodeValueType.Bool },
+                    new NodeOutput() { Name = "Result", SelfType = NodeValueType.Bool },
                },
 @"$OUTPUT@0$ = !($INPUT@0$ && $INPUT@1$);
 "

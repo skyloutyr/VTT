@@ -40,7 +40,7 @@
                         for (int i = 0; i < sz.Length; ++i)
                         {
                             shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                            shader[$"unifiedTextureFrames{i}"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                            shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
                         }
                     }
                     else

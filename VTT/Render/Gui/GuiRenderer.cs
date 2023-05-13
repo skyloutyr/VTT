@@ -111,6 +111,7 @@
         private string _editedTeamName;
 
         private AssetRef _draggedRef;
+        public AssetRef DraggedAssetReference => this._draggedRef;
 
         private AssetRef _editedRef;
         private Guid _editedParticleSystemId;

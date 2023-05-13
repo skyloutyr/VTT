@@ -419,7 +419,7 @@
                 allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
                 img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
                 f.Dispose();
-                this.Frames[i] = this.Frames[i].ClearBinary();
+                //this.Frames[i] = this.Frames[i].ClearBinary();
             }
 
             this._cachedAnim = new TextureAnimation(allFrames);

@@ -579,6 +579,18 @@
                         state.particleContainerHovered.SystemID = this._draggedRef.AssetID;
                         new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = state.particleContainerHovered.Serialize(), MapID = state.particleContainerHovered.Container.MapID, ObjectID = state.particleContainerHovered.Container.ID, ParticleID = state.particleContainerHovered.ID }.Send();
                     }
+
+                    if (!haveResult && state.shaderGraphExtraTexturesHovered != null && Client.Instance.IsAdmin)
+                    {
+                        if (state.shaderGraphExtraTexturesHoveredIndex == -1)
+                        {
+                            state.shaderGraphExtraTexturesHovered.ExtraTexturesAttachments.Add(this._draggedRef.AssetID);
+                        }
+                        else
+                        {
+                            state.shaderGraphExtraTexturesHovered.ExtraTexturesAttachments[state.shaderGraphExtraTexturesHoveredIndex] = this._draggedRef.AssetID;
+                        }
+                    }
                 }
 
                 this._lmbDown = false;

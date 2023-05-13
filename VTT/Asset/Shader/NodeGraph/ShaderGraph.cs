@@ -881,7 +881,7 @@
             int maxW = 0;
             int maxH = 0;
             bool s = true;
-            if (this.CombinedExtraTexturesData.Length != this.ExtraTexturesAttachments.Count)
+            if (this.CombinedExtraTexturesData == null || this.CombinedExtraTexturesData.Length != this.ExtraTexturesAttachments.Count)
             {
                 this.CombinedExtraTexturesData = new Vector2[this.ExtraTexturesAttachments.Count];
                 this.CombinedExtraTexturesAnimations = new TextureAnimation[this.ExtraTexturesAttachments.Count];

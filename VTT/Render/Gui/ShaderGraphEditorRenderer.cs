@@ -69,6 +69,55 @@
                         SVec2 padding = this._cameraLocation;
                         lock (this.EditedGraph.Lock)
                         {
+                            float wW = ImGui.GetWindowSize().X;
+                            float wH = ImGui.GetWindowSize().Y;
+                            ImGui.SetCursorPosX(wW - 320);
+                            ImGui.SetCursorPosY(24);
+                            if (ImGui.BeginChild("ui.shader.extratextures", new(320, wH - 40)))
+                            {
+                                float oY = 0;
+                                int i = 0;
+                                int dIndex = -1;
+                                foreach (Guid tid in this.EditedGraph.ExtraTexturesAttachments)
+                                {
+                                    ImGui.TextUnformatted($"{i}: ");
+                                    ImGui.SameLine();
+                                    if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new (16, 16)))
+                                    {
+                                        dIndex = i;
+                                    }
+
+                                    if (this.DrawAssetRecepticle(tid, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                    {
+                                        if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
+                                        {
+                                            state.shaderGraphExtraTexturesHovered = this.EditedGraph;
+                                            state.shaderGraphExtraTexturesHoveredIndex = i;
+                                        }
+                                    }
+
+                                    ++i;
+                                    oY += 32;
+                                }
+
+                                ImGui.TextUnformatted($"{i}: ");
+                                if (this.DrawAssetRecepticle(Guid.Empty, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                {
+                                    if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
+                                    {
+                                        state.shaderGraphExtraTexturesHovered = this.EditedGraph;
+                                        state.shaderGraphExtraTexturesHoveredIndex = -1;
+                                    }
+                                }
+
+                                if (dIndex != -1)
+                                {
+                                    this.EditedGraph.ExtraTexturesAttachments.RemoveAt(dIndex);
+                                }
+                            }
+
+                            ImGui.EndChild();
+
                             Color nodeBack = Color.SlateGray.Darker(0.8f);
                             Color nodeHeader = Color.SlateGray.Darker(0.7f);
                             Color nodeHeaderHover = Color.SlateGray.Darker(0.2f);
@@ -467,6 +516,48 @@
                 this._inMoved = null;
                 this._outMoved = null;
             }
+        }
+
+        unsafe bool DrawAssetRecepticle(Guid aId, SimpleLanguage lang, Func<bool> assetEval, GL.Texture iconTex = null)
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            var imScreenPos = ImGui.GetCursorScreenPos();
+            var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+            uint bClr = mouseOver ? GuiRenderer.Instance.DraggedAssetReference != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+            drawList.AddRect(imScreenPos, rectEnd, bClr);
+            drawList.AddImage(iconTex ?? GuiRenderer.Instance.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+            string mdlTxt = "";
+            int mdlTxtOffset = 0;
+            if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
+            {
+                AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
+                mdlTxt += aRef.Name;
+                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                {
+                    GL.Texture tex = ap.GetGLTexture();
+                    if (tex != null)
+                    {
+                        drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                        mdlTxtOffset += 20;
+                    }
+                }
+            }
+
+            if (Guid.Equals(Guid.Empty, aId))
+            {
+                mdlTxt = lang.Translate("generic.none");
+            }
+            else
+            {
+                mdlTxt += " (" + aId.ToString() + ")\0";
+            }
+
+            drawList.PushClipRect(imScreenPos, rectEnd);
+            drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+            drawList.PopClipRect();
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+            return mouseOver;
         }
 
         private void ShaderLine(ImDrawListPtr drawPtr, SVec2 from, NodeValueType valFrom, SVec2 to, float xOffset, NodeValueType valTo, bool mOverAny)

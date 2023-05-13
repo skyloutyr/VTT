@@ -33,6 +33,8 @@
         public MapObject objectCustomShaderHovered = null;
         public ParticleSystem particleModelHovered = null;
         public ParticleContainer particleContainerHovered = null;
+        public ShaderGraph shaderGraphExtraTexturesHovered = null;
+        public int shaderGraphExtraTexturesHoveredIndex = -1;
         public bool editParticleSystemPopup = false;
         public bool changeParticleColorPopup = false;
         public bool editShaderPopup = false;
@@ -68,6 +70,8 @@
             particleModelHovered = null;
             changeParticleColorPopup = false;
             particleContainerHovered = null;
+            shaderGraphExtraTexturesHovered = null;
+            shaderGraphExtraTexturesHoveredIndex = -1;
             clientMap = Client.Instance.CurrentMap;
             editShaderPopup = false;
         }

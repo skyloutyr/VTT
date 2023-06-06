@@ -756,12 +756,12 @@
             GL.DepthFunc(DepthFunction.Lequal);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
+            this.UniformCommonData(m, delta);
             this.RenderLights(m);
 
             this.DeferredPipeline.RenderScene(m); 
             GL.ActiveTexture(TextureUnit.Texture0);
 
-            this.UniformCommonData(m, delta);
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             for (int i = -2; i <= maxLayer; ++i)
             {

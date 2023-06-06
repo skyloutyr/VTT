@@ -222,8 +222,6 @@
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO);
             GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
-            GL.Enable(EnableCap.PolygonOffsetFill);
-            GL.PolygonOffset(1.0f, 0.0f);
             GL.Clear(ClearBufferMask.DepthBufferBit);
             GL.ColorMask(false, false, false, false);
 
@@ -276,7 +274,6 @@
                 SunShadowRenderer.ShadowPass = false;
             }
 
-            GL.Disable(EnableCap.PolygonOffsetFill);
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             GL.ColorMask(true, true, true, true);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);

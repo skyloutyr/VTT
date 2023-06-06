@@ -426,6 +426,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableCustomShaders { get; set; } = true;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool UseHalfPrecision { get; set; } = false;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");

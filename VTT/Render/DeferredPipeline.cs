@@ -108,13 +108,13 @@
             this.PositionTex.Bind();
             this.PositionTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.PositionTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, w, h, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, Client.Instance.Settings.UseHalfPrecision ? PixelInternalFormat.Rgba16f : PixelInternalFormat.Rgba32f, w, h, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this.PositionTex, 0);
 
             this.NormalTex.Bind();
             this.NormalTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.NormalTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, w, h, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, Client.Instance.Settings.UseHalfPrecision ? PixelInternalFormat.Rgba16f : PixelInternalFormat.Rgba32f, w, h, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, this.NormalTex, 0);
 
             this.AlbedoTex.Bind();

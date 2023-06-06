@@ -57,6 +57,7 @@
             this._cam.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60), 1, 0.01f, 100f);
             this._cam.RecalculateData(assumedUpVector: Vector3.UnitZ);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
 
             this.SecondaryWorker = new Thread(this.UpdateOffscreen) { Priority = ThreadPriority.BelowNormal, IsBackground = true };
             this.SecondaryWorker.Start();

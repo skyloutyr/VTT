@@ -45,6 +45,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
 
             this.SunShader = OpenGLUtil.LoadShader("object_shadow", ShaderType.VertexShader, ShaderType.FragmentShader);
         }
@@ -90,6 +91,7 @@
 
                 ShadowPass = false;
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             }
         }

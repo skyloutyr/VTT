@@ -96,6 +96,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
             this.Shader = OpenGLUtil.LoadShader("pl", ShaderType.VertexShader, ShaderType.FragmentShader, ShaderType.GeometryShader);
         }
 
@@ -125,6 +126,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
             ShadowMapResolution = resolution;
         }
 
@@ -277,6 +279,7 @@
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             GL.ColorMask(true, true, true, true);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
         }
     }
 

@@ -880,6 +880,7 @@
             Image<Rgba32> retImg = tex.GetImage<Rgba32>();
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
             GL.DeleteFramebuffer(fbo);
             tex.Dispose();
             GL.DeleteRenderbuffer(rbo);

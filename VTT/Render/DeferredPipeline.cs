@@ -146,6 +146,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
         }
 
         public void RenderScene(Map m)
@@ -220,6 +221,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
             shader = this.FinalPass;
             shader.Bind();
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -288,6 +290,7 @@
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
             GL.BlitFramebuffer(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, 0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DrawBuffer(DrawBufferMode.Back);
             GL.ActiveTexture(TextureUnit.Texture0);
         }
 

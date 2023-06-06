@@ -38,7 +38,7 @@
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._fbo);
             this._rbo = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, this._rbo);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, 2048, 2048);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, 2048, 2048);
 
             this._renderTex = new Texture(TextureTarget.Texture2D);
             this._renderTex.Bind();

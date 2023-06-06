@@ -102,7 +102,7 @@
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO.Value);
 
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, this.DepthRBO.Value);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, w, h);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, w, h);
             GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, this.DepthRBO.Value);
 
             this.PositionTex.Bind();

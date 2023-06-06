@@ -38,11 +38,11 @@
             this._vbo.Bind();
             this._vbo.SetData(new float[] { 
                 -1.0f, 1.0f,
+                1.0f, -1.0f,
                 1.0f, 1.0f,
-                1.0f, -1.0f,
                 -1.0f, 1.0f,
+                -1.0f, -1.0f,
                 1.0f, -1.0f,
-                -1.0f, -1.0f
             });
 
             this._vao.SetVertexSize<float>(2);
@@ -275,14 +275,14 @@
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
 
             this._vao.Bind();
-            GL.Disable(EnableCap.CullFace);
-            GL.Disable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-            GL.Disable(EnableCap.Blend);
-            GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
+            GL.CullFace(CullFaceMode.Back);
+            GL.Disable(EnableCap.DepthTest);
+            GL.DepthMask(false);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            GL.DepthMask(true);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, this.FBO.Value);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);

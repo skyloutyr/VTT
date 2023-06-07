@@ -52,11 +52,11 @@ uniform vec4 tint_color;
 
 uniform float grid_alpha;
 
-out vec4 g_position;
-out vec4 g_normal;
-out vec4 g_albedo;
-out vec4 g_aomrg;
-out vec4 g_emission;
+layout (location = 0) out vec4 g_position;
+layout (location = 1) out vec4 g_normal;
+layout (location = 2) out vec4 g_albedo;
+layout (location = 3) out vec4 g_aomrg;
+layout (location = 4) out vec4 g_emission;
 
 vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 {

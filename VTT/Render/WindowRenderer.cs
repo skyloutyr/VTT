@@ -106,7 +106,7 @@
             {
                 Map m = Client.Instance.CurrentMap;
                 GL.ClearColor(this.SkyRenderer.GetSkyColor().ToGLColor());
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
                 if (Client.Instance.Settings.MSAA == ClientSettings.MSAAMode.Disabled)
                 {
                     GL.Disable(EnableCap.Multisample);

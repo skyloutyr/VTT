@@ -14,13 +14,13 @@
     public class DeferredPipeline
     {
         public int? FBO { get; set; }
-        public int? DepthRBO { get; set; }
 
         public Texture PositionTex { get; set; }
         public Texture AlbedoTex { get; set; }
         public Texture EmissionTex { get; set; }
         public Texture NormalTex { get; set; }
         public Texture MRAOGTex { get; set; }
+        public Texture DepthTex { get; set; }
 
         public ShaderProgram DeferredPass { get; set; }
         public ShaderProgram FinalPass { get; set; }
@@ -56,10 +56,7 @@
             this.EmissionTex.Dispose();
             this.NormalTex.Dispose();
             this.MRAOGTex.Dispose();
-            if (this.DepthRBO.HasValue)
-            {
-                GL.DeleteRenderbuffer(this.DepthRBO.Value);
-            }
+            this.DepthTex.Dispose();
 
             if (this.FBO.HasValue)
             {
@@ -68,8 +65,7 @@
 
             this._vbo.Dispose();
             this._vao.Dispose();
-            this.PositionTex = this.AlbedoTex = this.NormalTex = this.MRAOGTex = default;
-            this.DepthRBO = null;
+            this.PositionTex = this.AlbedoTex = this.NormalTex = this.MRAOGTex = this.DepthTex = default;
             this.FBO = null;
             this._vbo = default;
             this._vao = null;
@@ -87,23 +83,26 @@
             this.EmissionTex?.Dispose();
             this.NormalTex?.Dispose();
             this.MRAOGTex?.Dispose();
+            this.DepthTex?.Dispose();
 
             this.PositionTex = new Texture(TextureTarget.Texture2D);
             this.AlbedoTex = new Texture(TextureTarget.Texture2D);
             this.EmissionTex = new Texture(TextureTarget.Texture2D);
             this.NormalTex = new Texture(TextureTarget.Texture2D);
             this.MRAOGTex = new Texture(TextureTarget.Texture2D);
+            this.DepthTex = new Texture(TextureTarget.Texture2D);
             if (!this.FBO.HasValue)
             {
                 this.FBO = GL.GenFramebuffer();
-                this.DepthRBO = GL.GenRenderbuffer();
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO.Value);
 
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, this.DepthRBO.Value);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, w, h);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, this.DepthRBO.Value);
+            this.DepthTex.Bind();
+            this.DepthTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+            this.DepthTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8, w, h, 0, PixelFormat.DepthStencil, PixelType.Float32UnsignedInt248Rev, IntPtr.Zero);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, this.DepthTex, 0);
 
             this.PositionTex.Bind();
             this.PositionTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
@@ -175,7 +174,7 @@
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO.Value);
             GL.ClearColor(0, 0, 0, 0);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             GL.DepthMask(true);

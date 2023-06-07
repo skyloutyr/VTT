@@ -80,7 +80,9 @@
 
                     Profile = OpenTK.Windowing.Common.ContextProfile.Core,
                     Size = new OpenTK.Mathematics.Vector2i(Client.Instance.Settings.Resolution.Width, Client.Instance.Settings.Resolution.Height),
-                    Icon = windowIcon
+                    Icon = windowIcon,
+                    DepthBits = 24,
+                    StencilBits = 8,
                 }
             )
             { 

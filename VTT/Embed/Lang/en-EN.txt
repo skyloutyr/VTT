@@ -447,3 +447,5 @@ menu.settings.msaa.low=2x
 menu.settings.msaa.normal=4x
 menu.settings.msaa.high=16x
 menu.settings.msaa.tt=Controls the MSAA (Multi-Sampling Anti-Aliasing) mode.
+ui.properties.casts_shadow=Casts Shadows
+ui.properties.casts_shadow.tt=Controls whether this object casts shadows from the sun and other light sources.

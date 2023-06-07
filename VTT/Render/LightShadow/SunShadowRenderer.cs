@@ -80,6 +80,11 @@
                 {
                     foreach (MapObject mo in m.IterateObjects(i))
                     {
+                        if (!mo.CastsShadow)
+                        {
+                            continue;
+                        }
+
                         AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                         if (status == AssetStatus.Return && a != null && a.Model != null && a.Model.GLMdl != null)
                         {

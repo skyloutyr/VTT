@@ -258,7 +258,12 @@
 
                     foreach (MapObject mo in m.Objects)
                     {
-                        if (mo.MapLayer <= 0 && (mo != pl.ObjectPtr || pl.ObjectPtr.SelfCastsShadow))
+                        if (!mo.CastsShadow)
+                        {
+                            continue;
+                        }
+
+                        if (mo.MapLayer <= 0 && (mo != pl.ObjectPtr || pl.ObjectPtr.LightsSelfCastsShadow))
                         {
                             AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                             if (status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
@@ -313,7 +318,7 @@
             this.LightPtr = light;
             this.LightIndex = lightIndex;
             this.ObjectPtr = objectPtr;
-            this.CastsOwnShadow = objectPtr?.SelfCastsShadow ?? false;
+            this.CastsOwnShadow = objectPtr?.LightsSelfCastsShadow ?? false;
             this.CastsShadows = objectPtr?.LightsCastShadows ?? false;
         }
 

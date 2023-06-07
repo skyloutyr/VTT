@@ -176,10 +176,10 @@
                             ImGui.SetTooltip(lang.Translate("ui.properties.cast_shadows.tt"));
                         }
 
-                        bool mSelfShadows = mo.SelfCastsShadow;
+                        bool mSelfShadows = mo.LightsSelfCastsShadow;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.self_shadow") + "###Cast Own Shadows", ref mSelfShadows))
                         {
-                            mo.SelfCastsShadow = mSelfShadows;
+                            mo.LightsSelfCastsShadow = mSelfShadows;
                             PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.SelfCastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mSelfShadows) }, IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
@@ -187,6 +187,19 @@
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.SetTooltip(lang.Translate("ui.properties.self_shadow.tt"));
+                        }
+
+                        bool mCastsShadows = mo.CastsShadow;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.casts_shadow") + "###Casts Shadow", ref mCastsShadows))
+                        {
+                            mo.CastsShadow = mCastsShadows;
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mCastShadows) }, IsServer = false, Session = Client.Instance.SessionID };
+                            pmogd.Send();
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.casts_shadow.tt"));
                         }
 
                         if (!isAdmin)

@@ -82,7 +82,7 @@
                         
                         case DataType.SelfCastsShadow:
                         {
-                            d.Item2.SelfCastsShadow = (bool)d.Item3;
+                            d.Item2.LightsSelfCastsShadow = (bool)d.Item3;
                             break;
                         }
 
@@ -101,6 +101,12 @@
                         case DataType.HasCustomNameplate:
                         {
                             d.Item2.HasCustomNameplate = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.CastsShadow:
+                        {
+                            d.Item2.CastsShadow = (bool)d.Item3;
                             break;
                         }
 
@@ -152,6 +158,7 @@
                     case DataType.SelfCastsShadow:
                     case DataType.IsCrossedOut:
                     case DataType.HasCustomNameplate:
+                    case DataType.CastsShadow:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -213,6 +220,7 @@
                     case DataType.SelfCastsShadow:
                     case DataType.IsCrossedOut:
                     case DataType.HasCustomNameplate:
+                    case DataType.CastsShadow:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -310,6 +318,7 @@
             LightsEnabled,
             LightsCastShadows,
             SelfCastsShadow,
+            CastsShadow,
             TintColor,
             IsCrossedOut,
             HasCustomNameplate,

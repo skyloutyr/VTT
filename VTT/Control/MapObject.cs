@@ -77,7 +77,8 @@
 
         public bool LightsEnabled { get; set; }
         public bool LightsCastShadows { get; set; }
-        public bool SelfCastsShadow { get; set; }
+        public bool LightsSelfCastsShadow { get; set; }
+        public bool CastsShadow { get; set; } = true;
 
         public bool HasCustomNameplate { get; set; }
         public Guid CustomNameplateID { get; set; }
@@ -138,7 +139,8 @@
             ret.SetVec3("Scale", this.Scale);
             ret.Set("LightsEnabled", this.LightsEnabled);
             ret.Set("LightsCastShadows", this.LightsCastShadows);
-            ret.Set("SelfCastsShadow", this.SelfCastsShadow);
+            ret.Set("SelfCastsShadow", this.LightsSelfCastsShadow);
+            ret.Set("CastsShadow", this.CastsShadow);
             ret.SetColor("TintColor", this.TintColor);
             ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
             ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) => {
@@ -182,7 +184,8 @@
             this.Scale = e.GetVec3("Scale", Vector3.One);
             this.LightsEnabled = e.Get<bool>("LightsEnabled");
             this.LightsCastShadows = e.Get<bool>("LightsCastShadows");
-            this.SelfCastsShadow = e.Get<bool>("SelfCastsShadow");
+            this.LightsSelfCastsShadow = e.Get<bool>("SelfCastsShadow");
+            this.CastsShadow = e.Get("CastsShadow", true);
             this.TintColor = e.GetColor("TintColor", Color.White);
             this.Bars.Clear();
             this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
@@ -240,7 +243,8 @@
             ret.Scale = this.Scale;
             ret.LightsEnabled = this.LightsEnabled;
             ret.LightsCastShadows = this.LightsCastShadows;
-            ret.SelfCastsShadow = this.SelfCastsShadow;
+            ret.LightsSelfCastsShadow = this.LightsSelfCastsShadow;
+            ret.CastsShadow = this.CastsShadow;
             ret.Bars.AddRange(this.Bars);
             ret.Auras.AddRange(this.Auras);
             ret.IsCrossedOut = this.IsCrossedOut;

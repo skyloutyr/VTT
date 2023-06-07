@@ -447,3 +447,5 @@ menu.settings.msaa.low=2x
 menu.settings.msaa.normal=4x
 menu.settings.msaa.high=16x
 menu.settings.msaa.tt=Управляет режимом MSAA.
+ui.properties.casts_shadow=Отбрасывает Тени
+ui.properties.casts_shadow.tt=Если включено, обьект будет отбрасывать тени от солнца и иных источников света.

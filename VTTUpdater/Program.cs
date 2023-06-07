@@ -282,7 +282,7 @@
     {
         public static async Task DownloadAsync(HttpClient client, string requestUri, Stream destination, IProgress<float>? progress = default, CancellationToken cancellationToken = default)
         {
-            using (var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            using (var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseContentRead, cancellationToken))
             {
                 var contentLength = response.Content.Headers.ContentLength;
 

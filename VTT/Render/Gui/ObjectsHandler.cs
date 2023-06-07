@@ -214,6 +214,13 @@
                             new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsCrossedOut, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsCrossed) } }.Send();
                         }
 
+                        bool mIsInfo = mo.IsInfoObject;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.is_info") + "###Is Info", ref mIsInfo))
+                        {
+                            mo.IsInfoObject = mIsInfo;
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsInfo, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsInfo) } }.Send();
+                        }
+
                         ImGui.Text(lang.Translate("ui.properties.tint_color"));
                         ImGui.SameLine();
                         System.Numerics.Vector4 tClr = ((System.Numerics.Vector4)mo.TintColor);
@@ -852,6 +859,22 @@
                     {
                         ImGui.PopStyleVar();
                         ImGui.PopStyleVar();
+                    }
+
+                    if (mo.IsInfoObject)
+                    {
+                        System.Numerics.Vector2 tSizeMin = ImGui.CalcTextSize(mo.Description, 400f);
+                        float tWM = MathF.Min(tSizeMin.X + 32, 400);
+                        ImGui.SetNextWindowSize(new System.Numerics.Vector2(tWM, tSizeMin.Y + 32));
+                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - tWM / 2, screen.Y));
+                        if (ImGui.Begin("InfoPanel_" + mo.ID.ToString(), flags))
+                        {
+                            ImGui.PushTextWrapPos();
+                            ImGui.TextUnformatted(mo.Description);
+                            ImGui.PopTextWrapPos();
+                        }
+
+                        ImGui.End();
                     }
                 }
             }

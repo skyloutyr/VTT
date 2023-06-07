@@ -110,6 +110,12 @@
                             break;
                         }
 
+                        case DataType.IsInfo:
+                        {
+                            d.Item2.IsInfoObject = (bool)d.Item3;
+                            break;
+                        }
+
                         case DataType.CustomNameplateID:
                         {
                             d.Item2.CustomNameplateID = (Guid)d.Item3;
@@ -159,6 +165,7 @@
                     case DataType.IsCrossedOut:
                     case DataType.HasCustomNameplate:
                     case DataType.CastsShadow:
+                    case DataType.IsInfo:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -221,6 +228,7 @@
                     case DataType.IsCrossedOut:
                     case DataType.HasCustomNameplate:
                     case DataType.CastsShadow:
+                    case DataType.IsInfo:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -321,6 +329,7 @@
             CastsShadow,
             TintColor,
             IsCrossedOut,
+            IsInfo,
             HasCustomNameplate,
             CustomNameplateID,
             Properties,

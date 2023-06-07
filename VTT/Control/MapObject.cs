@@ -82,6 +82,7 @@
 
         public bool HasCustomNameplate { get; set; }
         public Guid CustomNameplateID { get; set; }
+        public bool IsInfoObject { get; set; }
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -162,6 +163,7 @@
             ret.SetArray("Particles", this.ParticleContainers.Values.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
             ret.Set("HasCustomNameplate", this.HasCustomNameplate);
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
+            ret.Set("IsInfoObject", this.IsInfoObject);
             ret.Set("Props", this.CustomProperties);
             return ret;
         }
@@ -223,6 +225,7 @@
 
             this.HasCustomNameplate = e.Get<bool>("HasCustomNameplate", false);
             this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
+            this.IsInfoObject = e.Get<bool>("IsInfoObject");
             this.CustomProperties = e.Get<DataElement>("Props");
         }
 
@@ -248,6 +251,9 @@
             ret.Bars.AddRange(this.Bars);
             ret.Auras.AddRange(this.Auras);
             ret.IsCrossedOut = this.IsCrossedOut;
+            ret.HasCustomNameplate = this.HasCustomNameplate;
+            ret.CustomNameplateID = this.CustomNameplateID;
+            ret.IsInfoObject = this.IsInfoObject;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

@@ -497,6 +497,21 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.vsync.tt"));
                     }
 
+                    string[] unfocusedFramerate = { lang.Translate("menu.settings.uframes.none"), lang.Translate("menu.settings.uframes.native"), lang.Translate("menu.settings.uframes.high"), lang.Translate("menu.settings.uframes.medium"), lang.Translate("menu.settings.uframes.low"), lang.Translate("menu.settings.uframes.lowest") };
+                    int unfocusedFramerateIndex = (int)Client.Instance.Settings.UnfocusedFramerate;
+                    ImGui.Text(lang.Translate("menu.settings.uframes"));
+                    if (ImGui.Combo("##UFrames", ref unfocusedFramerateIndex, unfocusedFramerate, unfocusedFramerate.Length))
+                    {
+                        ClientSettings.UnfocusedFramerateCap newMode = (ClientSettings.UnfocusedFramerateCap)unfocusedFramerateIndex;
+                        Client.Instance.Settings.UnfocusedFramerate = newMode;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.uframes.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 
@@ -647,6 +662,21 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.use_half_precision.tt"));
+                    }
+
+                    string[] msaa = { lang.Translate("menu.settings.msaa.off"), lang.Translate("menu.settings.msaa.low"), lang.Translate("menu.settings.msaa.normal"), lang.Translate("menu.settings.msaa.high") };
+                    int msaaIndex = (int)Client.Instance.Settings.MSAA;
+                    ImGui.Text(lang.Translate("menu.settings.msaa"));
+                    if (ImGui.Combo("##MSAA", ref msaaIndex, msaa, msaa.Length))
+                    {
+                        ClientSettings.MSAAMode newMode = (ClientSettings.MSAAMode)msaaIndex;
+                        Client.Instance.Settings.MSAA = newMode;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.msaa.tt"));
                     }
 
                     ImGui.TreePop();

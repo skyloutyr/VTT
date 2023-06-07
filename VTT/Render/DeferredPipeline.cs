@@ -181,6 +181,10 @@
             GL.DepthMask(true);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.Multisample);
+            }
 
             for (int i = -2; i <= 0; ++i)
             {

@@ -393,8 +393,12 @@
                 this._vertexData.Clear();
                 this._indexData.Clear();
                 GL.Enable(EnableCap.Blend);
-                GL.Enable(EnableCap.Multisample);
-                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                {
+                    GL.Enable(EnableCap.Multisample);
+                    GL.Enable(EnableCap.SampleAlphaToCoverage);
+                }
+
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 switch (ri.Type)
                 {
@@ -486,8 +490,12 @@
                 }
 
                 GL.Disable(EnableCap.Blend);
-                GL.Disable(EnableCap.SampleAlphaToCoverage);
-                GL.Disable(EnableCap.Multisample);
+                if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                {
+                    GL.Disable(EnableCap.Multisample);
+                    GL.Disable(EnableCap.SampleAlphaToCoverage);
+                }
+
                 GL.Enable(EnableCap.CullFace);
             }
 

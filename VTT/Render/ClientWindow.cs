@@ -69,7 +69,15 @@
                     Flags = winFlags,
                     IsEventDriven = false,
                     WindowState = Client.Instance.Settings.ScreenMode == ClientSettings.FullscreenMode.Fullscreen ? OpenTK.Windowing.Common.WindowState.Fullscreen : OpenTK.Windowing.Common.WindowState.Normal,
-                    NumberOfSamples = 4,
+                    NumberOfSamples = Client.Instance.Settings.MSAA switch
+                    { 
+                        ClientSettings.MSAAMode.Disabled => 0,
+                        ClientSettings.MSAAMode.Low => 2,
+                        ClientSettings.MSAAMode.Standard => 4,
+                        ClientSettings.MSAAMode.High => 16,
+                        _ => 0
+                    },
+
                     Profile = OpenTK.Windowing.Common.ContextProfile.Core,
                     Size = new OpenTK.Mathematics.Vector2i(Client.Instance.Settings.Resolution.Width, Client.Instance.Settings.Resolution.Height),
                     Icon = windowIcon
@@ -256,9 +264,65 @@
 
         public bool CheckThread() => Thread.CurrentThread == this._glThread;
 
+        private bool _lastFocusState;
         private void Instance_RenderFrame(OpenTK.Windowing.Common.FrameEventArgs obj)
         {
             ++this.FramesExisted;
+
+            if (this._lastFocusState != this.GameHandle.IsFocused)
+            {
+                this._lastFocusState = this.GameHandle.IsFocused;
+                if (this._lastFocusState)
+                {
+                    this.GameHandle.RenderFrequency = 0;
+                }
+                else
+                {
+                    switch (Client.Instance.Settings.UnfocusedFramerate)
+                    {
+                        case ClientSettings.UnfocusedFramerateCap.Native:
+                        {
+                            unsafe
+                            {
+                                OpenTK.Windowing.GraphicsLibraryFramework.VideoMode* vmode = OpenTK.Windowing.GraphicsLibraryFramework.GLFW.GetVideoMode(this.GameHandle.CurrentMonitor.ToUnsafePtr<OpenTK.Windowing.GraphicsLibraryFramework.Monitor>());
+                                this.GameHandle.RenderFrequency = vmode->RefreshRate;
+                            }
+
+                            break;
+                        }
+
+                        case ClientSettings.UnfocusedFramerateCap.High:
+                        {
+                            this.GameHandle.RenderFrequency = 60;
+                            break;
+                        }
+
+                        case ClientSettings.UnfocusedFramerateCap.Medium:
+                        {
+                            this.GameHandle.RenderFrequency = 30;
+                            break;
+                        }
+
+                        case ClientSettings.UnfocusedFramerateCap.Low:
+                        {
+                            this.GameHandle.RenderFrequency = 10;
+                            break;
+                        }
+
+                        case ClientSettings.UnfocusedFramerateCap.Lowest:
+                        {
+                            this.GameHandle.RenderFrequency = 1;
+                            break;
+                        }
+
+                        default:
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
             this.Renderer.Render(obj.Time);
             while (!this._gpuReqs.IsEmpty)
             {

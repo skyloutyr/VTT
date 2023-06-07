@@ -430,6 +430,14 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UseHalfPrecision { get; set; } = false;
 
+        [DefaultValue(MSAAMode.Standard)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public MSAAMode MSAA { get; set; } = MSAAMode.Standard;
+
+        [DefaultValue(UnfocusedFramerateCap.Native)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public UnfocusedFramerateCap UnfocusedFramerate { get; set; } = UnfocusedFramerateCap.Native;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -527,6 +535,24 @@
             MSLight,
             Cherry,
             Photoshop
+        }
+
+        public enum UnfocusedFramerateCap
+        {
+            None,
+            Native,
+            High,
+            Medium,
+            Low,
+            Lowest
+        }
+
+        public enum MSAAMode
+        {
+            Disabled,
+            Low,
+            Standard,
+            High
         }
     }
 

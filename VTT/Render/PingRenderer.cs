@@ -175,8 +175,12 @@
 
         public void Render(double time)
         {
-            GL.Enable(EnableCap.Multisample);
-            GL.Enable(EnableCap.SampleAlphaToCoverage);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(EnableCap.Multisample);
+                GL.Enable(EnableCap.SampleAlphaToCoverage);
+            }
+
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -204,8 +208,11 @@
             }
 
             GL.Disable(EnableCap.Blend);
-            GL.Disable(EnableCap.SampleAlphaToCoverage);
-            GL.Disable(EnableCap.Multisample);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.SampleAlphaToCoverage);
+                GL.Disable(EnableCap.Multisample);
+            }
         }
 
         private readonly Vector2[] _poly = new Vector2[512];

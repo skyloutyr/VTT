@@ -191,8 +191,12 @@
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Enable(EnableCap.Multisample);
-            GL.Enable(EnableCap.SampleAlphaToCoverage);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(EnableCap.Multisample);
+                GL.Enable(EnableCap.SampleAlphaToCoverage);
+            }
+
             this.ParticleShader.Bind();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             this.ParticleShader["view"].Set(cam.View);
@@ -221,8 +225,12 @@
                 }
             }
 
-            GL.Disable(EnableCap.Multisample);
-            GL.Disable(EnableCap.SampleAlphaToCoverage);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.Multisample);
+                GL.Disable(EnableCap.SampleAlphaToCoverage);
+            }
+
             GL.Disable(EnableCap.Blend);
         }
     }

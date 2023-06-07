@@ -805,7 +805,10 @@
                             Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
                             GL.Enable(EnableCap.Blend);
                             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                            GL.Enable(EnableCap.SampleAlphaToCoverage);
+                            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                            {
+                                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                            }
                             shader = this.RenderShader;
                             this._passthroughData.TintColor = mo.TintColor.Vec4();
                             shader["tint_color"].Set(this._passthroughData.TintColor);
@@ -828,7 +831,11 @@
                                 this.RenderShader.Bind();
                             }
 
-                            GL.Disable(EnableCap.SampleAlphaToCoverage);
+                            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                            {
+                                GL.Disable(EnableCap.SampleAlphaToCoverage);
+                            }
+
                             GL.Disable(EnableCap.Blend);
                         }
 
@@ -1129,7 +1136,11 @@
 
         private void RenderForward(Map m, double delta)
         {
-            GL.Enable(EnableCap.Multisample);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(EnableCap.Multisample);
+            }
+
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
@@ -1294,7 +1305,10 @@
             }
 
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.Disable(EnableCap.Multisample);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.Multisample);
+            }
         }
 
         private readonly List<MapObject> _auraCollection = new List<MapObject>();
@@ -1314,7 +1328,11 @@
             this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared.CompareTo((l.Position - cam.Position).LengthSquared));
             GL.Enable(EnableCap.Blend);
             GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.SampleAlphaToCoverage);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(EnableCap.SampleAlphaToCoverage);
+            }
+
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             ShaderProgram shader = this.OverlayShader;
             shader.Bind();
@@ -1342,8 +1360,10 @@
             }
 
             GL.Disable(EnableCap.Blend);
-            GL.Disable(EnableCap.CullFace);
-            GL.Disable(EnableCap.SampleAlphaToCoverage);
+            GL.Disable(EnableCap.CullFace); if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.SampleAlphaToCoverage);
+            }
         }
     }
 

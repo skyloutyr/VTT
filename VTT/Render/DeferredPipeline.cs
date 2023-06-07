@@ -37,15 +37,16 @@
             this._vao.Bind();
             this._vbo.Bind();
             this._vbo.SetData(new float[] { 
-                -1.0f, 1.0f,
-                1.0f, -1.0f,
-                1.0f, 1.0f,
-                -1.0f, 1.0f,
-                -1.0f, -1.0f,
-                1.0f, -1.0f,
+                -1.0f, 1.0f, 0f, 1f,
+                1.0f, -1.0f, 1f, 0f,
+                1.0f, 1.0f, 1f, 1f,
+                -1.0f, 1.0f, 0f, 1f,
+                -1.0f, -1.0f, 0f, 0f,
+                1.0f, -1.0f, 1f, 0f
             });
 
-            this._vao.SetVertexSize<float>(2);
+            this._vao.SetVertexSize<float>(4);
+            this._vao.PushElement(ElementType.Vec2);
             this._vao.PushElement(ElementType.Vec2);
         }
 
@@ -291,7 +292,7 @@
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, this.FBO.Value);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-            GL.BlitFramebuffer(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, 0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
+            GL.BlitFramebuffer(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, 0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit, BlitFramebufferFilter.Nearest);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.ActiveTexture(TextureUnit.Texture0);

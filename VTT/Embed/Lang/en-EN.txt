@@ -430,3 +430,6 @@ ui.properties.custom_shader.tt=A shader asset can be drag'n'dropped here.
 ui.properties.custom_shader.delete=Clear custom shader
 menu.settings.enable_custom_shaders=Custom Shaders Enabled
 menu.settings.enable_custom_shaders.tt=Controls whether to use custom shaders when provided by objects.\nCustom shaders have a noticeable impact on performance if there are many of them.
+menu.update.tt=Click to update VTT to the latest version.\nHold control while clicking to open the latest release in your browser.
+menu.settings.use_half_precision=Use Half Precision
+menu.settings.use_half_precision.tt=Controls whether half precision is used for the deferred pipeline.\nWhen enabled VRAM usage will be reduced at the cost of potential artefacts.

@@ -430,3 +430,6 @@ ui.properties.custom_shader.tt=Сюда можно перенести шейде
 ui.properties.custom_shader.delete=Убрать шейдер
 menu.settings.enable_custom_shaders=Вкл. Пользовательские Шейдеры
 menu.settings.enable_custom_shaders.tt=Стоит ли использовать пользовательские шейдеры когда объект имеет таковые?\nПользовательские шейдеры оказывают значимое влияние на производительность, если их много.
+menu.update.tt=Нажмите, чтобы обновить VTT до последней версии.\nНажмите с зажатым Ctrl чтобы открыть последний релиз в браузере.
+menu.settings.use_half_precision=Использовать половинную точность
+menu.settings.use_half_precision.tt=Если включено, меньше VRAM будет использовано при комплексной отрисовке.

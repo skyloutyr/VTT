@@ -16,6 +16,7 @@
     using VTT.GL;
     using MathHelper = OpenTK.Mathematics.MathHelper;
     using System.Diagnostics;
+    using System.Runtime.InteropServices;
 
     public class MainMenuRenderer
     {
@@ -104,16 +105,28 @@
                     ImGui.SetCursorPos(new Vector2(16, 32));
                     if (ImGui.Button(lang.Translate("ui.button.update")))
                     {
-                        string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
-                        if (File.Exists(updater))
+                        if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
                         {
-                            Client.Instance.Frontend.GameHandle.Close();
-                            Process updaterProcess = new Process();
-                            updaterProcess.StartInfo.FileName = updater;
-                            updaterProcess.Start();
-                        }
+                            string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
+                            if (File.Exists(updater))
+                            {
+                                Client.Instance.Frontend.GameHandle.Close();
+                                Process updaterProcess = new Process();
+                                updaterProcess.StartInfo.FileName = updater;
+                                updaterProcess.Start();
+                            }
 
-                        Environment.Exit(0);
+                            Environment.Exit(0);
+                        }
+                        else
+                        {
+                            this.OpenUrl("https://github.com/skyloutyr/VTT/releases/latest");
+                        }
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.update.tt"));
                     }
                 }
 
@@ -624,6 +637,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.enable_custom_shaders.tt"));
                     }
 
+                    bool sHalfPrecision = Client.Instance.Settings.UseHalfPrecision;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.use_half_precision") + "###Use Half Precision", ref sHalfPrecision))
+                    {
+                        Client.Instance.Settings.UseHalfPrecision = sHalfPrecision;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.use_half_precision.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 
@@ -773,6 +798,36 @@
             }
 
             ImGui.EndChild();
+        }
+
+        // https://stackoverflow.com/questions/4580263/how-to-open-in-default-browser-in-c-sharp
+        private void OpenUrl(string url)
+        {
+            try
+            {
+                Process.Start(url);
+            }
+            catch
+            {
+                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    url = url.Replace("&", "^&");
+                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         public void Update(double delta)

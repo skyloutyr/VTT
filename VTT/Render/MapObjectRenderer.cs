@@ -757,9 +757,10 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             this.UniformCommonData(m, delta);
+            GL.ActiveTexture(TextureUnit.Texture0);
             this.RenderLights(m);
-
-            this.DeferredPipeline.RenderScene(m); 
+            GL.ActiveTexture(TextureUnit.Texture0);
+            this.DeferredPipeline.RenderScene(m);
             GL.ActiveTexture(TextureUnit.Texture0);
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;

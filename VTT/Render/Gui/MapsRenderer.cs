@@ -115,8 +115,16 @@
                     ImGui.SameLine();
                     if (ImGui.Button(lang.Translate("ui.maps.move_all") + "###Move All"))
                     {
-                        PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = state.clientMap.ID };
-                        pcm.Send();
+                        if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
+                        {
+                            PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = state.clientMap.ID, IsServer = false, Session = Client.Instance.SessionID };
+                            pcm.Send();
+                        }
+                        else
+                        {
+                            PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Where(x => x.Value.IsLoggedOn).Select(x => x.Key).ToArray(), NewMapID = state.clientMap.ID, IsServer = false, Session = Client.Instance.SessionID };
+                            pcm.Send();
+                        }
                     }
 
                     if (ImGui.IsItemHovered())
@@ -546,8 +554,16 @@
                                         ImGui.SameLine();
                                         if (ImGui.ImageButton("moveAllToBtn_" + mDat.Item1.ToString(), this.MoveAllToIcon, Vec12x12))
                                         {
-                                            PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
-                                            pcm.Send();
+                                            if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
+                                            {
+                                                PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
+                                                pcm.Send();
+                                            }
+                                            else
+                                            {
+                                                PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Where(x => x.Value.IsLoggedOn).Select(x => x.Key).ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
+                                                pcm.Send();
+                                            }
                                         }
 
                                         if (ImGui.IsItemHovered())

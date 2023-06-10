@@ -193,7 +193,7 @@
                         if (ImGui.Checkbox(lang.Translate("ui.properties.casts_shadow") + "###Casts Shadow", ref mCastsShadows))
                         {
                             mo.CastsShadow = mCastsShadows;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mCastShadows) }, IsServer = false, Session = Client.Instance.SessionID };
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mCastsShadows) }, IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 

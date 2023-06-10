@@ -855,7 +855,7 @@
 
             GL.ActiveTexture(TextureUnit.Texture14);
             shader["dl_shadow_map"].Set(14);
-            Client.Instance.Frontend.Renderer.White.Bind();
+            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
             GL.ActiveTexture(TextureUnit.Texture13);
             shader["pl_shadow_maps"].Set(13);
             plr.DepthMap.Bind();

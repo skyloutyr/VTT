@@ -2,6 +2,7 @@
 {
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
+    using System;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
@@ -14,6 +15,7 @@
 
         private int _sunFbo;
         private Texture _sunDepthTexture;
+        private Texture _fakeDepthTexture;
 
         public ShaderProgram SunShader { get; set; }
 
@@ -21,9 +23,19 @@
         public Matrix4 SunProjection { get; set; } = Matrix4.Identity;
 
         public Texture DepthTexture => this._sunDepthTexture;
+        public Texture DepthFakeTexture => this._fakeDepthTexture;
 
         public void Create()
         {
+            this._fakeDepthTexture = new Texture(TextureTarget.Texture2D);
+            this._fakeDepthTexture.Bind();
+            this._fakeDepthTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+            this._fakeDepthTexture.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
+            float[] fakeDepthData = new float[8 * 8];
+            Array.Fill(fakeDepthData, 1);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, 8, 8, 0, PixelFormat.DepthComponent, PixelType.Float, fakeDepthData);
+
             this._sunDepthTexture = new Texture(TextureTarget.Texture2D);
             this._sunDepthTexture.Bind();
             this._sunDepthTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
@@ -31,7 +43,7 @@
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent, ShadowMapResolution, ShadowMapResolution, 0, PixelFormat.DepthComponent, PixelType.Float, System.IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, ShadowMapResolution, ShadowMapResolution, 0, PixelFormat.DepthComponent, PixelType.Float, System.IntPtr.Zero);
 
             this._sunFbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._sunFbo);
@@ -48,6 +60,8 @@
             GL.DrawBuffer(DrawBufferMode.Back);
 
             this.SunShader = OpenGLUtil.LoadShader("object_shadow", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this.SunView = Matrix4.LookAt(new Vector3(0, -0.1f, 49.5f), Vector3.Zero, new Vector3(0, 1, 0));
+            this.SunProjection = Matrix4.CreateOrthographic(48, 48, 0.1f, 100f);
         }
 
         public static bool ShadowPass { get; set; }

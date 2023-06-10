@@ -1119,7 +1119,7 @@
             }
             else
             {
-                Client.Instance.Frontend.Renderer.White.Bind();
+                Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
             }
 
             GL.ActiveTexture(TextureUnit.Texture13);

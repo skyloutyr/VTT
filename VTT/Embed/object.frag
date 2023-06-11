@@ -458,7 +458,7 @@ void main()
         color = mix(color, grid.rgb, grid.a);
     }
 #endif
-    g_color.rgb = pow(g_color.rgb, vec3(1.0/gamma_factor));
+    color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
 
 #ifndef BRANCHING
     float fowVal = getFowMultiplier()  * fow_mod + (1.0 * (1.0 - fow_mod));

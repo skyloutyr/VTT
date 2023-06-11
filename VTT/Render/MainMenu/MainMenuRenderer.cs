@@ -105,7 +105,7 @@
                     ImGui.SetCursorPos(new Vector2(16, 32));
                     if (ImGui.Button(lang.Translate("ui.button.update")))
                     {
-                        if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
+                        if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
                         {
                             string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
                             if (File.Exists(updater))

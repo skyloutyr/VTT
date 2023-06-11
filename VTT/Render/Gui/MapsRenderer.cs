@@ -115,7 +115,7 @@
                     ImGui.SameLine();
                     if (ImGui.Button(lang.Translate("ui.maps.move_all") + "###Move All"))
                     {
-                        if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
+                        if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
                         {
                             PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = state.clientMap.ID, IsServer = false, Session = Client.Instance.SessionID };
                             pcm.Send();
@@ -554,7 +554,7 @@
                                         ImGui.SameLine();
                                         if (ImGui.ImageButton("moveAllToBtn_" + mDat.Item1.ToString(), this.MoveAllToIcon, Vec12x12))
                                         {
-                                            if (!ImGui.IsKeyDown(ImGuiKey.LeftCtrl) && !ImGui.IsKeyDown(ImGuiKey.RightCtrl))
+                                            if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
                                             {
                                                 PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
                                                 pcm.Send();

@@ -51,7 +51,7 @@
         public ConcurrentDictionary<Guid, ClientInfo> ClientInfos { get; } = new ConcurrentDictionary<Guid, ClientInfo>();
 
         public object ServerMapPointersLock { get; } = new object();
-        public SortedDictionary<string, List<(Guid, string)>> ServerMapPointers { get; } = new SortedDictionary<string, List<(Guid, string)>>();
+        //public SortedDictionary<string, List<(Guid, string)>> ServerMapPointers { get; } = new SortedDictionary<string, List<(Guid, string)>>();
 
         public object chatLock = new object();
         public List<ChatLine> Chat { get; } = new List<ChatLine>();
@@ -221,7 +221,8 @@
 
                 lock (this.ServerMapPointersLock)
                 {
-                    this.ServerMapPointers.Clear();
+                    this.RawClientMPMapsData.Clear();
+                    this.ClientMPMapsRoot.Elements.Clear();
                 }
 
                 this.ClientInfos.Clear();
@@ -284,6 +285,63 @@
             {
                 this.Frontend.Renderer.GuiRenderer.showDisconnect = true;
             }
+        }
+
+        public List<(string, string, Guid)> RawClientMPMapsData { get; } = new List<(string, string, Guid)>();
+        public MPMapPointer ClientMPMapsRoot { get; } = new MPMapPointer() { Name = "/" };
+        public void SortClientMaps()
+        {
+            lock (this.ServerMapPointersLock)
+            {
+                this.ClientMPMapsRoot.Elements.Clear();
+                foreach ((string, string, Guid) dat in this.RawClientMPMapsData)
+                {
+                    MPMapPointer dir = this.WalkDir(dat.Item1);
+                    MPMapPointer map = new MPMapPointer() { IsMap = true, MapID = dat.Item3, Name = dat.Item2 };
+                    dir.Elements.Add(map);
+                }
+
+                this.ClientMPMapsRoot.RecursivelySort();
+            }
+        }
+
+        private MPMapPointer WalkDir(string path)
+        {
+            MPMapPointer GetOrCreate(MPMapPointer dir, string name)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    return dir;
+                }
+
+                MPMapPointer ret = dir.Elements.Find(x => x.Name.Equals(name) && !x.IsMap);
+                if (ret == null)
+                {
+                    ret = new MPMapPointer() { Name = name };
+                    dir.Elements.Add(ret);
+                }
+
+                return ret;
+            }
+
+            MPMapPointer currentDir = this.ClientMPMapsRoot;
+            if (path.Length < 1 || path[0] == '/')
+            {
+                return currentDir;
+            }
+
+            if (path.IndexOf('/') == -1)
+            {
+                return GetOrCreate(currentDir, path);
+            }
+
+            string[] split = path.Split('/');
+            for (int i = 0; i < split.Length; ++i)
+            {
+                currentDir = GetOrCreate(currentDir, split[i]);
+            }
+
+            return currentDir;
         }
     }
 
@@ -576,5 +634,24 @@
 
         public static implicit operator Size(ClientSize self) => new Size(self.Width, self.Height);
         public static implicit operator ClientSize(Size self) => new ClientSize(self.Width, self.Height);
+    }
+
+    public class MPMapPointer : IComparable<MPMapPointer>
+    {
+        public string Name { get; set; }
+        public bool IsMap { get; set; }
+        public Guid MapID { get; set; }
+        public List<MPMapPointer> Elements { get; } = new List<MPMapPointer>();
+
+        public int CompareTo(MPMapPointer other) => this.Name.CompareTo(other.Name);
+
+        public void RecursivelySort()
+        {
+            this.Elements.Sort();
+            foreach (MPMapPointer mpmp in this.Elements)
+            {
+                mpmp.RecursivelySort();
+            }
+        }
     }
 }

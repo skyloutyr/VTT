@@ -15,92 +15,34 @@
             if (!isServer) // Client-only
             {
                 client.Logger.Log(Util.LogLevel.Debug, "Got server maps pointer data");
+                bool didWork = false;
                 lock (client.ServerMapPointersLock)
                 {
                     foreach ((Guid, string, string) d in this.Data)
                     {
                         if (this.Remove)
                         {
-                            bool b = this.TryFindDataIndex(d.Item1, out _, out List<(Guid, string)> container, out int cIndex);
-                            if (b)
-                            {
-                                container.RemoveAt(cIndex);
-                                if (container.Count > 1)
-                                {
-                                    container.Sort((l, r) => l.Item2.CompareTo(r.Item2));
-                                }
-                            }
+                            didWork |= client.RawClientMPMapsData.RemoveAll(x => x.Item3 == d.Item1) > 0;
                         }
                         else
                         {
-                            bool b = this.TryFindDataIndex(d.Item1, out string cFolder, out List<(Guid, string)> container, out int cIndex);
-                            if (b)
+                            didWork = true;
+                            int existing = client.RawClientMPMapsData.FindIndex(x => x.Item3 == d.Item1);
+                            if (existing != -1)
                             {
-                                if (string.Equals(cFolder, d.Item2))
-                                {
-                                    container[cIndex] = (d.Item1, d.Item3);
-                                    if (container.Count > 1)
-                                    {
-                                        container.Sort((l, r) => l.Item2.CompareTo(r.Item2));
-                                    }
-                                }
-                                else
-                                {
-                                    container.RemoveAt(cIndex);
-                                    if (container.Count > 1)
-                                    {
-                                        container.Sort((l, r) => l.Item2.CompareTo(r.Item2));
-                                    }
-
-                                    if (!client.ServerMapPointers.ContainsKey(d.Item2))
-                                    {
-                                        client.ServerMapPointers[d.Item2] = new List<(Guid, string)>();
-                                    }
-
-                                    client.ServerMapPointers[d.Item2].Add((d.Item1, d.Item3));
-                                    if (client.ServerMapPointers[d.Item2].Count > 1)
-                                    {
-                                        client.ServerMapPointers[d.Item2].Sort((l, r) => l.Item2.CompareTo(r.Item2));
-                                    }
-                                }
+                                client.RawClientMPMapsData.RemoveAt(existing);
                             }
-                            else
-                            {
-                                if (!client.ServerMapPointers.ContainsKey(d.Item2))
-                                {
-                                    client.ServerMapPointers[d.Item2] = new List<(Guid, string)>();
-                                }
 
-                                client.ServerMapPointers[d.Item2].Add((d.Item1, d.Item3));
-                                if (client.ServerMapPointers[d.Item2].Count > 1)
-                                {
-                                    client.ServerMapPointers[d.Item2].Sort((l, r) => l.Item2.CompareTo(r.Item2));
-                                }
-                            }
+                            client.RawClientMPMapsData.Add((d.Item2, d.Item3, d.Item1));
                         }
                     }
                 }
-            }
-        }
 
-        private bool TryFindDataIndex(Guid mId, out string cFolder, out List<(Guid, string)> container, out int containerIndex)
-        {
-            foreach (KeyValuePair<string, List<(Guid, string)>> kv in Client.Instance.ServerMapPointers)
-            {
-                int idx = kv.Value.FindIndex(d => d.Item1.Equals(mId));
-                if (idx != -1)
+                if (didWork)
                 {
-                    cFolder = kv.Key;
-                    container = kv.Value;
-                    containerIndex = idx;
-                    return true;
+                    client.SortClientMaps();
                 }
             }
-
-            cFolder = string.Empty;
-            containerIndex = -1;
-            container = null;
-            return false;
         }
 
         public override void Decode(BinaryReader br)

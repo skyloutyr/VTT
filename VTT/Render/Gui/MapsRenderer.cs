@@ -508,107 +508,117 @@
                     }
                     #endregion
 
+                    void RecursivelyRenderMaps(MPMapPointer dir, bool first, System.Numerics.Vector2 wC)
+                    {
+                        bool b1 = false;
+                        if (!first)
+                        {
+                            ImGui.SetNextItemOpen(false, ImGuiCond.Once);
+                            b1 = ImGui.TreeNode(dir.Name);
+                        }
+
+                        if (first || b1)
+                        {
+                            foreach (MPMapPointer d in dir.Elements.Where(x => !x.IsMap))
+                            {
+                                RecursivelyRenderMaps(d, false, wC);
+                            }
+
+                            foreach (MPMapPointer d in dir.Elements.Where(x => x.IsMap))
+                            {
+                                bool selected = state.clientMap.ID.Equals(d.MapID);
+                                if (selected)
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)Color.RoyalBlue);
+                                }
+
+                                bool hadTT = false;
+                                ImGui.BeginChild("mapNav_" + d.MapID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+                                if (selected)
+                                {
+                                    ImGui.PopStyleColor();
+                                }
+
+                                if (ImGui.ImageButton("moveToBtn_" + d.MapID.ToString(), this.MoveToIcon, Vec12x12))
+                                {
+                                    PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[1] { Client.Instance.ID }, NewMapID = d.MapID, IsServer = false, Session = Client.Instance.SessionID };
+                                    pcm.Send();
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    hadTT = true;
+                                    ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_to"));
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.ImageButton("moveAllToBtn_" + d.MapID.ToString(), this.MoveAllToIcon, Vec12x12))
+                                {
+                                    if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+                                    {
+                                        PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = d.MapID, IsServer = false, Session = Client.Instance.SessionID };
+                                        pcm.Send();
+                                    }
+                                    else
+                                    {
+                                        PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Where(x => x.Value.IsLoggedOn).Select(x => x.Key).ToArray(), NewMapID = d.MapID, IsServer = false, Session = Client.Instance.SessionID };
+                                        pcm.Send();
+                                    }
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    hadTT = true;
+                                    ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_all"));
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.ImageButton("deleteMapBtn_" + d.MapID.ToString(), this.DeleteIcon, Vec12x12))
+                                {
+                                    state.deleteMapPopup = true;
+                                    this._deletedMapId = d.MapID;
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    hadTT = true;
+                                    ImGui.SetTooltip(lang.Translate("ui.maps.nav.delete"));
+                                }
+
+                                ImGui.SameLine();
+                                ImGui.TextUnformatted(d.Name + "(" + d.MapID.ToString() + ")");
+
+                                ImGui.EndChild();
+                                bool hover = ImGui.IsItemHovered();
+                                if (hover && !hadTT)
+                                {
+                                    ImGui.BeginTooltip();
+                                    ImGui.Text(lang.Translate("ui.maps.players_here"));
+                                    foreach (KeyValuePair<Guid, ClientInfo> ckv in Client.Instance.ClientInfos)
+                                    {
+                                        if (!ckv.Key.Equals(Guid.Empty) && ckv.Value.MapID.Equals(d.MapID))
+                                        {
+                                            ImGui.TextUnformatted(" " + ckv.Value.Name);
+                                        }
+                                    }
+
+                                    ImGui.EndTooltip();
+                                }
+                            }
+
+                            if (b1)
+                            {
+                                ImGui.TreePop();
+                            }
+                        }
+                    }
+
                     if (ImGui.CollapsingHeader(lang.Translate("ui.maps.maps") + "###Maps"))
                     {
                         System.Numerics.Vector2 wC = ImGui.GetWindowSize();
                         lock (Client.Instance.ServerMapPointersLock)
                         {
-                            foreach (KeyValuePair<string, List<(Guid, string)>> kv in Client.Instance.ServerMapPointers)
-                            {
-                                string k = string.IsNullOrEmpty(kv.Key) ? lang.Translate("ui.maps.uncategorized") : kv.Key;
-                                if (kv.Value == null || kv.Value.Count <= 0)
-                                {
-                                    continue;
-                                }
-
-                                ImGui.SetNextItemOpen(false, ImGuiCond.Once);
-                                if (ImGui.TreeNode(k))
-                                {
-                                    foreach ((Guid, string) mDat in kv.Value)
-                                    {
-                                        bool selected = state.clientMap.ID.Equals(mDat.Item1);
-                                        if (selected)
-                                        {
-                                            ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)Color.RoyalBlue);
-                                        }
-
-                                        bool hadTT = false;
-                                        ImGui.BeginChild("mapNav_" + mDat.Item1.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-                                        if (selected)
-                                        {
-                                            ImGui.PopStyleColor();
-                                        }
-
-                                        if (ImGui.ImageButton("moveToBtn_" + mDat.Item1.ToString(), this.MoveToIcon, Vec12x12))
-                                        {
-                                            PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[1] { Client.Instance.ID }, NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
-                                            pcm.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            hadTT = true;
-                                            ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_to"));
-                                        }
-
-                                        ImGui.SameLine();
-                                        if (ImGui.ImageButton("moveAllToBtn_" + mDat.Item1.ToString(), this.MoveAllToIcon, Vec12x12))
-                                        {
-                                            if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
-                                            {
-                                                PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
-                                                pcm.Send();
-                                            }
-                                            else
-                                            {
-                                                PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Where(x => x.Value.IsLoggedOn).Select(x => x.Key).ToArray(), NewMapID = mDat.Item1, IsServer = false, Session = Client.Instance.SessionID };
-                                                pcm.Send();
-                                            }
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            hadTT = true;
-                                            ImGui.SetTooltip(lang.Translate("ui.maps.nav.move_all"));
-                                        }
-
-                                        ImGui.SameLine();
-                                        if (ImGui.ImageButton("deleteMapBtn_" + mDat.Item1.ToString(), this.DeleteIcon, Vec12x12))
-                                        {
-                                            state.deleteMapPopup = true;
-                                            this._deletedMapId = mDat.Item1;
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            hadTT = true;
-                                            ImGui.SetTooltip(lang.Translate("ui.maps.nav.delete"));
-                                        }
-
-                                        ImGui.SameLine();
-                                        ImGui.TextUnformatted(mDat.Item2 + "(" + mDat.Item1.ToString() + ")");
-
-                                        ImGui.EndChild();
-                                        bool hover = ImGui.IsItemHovered();
-                                        if (hover && !hadTT)
-                                        {
-                                            ImGui.BeginTooltip();
-                                            ImGui.Text(lang.Translate("ui.maps.players_here"));
-                                            foreach (KeyValuePair<Guid, ClientInfo> ckv in Client.Instance.ClientInfos)
-                                            {
-                                                if (!ckv.Key.Equals(Guid.Empty) && ckv.Value.MapID.Equals(mDat.Item1))
-                                                {
-                                                    ImGui.TextUnformatted(" " + ckv.Value.Name);
-                                                }
-                                            }
-
-                                            ImGui.EndTooltip();
-                                        }
-                                    }
-
-                                    ImGui.TreePop();
-                                }
-                            }
+                            RecursivelyRenderMaps(Client.Instance.ClientMPMapsRoot, true, wC);
                         }
 
                         if (ImGui.ImageButton("btnNewMap", this.AddIcon, Vec12x12))

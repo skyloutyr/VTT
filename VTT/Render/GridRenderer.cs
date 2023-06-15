@@ -150,7 +150,9 @@
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
+            GL.Disable(EnableCap.DepthTest);
             GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            GL.Enable(EnableCap.DepthTest);
             if (renderMisc)
             {
                 if (Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver != null)

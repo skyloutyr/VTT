@@ -102,8 +102,8 @@
             this.DepthTex.Bind();
             this.DepthTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Depth24Stencil8, w, h, 0, PixelFormat.DepthStencil, PixelType.Float32UnsignedInt248Rev, IntPtr.Zero);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, TextureTarget.Texture2D, this.DepthTex, 0);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent32f, w, h, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, this.DepthTex, 0);
 
             this.PositionTex.Bind();
             this.PositionTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
@@ -174,8 +174,9 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO.Value);
+            GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             GL.ClearColor(0, 0, 0, 0);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             GL.DepthMask(true);
@@ -239,6 +240,8 @@
             this.MRAOGTex.Bind();
             GL.ActiveTexture(TextureUnit.Texture8);
             this.EmissionTex.Bind();
+            GL.ActiveTexture(TextureUnit.Texture7);
+            this.DepthTex.Bind();
             if (!useUBO)
             {
                 shader["g_emission"].Set(8);
@@ -283,16 +286,17 @@
             this._vao.Bind();
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
-            GL.Disable(EnableCap.DepthTest);
-            GL.DepthMask(false);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-            GL.DepthMask(true);
             GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Always);
+            GL.DepthMask(true);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Less);
             GL.Disable(EnableCap.CullFace);
 
-            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, this.FBO.Value);
-            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-            GL.BlitFramebuffer(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, 0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit, BlitFramebufferFilter.Nearest);
+            //GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, this.FBO.Value);
+            //GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+            //GL.BlitFramebuffer(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, 0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit, BlitFramebufferFilter.Nearest);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.ActiveTexture(TextureUnit.Texture0);
@@ -319,6 +323,7 @@
             this.FinalPass["g_albedo"].Set(10);
             this.FinalPass["g_aomrg"].Set(9);
             this.FinalPass["g_emission"].Set(8);
+            this.FinalPass["g_depth"].Set(7);
             this.FinalPass["dl_shadow_map"].Set(14);
             this.FinalPass["pl_shadow_maps"].Set(13);
 

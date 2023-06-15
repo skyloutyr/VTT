@@ -35,6 +35,7 @@ uniform sampler2D g_normals;
 uniform sampler2D g_albedo;
 uniform sampler2D g_aomrg;
 uniform sampler2D g_emission;
+uniform sampler2D g_depth;
 
 // Directional light
 uniform sampler2D dl_shadow_map;
@@ -344,9 +345,9 @@ void main()
     {
         discard;
     }
-
+    
+    gl_FragDepth = texture(g_depth, f_texture).r;
     #endif
-
     vec3 world_to_camera = normalize(camera_position - world_position.rgb);
     vec4 aomrg = texture(g_aomrg, f_texture);
     vec3 albedo = texture(g_albedo, f_texture).rgb;
@@ -384,5 +385,4 @@ void main()
         g_color = vec4(color, world_position.a);
     }
 #endif
-
 }

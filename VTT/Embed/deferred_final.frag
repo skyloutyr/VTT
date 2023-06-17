@@ -2,10 +2,18 @@
 
 #define SHADOW_BIAS_MAX 0.01
 #define SHADOW_BIAS_MIN 0.0005
-#define PCF_ITERATIONS 2
 
+#ifndef GL_SPIRV
+#define PCF_ITERATIONS 2
 #define HAS_POINT_SHADOWS
 #define HAS_DIRECTIONAL_SHADOWS
+#else
+layout(constant_id = 0) const int has_dir_shadows = 1;
+layout(constant_id = 1) const int has_point_shadows = 1;
+layout(constant_id = 2) const int has_branches = 1;
+layout(constant_id = 3) const int PCF_ITERATIONS = 1;
+#endif
+
 #define BRANCHING
 
 in vec2 f_texture;
@@ -266,6 +274,7 @@ vec3 calcPointLight(int light_index, vec3 f_world_position, vec3 world_to_camera
 
     float attenuation = pl_cutout[light_index].x / (light_distance * light_distance * PI * PI * 4);
     vec3 radiance = pl_color[light_index] * attenuation;
+#ifndef GL_SPIRV
 #ifdef HAS_POINT_SHADOWS
 #ifndef BRANCHING
     float shadow = computeShadow(light_index, f_world_position - pl_position[light_index], normal);
@@ -275,11 +284,15 @@ vec3 calcPointLight(int light_index, vec3 f_world_position, vec3 world_to_camera
 #else
     float shadow = 1.0;
 #endif
+#else
+    float shadow = has_point_shadows == 1 ? pl_cutout[light_index].y < eff_epsilon ? 1.0 : computeShadow(light_index, f_world_position - pl_position[light_index], normal) : 1.0;
+#endif
     return calcLight(world_to_light, radiance, world_to_camera, albedo, normal, metallic, roughness) * shadow;
 }
 
 float calcDirectionalShadows(vec3 surface_normal, vec3 world_position)
 {
+#ifndef GL_SPIRV
 #ifdef HAS_DIRECTIONAL_SHADOWS
     vec4 sun_coord = sun_projection * sun_view * vec4(world_position.xyz, 1.0);
     float zMod = max(0, floor(sun_coord.z - 1.0));
@@ -293,6 +306,24 @@ float calcDirectionalShadows(vec3 surface_normal, vec3 world_position)
     return result;
 #else
     return 1.0;
+#endif
+#else
+    if (has_dir_shadows == 1)
+    {
+        vec4 sun_coord = sun_projection * sun_view * vec4(world_position.xyz, 1.0);
+        float zMod = max(0, floor(sun_coord.z - 1.0));
+        vec3 proj_coords = sun_coord.xyz / sun_coord.w;
+        proj_coords = proj_coords * 0.5 + 0.5; 
+        float currentDepth = proj_coords.z;
+        float cosTheta = dot(surface_normal, -dl_direction);
+        float bias = clamp(0.003 * tan(acos(cosTheta)), 0.0, 0.01);
+        float result = getShadowDepth2D(dl_shadow_map, proj_coords.xy, currentDepth - bias);
+        return result;
+    }
+    else
+    {
+        return 1.0;
+    }
 #endif
 }
 

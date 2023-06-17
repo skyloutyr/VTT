@@ -1,6 +1,8 @@
 ﻿namespace VTT.GL
 {
     using OpenTK.Graphics.OpenGL;
+    using System;
+    using System.Linq;
 
     public class ShaderProgram
     {
@@ -17,6 +19,89 @@
         }
 
         public static bool IsLastShaderSame(ShaderProgram currentShader) => currentShader._glID == _lastProgramID;
+
+        public static bool TryLoadBinary(out ShaderProgram sp, byte[] vert, byte[] geom, byte[] frag, Func<ShaderType, SpirVSpecializationData> specializer, out string error)
+        {
+            int vShader = -1;
+            int gShader = -1;
+            int fShader = -1;
+
+            static void IncludeShader(ShaderType sType, ref int s, byte[] code, Func<ShaderType, SpirVSpecializationData> specializer)
+            {
+                s = GL.CreateShader(sType);
+                GL.ShaderBinary(1, ref s, (BinaryFormat)All.ShaderBinaryFormatSpirVArb, code, code.Length);
+                SpirVSpecializationData data = specializer(sType);
+                GL.SpecializeShader(s, "main", data.SpecializationConstantIndices?.Length ?? 0, data.SpecializationConstantIndices, data.SpecializationConstantValues);
+            }
+
+            static bool IsNullOrEmpty(byte[] data) => data == null || data.Length == 0;
+
+
+            if (!IsNullOrEmpty(vert))
+            {
+                IncludeShader(ShaderType.VertexShader, ref vShader, vert, specializer);
+            }
+
+            if (!IsNullOrEmpty(geom))
+            {
+                IncludeShader(ShaderType.GeometryShader, ref gShader, geom, specializer);
+            }
+
+            if (!IsNullOrEmpty(frag))
+            {
+                IncludeShader(ShaderType.FragmentShader, ref fShader, frag, specializer);
+            }
+
+            ShaderProgram ret = new ShaderProgram();
+            int pId = (int)ret._glID;
+            if (vShader != -1)
+            {
+                GL.AttachShader(pId, vShader);
+            }
+
+            if (gShader != -1)
+            {
+                GL.AttachShader(pId, gShader);
+            }
+
+            if (fShader != -1)
+            {
+                GL.AttachShader(pId, fShader);
+            }
+
+            GL.LinkProgram(pId);
+            GL.GetProgram(pId, GetProgramParameterName.LinkStatus, out int pls);
+            if (pls != 1)
+            {
+                GL.DeleteProgram(pId);
+                sp = default;
+                GL.GetProgramInfoLog(pId, out error);
+                return false;
+            }
+
+            if (vShader != -1)
+            {
+                GL.DetachShader(pId, vShader);
+                GL.DeleteShader(vShader);
+            }
+
+            if (gShader != -1)
+            {
+                GL.DetachShader(pId, gShader);
+                GL.DeleteShader(gShader);
+            }
+
+            if (fShader != -1)
+            {
+                GL.DetachShader(pId, fShader);
+                GL.DeleteShader(fShader);
+            }
+
+            sp = ret;
+            ret.UniformManager.InitUniforms(ret);
+            error = string.Empty;
+            return true;
+        }
 
         public static bool TryCompile(out ShaderProgram sp, string vertCode, string geomCode, string fragCode, out string error)
         {
@@ -128,5 +213,17 @@
 
         public static implicit operator uint(ShaderProgram self) => self._glID;
         public static implicit operator int(ShaderProgram self) => (int)self._glID;
+    }
+
+    public readonly struct SpirVSpecializationData
+    {
+        public int[] SpecializationConstantIndices { get; }
+        public int[] SpecializationConstantValues { get; }
+
+        public SpirVSpecializationData(int[] specializationConstantIndices, int[] specializationConstantValues)
+        {
+            this.SpecializationConstantIndices = specializationConstantIndices;
+            this.SpecializationConstantValues = specializationConstantValues;
+        }
     }
 }

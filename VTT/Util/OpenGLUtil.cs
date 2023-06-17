@@ -1,8 +1,10 @@
 ﻿namespace VTT.Util
 {
     using OpenTK.Graphics.OpenGL;
+    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
+    using System;
     using System.Linq;
     using VTT.Asset.Obj;
     using VTT.GL;
@@ -16,7 +18,65 @@
             return new WavefrontObject(lines, desiredFormat);
         }
 
+        private static Lazy<bool> haveSpirVArb = new Lazy<bool>(() => IsExtensionSupported("ARB_gl_spirv"));
+        public static bool IsExtensionSupported(string extName) => GLFW.ExtensionSupported(extName);
+
+        public static bool PreferSpirV { get; set; }
+
+        public static bool ShouldUseSPIRV => haveSpirVArb.Value && PreferSpirV && Client.Instance.Settings.UseSpirVShaders;
+
         public static ShaderProgram LoadShader(string name, params ShaderType[] types)
+        {
+            bool trySpirV = false;
+            if (haveSpirVArb.Value && PreferSpirV)
+            {
+                trySpirV = IOVTT.DoesResourceExist("VTT.Embed." + name + ".vert.spv") || IOVTT.DoesResourceExist("VTT.Embed." + name + ".frag.spv");
+            }
+
+            if (trySpirV)
+            {
+                return LoadShaderBinary(name, types);
+            }
+            else
+            {
+                return LoadShaderCode(name, types);
+            }
+        }
+
+        private static ShaderProgram LoadShaderBinary(string name, params ShaderType[] types)
+        {
+            byte[] vSh = null;
+            byte[] gSh = null;
+            byte[] fSh = null;
+
+            if (types.Contains(ShaderType.VertexShader))
+            {
+                vSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".vert.spv");
+            }
+
+            if (types.Contains(ShaderType.GeometryShader))
+            {
+                gSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".geom.spv");
+            }
+
+            if (types.Contains(ShaderType.FragmentShader))
+            {
+                fSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".frag.spv");
+            }
+
+            Client.Instance.Logger.Log(LogLevel.Debug, "Loading SPIR-V shader VTT.Embed." + name);
+            if (!ShaderProgram.TryLoadBinary(out ShaderProgram sp, vSh, gSh, fSh, x => default, out string err))
+            {
+                Logger l = Client.Instance.Logger;
+                l.Log(LogLevel.Fatal, "Could not compile SPIR-V shader!");
+                l.Log(LogLevel.Fatal, err);
+                throw new System.Exception("Could not compile SPIR-V shader " + name + "! Shader error was " + err);
+            }
+
+            return sp;
+        }
+
+        private static ShaderProgram LoadShaderCode(string name, params ShaderType[] types)
         {
             string vSh = null;
             string gSh = null;

@@ -307,7 +307,7 @@
             this.DeferredPass?.Dispose();
             this.FinalPass?.Dispose();
 
-            this.DeferredPass = this.RecompileShader(dirShadows, pointShadows, noBranches, "deferred");
+            this.DeferredPass = this.RecompileShader(dirShadows, pointShadows, noBranches, OpenGLUtil.ShouldUseSPIRV, "deferred");
             this.DeferredPass.Bind();
             this.DeferredPass.BindUniformBlock("FrameData", 1);
             this.DeferredPass["m_texture_diffuse"].Set(0);
@@ -315,7 +315,7 @@
             this.DeferredPass["m_texture_emissive"].Set(2);
             this.DeferredPass["m_texture_aomr"].Set(3);
 
-            this.FinalPass = this.RecompileShader(dirShadows, pointShadows, noBranches, "deferred_final");
+            this.FinalPass = this.RecompileShader(dirShadows, pointShadows, noBranches, OpenGLUtil.ShouldUseSPIRV, "deferred_final");
             this.FinalPass.Bind();
             this.FinalPass.BindUniformBlock("FrameData", 1);
             this.FinalPass["g_positions"].Set(12);
@@ -326,41 +326,59 @@
             this.FinalPass["g_depth"].Set(7);
             this.FinalPass["dl_shadow_map"].Set(14);
             this.FinalPass["pl_shadow_maps"].Set(13);
-
         }
 
-        private ShaderProgram RecompileShader(bool dirShadows, bool pointShadows, bool noBranches, string sName)
+        private ShaderProgram RecompileShader(bool dirShadows, bool pointShadows, bool noBranches, bool useSpriV, string sName)
         {
-            string lineVert = IOVTT.ResourceToString($"VTT.Embed.{sName}.vert");
-            string lineFrag = IOVTT.ResourceToString($"VTT.Embed.{sName}.frag");
-            if (!dirShadows)
+            useSpriV &= IOVTT.DoesResourceExist($"VTT.Embed.{sName}.vert.spv");
+            if (!useSpriV)
             {
-                RemoveDefine(ref lineVert, "HAS_DIRECTIONAL_SHADOWS");
-                RemoveDefine(ref lineFrag, "HAS_DIRECTIONAL_SHADOWS");
-            }
+                string lineVert = IOVTT.ResourceToString($"VTT.Embed.{sName}.vert");
+                string lineFrag = IOVTT.ResourceToString($"VTT.Embed.{sName}.frag");
+                if (!dirShadows)
+                {
+                    RemoveDefine(ref lineVert, "HAS_DIRECTIONAL_SHADOWS");
+                    RemoveDefine(ref lineFrag, "HAS_DIRECTIONAL_SHADOWS");
+                }
 
-            if (!pointShadows)
+                if (!pointShadows)
+                {
+                    RemoveDefine(ref lineVert, "HAS_POINT_SHADOWS");
+                    RemoveDefine(ref lineFrag, "HAS_POINT_SHADOWS");
+                }
+
+                if (noBranches)
+                {
+                    RemoveDefine(ref lineVert, "BRANCHING");
+                    RemoveDefine(ref lineFrag, "BRANCHING");
+                }
+
+                lineFrag = lineFrag.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
+
+                if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))
+                {
+                    Logger l = Client.Instance.Logger;
+                    l.Log(LogLevel.Fatal, "Could not compile shader! Shader error was " + err);
+                    throw new Exception("Could not compile object shader! Shader error was " + err);
+                }
+
+                return sp;
+            }
+            else
             {
-                RemoveDefine(ref lineVert, "HAS_POINT_SHADOWS");
-                RemoveDefine(ref lineFrag, "HAS_POINT_SHADOWS");
+                byte[] vert = IOVTT.ResourceToBytes($"VTT.Embed.{sName}.vert.spv");
+                byte[] frag = IOVTT.ResourceToBytes($"VTT.Embed.{sName}.vert.frag");
+                int[] constIndices = new int[4] { 0, 1, 2, 3 };
+                int[] constValues = new int[4] { dirShadows ? 1 : 0, pointShadows ? 1 : 0, noBranches ? 0 : 1, Client.Instance.Settings.ShadowsPCF };
+                if (!ShaderProgram.TryLoadBinary(out ShaderProgram sp, vert, null, frag, x => x == ShaderType.FragmentShader ? new SpirVSpecializationData(constIndices, constValues) : default, out string err))
+                {
+                    Logger l = Client.Instance.Logger;
+                    l.Log(LogLevel.Fatal, "Could not compile SPIR-V shader! Shader error was " + err);
+                    throw new Exception("Could not compile SPIR-V object shader! Shader error was " + err);
+                }
+
+                return sp;
             }
-
-            if (noBranches)
-            {
-                RemoveDefine(ref lineVert, "BRANCHING");
-                RemoveDefine(ref lineFrag, "BRANCHING");
-            }
-
-            lineFrag = lineFrag.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
-
-            if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))
-            {
-                Logger l = Client.Instance.Logger;
-                l.Log(LogLevel.Fatal, "Could not compile shader! Shader error was " + err);
-                throw new Exception("Could not compile object shader! Shader error was " + err);
-            }
-
-            return sp;
         }
 
         private void RemoveDefine(ref string lines, string define)

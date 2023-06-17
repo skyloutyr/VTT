@@ -496,6 +496,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public UnfocusedFramerateCap UnfocusedFramerate { get; set; } = UnfocusedFramerateCap.Native;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool UseSpirVShaders { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");

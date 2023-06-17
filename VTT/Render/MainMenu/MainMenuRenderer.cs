@@ -561,7 +561,7 @@
                     {
                         Client.Instance.Settings.EnableSunShadows = sShadowsSun;
                         Client.Instance.Settings.Save();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches);
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
                     }
 
                     if (ImGui.IsItemHovered())
@@ -573,7 +573,7 @@
                     {
                         Client.Instance.Settings.EnableDirectionalShadows = sShadowsDir;
                         Client.Instance.Settings.Save();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches);
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
                     }
 
                     if (ImGui.IsItemHovered())
@@ -617,7 +617,7 @@
                     if (ImGui.SliderInt("###PCF Quality", ref sPcfQ, 1, 5))
                     {
                         Client.Instance.Settings.ShadowsPCF = sPcfQ;
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches);
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
                         Client.Instance.Settings.Save();
                     }
 
@@ -798,7 +798,7 @@
                     {
                         Client.Instance.Settings.DisableShaderBranching = sNoBranches;
                         Client.Instance.Settings.Save();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches);
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
                     }
 
                     if (ImGui.IsItemHovered())

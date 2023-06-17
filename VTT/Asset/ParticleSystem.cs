@@ -26,6 +26,7 @@
 
         public int MaxParticles { get; set; }
         public bool DoBillboard { get; set; } = true;
+        public bool ClusterEmission { get; set; } = false;
 
         public RangeVector3 InitialVelocity { get; set; } = new RangeVector3(Vector3.Zero, Vector3.Zero);
         public float InitialVelocityRandomAngle { get; set; } = 0f;
@@ -113,6 +114,7 @@
 
             ret.SetGuid("AssetID", this.AssetID);
             ret.Set("DoBillboard", this.DoBillboard);
+            ret.Set("ClusterEmission", this.ClusterEmission);
             ret.Write(bw);
         }
 
@@ -148,6 +150,7 @@
 
             this.AssetID = de.GetGuid("AssetID");
             this.DoBillboard = de.Get<bool>("DoBillboard", true);
+            this.ClusterEmission = de.Get<bool>("ClusterEmission", false);
         }
 
         public void ReadV1(BinaryReader br)
@@ -181,6 +184,7 @@
 
             this.AssetID = br.ReadGuid();
             this.DoBillboard = true;
+            this.ClusterEmission = false;
         }
 
         public ParticleSystem Copy() => new ParticleSystem() 
@@ -201,7 +205,8 @@
             ColorOverLifetime = new Gradient<Vector4>(this.ColorOverLifetime),
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
             AssetID = this.AssetID,
-            DoBillboard = this.DoBillboard
+            DoBillboard = this.DoBillboard,
+            ClusterEmission = this.ClusterEmission
         };
 
         public class RangeInt
@@ -375,6 +380,7 @@
             {
                 this._emissionCd = this.Template.EmissionCooldown.Value(this._rand.NextSingle());
                 int nNew = this.Template.EmissionAmount.Value(this._rand.NextSingle());
+                Vector3 emissionPoint = default;
                 for (int i = 0; i < nNew; ++i)
                 {
                     Particle p = this.FindFirstDeactivatedParticle();
@@ -399,80 +405,94 @@
                         baseOffset += this.Container.Container.Position;
                     }
 
-                    switch (this.Template.EmissionType)
+                    if (!this.Template.ClusterEmission || i == 0)
                     {
-                        case ParticleSystem.EmissionMode.Sphere:
-                        case ParticleSystem.EmissionMode.SphereSurface:
+                        switch (this.Template.EmissionType)
                         {
-                            Vector3 rndUnitVector = new Vector3(
-                                (this._rand.NextSingle() - this._rand.NextSingle()),
-                                (this._rand.NextSingle() - this._rand.NextSingle()),
-                                (this._rand.NextSingle() - this._rand.NextSingle())).Normalized();
-                            rndUnitVector *= this.Template.EmissionRadius;
-                            if (this.Template.EmissionType == ParticleSystem.EmissionMode.Sphere)
+                            case ParticleSystem.EmissionMode.Sphere:
+                            case ParticleSystem.EmissionMode.SphereSurface:
                             {
-                                rndUnitVector *= (float)this._rand.NextSingle();
+                                Vector3 rndUnitVector = new Vector3(
+                                    (this._rand.NextSingle() - this._rand.NextSingle()),
+                                    (this._rand.NextSingle() - this._rand.NextSingle()),
+                                    (this._rand.NextSingle() - this._rand.NextSingle())).Normalized();
+                                rndUnitVector *= this.Template.EmissionRadius;
+                                if (this.Template.EmissionType == ParticleSystem.EmissionMode.Sphere)
+                                {
+                                    rndUnitVector *= (float)this._rand.NextSingle();
+                                }
+
+                                rndUnitVector *= this.Template.EmissionVolume;
+                                baseOffset += rndUnitVector;
+                                break;
                             }
 
-                            rndUnitVector *= this.Template.EmissionVolume;
-                            baseOffset += rndUnitVector;
-                            break;
-                        }
-
-                        case ParticleSystem.EmissionMode.Cube:
-                        case ParticleSystem.EmissionMode.CubeSurface:
-                        {
-                            bool surf = this.Template.EmissionType == ParticleSystem.EmissionMode.CubeSurface;
-                            float oX = this._rand.NextSingle() - this._rand.NextSingle();
-                            float oY = this._rand.NextSingle() - this._rand.NextSingle();
-                            float oZ = this._rand.NextSingle() - this._rand.NextSingle();
-                            if (surf)
+                            case ParticleSystem.EmissionMode.Cube:
+                            case ParticleSystem.EmissionMode.CubeSurface:
                             {
-                                float rF = this._rand.NextSingle();
-                                if (rF <= 0.333333f)
+                                bool surf = this.Template.EmissionType == ParticleSystem.EmissionMode.CubeSurface;
+                                float oX = this._rand.NextSingle() - this._rand.NextSingle();
+                                float oY = this._rand.NextSingle() - this._rand.NextSingle();
+                                float oZ = this._rand.NextSingle() - this._rand.NextSingle();
+                                if (surf)
                                 {
-                                    oX = this._rand.NextSingle() < 0.5f ? -1 : 1;
-                                }
-                                else
-                                {
-                                    if (rF <= 0.6666666f)
+                                    float rF = this._rand.NextSingle();
+                                    if (rF <= 0.333333f)
                                     {
-                                        oY = this._rand.NextSingle() < 0.5f ? -1 : 1;
+                                        oX = this._rand.NextSingle() < 0.5f ? -1 : 1;
                                     }
                                     else
                                     {
-                                        oZ = this._rand.NextSingle() < 0.5f ? -1 : 1;
+                                        if (rF <= 0.6666666f)
+                                        {
+                                            oY = this._rand.NextSingle() < 0.5f ? -1 : 1;
+                                        }
+                                        else
+                                        {
+                                            oZ = this._rand.NextSingle() < 0.5f ? -1 : 1;
+                                        }
                                     }
                                 }
+
+                                oX *= this.Template.EmissionVolume.X;
+                                oY *= this.Template.EmissionVolume.Y;
+                                oZ *= this.Template.EmissionVolume.Z;
+                                baseOffset += new Vector3(oX, oY, oZ);
+                                break;
                             }
 
-                            oX *= this.Template.EmissionVolume.X;
-                            oY *= this.Template.EmissionVolume.Y;
-                            oZ *= this.Template.EmissionVolume.Z;
-                            baseOffset += new Vector3(oX, oY, oZ);
-                            break;
-                        }
-
-                        case ParticleSystem.EmissionMode.MeshSurface:
-                        case ParticleSystem.EmissionMode.Volume:
-                        {
-                            if (this.IsFake)
+                            case ParticleSystem.EmissionMode.MeshSurface:
+                            case ParticleSystem.EmissionMode.Volume:
                             {
-                                goto case ParticleSystem.EmissionMode.Point;
-                            }
-
-                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.glReady ?? false))
-                            {
-                                goto case ParticleSystem.EmissionMode.Point;
-                            }
-
-                            this._meshRefs.Clear();
-                            if (!string.IsNullOrEmpty(this.Container.AttachmentPoint))
-                            {
-                                GlbObject o = a.Model.GLMdl.Meshes.Find(p => p.Name.Equals(this.Container.AttachmentPoint));
-                                if (o != null)
+                                if (this.IsFake)
                                 {
-                                    foreach (GlbMesh m in o.Meshes)
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.glReady ?? false))
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                this._meshRefs.Clear();
+                                if (!string.IsNullOrEmpty(this.Container.AttachmentPoint))
+                                {
+                                    GlbObject o = a.Model.GLMdl.Meshes.Find(p => p.Name.Equals(this.Container.AttachmentPoint));
+                                    if (o != null)
+                                    {
+                                        foreach (GlbMesh m in o.Meshes)
+                                        {
+                                            if (m.simplifiedTriangles != null && m.simplifiedTriangles.Length > 0)
+                                            {
+                                                this._meshRefs.Add(new WeightedItem<GlbMesh>(m, (int)MathF.Ceiling(m.areaSums[^1])));
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (this._meshRefs.Count == 0)
+                                {
+                                    foreach (GlbMesh m in a.Model.GLMdl.Meshes.SelectMany(o => o.Meshes))
                                     {
                                         if (m.simplifiedTriangles != null && m.simplifiedTriangles.Length > 0)
                                         {
@@ -480,50 +500,46 @@
                                         }
                                     }
                                 }
-                            }
 
-                            if (this._meshRefs.Count == 0)
-                            {
-                                foreach (GlbMesh m in a.Model.GLMdl.Meshes.SelectMany(o => o.Meshes))
+                                if (this._meshRefs.Count > 0)
                                 {
-                                    if (m.simplifiedTriangles != null && m.simplifiedTriangles.Length > 0)
+                                    GlbMesh sMesh = WeightedRandom.GetWeightedItem(this._meshRefs, this._rand).Item;
+                                    float totalArea = sMesh.areaSums[^1];
+                                    float rArea = this._rand.NextSingle() * totalArea;
+                                    //int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;
+                                    int rIdx = sMesh.FindAreaSumIndex(rArea);
+                                    rIdx *= 3;
+                                    System.Numerics.Vector3 v1 = sMesh.simplifiedTriangles[rIdx + 0];
+                                    System.Numerics.Vector3 v2 = sMesh.simplifiedTriangles[rIdx + 1];
+                                    System.Numerics.Vector3 v3 = sMesh.simplifiedTriangles[rIdx + 2];
+                                    float r1 = MathF.Sqrt(this._rand.NextSingle());
+                                    float r2 = this._rand.NextSingle();
+                                    Vector3 rPt = (((1 - r1) * v1) + (r1 * (1 - r2) * v2) + (r2 * r1 * v3)).GLVector();
+                                    if (this.Container.UseContainerOrientation)
                                     {
-                                        this._meshRefs.Add(new WeightedItem<GlbMesh>(m, (int)MathF.Ceiling(m.areaSums[^1])));
+                                        rPt = (this.Container.Container.Rotation * new Vector4(rPt, 1.0f)).Xyz;
+                                        rPt *= this.Container.Container.Scale;
                                     }
+
+                                    baseOffset += rPt;
                                 }
+
+                                break;
                             }
 
-                            if (this._meshRefs.Count > 0)
+                            case ParticleSystem.EmissionMode.Point:
+                            default:
                             {
-                                GlbMesh sMesh = WeightedRandom.GetWeightedItem(this._meshRefs, this._rand).Item;
-                                float totalArea = sMesh.areaSums[^1];
-                                float rArea = this._rand.NextSingle() * totalArea;
-                                //int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;
-                                int rIdx = sMesh.FindAreaSumIndex(rArea);
-                                rIdx *= 3;
-                                System.Numerics.Vector3 v1 = sMesh.simplifiedTriangles[rIdx + 0];
-                                System.Numerics.Vector3 v2 = sMesh.simplifiedTriangles[rIdx + 1];
-                                System.Numerics.Vector3 v3 = sMesh.simplifiedTriangles[rIdx + 2];
-                                float r1 = MathF.Sqrt(this._rand.NextSingle());
-                                float r2 = this._rand.NextSingle();
-                                Vector3 rPt = (((1 - r1) * v1) + (r1 * (1 - r2) * v2) + (r2 * r1 * v3)).GLVector();
-                                if (this.Container.UseContainerOrientation)
-                                {
-                                    rPt = (this.Container.Container.Rotation * new Vector4(rPt, 1.0f)).Xyz;
-                                    rPt *= this.Container.Container.Scale;
-                                }
-
-                                baseOffset += rPt;
+                                break;
                             }
-
-                            break;
                         }
 
-                        case ParticleSystem.EmissionMode.Point:
-                        default:
-                        {
-                            break;
-                        }
+                        emissionPoint = baseOffset;
+                    }
+
+                    if (this.Template.ClusterEmission && i != 0)
+                    {
+                        baseOffset = emissionPoint;
                     }
 
                     p.WorldPosition = baseOffset;

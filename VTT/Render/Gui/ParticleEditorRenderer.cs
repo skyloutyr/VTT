@@ -157,6 +157,19 @@
                             pr.CurrentlyEditedSystem.EmissionCooldown.Max = max;
                         }
 
+                        ImGui.Text(lang.Translate("ui.particle.cluster_emission"));
+                        ImGui.SameLine();
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.particle.cluster_emission.tt"));
+                        }
+
+                        bool pClusters = pr.CurrentlyEditedSystem.ClusterEmission;
+                        if (ImGui.Checkbox("##DoClusters", ref pClusters))
+                        {
+                            pr.CurrentlyEditedSystem.ClusterEmission = pClusters;
+                        }
+
                         ImGui.Text(lang.Translate("ui.particle.lifetime"));
                         if (ImGui.IsItemHovered())
                         {

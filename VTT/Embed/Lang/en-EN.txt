@@ -450,3 +450,5 @@ menu.settings.msaa.tt=Controls the MSAA (Multi-Sampling Anti-Aliasing) mode.
 ui.properties.casts_shadow=Casts Shadows
 ui.properties.casts_shadow.tt=Controls whether this object casts shadows from the sun and other light sources.
 ui.properties.is_info=Is Info Object
+ui.particle.cluster_emission=Cluster Emission
+ui.particle.cluster_emission.tt=If enabled, when emitting in bursts all particles will come from the same point (per burst)

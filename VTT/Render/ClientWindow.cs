@@ -74,7 +74,7 @@
                         ClientSettings.MSAAMode.Disabled => 0,
                         ClientSettings.MSAAMode.Low => 2,
                         ClientSettings.MSAAMode.Standard => 4,
-                        ClientSettings.MSAAMode.High => 16,
+                        ClientSettings.MSAAMode.High => 8,
                         _ => 0
                     },
 

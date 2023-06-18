@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.2.2",
+  "version": "1.2.3",
   "link": "",
   "changelog": {
     "1.0.0": "Initial alpha release",
@@ -20,6 +20,7 @@
     "1.1.14": "Changed the turn tracker controls to render entries in a child element. Changed the camera for 2D maps to use less Z depth. Added compression for network packets.",
     "1.2.0": "Object bounding boxes now take model node rotation into account. Fully implemented custom shaders and nodegraph editor. Updated the readme to include a guide on custom shaders. Added a setting to disable custom shaders.",
     "1.2.1": "Added a material index to shadergraph. Added logic shader nodes. Added a shader compilation error handler. Added more various shader graph nodes. Increased the shader depth limit.",
-    "1.2.2": "Fixed missing name entries for logic nodes causing a crash. Implemented extra textures for custom shaders (up to 64 custom textures/shader)."
+    "1.2.2": "Fixed missing name entries for logic nodes causing a crash. Implemented extra textures for custom shaders (up to 64 custom textures/shader).",
+    "1.2.3": "Made deferred rendering more explicit and consistent across drivers. Added a 16bit vs 32bit precision option. Made updater wait for content availability before downloading it. Added the ability to open the latest release download page in browser with ctrl held. Added settings for MSAA and unfocused framerate. Added shadow casting property to objects. Added the info object property to objects. Fixed geometry above Z 1 always being considered shaded with sun disabled. Added the ability to only move logged-in clients to a map if ctrl is held. Reworked the maps ui to use nested folder-like structure. Added a cluster emission mode for particles."
   }
 }

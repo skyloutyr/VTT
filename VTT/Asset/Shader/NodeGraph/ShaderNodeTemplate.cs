@@ -187,7 +187,7 @@ r = $INPUT@6$;
         new NodeOutput[] {
             new NodeOutput() {
                 Name = "Result",
-                SelfType = NodeValueType.Vec3
+                SelfType = NodeValueType.Float
             }
         },
 
@@ -616,7 +616,7 @@ r = $INPUT@6$;
         new NodeOutput[] {
             new NodeOutput() {
                 Name = "Result",
-                SelfType = NodeValueType.Vec2
+                SelfType = NodeValueType.Float
             }
         },
 
@@ -1017,7 +1017,7 @@ r = $INPUT@6$;
         new NodeOutput[] {
             new NodeOutput() {
                 Name = "Result",
-                SelfType = NodeValueType.Vec4
+                SelfType = NodeValueType.Float
             }
         },
 

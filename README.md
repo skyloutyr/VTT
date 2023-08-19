@@ -52,7 +52,7 @@ An automatic updater companion app is built-in. When it detects a new version be
 
 
 ### Requires .NET 6, msvcr 120 and msvcr 140.
-There is no installation process, simply unpack the application into any directory and run the .vtt executable.
+There is no installation process, simply unpack the application into any directory and run the VTT.exe executable.
 
 ---
 
@@ -218,17 +218,21 @@ Everything in the Embed folder is a manifest resource of the resulting VTT.dll
 ## Command Line Arguments
 The following command line arguments are available (do not include the square brackets):
 ```
-**-debug [true/false]**: Enables/disables debug mode information and hooks without the debugger attached.
+-debug [true/false]: Enables/disables debug mode information and hooks without the debugger attached.
 
-**-server [port]**: Launches VTT without the graphical shell, terminal only, and starts a server on the specified port.
+-server [port]: Launches VTT without the graphical shell, terminal only, and starts a server on the specified port.
 
-**-quick [true/false]**: Launches VTT, hosts a server on the default port and connects to that server, bypassing the main menu.
+-quick [true/false]: Launches VTT, hosts a server on the default port and connects to that server, bypassing the main menu.
 
-**-connect [ip:port]**: Launches VTT and tries to connect to the address specified, bypassing the main menu.
+-connect [ip:port]: Launches VTT and tries to connect to the address specified, bypassing the main menu.
 
-**-loglevel [Off/Debug/Info/Warn/Error/Fatal]**: Specifies the logging level for the internal logger.
+-loglevel [Off/Debug/Info/Warn/Error/Fatal]: Specifies the logging level for the internal logger.
 
-**-gldebug [true/false]**: Launches the app with the OpenGL Debug flag set and sets up the necessary hooks.
+-gldebug [true/false]: Launches the app with the OpenGL Debug flag set and sets up the necessary hooks.
 
-**-timeout [number][postfix]**: Sets the timeout bound for both the client and the server to a specified value. If there was no client/server communication over this period of time the connection closes. Number is any positive number. Postfix indicates the rank, and can be ms(millisecond), s(seconds), m(minutes) or h(hours)
+-timeout [number][postfix]: Sets the timeout bound for both the client and the server to a specified value. If there was no client/server communication over this period of time the connection closes. Number is any positive number. Postfix indicates the rank, and can be ms(millisecond), s(seconds), m(minutes) or h(hours)
+
+-nocache [true]: If this argument is encountered the server will startup with the asset caching system disabled, regardless of the -servercache parameter.
+
+-servercache [number][postfix]: Sets the maximum server cache buffer before it is trimmed. Number is any positive number. Postfix indicates the rank, and can be b(bytes), kb(kilobytes), mb(megabytes) or gb(gigabytes)
 ```

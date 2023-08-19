@@ -798,8 +798,7 @@
                             GL.Texture tex = a.Texture.GetOrCreateGLTexture(out VTT.Asset.Glb.TextureAnimation anim);
                             VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
                             System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
-                            float miw = MathF.Max(tex.Size.Width, tX);
-                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(miw, tex.Size.Height), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Zw.SystemVector());
+                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Zw.SystemVector());
                             ImGui.SetCursorPos(cPn + customPadding);
                         }
                     }

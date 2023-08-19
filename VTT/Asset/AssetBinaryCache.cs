@@ -90,7 +90,7 @@
                     long ticksLastAccess = this._cacheAccessTimes[g];
                     long ticksDelta = now - ticksLastAccess;
                     long fs = this._binaries[g].LongLength;
-                    long score = (TimeSpan.TicksPerMinute / ticksDelta) + fs;
+                    long score = Math.Max(0, TimeSpan.TicksPerMinute - ticksDelta) + fs;
                     if (score < smallestScore)
                     {
                         smallestScore = score;

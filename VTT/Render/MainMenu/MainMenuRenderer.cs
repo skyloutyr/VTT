@@ -679,6 +679,20 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.msaa.tt"));
                     }
 
+                    float sFov = Client.Instance.Settings.FOV;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.fov"));
+                    ImGui.SameLine();
+                    if (ImGui.SliderFloat("###FOV", ref sFov, 45f, 120f))
+                    {
+                        Client.Instance.Settings.FOV = sFov;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.fov.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

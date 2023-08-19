@@ -452,3 +452,5 @@ ui.properties.casts_shadow.tt=Если включено, обьект будет
 ui.properties.is_info=Является Информацией
 ui.particle.cluster_emission=Выделение Пучками
 ui.particle.cluster_emission.tt=Если включено, то при выделении частиц в кол-ве больше одного за раз все частитцы (в этом выделении) появятся из одной точки.
+menu.settings.fov=3D Поле Зрения
+menu.settings.fov.tt=Угол обзора на 3д картах.

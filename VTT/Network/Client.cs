@@ -500,6 +500,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UseSpirVShaders { get; set; } = true;
 
+        [DefaultValue(60.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float FOV { get; set; } = 60.0f;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -539,7 +543,8 @@
                 ShadowsPCF = 2,
                 Gamma = 2.2f,
                 UseUBO = true,
-                EnableCustomShaders = true
+                EnableCustomShaders = true,
+                FOV = 60.0f,
             };
 
             ret.Save();

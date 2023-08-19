@@ -49,7 +49,7 @@
         {
             if (!this.IsOrtho)
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(this.FOV, (float)w / h, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(Client.Instance.Settings.FOV), (float)w / h, 0.01f, 100f);
             }
             else
             {
@@ -65,7 +65,7 @@
             this.FOV = to;
             if (!this.IsOrtho)
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(this.FOV, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(Client.Instance.Settings.FOV), (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
             else
@@ -96,7 +96,7 @@
             }
             else
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(this.FOV, (float)w / h, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f), (float)w / h, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
         }

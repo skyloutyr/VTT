@@ -82,6 +82,9 @@
 
         public Texture TurnTrackerBackground { get; set; }
         public Texture TurnTrackerBackgroundNoObject { get; set; }
+        public Texture TurnTrackerForeground { get; set; }
+        public Texture TurnTrackerHighlighter { get; set; }
+        public Texture TurnTrackerSeparator { get; set; }
 
         public Texture StatusAtlas { get; set; }
 
@@ -230,6 +233,9 @@
 
             this.TurnTrackerBackground = OpenGLUtil.LoadUIImage("turn-tracker-back");
             this.TurnTrackerBackgroundNoObject = OpenGLUtil.LoadUIImage("turn-tracker-back-no-object");
+            this.TurnTrackerForeground = OpenGLUtil.LoadUIImage("turn-tracker-front");
+            this.TurnTrackerHighlighter = OpenGLUtil.LoadUIImage("turn-tracker-highlighter-back");
+            this.TurnTrackerSeparator = OpenGLUtil.LoadUIImage("turn-tracker-separator");
 
             this.MeasureModeCircle = OpenGLUtil.LoadUIImage("icons8-radius-40");
             this.MeasureModeSphere = OpenGLUtil.LoadUIImage("icons8-sphere-58");

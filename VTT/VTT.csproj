@@ -125,6 +125,9 @@
     <None Remove="Embed\square.obj" />
     <None Remove="Embed\turn-tracker-back-no-object.png" />
     <None Remove="Embed\turn-tracker-back.png" />
+    <None Remove="Embed\turn-tracker-front.png" />
+    <None Remove="Embed\turn-tracker-highlighter-back.png" />
+    <None Remove="Embed\turn-tracker-separator.png" />
     <None Remove="Embed\unifont-14.0.04.ttf" />
     <None Remove="Embed\unifont-14.0.04.zip" />
   </ItemGroup>
@@ -251,6 +254,9 @@
     <EmbeddedResource Include="Embed\square.obj" />
     <EmbeddedResource Include="Embed\turn-tracker-back-no-object.png" />
     <EmbeddedResource Include="Embed\turn-tracker-back.png" />
+    <EmbeddedResource Include="Embed\turn-tracker-front.png" />
+    <EmbeddedResource Include="Embed\turn-tracker-highlighter-back.png" />
+    <EmbeddedResource Include="Embed\turn-tracker-separator.png" />
     <EmbeddedResource Include="Embed\unifont-14.0.04.zip" />
   </ItemGroup>
 

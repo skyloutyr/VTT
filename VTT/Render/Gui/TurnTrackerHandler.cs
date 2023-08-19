@@ -21,9 +21,9 @@
                 float ww = ImGui.GetMainViewport().WorkSize.X;
                 if (!this._turnTrackerCollapsed)
                 {
-                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(640, 128));
+                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(640, 132));
                     ImGui.SetNextWindowPos(new(ww / 4, 0));
-                    if (ImGui.Begin("##TurnTracker", window_flags & ~ImGuiWindowFlags.AlwaysAutoResize))
+                    if (ImGui.Begin("##TurnTracker", (window_flags | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollWithMouse) & ~ImGuiWindowFlags.AlwaysAutoResize))
                     {
                         if (cMap.TurnTracker.Entries.Count > 0)
                         {
@@ -42,7 +42,7 @@
                                     {
                                         if (e == first)
                                         {
-                                            ImGui.Image(Client.Instance.Frontend.Renderer.White, new System.Numerics.Vector2(8, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, new System.Numerics.Vector4(0.234f, 0, 0.4f, 1.0f));
+                                            ImGui.Image(this.TurnTrackerSeparator, new System.Numerics.Vector2(12, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, ((System.Numerics.Vector4)Color.Silver));
                                             ImGui.SameLine();
                                         }
 
@@ -58,6 +58,7 @@
                                             ImGui.EndTooltip();
                                         }
 
+                                        System.Numerics.Vector2 cursorScreenC = ImGui.GetCursorScreenPos();
                                         if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap) == AssetStatus.Return)
                                         {
                                             ImGui.SetCursorPos(ccXY);
@@ -73,51 +74,17 @@
                                                 portrairColor = Client.Instance.IsAdmin ? new System.Numerics.Vector4(0.5f, 0.5f, 0.5f, 1.0f) : ImColBlack;
                                             }
 
-                                            System.Numerics.Vector2 cursorScreenC = ImGui.GetCursorScreenPos();
+                                            cursorScreenC = ImGui.GetCursorScreenPos();
                                             ImGui.Image(ap.GLTex, new System.Numerics.Vector2(64, 96), new System.Numerics.Vector2(0.25f, 0), new System.Numerics.Vector2(0.75f, 1), portrairColor);
-                                            if (e == currentEntry)
-                                            {
-                                                ImDrawListPtr winDrawListC = ImGui.GetWindowDrawList();
-
-                                                winDrawListC.AddQuad(
-                                                    cursorScreenC + new System.Numerics.Vector2(1, 1),
-                                                    cursorScreenC + new System.Numerics.Vector2(63, 1),
-                                                    cursorScreenC + new System.Numerics.Vector2(63, 95),
-                                                    cursorScreenC + new System.Numerics.Vector2(1, 95),
-                                                    Color.White.Abgr()
-                                                );
-
-                                                winDrawListC.AddQuad(
-                                                    cursorScreenC + new System.Numerics.Vector2(2, 2),
-                                                    cursorScreenC + new System.Numerics.Vector2(62, 2),
-                                                    cursorScreenC + new System.Numerics.Vector2(62, 94),
-                                                    cursorScreenC + new System.Numerics.Vector2(2, 94),
-                                                    Color.Black.Abgr()
-                                                );
-
-                                                winDrawListC.AddQuadFilled(
-                                                    cursorScreenC + new System.Numerics.Vector2(0, -3),
-                                                    cursorScreenC + new System.Numerics.Vector2(64, -3),
-                                                    cursorScreenC + new System.Numerics.Vector2(64, 0),
-                                                    cursorScreenC + new System.Numerics.Vector2(0, 0),
-                                                    Color.Gold.Abgr()
-                                                );
-
-                                                winDrawListC.AddQuadFilled(
-                                                    cursorScreenC + new System.Numerics.Vector2(0, 96),
-                                                    cursorScreenC + new System.Numerics.Vector2(64, 96),
-                                                    cursorScreenC + new System.Numerics.Vector2(64, 99),
-                                                    cursorScreenC + new System.Numerics.Vector2(0, 99),
-                                                    Color.Gold.Abgr()
-                                                );
-                                            }
                                         }
 
-                                        if (e == last)
+                                        Vector4 tclV4 = tColor.Vec4();
+                                        if (e == currentEntry)
                                         {
-                                            ImGui.SameLine();
-                                            ImGui.Image(Client.Instance.Frontend.Renderer.White, new System.Numerics.Vector2(8, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, new System.Numerics.Vector4(0.234f, 0, 0.4f, 1.0f));
+                                            tclV4 = Vector4.Lerp(Color.Gold.Vec4(), Color.White.Vec4(), (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                         }
+
+                                        idl.AddImage(this.TurnTrackerForeground, cursorScreenC - new System.Numerics.Vector2(4, 4), cursorScreenC + new System.Numerics.Vector2(68, 100), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, new Color(tclV4.SystemVector()).Abgr());
                                     }
                                     else
                                     {
@@ -148,6 +115,7 @@
                                             ImGui.EndTooltip();
                                         }
 
+                                        System.Numerics.Vector2 cursorScreenC = ImGui.GetCursorScreenPos();
                                         if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap) == AssetStatus.Return)
                                         {
                                             ImGui.SetCursorPosX(cX);
@@ -166,15 +134,18 @@
                                                 portrairColor = Client.Instance.IsAdmin ? new System.Numerics.Vector4(0.5f, 0.5f, 0.5f, 1.0f) : ImColBlack;
                                             }
 
+                                            cursorScreenC = ImGui.GetCursorScreenPos();
                                             ImGui.Image(ap.GLTex, new System.Numerics.Vector2(64, 96), new System.Numerics.Vector2(0.25f, 0), new System.Numerics.Vector2(0.75f, 1), portrairColor, borderColor);
                                         }
 
+                                        idl.AddImage(this.TurnTrackerForeground, cursorScreenC - new System.Numerics.Vector2(4, 4), cursorScreenC + new System.Numerics.Vector2(68, 100), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, tColor.Abgr());
+
                                         if (e == first)
                                         {
-                                            cX -= 16;
+                                            cX -= 18;
                                             ImGui.SetCursorPosX(cX);
                                             ImGui.SetCursorPosY(cY);
-                                            ImGui.Image(Client.Instance.Frontend.Renderer.White, new System.Numerics.Vector2(8, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, new System.Numerics.Vector4(0.234f, 0, 0.4f, 1.0f));
+                                            ImGui.Image(this.TurnTrackerSeparator, new System.Numerics.Vector2(12, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, ((System.Numerics.Vector4)Color.Silver));
                                         }
                                     }
                                     else
@@ -187,24 +158,25 @@
                             }
 
                             float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
+                            ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
+                            for (int i = 0; i < 4; ++i)
+                            {
+                                ImGui.SetCursorPosX(319 - (tW / 2) + ((i & 1) * 2));
+                                ImGui.SetCursorPosY(109 + ((i >> 1) * 2));
+                                ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
+                            }
+
+                            ImGui.PopStyleColor();
                             ImGui.SetCursorPosX(320 - (tW / 2));
                             ImGui.SetCursorPosY(110);
                             ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
-                            ImGui.SetCursorPosY(110);
-                            ImGui.SetCursorPosX(120);
-                            ImGui.PushStyleColor(ImGuiCol.Text, cMap.TurnTracker.CurrentColor.Abgr());
-                            ImGui.TextUnformatted(cMap.TurnTracker.TeamName);
-                            ImGui.SetCursorPosY(110);
-                            ImGui.SetCursorPosX(520);
-                            ImGui.TextUnformatted(cMap.TurnTracker.TeamName);
-                            ImGui.PopStyleColor();
                         }
                     }
 
                     ImGui.End();
                 }
 
-                ImGui.SetNextWindowPos(new((ww / 4) + 320 - 24, this._turnTrackerCollapsed ? -12 : 120));
+                ImGui.SetNextWindowPos(new((ww / 4) + 640, -12));
                 ImGui.SetNextWindowBgAlpha(0.0f);
                 ImGui.Begin("##TurnTrackerCollapseContainer", window_flags | ImGuiWindowFlags.NoBackground);
                 ImGui.PushItemWidth(48);

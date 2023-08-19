@@ -159,6 +159,14 @@
             return new Color(sV);
         }
 
+        public static Color Brighter(this Color self, float brightenBy = 0.15f)
+        {
+            SVec4 sV = ((SVec4)self);
+            float b = 1.0f + brightenBy;
+            sV *= new SVec4(b, b, b, 1.0f);
+            return new Color(sV);
+        }
+
         public static Color Mix(this Color self, Color other, float a)
         {
             SVec4 sV = (SVec4)self;

@@ -2,9 +2,12 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using System.Collections.Generic;
+    using System;
     using System.Numerics;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Network.Packet;
     using VTT.Util;
 
     public partial class GuiRenderer
@@ -276,7 +279,7 @@
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
 
-                for (int i = 0; i < 7; ++i)
+                for (int i = 0; i < 9; ++i)
                 {
                     RulerType iMode = (RulerType)i;
                     bool selected = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == iMode;
@@ -290,7 +293,7 @@
                         ImGui.SetTooltip(lang.Translate("ui.measure." + iMode.ToString().ToLower()));
                     }
 
-                    if (i != 6)
+                    if (i != 8)
                     {
                         ImGui.SameLine();
                     }
@@ -305,6 +308,31 @@
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(lang.Translate("ui.measure.extra.tt"));
+                }
+
+                bool bDisplayInfos = Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo;
+                if (ImGui.Checkbox(lang.Translate("ui.measure.display_infos") + "###RulersDisplayInfo", ref bDisplayInfos))
+                {
+                    Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo = bDisplayInfos;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.measure.display_infos.tt"));
+                }
+
+                if (Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == RulerType.Eraser)
+                {
+                    Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
+                    if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###EraserMask", ref id, names, names.Length))
+                    {
+                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask = ids[id];
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                    }
                 }
 
                 ImGui.Separator();

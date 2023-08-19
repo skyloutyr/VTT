@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
@@ -20,6 +21,8 @@
         public RulerInfo CurrentInfo { get; set; }
         public Vector4 CurrentColor { get; set; }
         public string CurrentTooltip { get; set; } = string.Empty;
+        public bool RulersDisplayInfo { get; set; } = true;
+        public Guid CurrentEraserMask { get; set; } = Guid.Empty;
 
         public ConcurrentQueue<RulerInfo> InfosToActUpon { get; } = new ConcurrentQueue<RulerInfo>();
 
@@ -65,23 +68,48 @@
                 if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !this._lmbDown)
                 {
                     this._lmbDown = true;
-                    this.CurrentInfo = new RulerInfo()
+                    if (this.CurrentMode != RulerType.Eraser)
                     {
-                        OwnerID = Client.Instance.ID,
-                        OwnerName = Client.Instance.Settings.Name,
-                        Tooltip = this.CurrentTooltip,
-                        Color = Extensions.FromVec4(this.CurrentColor),
-                        Start = this.GetCursorWorldNow(),
-                        End = this.GetCursorWorldNow(),
-                        ExtraInfo = this.CurrentExtraValue,
-                        IsDead = false,
-                        NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500,
-                        SelfID = Guid.NewGuid(),
-                        Type = this.CurrentMode
-                    };
+                        this.CurrentInfo = new RulerInfo()
+                        {
+                            OwnerID = Client.Instance.ID,
+                            OwnerName = Client.Instance.Settings.Name,
+                            Tooltip = this.CurrentTooltip,
+                            Color = Extensions.FromVec4(this.CurrentColor),
+                            Start = this.GetCursorWorldNow(),
+                            End = this.GetCursorWorldNow(),
+                            ExtraInfo = this.CurrentExtraValue,
+                            IsDead = false,
+                            NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500,
+                            SelfID = Guid.NewGuid(),
+                            Type = this.CurrentMode,
+                            DisplayInfo = this.RulersDisplayInfo
+                        };
 
-                    this.ActiveInfos.Add(this.CurrentInfo);
-                    this.UpdateCurrentInfo();
+                        this.ActiveInfos.Add(this.CurrentInfo);
+                        this.UpdateCurrentInfo();
+                    }
+                    else
+                    {
+                        Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                        if (tHit.HasValue)
+                        {
+                            for (int i = this.ActiveInfos.Count - 1; i >= 0; i--)
+                            {
+                                RulerInfo ri = this.ActiveInfos[i];
+                                if (ri.KeepAlive && (ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length <= this.CurrentExtraValue))
+                                {
+                                    if (this.CanErase(ri))
+                                    {
+                                        ri.IsDead = true;
+                                        ri.KeepAlive = false;
+                                        new PacketRulerInfo() { Info = ri }.Send();
+                                    }
+                                }
+                            }
+                        }
+                        
+                    }
                 }
 
                 if (this._lmbDown && this.CurrentInfo != null && !this.CurrentInfo.IsDead)
@@ -120,10 +148,24 @@
                     this._rmbDown = true;
                     if (this.CurrentInfo != null)
                     {
-                        RulerInfo clone = new RulerInfo() { SelfID = Guid.NewGuid() };
-                        clone.CloneData(this.CurrentInfo);
-                        clone.KeepAlive = true;
-                        new PacketRulerInfo() { Info = clone }.Send();
+                        if (this.CurrentInfo.Type is not RulerType.Polyline and not RulerType.Eraser)
+                        {
+                            RulerInfo clone = new RulerInfo() { SelfID = Guid.NewGuid() };
+                            clone.CloneData(this.CurrentInfo);
+                            clone.KeepAlive = true;
+                            new PacketRulerInfo() { Info = clone }.Send();
+                            this.CurrentInfo.Start = this.CurrentInfo.End;
+                            this.UpdateCurrentInfo();
+                        }
+                        
+                        if (this.CurrentInfo.Type == RulerType.Polyline)
+                        {
+                            Vector3[] nArr = new Vector3[this.CurrentInfo.Points.Length + 1];
+                            Array.Copy(this.CurrentInfo.Points, nArr, this.CurrentInfo.Points.Length);
+                            nArr[^1] = this.CurrentInfo.End;
+                            this.CurrentInfo.Points = nArr;
+                            this.UpdateCurrentInfo();
+                        }
                     }
                     else
                     {
@@ -157,6 +199,17 @@
                 this._lmbDown = false;
                 if (this.CurrentInfo != null)
                 {
+                    if (this.CurrentInfo.Type == RulerType.Polyline && this.CurrentInfo.Points.Length > 2)
+                    {
+                        RulerInfo clone = new RulerInfo() { SelfID = Guid.NewGuid() };
+                        clone.CloneData(this.CurrentInfo);
+                        Vector3[] nArr = new Vector3[clone.Points.Length - 1];
+                        Array.Copy(clone.Points, nArr, nArr.Length);
+                        clone.Points = nArr;
+                        clone.KeepAlive = true;
+                        new PacketRulerInfo() { Info = clone }.Send();
+                    }
+
                     this.CurrentInfo.IsDead = true;
                     this._updateTicksCtr = 0;
                     this.UpdateCurrentInfo();
@@ -303,6 +356,25 @@
                                 break;
                             }
 
+                            case RulerType.Polyline:
+                            {
+                                for (int j = 0; j < ri.Points.Length - 1; ++j)
+                                {
+                                    Vector3 start = ri.Points[j];
+                                    Vector3 end = ri.Points[j + 1];
+                                    foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
+                                    {
+                                        BBBox rBB = new BBBox(mo.ClientBoundingBox.Scale(mo.Scale), mo.Rotation);
+                                        if (IsInLine(rBB, mo.Position, start, end, ri.ExtraInfo))
+                                        {
+                                            this._highlightedObjects.Add((mo, ri.Color));
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+
                             case RulerType.Cone:
                             {
                                 if (ri.ExtraInfo <= 1e-7f)
@@ -363,22 +435,55 @@
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
             Matrix4 model;
+            Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+
             foreach (RulerInfo ri in this.ActiveInfos)
             {
                 model = Matrix4.CreateScale(0.2f) * Matrix4.CreateTranslation(ri.Start);
                 shader["model"].Set(model);
-                shader["u_color"].Set(ri.Color.Vec4());
+                Vector4 riClr = ri.Color.Vec4();
+                if (this.CurrentMode == RulerType.Eraser && tHit.HasValue)
+                {
+                    bool inRange = ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length <= this.CurrentExtraValue;
+                    if (inRange)
+                    {
+                        if (this.CanErase(ri))
+                        {
+                            riClr = Client.Instance.Frontend.UpdatesExisted % 60 < 30 ? Vector4.One : riClr;
+                        }
+                    }
+                }
+
+                shader["u_color"].Set(riClr);
                 this.ModelSphere.Render();
-                Vector3 vE2S = (ri.End - ri.Start).Normalized();
+                Vector3 vE2S = (ri.End - ri.PreEnd).Normalized();
                 Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);
                 Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitY, vE2S)).Normalized();
 
-                if (!ri.KeepAlive || (ri.Type == RulerType.Ruler && (ri.End - ri.Start).Length > 0.2f))
+                if (!ri.KeepAlive || ((ri.Type is RulerType.Ruler or RulerType.Polyline) && ri.CumulativeLength > 0.2f))
                 {
                     model = Matrix4.CreateScale(0.2f) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(ri.End);
                     shader["model"].Set(model);
                     this.ModelArrow.Render();
-                    this.CreateLine(ri.Start, ri.End);
+                    if (ri.Type == RulerType.Polyline)
+                    {
+                        for (int i = 0; i < ri.Points.Length - 1; ++i)
+                        {
+                            if (i > 0)
+                            {
+                                model = Matrix4.CreateScale(0.2f) * Matrix4.CreateTranslation(ri.Points[i]);
+                                shader["model"].Set(model);
+                                this.ModelSphere.Render();
+                            }
+
+                            this.CreateLine(ri.Points[i], ri.Points[i + 1]);
+                        }
+                    }
+                    else
+                    {
+                        this.CreateLine(ri.Start, ri.End);
+                    }
+
                     this.UploadBuffers();
                     this._vao.Bind();
                     shader["model"].Set(Matrix4.Identity);
@@ -463,7 +568,7 @@
 
                     case RulerType.Line:
                     {
-                        Vector3 vE2Snn = (ri.End - ri.Start);
+                        Vector3 vE2Snn = ri.End - ri.Start;
                         float gFac = m.GridUnit;
                         model = Matrix4.CreateScale(ri.ExtraInfo / gFac, vE2Snn.Length, ri.ExtraInfo / gFac) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(ri.Start + ((ri.End - ri.Start) / 2));
                         shader["model"].Set(model);
@@ -498,6 +603,17 @@
                 }
 
                 GL.Enable(EnableCap.CullFace);
+            }
+
+            if (this.CurrentMode == RulerType.Eraser && tHit.HasValue)
+            {
+                model = Matrix4.CreateScale(this.CurrentExtraValue * 2) * Matrix4.CreateTranslation(tHit.Value);
+                shader["model"].Set(model);
+                shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                this.ModelSphere.Render();
+                GL.Disable(EnableCap.Blend);
             }
 
             foreach ((MapObject, Color) d in this._highlightedObjects)
@@ -682,34 +798,35 @@
             Vector3 v7 = end - oX + oZ;   // 6
             Vector3 v8 = end - oX - oZ;   // 7
 
+            uint fvIdx = (uint)(this._vertexData.Count / 3);
             this.AddVertices(v1, v2, v3, v4, v5, v6, v7, v8);
-            this._indexData.Add(0);
-            this._indexData.Add(1);
-            this._indexData.Add(4);
-            this._indexData.Add(1);
-            this._indexData.Add(4);
-            this._indexData.Add(5);
+            this._indexData.Add(fvIdx + 0);
+            this._indexData.Add(fvIdx + 1);
+            this._indexData.Add(fvIdx + 4);
+            this._indexData.Add(fvIdx + 1);
+            this._indexData.Add(fvIdx + 4);
+            this._indexData.Add(fvIdx + 5);
 
-            this._indexData.Add(2);
-            this._indexData.Add(3);
-            this._indexData.Add(6);
-            this._indexData.Add(3);
-            this._indexData.Add(6);
-            this._indexData.Add(7);
+            this._indexData.Add(fvIdx + 2);
+            this._indexData.Add(fvIdx + 3);
+            this._indexData.Add(fvIdx + 6);
+            this._indexData.Add(fvIdx + 3);
+            this._indexData.Add(fvIdx + 6);
+            this._indexData.Add(fvIdx + 7);
 
-            this._indexData.Add(0);
-            this._indexData.Add(2);
-            this._indexData.Add(4);
-            this._indexData.Add(2);
-            this._indexData.Add(4);
-            this._indexData.Add(6);
+            this._indexData.Add(fvIdx + 0);
+            this._indexData.Add(fvIdx + 2);
+            this._indexData.Add(fvIdx + 4);
+            this._indexData.Add(fvIdx + 2);
+            this._indexData.Add(fvIdx + 4);
+            this._indexData.Add(fvIdx + 6);
 
-            this._indexData.Add(1);
-            this._indexData.Add(3);
-            this._indexData.Add(5);
-            this._indexData.Add(3);
-            this._indexData.Add(5);
-            this._indexData.Add(7);
+            this._indexData.Add(fvIdx + 1);
+            this._indexData.Add(fvIdx + 3);
+            this._indexData.Add(fvIdx + 5);
+            this._indexData.Add(fvIdx + 3);
+            this._indexData.Add(fvIdx + 5);
+            this._indexData.Add(fvIdx + 7);
         }
 
         public void AddVertices(params Vector3[] vecs)
@@ -720,6 +837,13 @@
                 this._vertexData.Add(v.Y);
                 this._vertexData.Add(v.Z);
             }
+        }
+
+        public bool CanErase(RulerInfo ri)
+        {
+            return Client.Instance.IsAdmin
+                ? this.CurrentEraserMask.Equals(Guid.Empty) || this.CurrentEraserMask.Equals(ri.OwnerID)
+                : ri.OwnerID.Equals(Client.Instance.ID);
         }
 
         public void UploadBuffers()
@@ -898,12 +1022,14 @@
 
     public enum RulerType
     {
-        Ruler,  // X ------> Y
-        Circle, // From point XY circle
-        Sphere, // From point 3d sphere
-        Square, // From point XY quad
-        Cube,   // From point 3d cube
-        Line,   // From point 3d rectangle, ExtraInfo = radius
-        Cone
+        Ruler,    // X ------> Y
+        Circle,   // From point XY circle
+        Sphere,   // From point 3d sphere
+        Square,   // From point XY quad
+        Cube,     // From point 3d cube
+        Line,     // From point 3d rectangle, ExtraInfo = radius
+        Cone,
+        Polyline, // Multiple point line
+        Eraser,   // Erase data points, ExtraInfo = radius
     }
 }

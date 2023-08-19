@@ -49,6 +49,7 @@
     <None Remove="Embed\icons8-double-down-80.png" />
     <None Remove="Embed\icons8-drag-40.png" />
     <None Remove="Embed\icons8-edit-40.png" />
+    <None Remove="Embed\icons8-erase-40.png" />
     <None Remove="Embed\icons8-error-40.png" />
     <None Remove="Embed\icons8-eye-40.png" />
     <None Remove="Embed\icons8-folder-40.png" />
@@ -74,6 +75,7 @@
     <None Remove="Embed\icons8-pipeline-40.png" />
     <None Remove="Embed\icons8-play-40.png" />
     <None Remove="Embed\icons8-plus-math-40.png" />
+    <None Remove="Embed\icons8-polyline-40.png" />
     <None Remove="Embed\icons8-process-40.png" />
     <None Remove="Embed\icons8-radar-plot-40.png" />
     <None Remove="Embed\icons8-radius-40.png" />
@@ -169,6 +171,7 @@
     <EmbeddedResource Include="Embed\icons8-dice-60.png" />
     <EmbeddedResource Include="Embed\icons8-double-down-80.png" />
     <EmbeddedResource Include="Embed\icons8-edit-40.png" />
+    <EmbeddedResource Include="Embed\icons8-erase-40.png" />
     <EmbeddedResource Include="Embed\icons8-eye-40.png" />
     <EmbeddedResource Include="Embed\icons8-help-80.png" />
     <EmbeddedResource Include="Embed\icons8-incoming-data-40.png" />
@@ -189,6 +192,7 @@
     <EmbeddedResource Include="Embed\icons8-picture-40.png" />
     <EmbeddedResource Include="Embed\icons8-pipeline-40.png" />
     <EmbeddedResource Include="Embed\icons8-play-40.png" />
+    <EmbeddedResource Include="Embed\icons8-polyline-40.png" />
     <EmbeddedResource Include="Embed\icons8-radar-plot-40.png" />
     <EmbeddedResource Include="Embed\icons8-radius-40.png" />
     <EmbeddedResource Include="Embed\icons8-rectangle-40.png" />

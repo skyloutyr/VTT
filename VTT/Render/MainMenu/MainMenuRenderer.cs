@@ -295,6 +295,7 @@
                         ImGui.Text("    double-down");
                         ImGui.Text("    drag");
                         ImGui.Text("    edit");
+                        ImGui.Text("    erase");
                         ImGui.Text("    error");
                         ImGui.Text("    eye");
                         ImGui.Text("    folder");
@@ -319,6 +320,7 @@
                         ImGui.Text("    pipeline");
                         ImGui.Text("    play");
                         ImGui.Text("    plus-math");
+                        ImGui.Text("    polyline");
                         ImGui.Text("    process");
                         ImGui.Text("    radar-plot");
                         ImGui.Text("    radius");

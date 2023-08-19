@@ -571,10 +571,7 @@
             }
         }
 
-        private Map GetOrLoadMap(ServerMapPointer mapPointer)
-        {
-            return mapPointer.Loaded ? mapPointer.Map : mapPointer.Valid ? this.LoadMap(mapPointer) : null;
-        }
+        private Map GetOrLoadMap(ServerMapPointer mapPointer) => mapPointer.Loaded ? mapPointer.Map : mapPointer.Valid ? this.LoadMap(mapPointer) : null;
 
         private Map LoadMap(ServerMapPointer mapPointerData)
         {

@@ -69,6 +69,8 @@
         public Texture MeasureModeCone { get; set; }
         public Texture MeasureModeLine { get; set; }
         public Texture MeasureModeWall { get; set; }
+        public Texture MeasureModePolyline { get; set; }
+        public Texture MeasureModeErase { get; set; }
 
         public Texture ChatSimpleRollImage { get; set; }
         public Texture ChatSendImage { get; set; }
@@ -236,6 +238,8 @@
             this.MeasureModeCone = OpenGLUtil.LoadUIImage("icons8-pipeline-40");
             this.MeasureModeLine = OpenGLUtil.LoadUIImage("icons8-vertical-line-40");
             this.MeasureModeWall = OpenGLUtil.LoadUIImage("icons8-block-40");
+            this.MeasureModePolyline = OpenGLUtil.LoadUIImage("icons8-polyline-40");
+            this.MeasureModeErase = OpenGLUtil.LoadUIImage("icons8-erase-40");
 
             this.ChatSimpleRollImage = OpenGLUtil.LoadUIImage("icons8-dice-60");
             this.ChatSendImage = OpenGLUtil.LoadUIImage("icons8-paper-plane-40");
@@ -252,7 +256,7 @@
             this.CameraRotate = OpenGLUtil.LoadUIImage("icons8-video-camera-rotate-40");
 
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure };
-            this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone };
+            this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
             this.MainMenuRenderer = new MainMenuRenderer();
@@ -336,14 +340,14 @@
             {
                 foreach (RulerInfo ri in rr.ActiveInfos)
                 {
-                    if (!ri.IsDead)
+                    if (!ri.IsDead && ri.DisplayInfo)
                     {
                         if (ri.KeepAlive)
                         {
-                            Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(ri.Start + Vector3.UnitZ);
+                            Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace((ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start) + Vector3.UnitZ);
                             if (screen.Z >= 0)
                             {
-                                float len = (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
                                 System.Numerics.Vector2 tLen = ImGui.CalcTextSize(ri.OwnerName);
                                 System.Numerics.Vector2 tLen2 = ImGui.CalcTextSize(ri.Tooltip);
@@ -398,11 +402,11 @@
                         }
                         else
                         {
-                            Vector3 half = ri.Start + ((ri.End - ri.Start) / 2f);
+                            Vector3 half = ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start + ((ri.End - ri.Start) / 2f);
                             Vector3 halfScreen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half);
                             if (halfScreen.Z >= 0)
                             {
-                                float len = (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
                                 var tLen = ImGui.CalcTextSize(text);
                                 ImGui.SetNextWindowPos(halfScreen.Xy.SystemVector() - (tLen / 2));

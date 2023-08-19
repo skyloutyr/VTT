@@ -218,6 +218,27 @@
             bw.Write(vec.W);
         }
 
+        public static void WriteArray<T>(this BinaryWriter bw, T[] collection, Action<BinaryWriter, T> writer)
+        {
+            bw.Write(collection.Length);
+            for (int i = 0; i < collection.Length; ++i)
+            {
+                writer(bw, collection[i]);
+            }
+        }
+
+        public static T[] ReadArray<T>(this BinaryReader br, Func<BinaryReader, T> reader)
+        {
+            int n = br.ReadInt32();
+            T[] ret = new T[n];
+            for (int i = 0; i < n; ++i)
+            {
+                ret[i] = reader(br);
+            }
+
+            return ret;
+        }
+
         public static TKVec2 ReadGlVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
         public static TKVec3 ReadGlVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
         public static TKVec4 ReadGlVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());

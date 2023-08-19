@@ -29,7 +29,7 @@
         public ConcurrentDictionary<Guid, ServerClient> ClientsByID { get; } = new ConcurrentDictionary<Guid, ServerClient>();
 
         public AssetManager AssetManager { get; } = new AssetManager() { IsServer = true };
-        public Dictionary<Guid, Map> Maps { get; } = new Dictionary<Guid, Map>();
+        private Dictionary<Guid, ServerMapPointer> Maps { get; } = new Dictionary<Guid, ServerMapPointer>();
 
         public object mapsLock = new object();
 
@@ -51,28 +51,60 @@
 
         public long TimeoutInterval { get; set; } = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
-        public Server(IPAddress address, int port) : base(address, port) => Instance = this;
+        public Server(IPAddress address, int port) : base(address, port)
+        {
+            Instance = this;
+            this.MapsRoot = Path.Combine(IOVTT.ServerDir, "Maps");
+        }
+
+        public string MapsRoot { get; set; }
 
         public bool TryGetMap(Guid mapID, out Map map)
         {
             lock (this.mapsLock)
             {
-                if (this.Maps.ContainsKey(mapID))
+                this.Maps.TryGetValue(mapID, out ServerMapPointer smp);
+                map = this.GetOrLoadMap(smp);
+            }
+
+            return map != null;
+        }
+
+        public bool HasMap(Guid mapID) => this.Maps.ContainsKey(mapID);
+
+        public Map GetExistingMap(Guid mapID)
+        {
+            this.TryGetMap(mapID, out Map m);
+            return m;
+        }
+
+        public bool TryGetMapPointer(Guid mapID, out ServerMapPointer smp)
+        {
+            lock (this.mapsLock)
+            {
+                return this.Maps.TryGetValue(mapID, out smp);
+            }
+        }
+
+        public IEnumerable<ServerMapPointer> EnumerateMapData()
+        {
+            lock (this.mapsLock) // Need a lock in case of collection changes
+            {
+                foreach (ServerMapPointer smp in this.Maps.Values)
                 {
-                    map = this.Maps[mapID];
-                    return true;
+                    yield return smp;
                 }
             }
 
-            map = null;
-            return false;
+            yield break;
         }
 
         public bool AddMap(Map m)
         {
             lock (this.mapsLock)
             {
-                return this.Maps.TryAdd(m.ID, m);
+                ServerMapPointer smp = new ServerMapPointer(m.ID, m.Name, m.Folder, Path.Combine(this.MapsRoot, m.ID + ".ued"));
+                return this.Maps.TryAdd(m.ID, smp);
             }
         }
 
@@ -80,14 +112,20 @@
         {
             lock (this.mapsLock)
             {
-                if (this.Maps.Remove(mapID, out Map m))
+                if (this.Maps.Remove(mapID, out ServerMapPointer smp))
                 {
                     string mapsLoc = Path.Combine(IOVTT.ServerDir, "Maps");
                     Directory.CreateDirectory(mapsLoc);
-                    string fileLoc = Path.Combine(mapsLoc, m.ID + ".ued");
+                    string fileLoc = Path.Combine(mapsLoc, smp.MapID + ".ued");
+                    string jsLoc = Path.Combine(mapsLoc, smp.MapID + ".json");
                     if (File.Exists(fileLoc))
                     {
                         File.Delete(fileLoc);
+                    }
+
+                    if (File.Exists(jsLoc))
+                    {
+                        File.Delete(jsLoc);
                     }
 
                     if (File.Exists(fileLoc + ".bak"))
@@ -197,50 +235,58 @@
             {
                 lock (this.mapsLock)
                 {
-                    foreach (Map m in this.Maps.Values)
+                    foreach (ServerMapPointer smp in this.Maps.Values)
                     {
-                        if (m.NeedsSave)
+                        if (smp.Loaded)
                         {
-                            m.NeedsSave = false;
-                            Directory.CreateDirectory(mapsLoc);
-                            string fPath = Path.Combine(mapsLoc, m.ID.ToString() + ".ued");
-                            if (File.Exists(fPath))
+                            Map m = smp.Map;
+                            if (m.NeedsSave)
                             {
-                                File.Move(fPath, fPath + ".bak", true);
-                            }
-
-                            m.Save(fPath);
-                        }
-
-                        if (m.FOW != null && (m.FOW.NeedsSave || m.FOW.IsDeleted))
-                        {
-                            if (m.FOW.NeedsSave)
-                            {
+                                m.NeedsSave = false;
                                 Directory.CreateDirectory(mapsLoc);
-                                string name = m.ID.ToString() + "_fow.png";
-                                if (File.Exists(name))
+                                string fPath = Path.Combine(mapsLoc, m.ID.ToString() + ".ued");
+                                string jPath = Path.Combine(mapsLoc, m.ID.ToString() + ".json");
+                                if (File.Exists(fPath))
                                 {
-                                    File.Move(name, name + ".bak", true);
+                                    File.Move(fPath, fPath + ".bak", true);
                                 }
 
-                                m.FOW.Write(Path.Combine(mapsLoc, name));
+                                m.Save(fPath);
+                                smp.MapName = m.Name;
+                                smp.MapFolder = m.Folder;
+                                File.WriteAllText(jPath, JsonConvert.SerializeObject(smp));
                             }
 
-                            if (m.FOW.IsDeleted)
+                            if (m.FOW != null && (m.FOW.NeedsSave || m.FOW.IsDeleted))
                             {
-                                string name = m.ID.ToString() + "_fow.png";
-                                name = Path.Combine(mapsLoc, name);
-                                if (File.Exists(name))
+                                if (m.FOW.NeedsSave)
                                 {
-                                    File.Delete(name);
+                                    Directory.CreateDirectory(mapsLoc);
+                                    string name = m.ID.ToString() + "_fow.png";
+                                    if (File.Exists(name))
+                                    {
+                                        File.Move(name, name + ".bak", true);
+                                    }
+
+                                    m.FOW.Write(Path.Combine(mapsLoc, name));
                                 }
 
-                                if (File.Exists(name + ".bak"))
+                                if (m.FOW.IsDeleted)
                                 {
-                                    File.Delete(name + ".bak");
-                                }
+                                    string name = m.ID.ToString() + "_fow.png";
+                                    name = Path.Combine(mapsLoc, name);
+                                    if (File.Exists(name))
+                                    {
+                                        File.Delete(name);
+                                    }
 
-                                m.FOW = null;
+                                    if (File.Exists(name + ".bak"))
+                                    {
+                                        File.Delete(name + ".bak");
+                                    }
+
+                                    m.FOW = null;
+                                }
                             }
                         }
                     }
@@ -443,11 +489,10 @@
 
         public void LoadAllMaps()
         {
-            string mapsLoc = Path.Combine(IOVTT.ServerDir, "Maps");
-            this.Logger.Log(LogLevel.Info, "Scanning for maps at " + mapsLoc);
-            Directory.CreateDirectory(mapsLoc);
+            this.Logger.Log(LogLevel.Info, "Scanning for maps at " + this.MapsRoot);
+            Directory.CreateDirectory(this.MapsRoot);
             List<string> mapsPtrs = new List<string>();
-            foreach (string file in Directory.EnumerateFiles(mapsLoc))
+            foreach (string file in Directory.EnumerateFiles(this.MapsRoot))
             {
                 if (file.EndsWith(".ued"))
                 {
@@ -456,90 +501,49 @@
                 }
             }
 
-            object localLock = new object();
             Parallel.ForEach(mapsPtrs, file =>
             {
-                Map m = null;
-                try
+                string fnNoExtension = Path.GetFileNameWithoutExtension(file);
+                Guid mID = Guid.Parse(fnNoExtension);
+                string js = file.Replace(".ued", ".json");
+                if (!File.Exists(js))
                 {
-                    using BinaryReader br = new BinaryReader(File.OpenRead(file));
-                    m = new Map() { IsServer = true };
-                    DataElement de = new DataElement();
-                    de.Read(br);
-                    m.Deserialize(de);
-                    this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
-                }
-                catch
-                {
-                    this.Logger.Log(LogLevel.Error, "Map could not be loaded.");
-                    string bF = file + ".bak";
-                    if (File.Exists(bF))
+                    ServerMapPointer smp = new ServerMapPointer(mID, string.Empty, string.Empty, file);
+                    Map m = this.LoadMap(smp);
+                    // Create a json for map metadata
+                    smp.MapName = m.Name;
+                    smp.MapFolder = m.Folder;
+                    File.WriteAllText(js, JsonConvert.SerializeObject(smp));
+                    lock (this.mapsLock)
                     {
-                        try
-                        {
-                            this.Logger.Log(LogLevel.Info, "Trying to load map backup.");
-                            using BinaryReader br = new BinaryReader(File.OpenRead(bF));
-                            m = new Map() { IsServer = true };
-                            DataElement de = new DataElement();
-                            de.Read(br);
-                            m.Deserialize(de);
-                            this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
-                        }
-                        catch
-                        {
-                            this.Logger.Log(LogLevel.Error, "Map backup could not be loaded.");
-                            return;
-                        }
+                        this.Maps.Add(mID, smp);
                     }
                 }
-
-                lock (localLock)
+                else
                 {
-                    this.Maps.Add(m.ID, m);
-                }
-
-                if (m == null)
-                {
-                    return;
-                }
-
-                string expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png");
-                if (File.Exists(expectedFOW))
-                {
-                    this.Logger.Log(LogLevel.Info, "Map FOW canvas loaded");
-                    FOWCanvas fowc = new FOWCanvas();
-                    try
+                    ServerMapPointer smp = JsonConvert.DeserializeObject<ServerMapPointer>(File.ReadAllText(js));
+                    if (smp.MapID != mID) // Uh-oh, IDs don't match
                     {
-                        fowc.Read(expectedFOW);
-                        m.FOW = fowc;
+                        this.Logger.Log(LogLevel.Error, $"Map IDs don't match physical IDs - expected {mID}, got {smp.MapID}!");
+                        this.Logger.Log(LogLevel.Error, $"This will cause issues as it means map's ID doesn't match that of the fs. Map can't be loaded.");
+                        smp.MapID = mID;
+                        smp.Valid = false;
                     }
-                    catch
+                    else
                     {
-                        this.Logger.Log(LogLevel.Error, "FOW canvas could not be loaded, trying to load backup.");
-                        expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png.bak");
-                        if (File.Exists(expectedFOW))
-                        {
-                            fowc = new FOWCanvas();
-                            try
-                            {
-                                fowc.Read(expectedFOW);
-                                m.FOW = fowc;
-                            }
-                            catch
-                            {
-                                this.Logger.Log(LogLevel.Error, "FOW canvas backup could not be loaded.");
-                                m.FOW = null;
-                            }
-                        }
-                        else
-                        {
-                            m.FOW = null;
-                        }
+                        smp.Loaded = false;
+                        smp.Valid = true;
+                        smp.MapDiskLocation = file;
+                    }
+
+                    lock (this.mapsLock)
+                    {
+                        this.Maps.Add(mID, smp);
                     }
                 }
             });
 
-            if (!this.Maps.ContainsKey(this.Settings.DefaultMapID)) // Have a default map setup, but no such map exists, setup a default one
+            if (!this.Maps.TryGetValue(this.Settings.DefaultMapID, out ServerMapPointer defaultMapPtr)) // Have a default map setup, but no such map exists, setup a default one
             {
                 this.Logger.Log(LogLevel.Warn, "Default map ID exists, but no map was found, creating empty");
                 Map m = new Map()
@@ -555,11 +559,106 @@
                     Name = "New Map"
                 };
 
-                Directory.CreateDirectory(mapsLoc);
-                m.Save(Path.Combine(mapsLoc, m.ID.ToString() + ".ued"));
-                this.Maps[m.ID] = m;
+                ServerMapPointer smp = new ServerMapPointer(m.ID, m.Name, m.Folder, Path.Combine(this.MapsRoot, m.ID.ToString() + ".ued"));
+                Directory.CreateDirectory(this.MapsRoot);
+                m.Save(smp.MapDiskLocation);
+                File.WriteAllText(Path.Combine(this.MapsRoot, m.ID.ToString() + ".json"), JsonConvert.SerializeObject(smp));
+                this.Maps[m.ID] = smp;
+            }
+            else
+            {
+                this.LoadMap(defaultMapPtr);
             }
         }
+
+        private Map GetOrLoadMap(ServerMapPointer mapPointer)
+        {
+            return mapPointer.Loaded ? mapPointer.Map : mapPointer.Valid ? this.LoadMap(mapPointer) : null;
+        }
+
+        private Map LoadMap(ServerMapPointer mapPointerData)
+        {
+            Map m = null;
+            string file = mapPointerData.MapDiskLocation;
+            try
+            {
+                using BinaryReader br = new BinaryReader(File.OpenRead(file));
+                m = new Map() { IsServer = true };
+                DataElement de = new DataElement();
+                de.Read(br);
+                m.Deserialize(de);
+                this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
+            }
+            catch
+            {
+                this.Logger.Log(LogLevel.Error, "Map could not be loaded.");
+                string bF = file + ".bak";
+                if (File.Exists(bF))
+                {
+                    try
+                    {
+                        this.Logger.Log(LogLevel.Info, "Trying to load map backup.");
+                        using BinaryReader br = new BinaryReader(File.OpenRead(bF));
+                        m = new Map() { IsServer = true };
+                        DataElement de = new DataElement();
+                        de.Read(br);
+                        m.Deserialize(de);
+                        this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
+                    }
+                    catch
+                    {
+                        this.Logger.Log(LogLevel.Error, "Map backup could not be loaded.");
+                        return null;
+                    }
+                }
+            }
+
+            if (m == null)
+            {
+                return null;
+            }
+
+            mapPointerData.Loaded = true;
+            mapPointerData.Map = m;
+
+            string expectedFOW = Path.Combine(this.MapsRoot, m.ID + "_fow.png");
+            if (File.Exists(expectedFOW))
+            {
+                this.Logger.Log(LogLevel.Info, "Map FOW canvas loaded");
+                FOWCanvas fowc = new FOWCanvas();
+                try
+                {
+                    fowc.Read(expectedFOW);
+                    m.FOW = fowc;
+                }
+                catch
+                {
+                    this.Logger.Log(LogLevel.Error, "FOW canvas could not be loaded, trying to load backup.");
+                    expectedFOW = Path.Combine(this.MapsRoot, m.ID + "_fow.png.bak");
+                    if (File.Exists(expectedFOW))
+                    {
+                        fowc = new FOWCanvas();
+                        try
+                        {
+                            fowc.Read(expectedFOW);
+                            m.FOW = fowc;
+                        }
+                        catch
+                        {
+                            this.Logger.Log(LogLevel.Error, "FOW canvas backup could not be loaded.");
+                            m.FOW = null;
+                        }
+                    }
+                    else
+                    {
+                        m.FOW = null;
+                    }
+                }
+            }
+
+            return m;
+        }
+
 
         protected override TcpSession CreateSession() => new ServerClient(this);
 
@@ -765,6 +864,33 @@
             Server.Instance.Logger.Log(LogLevel.Info, "Saved server settings");
             string expectedLocation = Path.Combine(IOVTT.ServerDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
+        }
+    }
+
+    public class ServerMapPointer
+    {
+        public Guid MapID { get; set; }
+        public string MapName { get; set; }
+        public string MapFolder { get; set; }
+
+        [JsonIgnore]
+        public string MapDiskLocation { get; set; }
+
+        [JsonIgnore]
+        public bool Loaded { get; set; }
+
+        [JsonIgnore]
+        public Map Map { get; set; }
+
+        [JsonIgnore]
+        public bool Valid { get; set; } = true;
+
+        public ServerMapPointer(Guid mapID, string mapName, string mapFolder, string mapDiskLocation)
+        {
+            this.MapID = mapID;
+            this.MapName = mapName;
+            this.MapFolder = mapFolder;
+            this.MapDiskLocation = mapDiskLocation;
         }
     }
 }

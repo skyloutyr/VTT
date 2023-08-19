@@ -14,7 +14,7 @@
             if (isServer)
             {
                 server.Logger.Log(Util.LogLevel.Info, "Client " + this.Sender.ID + " asked for object data for " + this.ObjectID);
-                Map m = server.Maps[this.Sender.ClientMapID];
+                Map m = server.GetExistingMap(this.Sender.ClientMapID);
                 if (m.GetObject(this.ObjectID, out MapObject mo))
                 {
                     PacketMapObject pmo = new PacketMapObject() { IsServer = true, Session = sessionID, Obj = mo };

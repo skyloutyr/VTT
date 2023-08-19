@@ -14,7 +14,7 @@
         {
             Logger l = this.GetContextLogger();
             l.Log(LogLevel.Debug, "Got turn move request");
-            Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
+            Map m = isServer ? server.GetExistingMap(this.Sender.ClientMapID) : client.CurrentMap;
             if (isServer && !this.Sender.IsAdmin)
             {
                 l.Log(LogLevel.Warn, "Client asked for turn tracker modification without permissions!");

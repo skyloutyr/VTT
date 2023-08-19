@@ -16,7 +16,7 @@
         {
             if (isServer)
             {
-                Map m = server.Maps[this.Sender.ClientMapID];
+                Map m = server.GetExistingMap(this.Sender.ClientMapID);
                 server.Logger.Log(Util.LogLevel.Debug, "Got client FOW change message");
                 if (this.Sender.IsAdmin)
                 {

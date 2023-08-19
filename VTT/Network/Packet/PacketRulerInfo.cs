@@ -14,7 +14,7 @@
             if (isServer)
             {
                 this.Broadcast(c => c.ClientMapID.Equals(this.Sender.ClientMapID)); // Just pass to all clients on the same map
-                Map m = server.Maps[this.Sender.ClientMapID];
+                Map m = server.GetExistingMap(this.Sender.ClientMapID);
                 int pmIndex = m.PermanentMarks.FindIndex(p => p.SelfID.Equals(this.Info.SelfID));
                 if (this.Info.KeepAlive)
                 {

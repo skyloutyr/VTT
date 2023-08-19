@@ -18,7 +18,7 @@
                 server.Logger.Log(Util.LogLevel.Debug, "Got client FOW change request");
                 if (this.Sender.IsAdmin)
                 {
-                    Map m = server.Maps[this.Sender.ClientMapID];
+                    Map m = server.GetExistingMap(this.Sender.ClientMapID);
                     if (this.Status)
                     {
                         if (this.Size.X < 32 || this.Size.Y < 32 || this.Size.X > 4096 || this.Size.Y > 4096)
@@ -49,7 +49,7 @@
                 else
                 {
                     server.Logger.Log(Util.LogLevel.Warn, "Client asked for FOW changes without permissions!");
-                    Map m = server.Maps[this.Sender.ClientMapID];
+                    Map m = server.GetExistingMap(this.Sender.ClientMapID);
                     PacketFOWData pfowd = new PacketFOWData() { MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted, Image = m.FOW?.Canvas };
                     pfowd.Send(this.Sender);
                 }

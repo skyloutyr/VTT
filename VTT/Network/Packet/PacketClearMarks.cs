@@ -13,7 +13,7 @@
             {
                 if (this.Sender.IsAdmin)
                 {
-                    Map m = server.Maps[this.Sender.ClientMapID];
+                    Map m = server.GetExistingMap(this.Sender.ClientMapID);
                     if (m != null)
                     {
                         m.PermanentMarks.Clear();

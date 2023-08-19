@@ -10,7 +10,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            if (isServer && this.Sender.IsAdmin && server.Maps.ContainsKey(this.MapID))
+            if (isServer && this.Sender.IsAdmin && server.TryGetMap(this.MapID, out _))
             {
                 server.Logger.Log(Util.LogLevel.Info, "Changing default map");
                 server.Settings.DefaultMapID = this.MapID;

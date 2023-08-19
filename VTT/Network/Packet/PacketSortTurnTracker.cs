@@ -14,7 +14,7 @@
                 server.Logger.Log(Util.LogLevel.Debug, "Got turn tracker sort request");
                 if (this.Sender.IsAdmin)
                 {
-                    Map m = server.Maps[this.Sender.ClientMapID];
+                    Map m = server.GetExistingMap(this.Sender.ClientMapID);
                     lock (m.TurnTracker.Lock)
                     {
                         m.TurnTracker.Sort();

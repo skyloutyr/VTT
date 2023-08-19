@@ -20,7 +20,7 @@
         {
             Logger l = this.GetContextLogger();
             l.Log(LogLevel.Debug, "Got turn tracker entry property change request");
-            Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
+            Map m = isServer ? server.GetExistingMap(this.Sender.ClientMapID) : client.CurrentMap;
             if (m == null)
             {
                 l.Log(LogLevel.Warn, "Turn request map was null!");

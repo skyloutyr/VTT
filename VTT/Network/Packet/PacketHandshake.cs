@@ -85,13 +85,13 @@
                 pci.Send(sc);
                 new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(sc);
                 server.Logger.Log(Util.LogLevel.Debug, "Client handshake completion sent");
-                if (!server.Maps.ContainsKey(sc.ClientMapID))
+                if (!server.TryGetMap(sc.ClientMapID, out Map m))
                 {
                     sc.ClientMapID = server.Settings.DefaultMapID;
+                    m = server.GetExistingMap(server.Settings.DefaultMapID);
                     sc.SaveClientData();
                 }
 
-                Map m = server.Maps[sc.ClientMapID];
                 PacketMap mp = new PacketMap() { Map = m, Session = sessionID, IsServer = IsServer };
                 mp.Send(sc); // Send the client current map information, wait for MapAck packet
                 sc.ClientMapID = m.ID;
@@ -120,7 +120,7 @@
                     PacketAssetDef pad = new PacketAssetDef() { ActionType = AssetDefActionType.Initialize, Dir = server.AssetManager.Root };
                     pad.Send(sc);
                     server.Logger.Log(Util.LogLevel.Debug, "AssetRef data sent");
-                    PacketMapPointer pmp = new PacketMapPointer() { Data = server.Maps.Select(kv => (kv.Key, kv.Value.Folder, kv.Value.Name)).ToList(), IsServer = true, Remove = false, Session = sessionID };
+                    PacketMapPointer pmp = new PacketMapPointer() { Data = server.EnumerateMapData().Select(x => (x.MapID, x.MapFolder, x.MapName)).ToList(), IsServer = true, Remove = false, Session = sessionID };
                     pmp.Send(sc);
                 }
 

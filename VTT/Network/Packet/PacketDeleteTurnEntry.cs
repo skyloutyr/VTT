@@ -17,7 +17,7 @@
             bool allowed = !isServer || this.Sender.IsAdmin;
             if (allowed)
             {
-                Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
+                Map m = isServer ? server.GetExistingMap(this.Sender.ClientMapID) : client.CurrentMap;
                 if (m == null)
                 {
                     l.Log(LogLevel.Warn, "Turn tracker packet got null map!");

@@ -24,7 +24,7 @@
                 return;
             }
 
-            Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
+            Map m = isServer ? server.GetExistingMap(this.Sender.ClientMapID) : client.CurrentMap;
             if (m == null)
             {
                 l.Log(LogLevel.Warn, "Got turn tracker packet for non-existing map!");

@@ -19,7 +19,16 @@
         {
             Logger l = this.GetContextLogger();
             l.Log(LogLevel.Debug, "Got object status effect packet");
-            Map m = isServer ? server.Maps.ContainsKey(this.MapID) ? server.Maps[this.MapID] : null : client.CurrentMapIfMatches(this.MapID);
+            Map m;
+            if (isServer)
+            {
+                server.TryGetMap(this.MapID, out m);
+            }
+            else
+            {
+                m = client.CurrentMapIfMatches(this.MapID);
+            }
+
             MapObject mo = null;
             m?.GetObject(this.ObjectID, out mo);
             if (m == null)

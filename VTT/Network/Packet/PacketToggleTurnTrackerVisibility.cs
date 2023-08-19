@@ -13,7 +13,7 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             Logger l = isServer ? server.Logger : client.Logger;
-            Map m = isServer ? server.Maps[this.Sender.ClientMapID] : client.CurrentMap;
+            Map m = isServer ? server.GetExistingMap(this.Sender.ClientMapID) : client.CurrentMap;
             if (isServer && !this.Sender.IsAdmin)
             {
                 l.Log(LogLevel.Warn, "A client asked to toggle turn order visibility without permissions!");

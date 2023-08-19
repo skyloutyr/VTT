@@ -16,7 +16,7 @@
             if (isServer)
             {
                 server.Logger.Log(LogLevel.Info, "Got full explicit turn tracker synchronization command!");
-                this.Data = server.Maps[this.Sender.ClientMapID].TurnTracker.Serialize();
+                this.Data = server.GetExistingMap(this.Sender.ClientMapID).TurnTracker.Serialize();
                 this.Broadcast(c => c.ClientMapID.Equals(this.Sender.ClientMapID));
             }
             else

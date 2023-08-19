@@ -17,6 +17,7 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             Map m = null;
+            ServerMapPointer smp = null;
             if (isServer)
             {
                 if (!this.Sender.IsAdmin)
@@ -28,6 +29,7 @@
                 else
                 {
                     server.TryGetMap(this.MapID, out m);
+                    server.TryGetMapPointer(this.MapID, out smp);
                 }
             }
             else
@@ -42,12 +44,22 @@
                     case DataType.Name:
                     {
                         m.Name = (string)this.Data;
+                        if (smp != null)
+                        {
+                            smp.MapName = (string)this.Data;
+                        }
+
                         break;
                     }
 
                     case DataType.Folder:
                     {
                         m.Folder = (string)this.Data;
+                        if (smp != null)
+                        {
+                            smp.MapFolder = (string)this.Data;
+                        }
+
                         break;
                     }
 
@@ -176,6 +188,7 @@
                         break;
                     }
                 }
+
                 if (isServer)
                 {
                     m.NeedsSave = true;

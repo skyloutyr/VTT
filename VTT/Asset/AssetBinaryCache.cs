@@ -49,9 +49,13 @@
             }
             else
             {
-                if (!this._binaries.TryGetValue(id, out byte[] value))
+                byte[] value;
+                lock (this._guiLock)
                 {
-                    value = this.UpdateCache(id);
+                    if (!this._binaries.TryGetValue(id, out value))
+                    {
+                        value = this.UpdateCache(id);
+                    }
                 }
 
                 return value;
@@ -65,12 +69,8 @@
                 AssetBinaryPointer abp = aref.ServerPointer;
                 byte[] binary = File.ReadAllBytes(abp.FileLocation);
                 this._cacheLength += binary.LongLength;
-                lock (this._guiLock)
-                {
-                    this._cacheAccessTimes[id] = DateTimeOffset.Now.Ticks;
-                    this._binaries[id] = binary;
-                }
-
+                this._cacheAccessTimes[id] = DateTimeOffset.Now.Ticks;
+                this._binaries[id] = binary;
                 this.ShuffleCache();
                 return binary;
             }
@@ -101,12 +101,8 @@
                 if (leastScoringCacheElement != Guid.Empty)
                 {
                     long l = this._binaries[leastScoringCacheElement].LongLength;
-                    lock (this._guiLock)
-                    {
-                        this._binaries.Remove(leastScoringCacheElement);
-                        this._cacheAccessTimes.Remove(leastScoringCacheElement);
-                    }
-
+                    this._binaries.Remove(leastScoringCacheElement);
+                    this._cacheAccessTimes.Remove(leastScoringCacheElement);
                     this._cacheLength -= l;
                 }
             }

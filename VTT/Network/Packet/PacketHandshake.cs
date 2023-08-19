@@ -104,12 +104,12 @@
                     int c = 0;
                     while (c < 24 && chatIndex >= 0)
                     {
-                        ++c;
                         ChatLine cl = server.ServerChat[chatIndex--];
                         if (sc.IsAdmin || cl.SenderID.Equals(sc.ID) || cl.DestID.Equals(sc.ID) || cl.DestID.Equals(Guid.Empty))
                         {
                             PacketChatLine pcl = new PacketChatLine() { Line = cl };
                             pcl.Send(sc);
+                            ++c; 
                         }
                     }
                 }

@@ -1,10 +1,18 @@
 ﻿namespace VTT.Util
 {
     using System;
+    using System.Collections.Concurrent;
     using System.IO;
+    using System.Threading;
 
     public class Logger
     {
+        static Logger()
+        {
+            consoleMsgThread = new Thread(ProcessConsole) { IsBackground = true };
+            consoleMsgThread.Start();
+        }
+
         public string Prefix { get; set; }
         public string TimeFormat { get; set; }
 
@@ -34,7 +42,9 @@
             }
         }
 
-        public static LogListener Console => (l, msg) =>
+        private static BlockingCollection<(LogLevel, string)> consoleMsgQueue = new BlockingCollection<(LogLevel, string)>();
+        private static Thread consoleMsgThread;
+        private static void ProcessConsole()
         {
             static ConsoleColor GetColor(LogLevel level)
             {
@@ -50,17 +60,24 @@
                 };
             }
 
-            ConsoleColor clr = System.Console.ForegroundColor;
-            System.Console.ForegroundColor = GetColor(l);
-            System.Console.WriteLine(msg);
-            System.Console.ForegroundColor = clr;
-        };
+            while (true)
+            {
+                (LogLevel, string) msg = consoleMsgQueue.Take();
+                ConsoleColor clr = System.Console.ForegroundColor;
+                System.Console.ForegroundColor = GetColor(msg.Item1);
+                System.Console.WriteLine(msg.Item2);
+                System.Console.ForegroundColor = clr;
+            }
+        }
 
+        public static LogListener Console => (l, msg) => consoleMsgQueue.Add((l, msg));
         public static LogListener Debug => (l, msg) => System.Diagnostics.Debugger.Log(0, null, msg + "\n");
 
         public class FileLogListener
         {
             private readonly StreamWriter _fs;
+            private readonly BlockingCollection<(LogLevel, string)> _internalQueue = new BlockingCollection<(LogLevel, string)>();
+            private readonly Thread _writerThread;
 
             public FileLogListener(string file)
             {
@@ -73,12 +90,23 @@
                 {
                     this._fs = new StreamWriter(File.Open(file, FileMode.Create, FileAccess.Write));
                 }
+
+                this._writerThread = new Thread(ProcessWrites) { IsBackground = true };
+                this._writerThread.Start();
+            }
+
+            private void ProcessWrites()
+            {
+                while (true)
+                {
+                    (LogLevel, string) msg = this._internalQueue.Take();
+                    this._fs.WriteLine(msg.Item2);
+                }
             }
 
             public void WriteLine(LogLevel level, string line)
             {
-                this._fs.WriteLine(line);
-                this._fs.Flush();
+                this._internalQueue.Add((level, line));
             }
 
             public void Close()

@@ -11,6 +11,7 @@
     using System.Linq;
     using System.Net.Http;
     using System.Threading;
+    using System.Threading.Tasks;
     using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -151,10 +152,26 @@
         public void Load() // Load on server side
         {
             string assetDir = Path.Combine(IOVTT.ServerDir, "Assets");
-            this.ScanServerDir(assetDir, this.Root);
+            List<(AssetDirectory assetDir, string file)> paths = new List<(AssetDirectory assetDir, string file)>(4096);
+            this.ScanServerDir(assetDir, this.Root, paths);
+            object localRefLock = new object();
+            Parallel.ForEach(paths, x =>
+            {
+                Guid aId = Guid.Parse(Path.GetFileNameWithoutExtension(x.file));
+                if (AssetBinaryPointer.ReadAssetMetadata(x.file, out AssetMetadata meta))
+                {
+                    AssetBinaryPointer abp = new AssetBinaryPointer() { FileLocation = x.file, PreviewPointer = aId };
+                    AssetRef aRef = new AssetRef() { AssetID = aId, AssetPreviewID = aId, IsServer = true, ServerPointer = abp, Meta = meta };
+                    x.assetDir.Refs.Add(aRef);
+                    lock (localRefLock)
+                    {
+                        Refs.Add(aId, aRef);
+                    }
+                }
+            });
         }
 
-        public void ScanServerDir(string dir, AssetDirectory assetDir) // Recursive directory iteration
+        public void ScanServerDir(string dir, AssetDirectory assetDir, List<(AssetDirectory assetDir, string file)> paths) // Recursive directory iteration
         {
             Directory.CreateDirectory(dir);
             foreach (string file in Directory.EnumerateFiles(dir)) // List all files
@@ -162,14 +179,7 @@
                 if (file.EndsWith(".ab")) // Have asset def!
                 {
                     Server.Instance.Logger.Log(LogLevel.Info, "Found asset candidate at " + file);
-                    Guid aId = Guid.Parse(Path.GetFileNameWithoutExtension(file));
-                    if (AssetBinaryPointer.ReadAssetMetadata(file, out AssetMetadata meta))
-                    {
-                        AssetBinaryPointer abp = new AssetBinaryPointer() { FileLocation = file, PreviewPointer = aId };
-                        AssetRef aRef = new AssetRef() { AssetID = aId, AssetPreviewID = aId, IsServer = true, ServerPointer = abp, Meta = meta };
-                        assetDir.Refs.Add(aRef);
-                        Refs[aId] = aRef;
-                    }
+                    paths.Add((assetDir, file));
                 }
             }
 
@@ -177,7 +187,7 @@
             {
                 Server.Instance.Logger.Log(LogLevel.Info, "Found asset subdirectory at " + subdir);
                 AssetDirectory subDir = new AssetDirectory() { Name = Path.GetFileName(subdir) };
-                this.ScanServerDir(subdir, subDir);
+                this.ScanServerDir(subdir, subDir, paths);
                 subDir.Parent = assetDir;
                 assetDir.Directories.Add(subDir);
             }

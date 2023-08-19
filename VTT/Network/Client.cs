@@ -78,10 +78,11 @@
                 this.TimeoutInterval = ti;
             }
 
+            AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Client", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
             this.Logger.OnLog += Logger.Debug;
-            Logger.FileLogListener fll = new Logger.FileLogListener(IOVTT.OpenLogFile(false));
+            Logger.FileLogListener fll = this._fll = new Logger.FileLogListener(IOVTT.OpenLogFile(false));
             this.Logger.OnLog += fll.WriteLine;
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;
             this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH:mm:ss GMT"));
@@ -96,6 +97,20 @@
             this.Lang.LoadFile(this.Settings.Language ?? "en-EN");
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ShaderNodeTemplate).TypeHandle);
             this.Frontend = new ClientWindow();
+        }
+
+        private Logger.FileLogListener _fll;
+        private void Cleanup(object sender, EventArgs e)
+        {
+            // Try a logger cleanup
+            try
+            {
+                this._fll?.Close();
+            }
+            catch
+            {
+                // NOOP - no idea when this fires, may have FS/logger issues
+            }
         }
 
         public void AddChatLine(ChatLine line)

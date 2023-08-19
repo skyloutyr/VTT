@@ -14,6 +14,7 @@
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network.Packet;
+    using System.Threading.Tasks;
 
     public class Server : TcpServer
     {
@@ -111,10 +112,11 @@
                 this.TimeoutInterval = ti;
             }
 
+            AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Server", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
             this.Logger.OnLog += Logger.Debug;
-            Logger.FileLogListener fll = new Logger.FileLogListener(IOVTT.OpenLogFile(true));
+            Logger.FileLogListener fll = this._fll = new Logger.FileLogListener(IOVTT.OpenLogFile(true));
             this.Logger.OnLog += fll.WriteLine; this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH’:’mm’:’ss ‘GMT’"));
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;
             this.Settings = ServerSettings.Load();
@@ -130,6 +132,20 @@
             new Thread(this.RunWorker) { IsBackground = true, Priority = ThreadPriority.Lowest }.Start();
             this.Start();
             this.WaitHandle = wh;
+        }
+
+        private Logger.FileLogListener _fll;
+        private void Cleanup(object sender, EventArgs e)
+        {
+            // Try a logger cleanup
+            try
+            {
+                this._fll?.Close();
+            }
+            catch
+            {
+                // NOOP - no idea when this fires, may have FS/logger issues
+            }
         }
 
         private void LoadJournals()
@@ -417,88 +433,98 @@
             string mapsLoc = Path.Combine(IOVTT.ServerDir, "Maps");
             this.Logger.Log(LogLevel.Info, "Scanning for maps at " + mapsLoc);
             Directory.CreateDirectory(mapsLoc);
+            List<string> mapsPtrs = new List<string>();
             foreach (string file in Directory.EnumerateFiles(mapsLoc))
             {
                 if (file.EndsWith(".ued"))
                 {
-                    Map m = null;
-                    try
-                    {
-                        this.Logger.Log(LogLevel.Info, "Found map candidate " + file);
-                        using BinaryReader br = new BinaryReader(File.OpenRead(file));
-                        m = new Map() { IsServer = true };
-                        DataElement de = new DataElement();
-                        de.Read(br);
-                        m.Deserialize(de);
-                        this.Maps[m.ID] = m;
-                        this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
-                    }
-                    catch
-                    {
-                        this.Logger.Log(LogLevel.Error, "Map could not be loaded.");
-                        string bF = file + ".bak";
-                        if (File.Exists(bF))
-                        {
-                            try
-                            {
-                                this.Logger.Log(LogLevel.Info, "Trying to load map backup.");
-                                using BinaryReader br = new BinaryReader(File.OpenRead(bF));
-                                m = new Map() { IsServer = true };
-                                DataElement de = new DataElement();
-                                de.Read(br);
-                                m.Deserialize(de);
-                                this.Maps[m.ID] = m;
-                                this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
-                            }
-                            catch
-                            {
-                                this.Logger.Log(LogLevel.Error, "Map backup could not be loaded.");
-                                continue;
-                            }
-                        }
-                    }
+                    mapsPtrs.Add(file);
+                    this.Logger.Log(LogLevel.Info, "Found map candidate " + file);
+                }
+            }
 
-                    if (m == null)
+            object localLock = new object();
+            Parallel.ForEach(mapsPtrs, file =>
+            {
+                Map m = null;
+                try
+                {
+                    using BinaryReader br = new BinaryReader(File.OpenRead(file));
+                    m = new Map() { IsServer = true };
+                    DataElement de = new DataElement();
+                    de.Read(br);
+                    m.Deserialize(de);
+                    this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
+                }
+                catch
+                {
+                    this.Logger.Log(LogLevel.Error, "Map could not be loaded.");
+                    string bF = file + ".bak";
+                    if (File.Exists(bF))
                     {
-                        continue;
-                    }
-
-                    string expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png");
-                    if (File.Exists(expectedFOW))
-                    {
-                        this.Logger.Log(LogLevel.Info, "Map FOW canvas loaded");
-                        FOWCanvas fowc = new FOWCanvas();
                         try
                         {
-                            fowc.Read(expectedFOW);
-                            m.FOW = fowc;
+                            this.Logger.Log(LogLevel.Info, "Trying to load map backup.");
+                            using BinaryReader br = new BinaryReader(File.OpenRead(bF));
+                            m = new Map() { IsServer = true };
+                            DataElement de = new DataElement();
+                            de.Read(br);
+                            m.Deserialize(de);
+                            this.Logger.Log(LogLevel.Info, "Loaded map " + m.ID + "(" + m.Name + ")");
                         }
                         catch
                         {
-                            this.Logger.Log(LogLevel.Error, "FOW canvas could not be loaded, trying to load backup.");
-                            expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png.bak");
-                            if (File.Exists(expectedFOW))
-                            {
-                                fowc = new FOWCanvas();
-                                try
-                                {
-                                    fowc.Read(expectedFOW);
-                                    m.FOW = fowc;
-                                }
-                                catch
-                                {
-                                    this.Logger.Log(LogLevel.Error, "FOW canvas backup could not be loaded.");
-                                    m.FOW = null;
-                                }
-                            }
-                            else
-                            {
-                                m.FOW = null;
-                            }
+                            this.Logger.Log(LogLevel.Error, "Map backup could not be loaded.");
+                            return;
                         }
                     }
                 }
-            }
+
+                lock (localLock)
+                {
+                    this.Maps.Add(m.ID, m);
+                }
+
+                if (m == null)
+                {
+                    return;
+                }
+
+                string expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png");
+                if (File.Exists(expectedFOW))
+                {
+                    this.Logger.Log(LogLevel.Info, "Map FOW canvas loaded");
+                    FOWCanvas fowc = new FOWCanvas();
+                    try
+                    {
+                        fowc.Read(expectedFOW);
+                        m.FOW = fowc;
+                    }
+                    catch
+                    {
+                        this.Logger.Log(LogLevel.Error, "FOW canvas could not be loaded, trying to load backup.");
+                        expectedFOW = Path.Combine(mapsLoc, m.ID + "_fow.png.bak");
+                        if (File.Exists(expectedFOW))
+                        {
+                            fowc = new FOWCanvas();
+                            try
+                            {
+                                fowc.Read(expectedFOW);
+                                m.FOW = fowc;
+                            }
+                            catch
+                            {
+                                this.Logger.Log(LogLevel.Error, "FOW canvas backup could not be loaded.");
+                                m.FOW = null;
+                            }
+                        }
+                        else
+                        {
+                            m.FOW = null;
+                        }
+                    }
+                }
+            });
 
             if (!this.Maps.ContainsKey(this.Settings.DefaultMapID)) // Have a default map setup, but no such map exists, setup a default one
             {

@@ -3,6 +3,8 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
+    using System.Numerics;
+    using VTT.Asset;
     using VTT.Network;
     using VTT.Util;
 
@@ -88,6 +90,60 @@
 
                         ImGui.EndTable();
                     }
+
+                    ImGui.Text(lang.Translate("ui.network.server_cache_info"));
+                    ImGui.Text(lang.Translate("ui.network.server_cache_status"));
+                    ImGui.SameLine();
+                    AssetManager am = Server.Instance?.AssetManager;
+                    ImGui.Text(
+                        am == null ? lang.Translate("ui.network.server_cache_status_noserver") : 
+                        am.ServerAssetCache.Enabled ? lang.Translate("ui.network.server_cache_status_ok") : lang.Translate("ui.network.server_cache_status_disabled")
+                    );
+
+                    if (am != null && am.ServerAssetCache.Enabled)
+                    {
+                        ImGui.Text(lang.Translate("ui.network.server_cache_usage"));
+                        ImGui.TextUnformatted(FormatMemUsage(am.ServerAssetCache.Occupancy) + "/" + FormatMemUsage(am.ServerAssetCache.MaxCacheLength) + $" ({((double)am.ServerAssetCache.Occupancy / (double)am.ServerAssetCache.MaxCacheLength * 100):0.0}%)");
+                        Random rand = new Random(1337);
+                        Vector2 vecScreen = ImGui.GetCursorScreenPos();
+                        ImGui.Dummy(new Vector2(512, 24));
+                        ImDrawListPtr dlptr = ImGui.GetWindowDrawList();
+                        dlptr.AddRectFilled(vecScreen, vecScreen + new Vector2(512, 24), ImGui.GetColorU32(ImGuiCol.FrameBg));
+                        long o = 0;
+                        float os = 0;
+                        foreach ((Guid, long) d in am.ServerAssetCache.GetDebugOccupancyInfo())
+                        {
+                            long l = d.Item2;
+                            float f1 = rand.NextSingle() * 360;
+                            if (MathF.Abs(os - f1) < 60)
+                            {
+                                f1 = (os + 60) % 360;
+                            }
+
+                            os = f1;
+                            HSVColor clr = new HSVColor(f1, 1, 1);
+                            float aS = (float)((double)o / am.ServerAssetCache.MaxCacheLength);
+                            float aE = aS + (float)((double)l / am.ServerAssetCache.MaxCacheLength);
+                            o += l;
+                            dlptr.AddRectFilled(vecScreen + new Vector2(512 * aS, 0), vecScreen + new Vector2(512 * aE, 24), ((Color)clr).Abgr());
+                            if (ImGui.IsMouseHoveringRect(vecScreen + new Vector2(512 * aS, 0), vecScreen + new Vector2(512 * aE, 24)))
+                            {
+                                ImGui.BeginTooltip();
+                                ImGui.Text(d.Item1.ToString());
+                                if (am.Refs.TryGetValue(d.Item1, out AssetRef v))
+                                {
+                                    ImGui.TextUnformatted(v.Type.ToString() + " " + v.Name);
+                                }
+                                else
+                                {
+                                    ImGui.Text(lang.Translate("ui.network.server_cache_unknown_asset_usage"));
+                                }
+
+                                ImGui.Text(FormatMemUsage(l));
+                                ImGui.EndTooltip();
+                            }
+                        }
+                    }
                 }
 
                 ImGui.End();
@@ -112,7 +168,28 @@
                 dBts /= 1000;
             }
 
-            return $"{dBts:0.000}{ranks[rank % 5]}";
+            return $"{dBts:0.000}{ranks[Math.Min(rank, 4)]}";
+        }
+
+        private string FormatMemUsage(long mem)
+        {
+            string[] ranks = {
+                "B",
+                "kB",
+                "mB",
+                "gB",
+                "i"
+            };
+
+            int rank = 0;
+            double dMem = mem;
+            while (dMem >= 1024)
+            {
+                rank++;
+                dMem /= 1024;
+            }
+
+            return $"{dMem:0.000}{ranks[Math.Min(rank, 4)]}";
         }
     }
 }

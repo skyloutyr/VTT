@@ -21,9 +21,8 @@
                 {
                     try
                     {
+                        byte[] binary = am.ServerAssetCache.GetBinary(this.AssetID);
                         AssetRef aRef = am.Refs[this.AssetID];
-                        AssetBinaryPointer abp = aRef.ServerPointer;
-                        byte[] binary = File.ReadAllBytes(abp.FileLocation);
                         PacketAssetResponse par = new PacketAssetResponse() { AssetID = this.AssetID, AssetType = aRef.Type, Binary = binary, Metadata = aRef.Meta, IsServer = true, ResponseType = AssetResponseType.Ok, Session = sessionID };
                         par.Send(sc);
                         server.Logger.Log(Util.LogLevel.Debug, "Sent client asset");

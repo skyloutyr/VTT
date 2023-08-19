@@ -112,6 +112,19 @@
                 this.TimeoutInterval = ti;
             }
 
+            if (ArgsManager.TryGetValue("servercache", out long sc))
+            {
+                if (sc == -1)
+                {
+                    this.AssetManager.ServerAssetCache.Enabled = false;
+                }
+                else
+                {
+                    this.AssetManager.ServerAssetCache.Enabled = true;
+                    this.AssetManager.ServerAssetCache.MaxCacheLength = sc;
+                }
+            }
+
             AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Server", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;

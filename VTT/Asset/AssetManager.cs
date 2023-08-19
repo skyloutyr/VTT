@@ -26,12 +26,17 @@
         public Dictionary<string, AssetPreview> WebPictures { get; } = new Dictionary<string, AssetPreview>();
 
         public ClientAssetLibrary ClientAssetLibrary { get; } = new ClientAssetLibrary();
+        public AssetBinaryCache ServerAssetCache { get; }
 
         public bool IsServer { get; set; }
 
         public AssetDirectory Root { get; } = new AssetDirectory() { Name = "root" };
 
-        public AssetManager() => this.ClientAssetLibrary.Container = this;
+        public AssetManager()
+        {
+            this.ClientAssetLibrary.Container = this;
+            this.ServerAssetCache = new AssetBinaryCache(this);
+        }
 
         public string GetFSPath(AssetDirectory dir)
         {

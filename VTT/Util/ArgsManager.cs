@@ -104,6 +104,80 @@
                     break;
                 }
 
+                case "-nocache":
+                {
+                    args["servercache"] = -1L;
+                    break;
+                }
+
+                case "-servercache":
+                {
+                    if (args.TryGetValue("servercache", out object val) && val is long l && l == -1)
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        int idx = value.Length - 1;
+                        while (!char.IsDigit(value[idx]) && idx >= 0)
+                        {
+                            sb.Insert(0, value[idx]);
+                            --idx;
+                        }
+
+                        string type = sb.ToString().Trim();
+                        long num = long.Parse(value[..(idx + 1)]);
+                        long mul = 1;
+                        switch (type)
+                        {
+                            case "b":
+                            case "B":
+                            {
+                                mul = 1;
+                                break;
+                            }
+
+                            case "kb":
+                            case "kB":
+                            case "Kb":
+                            case "KB":
+                            {
+                                mul = 1024;
+                                break;
+                            }
+
+                            case "mb":
+                            case "mB":
+                            case "Mb":
+                            case "MB":
+                            {
+                                mul = 1024 * 1024;
+                                break;
+                            }
+
+                            case "gb":
+                            case "gB":
+                            case "Gb":
+                            case "GB":
+                            {
+                                mul = 1024 * 1024 * 1024;
+                                break;
+                            }
+                        }
+
+                        num *= mul;
+                        args["servercache"] = num;
+                    }
+                    catch
+                    {
+                        args["servercache"] = 1024 * 1024 * 1024;
+                    }
+
+                    break;
+                }
+
                 case "-timeout":
                 {
                     try

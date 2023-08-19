@@ -763,7 +763,7 @@
                     bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                     float cbby = mo.ClientBoundingBox.End.Y - mo.ClientBoundingBox.Start.Y;
                     Vector3 screen = is2d ?
-                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) : 
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
 
                     float nS = ImGui.CalcTextSize(mo.Name).X;
@@ -863,7 +863,7 @@
                         System.Numerics.Vector2 tSizeMin = ImGui.CalcTextSize(mo.Description, 400f);
                         float tWM = MathF.Min(tSizeMin.X + 32, 400);
                         ImGui.SetNextWindowSize(new System.Numerics.Vector2(tWM, tSizeMin.Y + 32));
-                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - tWM / 2, screen.Y));
+                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tWM / 2), screen.Y));
                         if (ImGui.Begin("InfoPanel_" + mo.ID.ToString(), flags))
                         {
                             ImGui.PushTextWrapPos();

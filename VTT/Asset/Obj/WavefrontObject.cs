@@ -83,7 +83,7 @@
             List<Vertex> vertices = new List<Vertex>();
             List<System.Numerics.Vector3> tris = new List<System.Numerics.Vector3>();
 
-            for (int i = 0; i < faces.Count; i+=3)
+            for (int i = 0; i < faces.Count; i += 3)
             {
                 Vector3i v1 = faces[i + 0];
                 Vector3i v2 = faces[i + 1];
@@ -180,14 +180,14 @@
 
             this._vao = new VertexArray();
             this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
-            this._vao.Bind(); 
+            this._vao.Bind();
             this._vbo.Bind();
             this._vbo.SetData(data.ToArray());
             this._vao.Reset();
             desiredFormat.SetupVAO(this._vao);
-            
+
         }
-    
+
         public void Render()
         {
             this._vao.Bind();

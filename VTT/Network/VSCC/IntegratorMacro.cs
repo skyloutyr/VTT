@@ -31,7 +31,7 @@
                 JObject dataObject = (JObject)data["data"];
                 if (this._templates.ContainsKey(template))
                 {
-                    Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Using { template }");
+                    Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Using {template}");
                     this._templates[template](dataObject, integration, gr);
                     return true;
                 }

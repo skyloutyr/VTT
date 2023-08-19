@@ -99,7 +99,7 @@
             this.Frontend = new ClientWindow();
         }
 
-        private Logger.FileLogListener _fll;
+        private readonly Logger.FileLogListener _fll;
         private void Cleanup(object sender, EventArgs e)
         {
             // Try a logger cleanup
@@ -345,7 +345,7 @@
                 return currentDir;
             }
 
-            if (path.IndexOf('/') == -1)
+            if (!path.Contains('/'))
             {
                 return GetOrCreate(currentDir, path);
             }
@@ -646,7 +646,7 @@
     }
 
     public readonly struct ClientSize
-    { 
+    {
         public int Width { get; }
         public int Height { get; }
 

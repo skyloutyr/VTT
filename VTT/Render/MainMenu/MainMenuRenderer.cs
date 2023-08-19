@@ -5,18 +5,18 @@
     using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
-    using System.Linq;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Numerics;
-    using VTT.Network;
-    using VTT.Util;
-    using VTT.Network.Packet;
-    using System.IO;
-    using VTT.GL;
-    using MathHelper = OpenTK.Mathematics.MathHelper;
-    using System.Diagnostics;
     using System.Runtime.InteropServices;
+    using VTT.GL;
+    using VTT.Network;
+    using VTT.Network.Packet;
+    using VTT.Util;
+    using MathHelper = OpenTK.Mathematics.MathHelper;
 
     public class MainMenuRenderer
     {

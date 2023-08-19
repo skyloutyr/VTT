@@ -31,8 +31,8 @@
                 if (PacketsByID.ContainsKey(idx))
                 {
                     throw new Exception($"Packet with ID {idx} is already registered by {PacketsByID[idx].Name} while attempting to register {t.Name}!");
-                }   
-                
+                }
+
                 PacketsByID[idx] = t;
                 IDByPacketType[t] = idx;
             }

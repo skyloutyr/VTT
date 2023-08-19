@@ -12,8 +12,9 @@
         private static int lastY;
         private static bool isBackground;
 
-        private static readonly Lazy<HttpClient> client = new Lazy<HttpClient>(() => {
-            
+        private static readonly Lazy<HttpClient> client = new Lazy<HttpClient>(() =>
+        {
+
             HttpClient c = new HttpClient();
             c.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue() { NoCache = true, NoStore = true };
             return c;

@@ -1,9 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketParticleContainer : PacketBase
     {

@@ -240,7 +240,7 @@
                 Vector3 c = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(this._pingUIAnchor).SystemVector();
                 Vector2 uic = new Vector2(c.X, c.Y);
                 Vector2 mouseC = ImGui.GetMousePos();
-                
+
                 bool mouseOverCircle = (mouseC - uic).Length() <= 24;
                 winDrawList.AddCircleFilled(uic, 27, mouseOverCircle ? clrSelected : clrB);
                 winDrawList.AddCircleFilled(uic, 24, mouseOverCircle ? clrGBright : clrG);

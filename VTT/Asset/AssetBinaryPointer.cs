@@ -6,7 +6,7 @@
     using VTT.Network;
 
     public class AssetBinaryPointer
-    { 
+    {
         public string FileLocation { get; set; } // Assets are files on the hard drive
         public Guid PreviewPointer { get; set; }
 
@@ -84,7 +84,7 @@
                 br.ReadInt32();
                 br.ReadString();
             }
-            
+
             int mPos = (int)ms.Position;
             byte[] ret = new byte[assetBinary.Length - mPos];
             Array.Copy(assetBinary, mPos, ret, 0, ret.Length);

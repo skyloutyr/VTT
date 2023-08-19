@@ -320,10 +320,7 @@
             }
         }
 
-        public bool IsCameraMMBDown()
-        {
-            return Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) || (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && this.CameraControlMode != CameraControlMode.Standard);
-        }
+        public bool IsCameraMMBDown() => Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) || (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && this.CameraControlMode != CameraControlMode.Standard);
 
         public void HandleCamera(double time)
         {
@@ -342,12 +339,12 @@
                     keyboardMoveVec += new Vector3(cameraForward2D.X, cameraForward2D.Y, 0.0f);
                 }
 
-                if(Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Down) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad2))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Down) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad2))
                 {
                     keyboardMoveVec -= new Vector3(cameraForward2D.X, cameraForward2D.Y, 0.0f);
                 }
 
-                if(Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Left) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad4))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Left) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad4))
                 {
                     keyboardMoveVec -= new Vector3(cameraRight2D.X, cameraRight2D.Y, 0.0f);
                 }

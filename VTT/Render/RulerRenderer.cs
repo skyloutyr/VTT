@@ -65,7 +65,8 @@
                 if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !this._lmbDown)
                 {
                     this._lmbDown = true;
-                    this.CurrentInfo = new RulerInfo() {
+                    this.CurrentInfo = new RulerInfo()
+                    {
                         OwnerID = Client.Instance.ID,
                         OwnerName = Client.Instance.Settings.Name,
                         Tooltip = this.CurrentTooltip,
@@ -385,7 +386,7 @@
                     GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
                 }
                 else
-                { 
+                {
                     shader["model"].Set(Matrix4.Identity);
                     GL.Disable(EnableCap.CullFace);
                 }
@@ -805,7 +806,7 @@
                 if (rect.Contains(v.X, v.Y))
                 {
                     return true;
-                } 
+                }
             }
 
             return false;

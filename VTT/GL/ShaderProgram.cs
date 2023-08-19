@@ -2,7 +2,6 @@
 {
     using OpenTK.Graphics.OpenGL;
     using System;
-    using System.Linq;
 
     public class ShaderProgram
     {

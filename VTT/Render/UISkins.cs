@@ -237,17 +237,17 @@
             style.ItemSpacing = new Vector2(10, 2);
             style.IndentSpacing = 12;
             style.ScrollbarSize = 10;
-                 
+
             style.WindowRounding = 4;
             style.FrameRounding = 4;
             style.PopupRounding = 4;
             style.ScrollbarRounding = 6;
             style.GrabRounding = 4;
             style.TabRounding = 4;
-                 
+
             style.WindowTitleAlign = new Vector2(1.0f, 0.5f);
             style.WindowMenuButtonPosition = ImGuiDir.Right;
-                 
+
             style.DisplaySafeAreaPadding = new Vector2(4, 4);
         }
 

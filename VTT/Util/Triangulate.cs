@@ -9,7 +9,7 @@
         {
             int n = contour.Length;
             float A = 0.0f;
-            for(int p = n - 1, q = 0; q < n; p = q++)
+            for (int p = n - 1, q = 0; q < n; p = q++)
             {
                 A += (contour[p].X * contour[q].Y) - (contour[q].X * contour[p].Y);
             }
@@ -33,7 +33,7 @@
             return (aCROSSbp >= 0.0f) && (bCROSScp >= 0.0f) && (cCROSSap >= 0.0f);
         }
 
-        private static bool Snip(Vector2[] contour, int u,int v,int w,int n, int[] V)
+        private static bool Snip(Vector2[] contour, int u, int v, int w, int n, int[] V)
         {
             int p;
             float Ax, Ay, Bx, By, Cx, Cy, Px, Py;
@@ -102,10 +102,10 @@
 
             int nv = n;
 
-                /*  remove nv-2 Vertices, creating 1 triangle every time */
+            /*  remove nv-2 Vertices, creating 1 triangle every time */
             int count = 2 * nv;   /* error detection */
 
-            for(int m = 0, v = nv - 1; nv > 2; )
+            for (int m = 0, v = nv - 1; nv > 2;)
             {
                 /* if we loop, it is probably a non-simple polygon */
                 if (0 >= count--)
@@ -138,8 +138,8 @@
                     int a, b, c, s, t;
 
                     /* true names of the vertices */
-                    a = V[u]; 
-                    b = V[v]; 
+                    a = V[u];
+                    b = V[v];
                     c = V[w];
 
                     /* output Triangle */

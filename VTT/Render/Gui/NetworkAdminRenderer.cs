@@ -96,7 +96,7 @@
                     ImGui.SameLine();
                     AssetManager am = Server.Instance?.AssetManager;
                     ImGui.Text(
-                        am == null ? lang.Translate("ui.network.server_cache_status_noserver") : 
+                        am == null ? lang.Translate("ui.network.server_cache_status_noserver") :
                         am.ServerAssetCache.Enabled ? lang.Translate("ui.network.server_cache_status_ok") : lang.Translate("ui.network.server_cache_status_disabled")
                     );
 

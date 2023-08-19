@@ -1,9 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketDarkvisionData : PacketBase
     {
@@ -11,7 +11,7 @@
         public Guid PlayerID { get; set; }
         public Guid ObjectID { get; set; }
         public float Value { get; set; }
-    
+
         public bool Deletion { get; set; }
         public override uint PacketID => 30;
 

@@ -272,7 +272,7 @@
                 }
 
                 return polys.ToArray();
-            } 
+            }
             else
             {
 
@@ -280,7 +280,7 @@
                 Vector2[] cutEdge = cutEdges[0];
                 int i = PolygonIndexOf(polygon, cutEdge[0]);
                 int j = PolygonIndexOf(polygon, cutEdge[1]);
-                return i != -1 && j != -1 ? (new Vector2[][]{ CopyPolygon(polygon, i, j), CopyPolygon(polygon, j, i) }) : null;
+                return i != -1 && j != -1 ? (new Vector2[][] { CopyPolygon(polygon, i, j), CopyPolygon(polygon, j, i) }) : null;
             }
         }
 

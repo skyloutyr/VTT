@@ -2,7 +2,6 @@
 {
     using NetCoreServer;
     using Newtonsoft.Json;
-    using VTT.Util;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Concurrent;
@@ -11,10 +10,11 @@
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
+    using System.Threading.Tasks;
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network.Packet;
-    using System.Threading.Tasks;
+    using VTT.Util;
 
     public class Server : TcpServer
     {
@@ -542,8 +542,9 @@
             if (!this.Maps.ContainsKey(this.Settings.DefaultMapID)) // Have a default map setup, but no such map exists, setup a default one
             {
                 this.Logger.Log(LogLevel.Warn, "Default map ID exists, but no map was found, creating empty");
-                Map m = new Map() { 
-                    IsServer = true, 
+                Map m = new Map()
+                {
+                    IsServer = true,
                     ID = this.Settings.DefaultMapID,
                     BackgroundColor = Color.Black,
                     GridColor = Color.White,

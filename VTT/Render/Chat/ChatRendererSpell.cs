@@ -120,7 +120,7 @@
                 if (int.TryParse(somatic.Text, out i) && i == 1)
                 {
                     tex = Client.Instance.Frontend.Renderer.GuiRenderer.SomaticComponentIcon;
-                    drawList.AddImage(tex, cursorScreen + new Vector2(cx, 52), cursorScreen + new Vector2(cx + 20, 72)); 
+                    drawList.AddImage(tex, cursorScreen + new Vector2(cx, 52), cursorScreen + new Vector2(cx + 20, 72));
                     drawList.AddText(cursorScreen + new Vector2(cx + 12, 58), fcl, "S");
                     if (ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(cx, 52), cursorScreen + new Vector2(cx + 20, 72)))
                     {

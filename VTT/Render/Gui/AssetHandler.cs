@@ -1,22 +1,22 @@
 ﻿namespace VTT.Render.Gui
 {
+    using ImGuiNET;
     using OpenTK.Mathematics;
     using OpenTK.Windowing.Common;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
+    using SixLabors.ImageSharp.Processing;
     using System;
+    using System.Collections.Generic;
     using System.IO;
-    using VTT.Asset.Glb;
     using VTT.Asset;
+    using VTT.Asset.Glb;
+    using VTT.Asset.Shader.NodeGraph;
+    using VTT.Control;
+    using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
-    using ImGuiNET;
-    using VTT.Control;
     using VTT.Util;
-    using SixLabors.ImageSharp.Processing;
-    using System.Collections.Generic;
-    using VTT.GL;
-    using VTT.Asset.Shader.NodeGraph;
 
     public partial class GuiRenderer
     {
@@ -558,13 +558,13 @@
                     if (!haveResult && state.objectCustomNameplateHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
                     {
                         state.objectCustomNameplateHovered.CustomNameplateID = this._draggedRef.AssetID;
-                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CustomNameplateID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomNameplateHovered.MapID, state.objectCustomNameplateHovered.ID, this._draggedRef.AssetID) } }.Send(); 
+                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CustomNameplateID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomNameplateHovered.MapID, state.objectCustomNameplateHovered.ID, this._draggedRef.AssetID) } }.Send();
                         haveResult = true;
                     }
 
                     if (!haveResult && state.objectCustomShaderHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
                     {
-                        new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomShaderHovered.MapID, state.objectCustomShaderHovered.ID, this._draggedRef.AssetID) } }.Send(); 
+                        new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomShaderHovered.MapID, state.objectCustomShaderHovered.ID, this._draggedRef.AssetID) } }.Send();
                         haveResult = true;
                     }
 

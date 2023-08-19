@@ -1,17 +1,16 @@
 ﻿namespace VTT.Util
 {
-    using TKVec2 = OpenTK.Mathematics.Vector2;
-    using TKVec3 = OpenTK.Mathematics.Vector3;
-    using TKVec4 = OpenTK.Mathematics.Vector4;
-
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
+    using System;
+    using System.IO;
+    using System.Linq;
     using SVec2 = System.Numerics.Vector2;
     using SVec3 = System.Numerics.Vector3;
     using SVec4 = System.Numerics.Vector4;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
-    using System.Linq;
-    using System;
-    using System.IO;
+    using TKVec2 = OpenTK.Mathematics.Vector2;
+    using TKVec3 = OpenTK.Mathematics.Vector3;
+    using TKVec4 = OpenTK.Mathematics.Vector4;
 
     public static class Extensions
     {
@@ -58,9 +57,9 @@
             return new TKVec2(maxX, maxY);
         }
 
-        public static float Red(this Color self) => self.ToPixel<Rgba32>().R / 255.0f; 
-        public static float Green(this Color self) => self.ToPixel<Rgba32>().G / 255.0f; 
-        public static float Blue(this Color self) => self.ToPixel<Rgba32>().B / 255.0f; 
+        public static float Red(this Color self) => self.ToPixel<Rgba32>().R / 255.0f;
+        public static float Green(this Color self) => self.ToPixel<Rgba32>().G / 255.0f;
+        public static float Blue(this Color self) => self.ToPixel<Rgba32>().B / 255.0f;
         public static float Alpha(this Color self) => self.ToPixel<Rgba32>().A / 255.0f;
 
         public static byte RedB(this Color self) => self.ToPixel<Rgba32>().R;

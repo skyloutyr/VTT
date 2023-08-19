@@ -158,7 +158,7 @@
         private float _statusStepY;
         private string _statusSortString = string.Empty;
         private readonly List<(string, float, float)> _sortedStatuses = new List<(string, float, float)>();
-        private readonly List<(string, float, float)> _allStatuses = new List<(string, float, float)>(); 
+        private readonly List<(string, float, float)> _allStatuses = new List<(string, float, float)>();
 
         #endregion
 
@@ -620,14 +620,14 @@
 
             Client.Instance.Frontend.Renderer.PingRenderer.RenderUI();
         }
-    
+
         private void LoadStatuses()
         {
             int[] textureSize = new int[1];
             OpenTK.Graphics.OpenGL.GL.GetInteger(OpenTK.Graphics.OpenGL.GetPName.MaxTextureSize, textureSize);
             OpenTK.Graphics.OpenGL.PixelInternalFormat f = OpenTK.Graphics.OpenGL.PixelInternalFormat.R8;
             this.StatusAtlas = textureSize[0] >= 4096 ? OpenGLUtil.LoadUIImage("atlas", f) : OpenGLUtil.LoadUIImage("atlas_low", f);
-            OpenTK.Graphics.OpenGL.GL.TexParameter(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D, OpenTK.Graphics.OpenGL.TextureParameterName.TextureSwizzleRgba, new int[] { 
+            OpenTK.Graphics.OpenGL.GL.TexParameter(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D, OpenTK.Graphics.OpenGL.TextureParameterName.TextureSwizzleRgba, new int[] {
                 (int)OpenTK.Graphics.OpenGL.Version10.Red,
                 (int)OpenTK.Graphics.OpenGL.Version10.Red,
                 (int)OpenTK.Graphics.OpenGL.Version10.Red,

@@ -11,10 +11,10 @@
 
         public string Text { get; set; }
         public string Tooltip { get; set; }
-        public Color Color 
-        { 
-            get => this.color.Rgba() == 0 ? Extensions.FromAbgr(ImGuiNET.ImGui.GetColorU32(ImGuiNET.ImGuiCol.Text)) : this.color; 
-            set => this.color = value; 
+        public Color Color
+        {
+            get => this.color.Rgba() == 0 ? Extensions.FromAbgr(ImGuiNET.ImGui.GetColorU32(ImGuiNET.ImGuiCol.Text)) : this.color;
+            set => this.color = value;
         }
 
         public ChatBlockType Type { get; set; }
@@ -39,7 +39,7 @@
 
     [Flags]
     public enum ChatBlockType
-    { 
+    {
         Text = 1,
         Expression = 2,
         Error = 4,

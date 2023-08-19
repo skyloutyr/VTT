@@ -8,10 +8,10 @@
         public Vector3 Start { get; set; }
         public Vector3 End { get; set; }
 
-        public Vector3 Center => this.Start + ((this.End - this.Start) * 0.5f);
+        public readonly Vector3 Center => this.Start + ((this.End - this.Start) * 0.5f);
+        public readonly Vector3 Size => this.End - this.Start;
 
-        public Vector3 Size => this.End - this.Start;
-        public Vector3[] Mesh => new Vector3[] {
+        public readonly Vector3[] Mesh => new Vector3[] {
                     new Vector3(this.Start.X, this.Start.Y, this.Start.Z),
                     new Vector3(this.End.X, this.Start.Y, this.Start.Z),
                     new Vector3(this.End.X, this.End.Y, this.Start.Z),
@@ -35,12 +35,12 @@
 
         public static AABox FromPositionAndSize(Vector3 pos, Vector3 size) => new AABox(pos, pos + size);
 
-        public AABox Offset(Vector3 by) => new AABox(this.Start + by, this.End + by);
+        public readonly AABox Offset(Vector3 by) => new AABox(this.Start + by, this.End + by);
 
-        public AABox Scale(float by) => this.Scale(new Vector3(by));
-        public AABox Scale(Vector3 by) => new AABox(this.Start * by, this.End * by);
-        public AABox Inflate(Vector3 by) => new AABox(this.Start - (by / 2), this.End + (by / 2));
-        public AABox Union(AABox other) => new AABox(
+        public readonly AABox Scale(float by) => this.Scale(new Vector3(by));
+        public readonly AABox Scale(Vector3 by) => new AABox(this.Start * by, this.End * by);
+        public readonly AABox Inflate(Vector3 by) => new AABox(this.Start - (by / 2), this.End + (by / 2));
+        public readonly AABox Union(AABox other) => new AABox(
             MathF.Min(this.Start.X, other.Start.X),
             MathF.Min(this.Start.Y, other.Start.Y),
             MathF.Min(this.Start.Z, other.Start.Z),
@@ -49,9 +49,9 @@
             MathF.Max(this.End.Z, other.End.Z)
         );
 
-        public AABox Transform(Matrix3 by) => new AABox(this.Start * by, this.End * by);
+        public readonly AABox Transform(Matrix3 by) => new AABox(this.Start * by, this.End * by);
 
-        public AABox Transform(Matrix4 by)
+        public readonly AABox Transform(Matrix4 by)
         {
             Vector4 start = new Vector4(this.Start, 1);
             Vector4 end = new Vector4(this.End, 1);
@@ -60,7 +60,7 @@
             return new AABox(start.Xyz, end.Xyz);
         }
 
-        public bool IntersectsSphere(Vector3 center, float radius)
+        public readonly bool IntersectsSphere(Vector3 center, float radius)
         {
             static float Sqr(float f) => f * f;
 
@@ -74,7 +74,7 @@
             return dmin <= Sqr(radius);
         }
 
-        public bool Intersects(AABox other)
+        public readonly bool Intersects(AABox other)
         {
             Vector3 distances1 = other.Start - this.End;
             Vector3 distances2 = this.Start - other.End;
@@ -83,7 +83,7 @@
             return maxDistance < 0;
         }
 
-        public Vector3? Intersects(Ray ray)
+        public readonly Vector3? Intersects(Ray ray)
         {
             Vector3 dirFract = new Vector3(1 / ray.Direction.X, 1 / ray.Direction.Y, 1 / ray.Direction.Z);
             float t1 = (this.Start.X - ray.Origin.X) * dirFract.X;
@@ -109,20 +109,20 @@
             return ray.Origin + (ray.Direction * t);
         }
 
-        public bool Contains(Vector3 point)
+        public readonly bool Contains(Vector3 point)
         {
-            return 
+            return
                 point.X >= this.Start.X && point.Y >= this.Start.Y && point.Z >= this.Start.Z &&
                 point.X <= this.End.X && point.Y <= this.End.Y && point.Z <= this.End.Z;
         }
 
-        public bool Equals(AABox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);
+        public readonly bool Equals(AABox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);
 
-        public override int GetHashCode() => HashCode.Combine(this.Start, this.End);
+        public override readonly int GetHashCode() => HashCode.Combine(this.Start, this.End);
 
-        public override bool Equals(object obj) => base.Equals(obj);
+        public override readonly bool Equals(object obj) => base.Equals(obj);
 
-        public override string ToString() => base.ToString() + $"[{ this.Start }, { this.End }]";
+        public override readonly string ToString() => base.ToString() + $"[{this.Start}, {this.End}]";
 
         public static AABox operator *(AABox self, Vector3 by) => self.Scale(by);
 

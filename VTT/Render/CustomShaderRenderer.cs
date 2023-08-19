@@ -2,7 +2,6 @@
 {
     using OpenTK.Mathematics;
     using System;
-    using System.Collections.Generic;
     using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;

@@ -125,7 +125,7 @@
                             {
                                 for (int index = 0; index < contextArray.Length; index += 12) // pos == vec3
                                 {
-                                    positions.Add(new (
+                                    positions.Add(new(
                                         BitConverter.ToSingle(contextArray, index + 0),
                                         BitConverter.ToSingle(contextArray, index + 4),
                                         BitConverter.ToSingle(contextArray, index + 8)
@@ -428,11 +428,11 @@
                             // vec3 tangent
                             // vec3 bitangent
                             // vec4 color
-                            Vector3 pos = positions[j]; 
-                            Vector2 uv = uvs[j]; 
-                            Vector3 norm = normals[j]; 
-                            Vector3 tan = tangents[j].Xyz; 
-                            Vector3 bitan = bitangents[j].Xyz; 
+                            Vector3 pos = positions[j];
+                            Vector2 uv = uvs[j];
+                            Vector3 norm = normals[j];
+                            Vector3 tan = tangents[j].Xyz;
+                            Vector3 bitan = bitangents[j].Xyz;
                             Vector4 color = colors[j];
                             vBuffer[vBufIndex++] = pos.X;
                             vBuffer[vBufIndex++] = pos.Y;
@@ -618,7 +618,7 @@
             this.DefaultMaterial.NormalAnimation = new TextureAnimation(null);
             this.DefaultMaterial.EmissionTexture = this.LoadBaseTexture(new Rgba32(0, 0, 0, 1f));
             this.DefaultMaterial.EmissionAnimation = new TextureAnimation(null);
-            this.DefaultMaterial.OcclusionMetallicRoughnessTexture = this.LoadBaseTexture(new (1, 1, 1, 1f));
+            this.DefaultMaterial.OcclusionMetallicRoughnessTexture = this.LoadBaseTexture(new(1, 1, 1, 1f));
             this.DefaultMaterial.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
             this.DefaultMaterial.AlphaMode = Material.AlphaModeEnum.OPAQUE;
         }
@@ -969,7 +969,7 @@
             {
                 VTT.GL.Texture glTex = new VTT.GL.Texture(TextureTarget.Texture2D, false);
                 ++this._glRequestsTodo;
-                Client.Instance.Frontend.EnqueueOrExecuteTask(() => 
+                Client.Instance.Frontend.EnqueueOrExecuteTask(() =>
                 {
                     glTex.Allocate();
                     LoadTexture(glTex);

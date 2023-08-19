@@ -146,10 +146,10 @@
 
                 if (bo)
                 {
-                    PacketChangeMapData pcmd = new PacketChangeMapData() 
-                    { 
-                        Data = Extensions.FromVec4(this._editedMapColor.GLVector()), 
-                        MapID = state.clientMap.ID, 
+                    PacketChangeMapData pcmd = new PacketChangeMapData()
+                    {
+                        Data = Extensions.FromVec4(this._editedMapColor.GLVector()),
+                        MapID = state.clientMap.ID,
                         Type = this._editedMapColorIndex switch
                         {
                             0 => PacketChangeMapData.DataType.GridColor,
@@ -563,7 +563,7 @@
                 System.Numerics.Vector2 cursorStart = ImGui.GetCursorPos();
                 float cX = 0;
                 float cY = 0;
-                float w = ImGui.GetWindowWidth(); 
+                float w = ImGui.GetWindowWidth();
                 float scrollMin = ImGui.GetScrollY();
                 float scrollMax = scrollMin + ImGui.GetWindowHeight();
                 foreach ((string, float, float) btn in iterableBtns)
@@ -688,9 +688,9 @@
                 ImGui.Text(lang.Translate("ui.texture.filter_min"));
                 if (ImGui.Combo("##Min Filter", ref cfMin, filterModes, 4))
                 {
-                    this._editedTextureMetadataCopy.FilterMin = filterMin = 
-                        cfMin == 0 ? GL.FilterParam.Nearest : 
-                        cfMin == 1 ? GL.FilterParam.Linear : 
+                    this._editedTextureMetadataCopy.FilterMin = filterMin =
+                        cfMin == 0 ? GL.FilterParam.Nearest :
+                        cfMin == 1 ? GL.FilterParam.Linear :
                         cfMin == 2 ? GL.FilterParam.LinearMipmapNearest : GL.FilterParam.LinearMipmapLinear;
                 }
 
@@ -833,7 +833,7 @@
             {
                 ImGui.OpenPopup("###Edit Texture");
             }
-            
+
             if (state.editParticleSystemPopup && !this.ParticleEditorRenderer.popupState)
             {
                 this.ParticleEditorRenderer.popupState = true;

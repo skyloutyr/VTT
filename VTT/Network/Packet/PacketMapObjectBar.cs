@@ -157,7 +157,7 @@
                 de.Write(bw);
             }
         }
-    
+
         public enum Action
         {
             Add,

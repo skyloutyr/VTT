@@ -56,7 +56,7 @@
                 }
             },
 
-            new NodeOutput[0],
+            Array.Empty<NodeOutput>(),
 @"albedo = $INPUT@0$;
 normal = $INPUT@1$;
 emissive = $INPUT@2$;
@@ -516,14 +516,14 @@ r = $INPUT@6$;
                 CurrentValue = Vector2.Zero
             }
         },
-            
+
         new NodeOutput[] {
             new NodeOutput() {
                 Name = "Result",
                 SelfType = NodeValueType.Vec2
             }
         },
-        
+
 @"$OUTPUT@0$ = $INPUT@0$ * $INPUT@1$;
 "
 
@@ -2202,13 +2202,13 @@ r = $INPUT@6$;
 
         #region Material Uniforms
 
-        public static ShaderNodeTemplate MaterialData = new ShaderNodeTemplate(Guid.Parse("fcb1fc5e-deaf-410d-b811-3ba90cef9da6"), ShaderTemplateCategory.Inputs, "Material Info", true, new NodeInput[0], new NodeOutput[] {
+        public static ShaderNodeTemplate MaterialData { get; } = new ShaderNodeTemplate(Guid.Parse("fcb1fc5e-deaf-410d-b811-3ba90cef9da6"), ShaderTemplateCategory.Inputs, "Material Info", true, Array.Empty<NodeInput>(), new NodeOutput[] {
             new NodeOutput(){
                 SelfType = NodeValueType.Vec3,
                 Name = "Albedo Color"
             },
 
-            new NodeOutput(){ 
+            new NodeOutput(){
                 SelfType = NodeValueType.Float,
                 Name = "Albedo Alpha"
             },
@@ -2280,24 +2280,24 @@ $OUTPUT@9$ = m_metal_factor;
 $OUTPUT@10$ = m_roughness_factor;
 $OUTPUT@11$ = material_index;
 ");
-        
-        public static ShaderNodeTemplate MaterialAlpha = new ShaderNodeTemplate(Guid.Parse("ce7189b5-c66d-4836-9cd4-e5c8937c32d0"), ShaderTemplateCategory.Inputs, "User Alpha", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },
+
+        public static ShaderNodeTemplate MaterialAlpha { get; } = new ShaderNodeTemplate(Guid.Parse("ce7189b5-c66d-4836-9cd4-e5c8937c32d0"), ShaderTemplateCategory.Inputs, "User Alpha", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },
 @"$OUTPUT@0$ = alpha;
 ");
 
-        public static ShaderNodeTemplate MaterialTintColor = new ShaderNodeTemplate(Guid.Parse("1a220e15-4e06-4df2-ba80-4fa1bb2f2d32"), ShaderTemplateCategory.Inputs, "User Tint Color", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Color", SelfType = NodeValueType.Vec3 }, new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },
+        public static ShaderNodeTemplate MaterialTintColor { get; } = new ShaderNodeTemplate(Guid.Parse("1a220e15-4e06-4df2-ba80-4fa1bb2f2d32"), ShaderTemplateCategory.Inputs, "User Tint Color", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Color", SelfType = NodeValueType.Vec3 }, new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },
 @"$OUTPUT@0$ = tint_color.rgb;
 $OUTPUT@1$ = tint_color.a;
 ");
 
-        public static ShaderNodeTemplate TimeData = new ShaderNodeTemplate(Guid.Parse("12266c37-51b8-4eb3-bcde-73580ea23b0d"), ShaderTemplateCategory.Inputs, "Time Data", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Frame", SelfType = NodeValueType.UInt }, new NodeOutput() { Name = "Update", SelfType = NodeValueType.UInt } },
+        public static ShaderNodeTemplate TimeData { get; } = new ShaderNodeTemplate(Guid.Parse("12266c37-51b8-4eb3-bcde-73580ea23b0d"), ShaderTemplateCategory.Inputs, "Time Data", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Frame", SelfType = NodeValueType.UInt }, new NodeOutput() { Name = "Update", SelfType = NodeValueType.UInt } },
 @"$OUTPUT@0$ = frame;
 $OUTPUT@1$ = update;
 ");
 
-        public static ShaderNodeTemplate GeometryData = new ShaderNodeTemplate(Guid.Parse("2d314027-1f83-469c-9d22-29c8f4539a63"), ShaderTemplateCategory.Inputs, "Geometry Data", true, new NodeInput[0], 
-            new NodeOutput[] { 
-                new NodeOutput() { Name = "World Tangent", SelfType = NodeValueType.Vec3 }, 
+        public static ShaderNodeTemplate GeometryData { get; } = new ShaderNodeTemplate(Guid.Parse("2d314027-1f83-469c-9d22-29c8f4539a63"), ShaderTemplateCategory.Inputs, "Geometry Data", true, Array.Empty<NodeInput>(),
+            new NodeOutput[] {
+                new NodeOutput() { Name = "World Tangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "World Bitangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "World Normal", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "World Position", SelfType = NodeValueType.Vec3 },
@@ -2318,11 +2318,11 @@ $OUTPUT@7$ = f_position;
 $OUTPUT@8$ = gl_FragCoord.xyz;
 ");
 
-        public static ShaderNodeTemplate Mapping = new ShaderNodeTemplate(Guid.Parse("a278f63a-57f0-4aa0-b10c-f65b5d248739"), ShaderTemplateCategory.Inputs, "Texture Coordinates", true, new NodeInput[0], new NodeOutput[] { new NodeOutput() { Name = "Geometry UVs", SelfType = NodeValueType.Vec2 }},
+        public static ShaderNodeTemplate Mapping { get; } = new ShaderNodeTemplate(Guid.Parse("a278f63a-57f0-4aa0-b10c-f65b5d248739"), ShaderTemplateCategory.Inputs, "Texture Coordinates", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Geometry UVs", SelfType = NodeValueType.Vec2 } },
 @"$OUTPUT@0$ = f_texture;
 ");
 
-        public static ShaderNodeTemplate CursorLocation = new ShaderNodeTemplate(Guid.Parse("9d52d71d-117b-4bb3-8949-48e85f57bf35"), ShaderTemplateCategory.Inputs, "Cursor Position", true, new NodeInput[0], new NodeOutput[] { 
+        public static ShaderNodeTemplate CursorLocation { get; } = new ShaderNodeTemplate(Guid.Parse("9d52d71d-117b-4bb3-8949-48e85f57bf35"), ShaderTemplateCategory.Inputs, "Cursor Position", true, Array.Empty<NodeInput>(), new NodeOutput[] {
             new NodeOutput() { Name = "Worldspace", SelfType = NodeValueType.Vec3 },
             new NodeOutput() { Name = "Screenspace", SelfType = NodeValueType.Vec2 }
         },
@@ -2333,11 +2333,11 @@ $OUTPUT@1$ = (projection * view * vec4(cursor_position, 1.0)).xy;
         #endregion
 
         #region Samplers
-        public static ShaderNodeTemplate SampleAlbedo = new ShaderNodeTemplate(Guid.Parse("e057ff81-0699-4e02-8eef-5f808d71fe34"), ShaderTemplateCategory.Samplers, "Albedo Sampler", true,
+        public static ShaderNodeTemplate SampleAlbedo { get; } = new ShaderNodeTemplate(Guid.Parse("e057ff81-0699-4e02-8eef-5f808d71fe34"), ShaderTemplateCategory.Samplers, "Albedo Sampler", true,
             new NodeInput[] {
                 new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
             },
-            new NodeOutput[] { 
+            new NodeOutput[] {
                 new NodeOutput(){ Name = "Color", SelfType = NodeValueType.Vec3 },
                 new NodeOutput(){ Name = "Alpha", SelfType = NodeValueType.Float }
             },
@@ -2346,7 +2346,7 @@ $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;
 ");
 
-        public static ShaderNodeTemplate SampleEmission = new ShaderNodeTemplate(Guid.Parse("a3664983-c17d-42e7-8493-bb0ceca9937d"), ShaderTemplateCategory.Samplers, "Emissive Sampler", true,
+        public static ShaderNodeTemplate SampleEmission { get; } = new ShaderNodeTemplate(Guid.Parse("a3664983-c17d-42e7-8493-bb0ceca9937d"), ShaderTemplateCategory.Samplers, "Emissive Sampler", true,
             new NodeInput[] {
                 new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
             },
@@ -2359,7 +2359,7 @@ $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;
 ");
 
-        public static ShaderNodeTemplate SampleNormal = new ShaderNodeTemplate(Guid.Parse("370e5679-2d46-464d-b5d6-f4938b2c9328"), ShaderTemplateCategory.Samplers, "Normal Sampler", true,
+        public static ShaderNodeTemplate SampleNormal { get; } = new ShaderNodeTemplate(Guid.Parse("370e5679-2d46-464d-b5d6-f4938b2c9328"), ShaderTemplateCategory.Samplers, "Normal Sampler", true,
             new NodeInput[] {
                 new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
             },
@@ -2369,7 +2369,7 @@ $OUTPUT@1$ = $TEMP@0$.a;
 @"$OUTPUT@0$ = getNormalFromMapCustom($INPUT@0$);
 ");
 
-        public static ShaderNodeTemplate SampleAOMR = new ShaderNodeTemplate(Guid.Parse("4ee9d9b9-7cbd-4526-a827-f8b280e73ac7"), ShaderTemplateCategory.Samplers, "AoMR Sampler", true,
+        public static ShaderNodeTemplate SampleAOMR { get; } = new ShaderNodeTemplate(Guid.Parse("4ee9d9b9-7cbd-4526-a827-f8b280e73ac7"), ShaderTemplateCategory.Samplers, "AoMR Sampler", true,
             new NodeInput[] {
                 new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
             },
@@ -2384,7 +2384,7 @@ $OUTPUT@1$ = $TEMP@0$.g;
 $OUTPUT@2$ = $TEMP@0$.b;
 ");
 
-        public static ShaderNodeTemplate SampleCustomTexture = new ShaderNodeTemplate(Guid.Parse("924608ae-46d5-4b05-ab4d-7cbbaa23cdbc"), ShaderTemplateCategory.Samplers, "Custom Sampler", true,
+        public static ShaderNodeTemplate SampleCustomTexture { get; } = new ShaderNodeTemplate(Guid.Parse("924608ae-46d5-4b05-ab4d-7cbbaa23cdbc"), ShaderTemplateCategory.Samplers, "Custom Sampler", true,
             new NodeInput[] {
                 new NodeInput(){ Name = "Texture Index", SelfType = NodeValueType.Int, CurrentValue = 0 },
                 new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero }
@@ -2402,7 +2402,7 @@ $OUTPUT@1$ = $TEMP@0$.a;
 
         #region Vector Decomposition and Composition
 
-        public static ShaderNodeTemplate DecomposeVec2 { get; } = new ShaderNodeTemplate(Guid.Parse("0563de9b-42b7-46ec-a850-824b1570f85b"), ShaderTemplateCategory.VectorC, "Vec2 - Decompose", true, new NodeInput[] { 
+        public static ShaderNodeTemplate DecomposeVec2 { get; } = new ShaderNodeTemplate(Guid.Parse("0563de9b-42b7-46ec-a850-824b1570f85b"), ShaderTemplateCategory.VectorC, "Vec2 - Decompose", true, new NodeInput[] {
             new NodeInput() { CurrentValue = Vector2.Zero, Name = "Vec2", SelfType = NodeValueType.Vec2 } }, new NodeOutput[] {
             new NodeOutput(){ Name = "X", SelfType = NodeValueType.Float },
             new NodeOutput(){ Name = "Y", SelfType = NodeValueType.Float }
@@ -2440,7 +2440,7 @@ $OUTPUT@2$ = $INPUT@0$.z;
 @"$OUTPUT@0$ = vec3($INPUT@0$, $INPUT@1$, $INPUT@2$);
 ");
 
-        public static ShaderNodeTemplate DecomposeVec4 { get; } = new ShaderNodeTemplate(Guid.Parse("b880b1af-3bdc-498b-92bd-1f38f728d9a3"), ShaderTemplateCategory.VectorC, "Vec4 - Decompose", true, new NodeInput[] { 
+        public static ShaderNodeTemplate DecomposeVec4 { get; } = new ShaderNodeTemplate(Guid.Parse("b880b1af-3bdc-498b-92bd-1f38f728d9a3"), ShaderTemplateCategory.VectorC, "Vec4 - Decompose", true, new NodeInput[] {
             new NodeInput() { CurrentValue = Vector4.Zero, Name = "Vec4", SelfType = NodeValueType.Vec4 } }, new NodeOutput[] {
             new NodeOutput(){ Name = "X", SelfType = NodeValueType.Float },
             new NodeOutput(){ Name = "Y", SelfType = NodeValueType.Float },
@@ -2800,7 +2800,7 @@ $OUTPUT@3$ = $INPUT@0$.w;
                 Inputs = this.NodeInputs.Select(x => x.Copy().ValidateValue()).ToList(),
                 Outputs = this.NodeOutputs.Select(x => x.Copy()).ToList(),
                 TemplateID = this.ID,
-                Size = new Vector2(mW, 40 + maxS * 20)
+                Size = new Vector2(mW, 40 + (maxS * 20))
             };
         }
     }

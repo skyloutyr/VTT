@@ -129,7 +129,7 @@
             this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
             this._vao.Bind();
             this._vbo.Bind();
-            this._vbo.SetData(new float[] { 
+            this._vbo.SetData(new float[] {
                 -1f, -1f, 0f,
                 1f, -1f, 0f,
                 -1f, 1f, 0f,

@@ -1,10 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     internal class PacketDeleteMapObject : PacketBase
     {

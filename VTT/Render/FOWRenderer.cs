@@ -18,7 +18,7 @@
         public Vector2 FOWOffset { get; set; }
         public Vector2 FOWWorldSize
         {
-            get => this.fOWWorldSize; 
+            get => this.fOWWorldSize;
             set
             {
                 this.fOWWorldSize = value;

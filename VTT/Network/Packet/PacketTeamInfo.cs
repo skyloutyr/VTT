@@ -1,10 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using SixLabors.ImageSharp;
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketTeamInfo : PacketBase
     {
@@ -95,7 +95,7 @@
                     }
                 }
             }
-        
+
             if (isServer)
             {
                 m.NeedsSave = true;

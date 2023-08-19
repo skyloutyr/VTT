@@ -14,7 +14,7 @@
             this.Direction = direction.Normalized();
         }
 
-        public Vector3? IntersectsSphere(Vector3 position, float radius)
+        public readonly Vector3? IntersectsSphere(Vector3 position, float radius)
         {
             Vector3 o_minus_c = this.Origin - position;
             float p = Vector3.Dot(this.Direction, o_minus_c);
@@ -32,7 +32,7 @@
             return discriminant > 1e-7 ? this.Origin + (this.Direction * dist2) : this.Origin + (this.Direction * dist1);
         }
 
-        public (Vector3, Vector3)? IntersectsSphereBoth(Vector3 position, float radius)
+        public readonly (Vector3, Vector3)? IntersectsSphereBoth(Vector3 position, float radius)
         {
             Vector3 o_minus_c = this.Origin - position;
             float p = Vector3.Dot(this.Direction, o_minus_c);
@@ -50,7 +50,7 @@
             return (this.Origin + (this.Direction * dist2), this.Origin + (this.Direction * dist1));
         }
 
-        public Vector3? IntersectsSphereInverse(Vector3 position, float radius)
+        public readonly Vector3? IntersectsSphereInverse(Vector3 position, float radius)
         {
             Vector3 o_minus_c = this.Origin - position;
             float p = Vector3.Dot(this.Direction, o_minus_c);
@@ -69,6 +69,6 @@
         }
 
 
-        public override string ToString() => this.Origin.ToString() + ", " + this.Direction.ToString();
+        public override readonly string ToString() => this.Origin.ToString() + ", " + this.Direction.ToString();
     }
 }

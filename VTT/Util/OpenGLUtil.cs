@@ -18,7 +18,7 @@
             return new WavefrontObject(lines, desiredFormat);
         }
 
-        private static Lazy<bool> haveSpirVArb = new Lazy<bool>(() => IsExtensionSupported("ARB_gl_spirv"));
+        private static readonly Lazy<bool> haveSpirVArb = new Lazy<bool>(() => IsExtensionSupported("ARB_gl_spirv"));
         public static bool IsExtensionSupported(string extName) => GLFW.ExtensionSupported(extName);
 
         public static bool PreferSpirV { get; set; }
@@ -33,14 +33,7 @@
                 trySpirV = IOVTT.DoesResourceExist("VTT.Embed." + name + ".vert.spv") || IOVTT.DoesResourceExist("VTT.Embed." + name + ".frag.spv");
             }
 
-            if (trySpirV)
-            {
-                return LoadShaderBinary(name, types);
-            }
-            else
-            {
-                return LoadShaderCode(name, types);
-            }
+            return trySpirV ? LoadShaderBinary(name, types) : LoadShaderCode(name, types);
         }
 
         private static ShaderProgram LoadShaderBinary(string name, params ShaderType[] types)

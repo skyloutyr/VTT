@@ -133,7 +133,7 @@
         }
 
         public enum FieldType
-        { 
+        {
             Title,
             Text,
             IsPublic,

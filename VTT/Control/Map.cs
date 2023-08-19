@@ -61,7 +61,7 @@
 
         public void AddObject(MapObject obj)
         {
-            lock(this.Lock)
+            lock (this.Lock)
             {
                 this.Objects.Add(obj);
                 this.Objects.Sort((l, r) => l.AssetID.CompareTo(r.AssetID));
@@ -196,7 +196,8 @@
             }
 
             this.PermanentMarks.Clear();
-            this.PermanentMarks.AddRange(e.GetArray("PermanentMarks", (n, c) => { 
+            this.PermanentMarks.AddRange(e.GetArray("PermanentMarks", (n, c) =>
+            {
                 DataElement de = c.Get<DataElement>(n);
                 RulerInfo ri = new RulerInfo();
                 ri.Deserialize(de);
@@ -261,7 +262,8 @@
             ret.Set("EnableDarkvision", this.EnableDarkvision);
             ret.SetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
-            ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) => {
+            ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) =>
+            {
                 DataElement d = new DataElement();
                 d.SetGuid("k", e.Key);
                 d.SetGuid("o", e.Item2);

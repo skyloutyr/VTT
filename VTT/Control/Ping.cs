@@ -39,7 +39,7 @@
         }
 
         public enum PingType
-        { 
+        {
             Generic,
             Exclamation,
             Question,

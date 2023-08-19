@@ -42,8 +42,8 @@
             }
         }
 
-        private static BlockingCollection<(LogLevel, string)> consoleMsgQueue = new BlockingCollection<(LogLevel, string)>();
-        private static Thread consoleMsgThread;
+        private static readonly BlockingCollection<(LogLevel, string)> consoleMsgQueue = new BlockingCollection<(LogLevel, string)>();
+        private static readonly Thread consoleMsgThread;
         private static void ProcessConsole()
         {
             static ConsoleColor GetColor(LogLevel level)
@@ -104,10 +104,7 @@
                 }
             }
 
-            public void WriteLine(LogLevel level, string line)
-            {
-                this._internalQueue.Add((level, line));
-            }
+            public void WriteLine(LogLevel level, string line) => this._internalQueue.Add((level, line));
 
             public void Close()
             {

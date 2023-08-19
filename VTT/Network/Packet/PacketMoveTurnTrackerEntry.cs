@@ -1,9 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketMoveTurnTrackerEntry : PacketBase
     {
@@ -40,7 +40,7 @@
                 this.Broadcast(c => c.ClientMapID.Equals(m.ID));
             }
         }
-            
+
 
         public override void Decode(BinaryReader br)
         {

@@ -172,7 +172,7 @@
             ret.Set("Name", this.Name);
             ret.SetEnum("Type", this.SelfType);
             ret.SetGuid("Connected", this.ConnectedOutput);
-            switch (this.SelfType) 
+            switch (this.SelfType)
             {
                 case NodeValueType.Int:
                 {

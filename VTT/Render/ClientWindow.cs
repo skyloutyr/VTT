@@ -70,7 +70,7 @@
                     IsEventDriven = false,
                     WindowState = Client.Instance.Settings.ScreenMode == ClientSettings.FullscreenMode.Fullscreen ? OpenTK.Windowing.Common.WindowState.Fullscreen : OpenTK.Windowing.Common.WindowState.Normal,
                     NumberOfSamples = Client.Instance.Settings.MSAA switch
-                    { 
+                    {
                         ClientSettings.MSAAMode.Disabled => 0,
                         ClientSettings.MSAAMode.Low => 2,
                         ClientSettings.MSAAMode.Standard => 4,
@@ -85,7 +85,7 @@
                     StencilBits = 8,
                 }
             )
-            { 
+            {
                 VSync = Client.Instance.Settings.VSync,
                 Title = "VTT " + Program.Version.ToString(),
             };

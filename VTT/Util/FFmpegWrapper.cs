@@ -272,7 +272,7 @@
                 Size destinationSize, AVPixelFormat destinationPixelFormat)
             {
                 _destinationSize = destinationSize;
-                
+
                 _pConvertContext = ffmpeg.sws_getContext(
                     sourceSize.Width,
                     sourceSize.Height,

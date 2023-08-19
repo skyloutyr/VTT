@@ -447,7 +447,7 @@
                 this.ImageBinary = imageBinary;
             }
 
-            public Frame ClearBinary() => new Frame(this.Idx, this.Duration, this.Blend, null);
+            public readonly Frame ClearBinary() => new Frame(this.Idx, this.Duration, this.Blend, null);
         }
 
         public class Metadata : ISerializable

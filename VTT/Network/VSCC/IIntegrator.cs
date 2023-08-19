@@ -8,7 +8,7 @@
     {
         public bool Accepts(string type);
         public bool Process(JObject data, string fullMessage, VSCCIntegration integration);
-    
+
         public static string SanitizeInput(string input)
         {
             StringBuilder sb = new StringBuilder();

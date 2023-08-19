@@ -24,16 +24,16 @@
 
         public static BBBox FromPositionAndSize(Vector3 pos, Vector3 size) => new BBBox(pos, pos + size, Quaternion.Identity);
 
-        public BBBox Offset(Vector3 by) => new BBBox(this.Start + by, this.End + by, this.Rotation);
+        public readonly BBBox Offset(Vector3 by) => new BBBox(this.Start + by, this.End + by, this.Rotation);
 
-        public BBBox Scale(Vector3 by) => new BBBox(this.Start * by, this.End * by, this.Rotation);
-        public BBBox Scale(float by) => new BBBox(this.Start * by, this.End * by, this.Rotation);
+        public readonly BBBox Scale(Vector3 by) => new BBBox(this.Start * by, this.End * by, this.Rotation);
+        public readonly BBBox Scale(float by) => new BBBox(this.Start * by, this.End * by, this.Rotation);
 
-        public BBBox Rotate(Quaternion by) => new BBBox(this.Start, this.End, this.Rotation * by);
+        public readonly BBBox Rotate(Quaternion by) => new BBBox(this.Start, this.End, this.Rotation * by);
 
-        public BBBox SetRotation(Quaternion to) => new BBBox(this.Start, this.End, to);
+        public readonly BBBox SetRotation(Quaternion to) => new BBBox(this.Start, this.End, to);
 
-        public AABox GetBounds()
+        public readonly AABox GetBounds()
         {
             Matrix3 m = Matrix3.CreateFromQuaternion(this.Rotation.Normalized());
 
@@ -94,7 +94,7 @@
             return new AABox(minX, minY, minZ, maxX, maxY, maxZ);
         }
 
-        public Vector3? Intersects(Ray ray, Vector3 offset = default)
+        public readonly Vector3? Intersects(Ray ray, Vector3 offset = default)
         {
             Matrix4 modelMatrix = Matrix4.CreateFromQuaternion(this.Rotation) * Matrix4.CreateTranslation(offset);
 
@@ -191,15 +191,15 @@
             // return new AABox(this.Start, this.End).Intersects(new Ray(ori.Xyz, dir.Xyz));
         }
 
-        public bool Equals(BBBox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);
+        public readonly bool Equals(BBBox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);
 
-        public override int GetHashCode() => HashCode.Combine(this.Start, this.End);
+        public override readonly int GetHashCode() => HashCode.Combine(this.Start, this.End);
 
-        public override bool Equals(object obj) => base.Equals(obj);
+        public override readonly bool Equals(object obj) => base.Equals(obj);
 
-        public override string ToString() => base.ToString() + $"[{ this.Start }, { this.End }]";
+        public override readonly string ToString() => base.ToString() + $"[{this.Start}, {this.End}]";
 
-        public IEnumerator<Vector3> GetEnumerator()
+        public readonly IEnumerator<Vector3> GetEnumerator()
         {
             Vector3 s = this.Start;
             Vector3 e = this.End;
@@ -224,7 +224,7 @@
             yield return p7;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
         public static BBBox operator *(BBBox self, Vector3 by) => self.Scale(by);
 

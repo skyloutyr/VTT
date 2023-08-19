@@ -112,15 +112,15 @@
                                 bool z = dotZ > dotX && dotZ > dotY;
                                 bool y = dotY > dotX;
 
-                                Vector3 boxVector = 
-                                    z ? new Vector3(0.25f, 0.5f, 0.05f) : 
-                                    y ? new Vector3(0.5f, 0.05f, 0.25f) : 
-                                        new Vector3(0.05f, 0.5f, 0.25f) ;
+                                Vector3 boxVector =
+                                    z ? new Vector3(0.25f, 0.5f, 0.05f) :
+                                    y ? new Vector3(0.5f, 0.05f, 0.25f) :
+                                        new Vector3(0.05f, 0.5f, 0.25f);
 
                                 Vector4 offsetVector =
                                     z ? new Vector4(0, -0.75f, 0, 1.0f) :
                                     y ? new Vector4(-0.75f, 0, 0, 1.0f) :
-                                        new Vector4(0, 0, -0.75f, 1.0f) ;
+                                        new Vector4(0, 0, -0.75f, 1.0f);
 
                                 Vector3 axis = z ? Vector3.UnitZ : y ? Vector3.UnitY : Vector3.UnitX;
                                 for (int i = 0; i < 8; ++i)
@@ -138,7 +138,7 @@
                                         offset.X = MathF.Abs(offset.X) <= 1e-7 ? 0 : offset.X;
                                         offset.Y = MathF.Abs(offset.Y) <= 1e-7 ? 0 : offset.Y;
                                         offset.Z = MathF.Abs(offset.Z) <= 1e-7 ? 0 : offset.Z;
-                                        
+
                                         float mX = 1 * MathF.Sign(offset.X);
                                         float mY = 1 * MathF.Sign(offset.Y);
                                         float mZ = 1 * MathF.Sign(offset.Z);
@@ -291,7 +291,7 @@
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
                             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
                             BBBox p = new BBBox(new Vector3(-0.490000f, -0.490000f, -0.01f), new Vector3(0.490000f, 0.490000f, 0.01f), q).Scale(new Vector3(2.0f * vScale));
-                            
+
                             Vector3? pIntersection = p.Intersects(r, half);
 
                             Vector3? sIntersection = r.IntersectsSphere(half, radius);
@@ -381,7 +381,7 @@
                             }
                         }
                     }
-                    
+
                     if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt))
                     {
                         if (!this._blockSelection)
@@ -865,7 +865,7 @@
                         this.SelectedObjects.Remove(mouseOver);
                         return;
                     }
-                    
+
                     if (add && !this.SelectedObjects.Contains(mouseOver) && (Client.Instance.IsAdmin || mouseOver.CanEdit(Client.Instance.ID)))
                     {
                         this.SelectedObjects.Add(mouseOver);

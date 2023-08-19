@@ -24,7 +24,7 @@
                 {
                     cal.ReceiveAsset(this.AssetID, this.AssetType, this.Binary, this.Metadata);
                 }
-                else 
+                else
                 {
                     cal.ErrorAsset(this.AssetID, this.ResponseType);
                 }

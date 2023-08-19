@@ -11,7 +11,8 @@
 
         public NodeOutput Copy()
         {
-            return new NodeOutput() {
+            return new NodeOutput()
+            {
                 ID = Guid.NewGuid(),
                 Name = this.Name,
                 SelfType = this.SelfType

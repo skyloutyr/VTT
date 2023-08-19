@@ -187,8 +187,8 @@
             this.ClusterEmission = false;
         }
 
-        public ParticleSystem Copy() => new ParticleSystem() 
-        { 
+        public ParticleSystem Copy() => new ParticleSystem()
+        {
             EmissionType = this.EmissionType,
             EmissionRadius = this.EmissionRadius,
             EmissionVolume = new Vector3(this.EmissionVolume),

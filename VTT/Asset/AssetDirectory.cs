@@ -57,14 +57,15 @@
                 return assetRef;
             }));
 
-            this.Directories.AddRange(e.GetArray("Sub", (n, e) => {
+            this.Directories.AddRange(e.GetArray("Sub", (n, e) =>
+            {
                 AssetDirectory d = new AssetDirectory();
                 d.Deserialize(e.Get<DataElement>(n));
                 d.Parent = this;
                 return d;
             }));
         }
-        
+
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
@@ -88,11 +89,11 @@
     }
 
     public class AssetRef : ISerializable
-    { 
+    {
         public Guid AssetID { get; set; }
         public Guid AssetPreviewID { get; set; }
 
-        public string Name 
+        public string Name
         {
             get => this.Meta.Name;
             set => this.Meta.Name = value;

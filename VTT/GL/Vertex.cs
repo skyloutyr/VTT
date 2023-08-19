@@ -47,9 +47,8 @@
             this.Appender = appender;
         }
 
-        public float[] ToArray(object data) => this.Converter(data);
-
-        public void PushVAO(VertexArray vao) => this.VAOAdapter(vao);
+        public readonly float[] ToArray(object data) => this.Converter(data);
+        public readonly void PushVAO(VertexArray vao) => this.VAOAdapter(vao);
     }
 
     public class VertexFormat
@@ -61,7 +60,7 @@
         public static VertexFormatElement ElementVec4 { get; } = new VertexFormatElement(VertexElementType.Vec4, o => new float[] { ((Vector4)o).X, ((Vector4)o).Y, ((Vector4)o).Z, ((Vector4)o).W }, v => v.PushElement(ElementType.Vec4), AppenderVec4, 4);
         public static VertexFormatElement ElementMat4 { get; } = new VertexFormatElement(VertexElementType.Mat4, o => new float[] { ((Matrix4)o).M11, ((Matrix4)o).M12, ((Matrix4)o).M13, ((Matrix4)o).M14, ((Matrix4)o).M21, ((Matrix4)o).M22, ((Matrix4)o).M23, ((Matrix4)o).M24, ((Matrix4)o).M31, ((Matrix4)o).M32, ((Matrix4)o).M33, ((Matrix4)o).M34, ((Matrix4)o).M41, ((Matrix4)o).M42, ((Matrix4)o).M43, ((Matrix4)o).M44 }, v => v.PushElement(ElementType.Mat4), AppenderMat4, 16);
 
-        public static VertexFormat Pos { get; } = new VertexFormat(new []{ VertexData.Position }, ElementVec3);
+        public static VertexFormat Pos { get; } = new VertexFormat(new[] { VertexData.Position }, ElementVec3);
         public static VertexFormat AnimatedPos { get; } = new VertexFormat(new[] { VertexData.Position, VertexData.BoneIndexMatrix, VertexData.BoneWeightMatrix }, ElementVec3, ElementMat4, ElementMat4);
         public static VertexFormat PosUV { get; } = new VertexFormat(new[] { VertexData.Position, VertexData.UV }, ElementVec3, ElementVec2);
         public static VertexFormat PosNormal { get; } = new VertexFormat(new[] { VertexData.Position, VertexData.Normal }, ElementVec3, ElementVec3);

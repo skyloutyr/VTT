@@ -241,7 +241,7 @@
             }
 
             HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", $"VTT-C#-Client-ImageRequestBot/1.0.0 (https://github.com/skyloutyr; skyloutyr@gmail.com) Requesting-User-Constant-GUID/{ Client.Instance.ID } ClientCachePolicy/Aggressive");
+            client.DefaultRequestHeaders.Add("User-Agent", $"VTT-C#-Client-ImageRequestBot/1.0.0 (https://github.com/skyloutyr; skyloutyr@gmail.com) Requesting-User-Constant-GUID/{Client.Instance.ID} ClientCachePolicy/Aggressive");
 
             try
             {
@@ -379,7 +379,7 @@
                 this.ErroredWebImages[url] = AssetStatus.Error;
                 return AssetStatus.Error;
             }
-            
+
             this.ErroredWebImages[url] = AssetStatus.Await;
             return AssetStatus.Await;
         }
@@ -676,7 +676,7 @@
         public void ClearAssets()
         {
             this.LastRequestTime = 0;
-            this.ErroredAssets.Clear(); 
+            this.ErroredAssets.Clear();
             foreach (Asset a in this.Container.Assets.Values)
             {
                 a.Dispose();

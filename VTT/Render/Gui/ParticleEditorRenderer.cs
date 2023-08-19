@@ -402,7 +402,7 @@
                 drawList.AddRectFilledMultiColor(
                     new System.Numerics.Vector2(curWin.X + fS, curWin.Y),
                     new System.Numerics.Vector2(curWin.X + fN, curWin.Y + 24),
-                    clrL, clrR, clrR, clrL                    
+                    clrL, clrR, clrR, clrL
                 );
 
                 bool hoverTri = PointInTriangle(

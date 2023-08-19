@@ -192,7 +192,7 @@
         }
 
         public enum ChangeType
-        { 
+        {
             Position,
             Rotation,
             Scale

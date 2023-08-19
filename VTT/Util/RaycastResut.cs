@@ -19,7 +19,7 @@
         public Vector3[] AllHit { get; set; }
         public int HitIndex { get; set; }
 
-        public static implicit operator bool (RaycastResut self) => self.Result;
+        public static implicit operator bool(RaycastResut self) => self.Result;
 
         public static RaycastResut Raycast(Ray r, Map env, Predicate<MapObject> selector = null)
         {

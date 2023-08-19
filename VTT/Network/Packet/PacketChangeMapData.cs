@@ -309,9 +309,9 @@
                 }
             }
         }
-    
+
         public enum DataType
-        { 
+        {
             Name,
             Folder,
             GridEnabled,

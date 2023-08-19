@@ -44,7 +44,7 @@
             DataType dt =
                 typeof(T) == typeof(sbyte) ? DataType.SByte :
                 typeof(T) == typeof(short) ? DataType.Short :
-                typeof(T) == typeof(ushort) ? DataType.UShort : 
+                typeof(T) == typeof(ushort) ? DataType.UShort :
                 typeof(T) == typeof(int) ? DataType.Int :
                 typeof(T) == typeof(uint) ? DataType.UInt :
                 typeof(T) == typeof(long) ? DataType.Long :

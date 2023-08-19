@@ -80,7 +80,7 @@
             this._highlightVao.PushElement(ElementType.Vec2);
 
             float[] nData = new float[data.Length * 6];
-            Quaternion[] q = new Quaternion[] { 
+            Quaternion[] q = new Quaternion[] {
                 Quaternion.Identity,                                                        // Up
                 Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(180)),  // Down
                 Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(90)),   // Front

@@ -4,7 +4,6 @@
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
-    using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -82,7 +81,7 @@
                                 {
                                     ImGui.TextUnformatted($"{i}: ");
                                     ImGui.SameLine();
-                                    if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new (16, 16)))
+                                    if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new(16, 16)))
                                     {
                                         dIndex = i;
                                     }
@@ -173,7 +172,7 @@
                                     {
                                         if (this.EditedGraph.AllOutputsById.TryGetValue(ni.ConnectedOutput, out (ShaderNode, NodeOutput) data))
                                         {
-                                            int outOffset = data.Item1.Inputs.Count * 20 + data.Item1.Outputs.IndexOf(data.Item2) * 20;
+                                            int outOffset = (data.Item1.Inputs.Count * 20) + (data.Item1.Outputs.IndexOf(data.Item2) * 20);
                                             SVec2 oSPos = padding + data.Item1.Location.SystemVector() + new SVec2(data.Item1.Size.X, 30 + outOffset);
                                             bool mOverOutput = ImGui.IsMouseHoveringRect(padding + data.Item1.Location.SystemVector(), padding + data.Item1.Location.SystemVector() + data.Item1.Size.SystemVector()) || ImGui.IsMouseHoveringRect(oSPos + new SVec2(-3, -3), oSPos + new SVec2(3, 3));
                                             SVec2 iSPos = nSPos + new SVec2(0, yOffset);
@@ -387,7 +386,7 @@
                             SVec2 mouseDelta = cMP - this._mouseInitialPosition;
                             switch (this._moveMode)
                             {
-                                case MoveMode.Camera: 
+                                case MoveMode.Camera:
                                 {
                                     this._cameraLocation = this._cameraInitialLocation + mouseDelta;
                                     break;
@@ -399,7 +398,7 @@
                                     break;
                                 }
 
-                                case MoveMode.NodeConnectionIn: 
+                                case MoveMode.NodeConnectionIn:
                                 {
                                     this._inMoved.ConnectedOutput = Guid.Empty;
                                     break;
@@ -413,9 +412,9 @@
                     uint backClrV4 = ImGui.GetColorU32(ImGuiCol.WindowBg);
                     drawPtr.AddRectFilled(bl, bl + new SVec2(winSize.X, 20), backClrV4);
                     drawPtr.AddText(bl + new SVec2(32, 0), Color.DarkRed.Abgr(), "⮿");
-                    drawPtr.AddText(bl + new SVec2(50, 0), Color.White.Abgr(), $"{ this._shaderErrors.Count }");
+                    drawPtr.AddText(bl + new SVec2(50, 0), Color.White.Abgr(), $"{this._shaderErrors.Count}");
                     drawPtr.AddText(bl + new SVec2(100, 0), Color.Yellow.Abgr(), "⚠");
-                    drawPtr.AddText(bl + new SVec2(118, 0), Color.White.Abgr(), $"{ this._shaderWarnings.Count }");
+                    drawPtr.AddText(bl + new SVec2(118, 0), Color.White.Abgr(), $"{this._shaderWarnings.Count}");
                     //drawPtr.AddImage(Client.Instance.Frontend.Renderer.GuiRenderer.ErrorIcon, bl, bl + new SVec2(20, 20));
 
                     ImGui.SetCursorPos(initialScreen + new SVec2(winSize.X - 70, winSize.Y - 56));

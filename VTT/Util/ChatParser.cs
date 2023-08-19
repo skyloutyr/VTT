@@ -38,7 +38,7 @@
                     int sIndex2 = text.IndexOf(' ', sIndex + 1);
                     if (sIndex != -1 && sIndex2 != -1)
                     {
-                        text = $"[d:{text[(sIndex+1)..sIndex2]}]{ text[(sIndex2 + 1)..] }";
+                        text = $"[d:{text[(sIndex + 1)..sIndex2]}]{text[(sIndex2 + 1)..]}";
                     }
                 }
 
@@ -309,11 +309,11 @@
                                 continue;
                             }
 
-                            expr:
-                                --idx;
-                                // Expression
-                                blockMode = 5;
-                                continue;
+                        expr:
+                            --idx;
+                            // Expression
+                            blockMode = 5;
+                            continue;
                         }
                         else
                         {

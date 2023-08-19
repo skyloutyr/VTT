@@ -1,11 +1,11 @@
 ﻿namespace VTT.Network.Packet
 {
-    using VTT.Util;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketMapObjectGenericData : PacketBase
     {
@@ -79,7 +79,7 @@
                             d.Item2.CustomProperties = (DataElement)d.Item3;
                             break;
                         }
-                        
+
                         case DataType.SelfCastsShadow:
                         {
                             d.Item2.LightsSelfCastsShadow = (bool)d.Item3;

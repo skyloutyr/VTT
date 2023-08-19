@@ -16,7 +16,7 @@
 
         public Vector3 Position
         {
-            get => this._position; 
+            get => this._position;
             set
             {
                 this._position = value;
@@ -25,7 +25,7 @@
         }
         public Quaternion Rotation
         {
-            get => this._rotation; 
+            get => this._rotation;
             set
             {
                 this._rotation = value;
@@ -34,7 +34,7 @@
         }
         public Vector3 Scale
         {
-            get => this._scale; 
+            get => this._scale;
             set
             {
                 this._scale = value;

@@ -7,7 +7,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Xml.Linq;
     using VTT.Asset.Glb;
     using VTT.GL;
     using VTT.Network;
@@ -140,7 +139,7 @@
                 }
 
                 // Step 1: sanitize the algorithm, removing useless nodes (a node is useless if all of its outputs are unused)
-                while (true) 
+                while (true)
                 {
                     foreach (ShaderNode n in this.Nodes)
                     {
@@ -643,7 +642,7 @@
             foreach (NodeInput ni in this.AllInputsById.Select(x => x.Value.Item2))
             {
                 if (!ni.ConnectedOutput.Equals(Guid.Empty) && this.AllOutputsById.TryGetValue(ni.ConnectedOutput, out (ShaderNode, NodeOutput) val))
-                { 
+                {
                     if (val.Item2.SelfType != ni.SelfType)
                     {
                         warnings.Add("shadergraph.warn.automatic_type_conversion@" + val.Item1.Name);
@@ -826,15 +825,13 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.SetArray("Nodes", this.Nodes.ToArray(), (n, c, v) => {
+            ret.SetArray("Nodes", this.Nodes.ToArray(), (n, c, v) =>
+            {
                 DataElement d = v.Serialize();
                 c.Set(n, d);
             });
 
-            ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) =>
-            {
-                c.SetGuid(n, v);
-            });
+            ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) => c.SetGuid(n, v));
 
             return ret;
         }

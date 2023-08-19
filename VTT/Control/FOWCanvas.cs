@@ -212,7 +212,7 @@
                 float y1 = now.Y;
                 float y2 = next.Y;
                 if (
-                    (x1 <= rect.Left && x2 <= rect.Left) || 
+                    (x1 <= rect.Left && x2 <= rect.Left) ||
                     (y1 <= rect.Top && y2 <= rect.Top) ||
                     (x1 >= rect.Right && x2 >= rect.Right) ||
                     (y1 >= rect.Bottom && y2 >= rect.Bottom)

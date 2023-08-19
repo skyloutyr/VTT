@@ -87,7 +87,7 @@
         #region Client Data
         public AABox ClientBoundingBox
         {
-            get => this.clientBoundingBox; 
+            get => this.clientBoundingBox;
             set
             {
                 this.clientBoundingBox = value;
@@ -144,7 +144,8 @@
             ret.Set("CastsShadow", this.CastsShadow);
             ret.SetColor("TintColor", this.TintColor);
             ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
-            ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) => {
+            ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) =>
+            {
                 DataElement e = new DataElement();
                 e.Set("r", v.Item1);
                 e.SetColor("c", v.Item2);
@@ -192,7 +193,8 @@
             this.Bars.Clear();
             this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
             this.Auras.Clear();
-            this.Auras.AddRange(e.GetArray("Auras", (n, e) => {
+            this.Auras.AddRange(e.GetArray("Auras", (n, e) =>
+            {
                 DataElement d = e.Get<DataElement>(n);
                 return (d.Get<float>("r"), d.GetColor("c"));
             }, Array.Empty<(float, Color)>()));
@@ -209,7 +211,7 @@
                 this.StatusEffects[s.Item1] = (s.Item2, s.Item3);
             }
 
-            this.ParticleContainers.Clear(); 
+            this.ParticleContainers.Clear();
             ParticleContainer[] containers = e.GetArray("Particles", (n, e) =>
             {
                 DataElement d = e.Get<DataElement>(n);

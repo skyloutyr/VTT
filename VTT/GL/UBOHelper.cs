@@ -22,16 +22,13 @@
             this._buf.SetData(IntPtr.Zero, bSize);
         }
 
-        ~UBOHelper() 
+        ~UBOHelper()
         {
             Marshal.FreeHGlobal((IntPtr)this._dataView);
             this._buf.Dispose();
         }
 
-        public void Reset()
-        {
-            this._cntr = 0;
-        }
+        public void Reset() => this._cntr = 0;
 
         private void Push(void* data, int bSize)
         {
@@ -48,9 +45,7 @@
         public void Push(byte f) => this.Push((uint)f); // N base size is 4
         public void Push(bool f) => this.Push(f ? 1 : 0); // N base size is 4, don't care signed/unsigned
         public void Push(Vector2 f) // OpenTK does this internally
-        {
-            this.Push(&f.X, sizeof(Vector2));
-        }
+=> this.Push(&f.X, sizeof(Vector2));
 
         public void Push(Vector3 f) // OpenTK does this internally
         {
@@ -68,9 +63,6 @@
             OpenTK.Graphics.OpenGL.GL.BindBufferBase(OpenTK.Graphics.OpenGL.BufferRangeTarget.UniformBuffer, bindingPoint, this._buf);
         }
 
-        public void Upload()
-        {
-            this._buf.SetSubData((IntPtr)this._dataView, this._cntr, 0);
-        }
+        public void Upload() => this._buf.SetSubData((IntPtr)this._dataView, this._cntr, 0);
     }
 }

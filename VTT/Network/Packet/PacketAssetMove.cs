@@ -65,7 +65,7 @@
             this.MovedFrom = br.ReadString();
             this.MovedTo = br.ReadString();
         }
-        
+
         public override void Encode(BinaryWriter bw)
         {
             bw.Write(this.MovedRefID.ToByteArray());

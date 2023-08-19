@@ -38,19 +38,19 @@
 
         private static Region GetPointRegion(in RectangleF box, in Vector2 point)
         {
-            return 
-                point.X < box.Left ? 
-                    point.Y < box.Top ? Region.TopLeft : 
-                    point.Y > box.Bottom ? Region.BottomLeft : 
-                    Region.Left 
-                : point.X > box.Right ? 
-                    point.Y < box.Top ? Region.TopRight : 
-                    point.Y > box.Bottom ? Region.BottomRight : 
-                    Region.Right : 
-                point.Y < box.Top ? 
-                    Region.Top : 
-                point.Y > box.Bottom ? 
-                    Region.Bottom : 
+            return
+                point.X < box.Left ?
+                    point.Y < box.Top ? Region.TopLeft :
+                    point.Y > box.Bottom ? Region.BottomLeft :
+                    Region.Left
+                : point.X > box.Right ?
+                    point.Y < box.Top ? Region.TopRight :
+                    point.Y > box.Bottom ? Region.BottomRight :
+                    Region.Right :
+                point.Y < box.Top ?
+                    Region.Top :
+                point.Y > box.Bottom ?
+                    Region.Bottom :
                     Region.Inside;
         }
 
@@ -196,38 +196,39 @@
         }
         private static int DoRegionsIntersect(Region r1, Region r2, Region r3) => ((answers[(int)(r1 | r2 | r3) >> 2] >> (((int)(r1 | r2 | r3) & 3) << 1)) & 3) - 1;
 
-        private static bool SegmentIntersects(in RectangleF rect, in Vector2 p1, in Vector2 p2, Region r1, Region r2) 
+        private static bool SegmentIntersects(in RectangleF rect, in Vector2 p1, in Vector2 p2, Region r1, Region r2)
         {
             // Skip if intersection is impossible
             Region r12 = r1 | r2;
             if ((r12 & (Region.TopLeft | Region.Top | Region.TopRight)) == r12 ||
                 (r12 & (Region.BottomLeft | Region.Bottom | Region.BottomRight)) == r12 ||
                 (r12 & (Region.TopLeft | Region.Left | Region.BottomLeft)) == r12 ||
-                (r12 & (Region.TopRight | Region.Right | Region.BottomRight)) == r12) {
+                (r12 & (Region.TopRight | Region.Right | Region.BottomRight)) == r12)
+            {
                 return false;
             }
             float dx = p2.X - p1.X;
-                float dy = p2.Y - p1.Y;
-            if (MathF.Abs(dx) < float.Epsilon || MathF.Abs(dy) < float.Epsilon) 
+            float dy = p2.Y - p1.Y;
+            if (MathF.Abs(dx) < float.Epsilon || MathF.Abs(dy) < float.Epsilon)
             {
                 // Vertical or horizontal line (or zero-sized vector)
                 // If there were intersection we would have already picked it up
                 return false;
             }
             float t = (rect.Left - p1.X) / dx;
-            if (t is >= 0.0f and <= 1.0f) 
+            if (t is >= 0.0f and <= 1.0f)
             {
                 return true;
             }
 
             t = (rect.Right - p1.X) / dx;
-            if (t is >= 0.0f and <= 1.0f) 
+            if (t is >= 0.0f and <= 1.0f)
             {
                 return true;
             }
 
             t = (rect.Top - p1.Y) / dy;
-            if (t is >= 0.0f and <= 1.0f) 
+            if (t is >= 0.0f and <= 1.0f)
             {
                 return true;
             }
@@ -236,7 +237,7 @@
             return t is >= 0.0f and <= 1.0f;
         }
 
-        public static bool Intersects(in RectangleF rect, in Vector2 tp0, in Vector2 tp1, in Vector2 tp2) 
+        public static bool Intersects(in RectangleF rect, in Vector2 tp0, in Vector2 tp1, in Vector2 tp2)
         {
             // Find plane regions for each point
             Region r1 = GetPointRegion(in rect, in tp0);
@@ -329,9 +330,9 @@
                     }
 
                     if (
-                        Contains(new Vector2(rect.Left, rect.Top), t0, t1, t2) || 
-                        Contains(new Vector2(rect.Right, rect.Top), t0, t1, t2) || 
-                        Contains(new Vector2(rect.Left, rect.Bottom), t0, t1, t2) || 
+                        Contains(new Vector2(rect.Left, rect.Top), t0, t1, t2) ||
+                        Contains(new Vector2(rect.Right, rect.Top), t0, t1, t2) ||
+                        Contains(new Vector2(rect.Left, rect.Bottom), t0, t1, t2) ||
                         Contains(new Vector2(rect.Right, rect.Bottom), t0, t1, t2)
                     )
                     {

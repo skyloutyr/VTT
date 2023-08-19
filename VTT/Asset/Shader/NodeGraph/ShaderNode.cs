@@ -45,15 +45,8 @@
             return ret;
         }
 
-        public void ConnectInput(int inputIndex, ShaderNode provider, int providerOutputIndex)
-        {
-            this.Inputs[inputIndex].ConnectedOutput = provider.Outputs[providerOutputIndex].ID;
-        }
-
-        public void ConnectOutput(int outputIndex, ShaderNode to, int toInputIndex)
-        {
-            to.ConnectInput(toInputIndex, this, outputIndex);
-        }
+        public void ConnectInput(int inputIndex, ShaderNode provider, int providerOutputIndex) => this.Inputs[inputIndex].ConnectedOutput = provider.Outputs[providerOutputIndex].ID;
+        public void ConnectOutput(int outputIndex, ShaderNode to, int toInputIndex) => to.ConnectInput(toInputIndex, this, outputIndex);
 
         public ShaderNode FullCopy()
         {

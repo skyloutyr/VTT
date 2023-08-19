@@ -49,10 +49,10 @@
         public DeferredPipeline DeferredPipeline { get; set; }
 
         private Vector3 _cachedSunDir;
-        private Color   _cachedSunColor;
+        private Color _cachedSunColor;
         private Vector3 _cachedAmbientColor;
-        private Color   _cachedSkyColor;
-        private ShaderContainerLocalPassthroughData _passthroughData = new ShaderContainerLocalPassthroughData();
+        private Color _cachedSkyColor;
+        private readonly ShaderContainerLocalPassthroughData _passthroughData = new ShaderContainerLocalPassthroughData();
 
         public void Create()
         {
@@ -344,9 +344,9 @@
         }
 
         public void RenderEarly(Map m, double delta)
-        { 
+        {
         }
-        
+
         public void RenderLate(Map m, double delta)
         {
             if (m != null)
@@ -460,7 +460,7 @@
 
                             Matrix4 baseRotation =
                                 dotZ > dotX && dotZ > dotY ? Matrix4.Identity :
-                                dotY > dotX ? Matrix4.CreateRotationY(MathF.PI * 0.5f) * Matrix4.CreateRotationX(MathF.PI * 0.5f) * Matrix4.CreateRotationZ(MathF.PI * 0.5f): 
+                                dotY > dotX ? Matrix4.CreateRotationY(MathF.PI * 0.5f) * Matrix4.CreateRotationX(MathF.PI * 0.5f) * Matrix4.CreateRotationZ(MathF.PI * 0.5f) :
                                 Matrix4.CreateRotationY(MathF.PI * 0.5f);
 
                             Vector4 renderClr = (
@@ -1131,7 +1131,7 @@
             }
 
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-           
+
             GL.ActiveTexture(TextureUnit.Texture14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
             {
@@ -1182,7 +1182,7 @@
                     Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
                 }
 
-                int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer; 
+                int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                 this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader["alpha"].Set(this._passthroughData.Alpha);

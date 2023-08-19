@@ -39,7 +39,7 @@
         public bool changeParticleColorPopup = false;
         public bool editShaderPopup = false;
         public Map clientMap = null;
-    
+
         public void Reset()
         {
             openNewFolderPopup = false;

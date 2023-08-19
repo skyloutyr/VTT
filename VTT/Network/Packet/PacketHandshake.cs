@@ -109,7 +109,7 @@
                         {
                             PacketChatLine pcl = new PacketChatLine() { Line = cl };
                             pcl.Send(sc);
-                            ++c; 
+                            ++c;
                         }
                     }
                 }
@@ -156,7 +156,7 @@
     }
 
     public enum AssetDefActionType
-    { 
+    {
         Initialize,
         Add,
         AddDir,

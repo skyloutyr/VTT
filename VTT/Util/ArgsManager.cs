@@ -80,7 +80,7 @@
 
                 case "-connect":
                 {
-                    if(IPEndPoint.TryParse(value, out IPEndPoint ep) && ep != null)
+                    if (IPEndPoint.TryParse(value, out IPEndPoint ep) && ep != null)
                     {
                         args["connect"] = ep;
                     }

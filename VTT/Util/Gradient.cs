@@ -109,7 +109,7 @@
 
         IEnumerator IEnumerable.GetEnumerator() => this.Keys.Select(p => new KeyValuePair<float, T>(p.Key, p.Color)).GetEnumerator();
 
-        
+
     }
 
     public static class GradientInterpolators

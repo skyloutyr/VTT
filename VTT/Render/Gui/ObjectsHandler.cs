@@ -833,10 +833,19 @@
 
                                 float tW = ImGui.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
                                 ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0, 0, 0, 1));
-                                for (int j = 0; j < 4; ++j)
+                                if (Client.Instance.Settings.TextThickDropShadow)
                                 {
-                                    ImGui.SetCursorPosY(cYPreBar - 5 + ((j & 1) << 1));
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                                    for (int j = 0; j < 4; ++j)
+                                    {
+                                        ImGui.SetCursorPosY(cYPreBar - 5 + ((j & 1) << 1));
+                                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                                        ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
+                                    }
+                                }
+                                else
+                                {
+                                    ImGui.SetCursorPosY(cYPreBar - 3);
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) + 1);
                                     ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 }
 

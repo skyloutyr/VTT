@@ -474,3 +474,5 @@ ui.popup.roll_separate=Суммированный Бросок
 ui.popup.roll_separate.tt=Совершить Х бросков костей, где Х = число, указаное в поле ниже\nБросок будет отображён как (1dY + 1dY + 1dY + ... + 1dY) в чате.
 menu.settings.enable_tt_particles=Частицы Порядка Хода
 menu.settings.enable_tt_particles.tt=Если включено, то за портретом текущего объекта в порядке хода будут отображаться частицы.
+menu.settings.thick_drop_shadow=Жирная тень текста
+menu.settings.thick_drop_shadow.tt=Если включено, то у элементов текста с тенью будет жирная обводка.

@@ -748,6 +748,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.chat_brightness.tt"));
                     }
 
+                    bool mTextThickShadow = Client.Instance.Settings.TextThickDropShadow;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.thick_drop_shadow"), ref mTextThickShadow))
+                    {
+                        Client.Instance.Settings.TextThickDropShadow = mTextThickShadow;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.thick_drop_shadow.tt"));
+                    }
+
                     ClientSettings.UISkin dSkin = Client.Instance.Settings.InterfaceSkin;
                     string[] skins = Enum.GetNames(typeof(ClientSettings.UISkin)).Select(s => lang.Translate("menu.settings.ui_skin." + s.ToLowerInvariant())).ToArray();
                     int sIdx = (int)dSkin;

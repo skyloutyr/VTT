@@ -523,6 +523,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool TurnTrackerParticlesEnabled { get; set; } = false;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool TextThickDropShadow { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -564,7 +568,8 @@
                 UseUBO = true,
                 EnableCustomShaders = true,
                 FOV = 60.0f,
-                TurnTrackerParticlesEnabled = false
+                TurnTrackerParticlesEnabled = false,
+                TextThickDropShadow = true
             };
 
             ret.Save();

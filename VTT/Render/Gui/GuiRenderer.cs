@@ -663,9 +663,6 @@
             this._statusStepY = 64f / o["height"].ToObject<float>();
         }
 
-        public void Update()
-        {
-            this.UpdateTurnTrackerParticles();
-        }
+        public void Update() => this.UpdateTurnTrackerParticles();
     }
 }

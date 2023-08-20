@@ -79,7 +79,7 @@
                                                 }
                                                 else
                                                 {
-                                                    idl.AddImage(this.TurnTrackerParticle, ttp.RelativePosition + cursorScreenC - new System.Numerics.Vector2(4, 4) * ttp.Scale, ttp.RelativePosition + cursorScreenC + new System.Numerics.Vector2(4, 4) * ttp.Scale, System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, ttp.Color == 0xffffffffu ? particleColor : ttp.Color);
+                                                    idl.AddImage(this.TurnTrackerParticle, ttp.RelativePosition + cursorScreenC - (new System.Numerics.Vector2(4, 4) * ttp.Scale), ttp.RelativePosition + cursorScreenC + (new System.Numerics.Vector2(4, 4) * ttp.Scale), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, ttp.Color == 0xffffffffu ? particleColor : ttp.Color);
                                                 }
                                             }
                                         }
@@ -178,10 +178,19 @@
 
                             float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
                             ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
-                            for (int i = 0; i < 4; ++i)
+                            if (Client.Instance.Settings.TextThickDropShadow)
                             {
-                                ImGui.SetCursorPosX(319 - (tW / 2) + ((i & 1) * 2));
-                                ImGui.SetCursorPosY(109 + ((i >> 1) * 2));
+                                for (int i = 0; i < 4; ++i)
+                                {
+                                    ImGui.SetCursorPosX(319 - (tW / 2) + ((i & 1) * 2));
+                                    ImGui.SetCursorPosY(109 + ((i >> 1) * 2));
+                                    ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
+                                }
+                            }
+                            else
+                            {
+                                ImGui.SetCursorPosX(321 - (tW / 2));
+                                ImGui.SetCursorPosY(111);
                                 ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                             }
 
@@ -231,9 +240,9 @@
                         Lifetime = lt,
                         LifetimeMax = lt,
                         Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
-                        Motion = new System.Numerics.Vector2(-0.05f + this.Random.NextSingle() * 0.1f, -0.3f + this.Random.NextSingle() * 0.1f),
+                        Motion = new System.Numerics.Vector2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
                         RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
-                        ScaleMultiplier = isSpecial ? 0.5f : 0.8f + this.Random.NextSingle() * 0.4f,
+                        ScaleMultiplier = isSpecial ? 0.5f : 0.8f + (this.Random.NextSingle() * 0.4f),
                     };
 
                     this._particles.Add(ttp);
@@ -245,9 +254,9 @@
                     Lifetime = lt,
                     LifetimeMax = lt,
                     Color = 0xffffffffu,
-                    Motion = new System.Numerics.Vector2(-0.05f + this.Random.NextSingle() * 0.1f, -0.3f + this.Random.NextSingle() * 0.1f),
+                    Motion = new System.Numerics.Vector2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
                     RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
-                    ScaleMultiplier = 1.0f + this.Random.NextSingle() * 0.5f,
+                    ScaleMultiplier = 1.0f + (this.Random.NextSingle() * 0.5f),
                 };
 
                 this._particles.Add(ttp);

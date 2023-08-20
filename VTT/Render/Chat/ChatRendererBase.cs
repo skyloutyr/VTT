@@ -11,5 +11,6 @@
         public abstract void Render();
         public abstract void Cache(out float width, out float height);
         public abstract void ClearCache();
+        public string TextOrEmpty(string sIn) => string.IsNullOrEmpty(sIn) ? " " : sIn;
     }
 }

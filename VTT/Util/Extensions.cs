@@ -102,6 +102,8 @@
             return string.Join(' ', words.Select(w => w.Capitalize()));
         }
 
+        public static string NonEmpty(this string self) => string.IsNullOrEmpty(self) ? " " : self;
+
         public static Color FromArgb(uint argb) => FromArgb((byte)((argb & 0xFF000000) >> 24), (byte)((argb & 0xFF0000) >> 16), (byte)((argb & 0xFF00) >> 8), (byte)(argb & 0xFF));
         public static Color FromAbgr(uint abgr) => FromArgb((byte)((abgr & 0xFF000000) >> 24), (byte)(abgr & 0xFF), (byte)((abgr & 0xFF00) >> 8), (byte)((abgr & 0xFF0000) >> 16));
 

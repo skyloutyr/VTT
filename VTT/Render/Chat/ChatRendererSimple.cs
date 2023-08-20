@@ -128,10 +128,10 @@
                 ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color.Abgr());
                 ImGui.TextUnformatted(rnameAndMod.Text);
                 ImGui.PopStyleColor();
-                sRn = ImGui.CalcTextSize(rcharname.Text);
+                sRn = ImGui.CalcTextSize(this.TextOrEmpty(rcharname.Text));
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 60) - (sRn / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color.Abgr());
-                ImGui.TextUnformatted(rcharname.Text);
+                ImGui.TextUnformatted(this.TextOrEmpty(rcharname.Text));
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPosY(cursorLocal.Y + 88);
             }

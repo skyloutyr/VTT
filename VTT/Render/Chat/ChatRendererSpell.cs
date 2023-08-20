@@ -56,7 +56,7 @@
                 SimpleLanguage lang = Client.Instance.Lang;
 
                 float maxWindowW = MathF.Min(340, size.X - 24);
-                Vector2 descs = ImGui.CalcTextSize(desc.Text, maxWindowW);
+                Vector2 descs = ImGui.CalcTextSize(this.TextOrEmpty(desc.Text), maxWindowW);
                 float h = 184 + descs.Y;
 
                 drawList.AddQuad(
@@ -69,9 +69,9 @@
 
                 Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
-                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), name.Text);
-                Vector2 ts = ImGui.CalcTextSize(cname.Text);
-                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), cname.Text);
+                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), this.TextOrEmpty(name.Text));
+                Vector2 ts = ImGui.CalcTextSize(this.TextOrEmpty(cname.Text));
+                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), this.TextOrEmpty(cname.Text));
                 drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color.Abgr(), schoollevel.Text);
                 uint bcl = this.Container.SenderColor.Abgr();
                 uint fcl = ImGui.GetColorU32(ImGuiCol.Text);

@@ -276,6 +276,28 @@
                     ImGui.TableSetupColumn("Separate Dice");
 
                     ImGui.TableNextRow();
+                    ImGui.TableSetColumnIndex(0);
+                    ImGui.TextUnformatted(lang.Translate("ui.popup.roll_singular"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.popup.roll_singular.tt"));
+                    }
+
+                    ImGui.TableSetColumnIndex(1);
+                    ImGui.TextUnformatted(lang.Translate("ui.popup.roll_compound"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.popup.roll_compound.tt"));
+                    }
+
+                    ImGui.TableSetColumnIndex(2);
+                    ImGui.TextUnformatted(lang.Translate("ui.popup.roll_separate"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.popup.roll_separate.tt"));
+                    }
+
+                    ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(1);
                     ImGui.InputInt("##Dice Amount", ref this._numDiceSingular);
                     ImGui.TableSetColumnIndex(2);
@@ -409,7 +431,8 @@
                     ImGui.SetTooltip(lang.Translate("ui.popup.link_image.height.tt"));
                 }
 
-                ImGui.InputTextMultiline(lang.Translate("ui.popup.link_image.tooltip"), ref this._imgTooltip, ushort.MaxValue, new System.Numerics.Vector2(ImGui.GetContentRegionMax().X - 32, 300));
+                ImGui.TextUnformatted(lang.Translate("ui.popup.link_image.tooltip"));
+                ImGui.InputTextMultiline("##ImageTooltip", ref this._imgTooltip, ushort.MaxValue, new System.Numerics.Vector2(ImGui.GetContentRegionMax().X - 32, 300));
 
                 bool bc = ImGui.Button(cancel);
                 ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);

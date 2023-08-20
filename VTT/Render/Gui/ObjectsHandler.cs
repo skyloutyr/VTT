@@ -777,10 +777,10 @@
                         RenderStatusEffects(mo, screen, tX);
                     }
 
-                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h));
-                    ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tX / 2), screen.Y - h));
                     System.Numerics.Vector2 customPadding = ImGui.GetStyle().WindowPadding;
                     bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
+                    ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tX / 2), screen.Y - h));
+                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h + (hasNp ? customPadding.Y : 0)));
                     if (hasNp)
                     {
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
@@ -823,14 +823,31 @@
                             if (!db.Compact)
                             {
                                 ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (System.Numerics.Vector4)db.DrawColor);
-                                ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)db.DrawColor.ContrastBlackOrWhite());
-                                if (hasNp)
+                                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2);
+                                float cYPreBar = ImGui.GetCursorPosY();
+
+                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
+                                ImGui.SetCursorPosY(cYPreBar);
+                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 12), string.Empty);
+                                ImGui.PopStyleVar();
+
+                                float tW = ImGui.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
+                                ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0, 0, 0, 1));
+                                for (int j = 0; j < 4; ++j)
                                 {
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + customPadding.X);
+                                    ImGui.SetCursorPosY(cYPreBar - 5 + ((j & 1) << 1));
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW / 2 - tW / 2 + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                                    ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 }
 
-                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 12), db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.PopStyleColor();
+                                ImGui.SetCursorPosY(cYPreBar - 4);
+                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW / 2 - tW / 2 + (hasNp ? customPadding.X : 0));
+                                ImGui.PushStyleColor(ImGuiCol.Text, System.Numerics.Vector4.One);
+                                ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
+                                ImGui.PopStyleColor();
+                                ImGui.SetCursorPosY(cYPreBar + 16);
+
                                 ImGui.PopStyleColor();
                             }
                             else

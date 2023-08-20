@@ -151,6 +151,12 @@
             return yiq >= 128 ? Color.Black : Color.White;
         }
 
+        public static Color Invert(this Color self)
+        {
+            SVec4 sV = ((SVec4)self);
+            return new Color(new SVec4(1, 1, 1, 2 * sV.W) - sV);
+        }
+
         public static Color Darker(this Color self, float darkenBy = 0.15f)
         {
             SVec4 sV = ((SVec4)self);

@@ -836,13 +836,13 @@
                                 for (int j = 0; j < 4; ++j)
                                 {
                                     ImGui.SetCursorPosY(cYPreBar - 5 + ((j & 1) << 1));
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW / 2 - tW / 2 + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
                                     ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 }
 
                                 ImGui.PopStyleColor();
                                 ImGui.SetCursorPosY(cYPreBar - 4);
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW / 2 - tW / 2 + (hasNp ? customPadding.X : 0));
+                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
                                 ImGui.PushStyleColor(ImGuiCol.Text, System.Numerics.Vector4.One);
                                 ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.PopStyleColor();

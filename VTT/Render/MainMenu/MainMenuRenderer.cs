@@ -131,7 +131,7 @@
                 }
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 128, 300));
-                ImGui.BeginChild("Main Menu Entry", new Vector2(256, 192), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
+                ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
                 if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
                 {
                     this.MenuMode = 1;
@@ -152,6 +152,11 @@
                     this.MenuMode = 4;
                 }
 
+                if (ImGui.Button(lang.Translate("menu.changelog") + "###Changelog", new Vector2(240, 32)))
+                {
+                    this.MenuMode = 5;
+                }
+
                 if (ImGui.Button(lang.Translate("menu.quit") + "###Quit", new Vector2(240, 32)))
                 {
                     Client.Instance.Frontend.GameHandle.Close();
@@ -161,7 +166,7 @@
 
                 if (this.MenuMode == 1)
                 {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 500));
+                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
                     if (ImGui.BeginChild("Main Menu Connect", new Vector2(256, 158), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                     {
                         ImGui.InputText(lang.Translate("menu.connect.address") + "###Address", ref this._connectAddress, 15);
@@ -214,13 +219,13 @@
                 }
                 if (this.MenuMode == 3)
                 {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 200, 500));
+                    ImGui.SetCursorPos(new Vector2((width / 2) - 200, 532));
                     DrawSettings(lang);
 
                 }
                 if (this.MenuMode == 2)
                 {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 500));
+                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
                     if (ImGui.BeginChild("Main Menu Host", new Vector2(256, 158), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                     {
                         ImGui.InputText(lang.Translate("menu.host.port") + "###Server Port", ref this._hostPort, 5);
@@ -261,9 +266,39 @@
                     ImGui.EndChild();
                 }
 
+                if (this.MenuMode == 5)
+                {
+                    if (Client.Instance.ClientVersion != null)
+                    {
+                        ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
+                        if (ImGui.BeginChild("Main Menu Changelog", new Vector2(512, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                        {
+                            foreach ((Version, string) kv in Client.Instance.ClientVersion.EnumerateChangelogData())
+                            {
+                                ImGui.TextUnformatted(kv.Item1.ToString());
+                                ImGui.Spacing();
+                                foreach (string s in kv.Item2.Split('\n'))
+                                {
+                                    ImGui.Bullet();
+                                    ImGui.PushTextWrapPos();
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                                    ImGui.TextUnformatted(s);
+                                    ImGui.PopStyleColor();
+                                    ImGui.PopTextWrapPos();
+                                }
+
+                                ImGui.Spacing();
+                                ImGui.Spacing();
+                            }
+                        }
+
+                        ImGui.EndChild();
+                    }
+                }
+
                 if (this.MenuMode == 4)
                 {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 256, 500));
+                    ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
                     if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
                     {
                         string sp = "    ";

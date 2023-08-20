@@ -476,3 +476,4 @@ menu.settings.enable_tt_particles=Enable Turn Tracker Particles
 menu.settings.enable_tt_particles.tt=Controls whether the turn tracker will emit particles for the current turn entry.
 menu.settings.thick_drop_shadow=Thick text drop shadow
 menu.settings.thick_drop_shadow.tt=If enabled, text elements with a drop shadow will instead have a thick outline.
+menu.changelog=Changelog

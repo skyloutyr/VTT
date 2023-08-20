@@ -1,5 +1,6 @@
 ﻿namespace VTT.Network
 {
+    using Microsoft.VisualBasic;
     using NetCoreServer;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
@@ -38,7 +39,7 @@
         public Logger Logger { get; set; }
 
         public SimpleLanguage Lang { get; } = new SimpleLanguage();
-
+        public AppVersion ClientVersion { get; set; }
         public NetClient NetClient { get; set; }
 
         public AssetManager AssetManager { get; } = new AssetManager() { IsServer = false };
@@ -89,6 +90,7 @@
             this.ID = IDUtil.GetDeviceID(this.Logger);
             this.Logger.Log(LogLevel.Info, "Self-assigned id is " + this.ID.ToString());
             this.Settings = ClientSettings.Load();
+            this.LoadVersion();
             if (this.Settings.Sensitivity is < 0.1f or > 10f)
             {
                 this.Settings.Sensitivity = 1.0f;
@@ -97,6 +99,37 @@
             this.Lang.LoadFile(this.Settings.Language ?? "en-EN");
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ShaderNodeTemplate).TypeHandle);
             this.Frontend = new ClientWindow();
+        }
+
+        private void LoadVersion()
+        {
+            string fPath = Path.Combine(IOVTT.AppDir, "Version.json");
+            if (File.Exists(fPath))
+            {
+                this.ClientVersion = JsonConvert.DeserializeObject<AppVersion>(File.ReadAllText(fPath));
+            }
+            else // Have no version file
+            {
+                this.Logger.Log(LogLevel.Warn, "No version file present, downloading!");
+                using System.Net.Http.HttpClient wc = new System.Net.Http.HttpClient();
+                System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> task = wc.GetAsync("https://raw.githubusercontent.com/skyloutyr/VTT/master/VTT/Version.json");
+                task.Start();
+                try
+                {
+                    task.Wait(new TimeSpan(0, 0, 30));
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        using StreamReader sr = new StreamReader(task.Result.Content.ReadAsStream());
+                        string contents = sr.ReadToEnd();
+                        File.WriteAllText(fPath, contents);
+                        this.ClientVersion = JsonConvert.DeserializeObject<AppVersion>(contents);
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.Logger.Exception(LogLevel.Error, e);
+                }
+            }
         }
 
         private readonly Logger.FileLogListener _fll;

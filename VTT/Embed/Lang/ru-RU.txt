@@ -476,3 +476,4 @@ menu.settings.enable_tt_particles=Частицы Порядка Хода
 menu.settings.enable_tt_particles.tt=Если включено, то за портретом текущего объекта в порядке хода будут отображаться частицы.
 menu.settings.thick_drop_shadow=Жирная тень текста
 menu.settings.thick_drop_shadow.tt=Если включено, то у элементов текста с тенью будет жирная обводка.
+menu.changelog=Список Изменений

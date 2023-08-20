@@ -58,9 +58,9 @@
                                         if (ImGui.IsItemHovered())
                                         {
                                             ImGui.BeginTooltip();
-                                            ImGui.TextUnformatted(eName.NonEmpty());
+                                            ImGui.TextUnformatted(eName);
                                             ImGui.PushStyleColor(ImGuiCol.Text, tColor.Abgr());
-                                            ImGui.TextUnformatted(tName.NonEmpty());
+                                            ImGui.TextUnformatted(tName);
                                             ImGui.PopStyleColor();
                                             ImGui.EndTooltip();
                                         }
@@ -176,7 +176,7 @@
                                 }
                             }
 
-                            float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName.NonEmpty()).X;
+                            float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
                             ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
                             if (Client.Instance.Settings.TextThickDropShadow)
                             {
@@ -184,20 +184,20 @@
                                 {
                                     ImGui.SetCursorPosX(319 - (tW / 2) + ((i & 1) * 2));
                                     ImGui.SetCursorPosY(109 + ((i >> 1) * 2));
-                                    ImGui.TextUnformatted(cMap.TurnTracker.EntryName.NonEmpty());
+                                    ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                                 }
                             }
                             else
                             {
                                 ImGui.SetCursorPosX(321 - (tW / 2));
                                 ImGui.SetCursorPosY(111);
-                                ImGui.TextUnformatted(cMap.TurnTracker.EntryName.NonEmpty());
+                                ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                             }
 
                             ImGui.PopStyleColor();
                             ImGui.SetCursorPosX(320 - (tW / 2));
                             ImGui.SetCursorPosY(110);
-                            ImGui.TextUnformatted(cMap.TurnTracker.EntryName.NonEmpty());
+                            ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                         }
                     }
 

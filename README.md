@@ -51,7 +51,7 @@ An automatic updater companion app is built-in. When it detects a new version be
 **Windows only, but since the application is built with .net core and uses opengl 3.3 it should be relatively simple to run on linux.**
 
 
-### Requires .NET 7, msvcr 120 and msvcr 140.
+### Requires .NET 6, msvcr 120 and msvcr 140.
 There is no installation process, simply unpack the application into any directory and run the VTT.exe executable.
 
 ---

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>icon-alpha.ico</ApplicationIcon>
   </PropertyGroup>
@@ -267,14 +267,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreCLR-NCalc" Version="2.2.113" />
-    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
+    <PackageReference Include="CoreCLR-NCalc" Version="2.2.110" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="5.1.1" />
     <PackageReference Include="glTF2Loader" Version="1.1.4-alpha" />
-    <PackageReference Include="ImGui.NET" Version="1.89.7.1" />
-    <PackageReference Include="NetCoreServer" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="ImGui.NET" Version="1.89.2" />
+    <PackageReference Include="NetCoreServer" Version="6.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="OpenTK" Version="4.7.5" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
   </ItemGroup>
 
   <ItemGroup>

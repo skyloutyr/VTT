@@ -103,10 +103,10 @@
 
                 Vector2 ts = ImGui.CalcTextSize(rnameandmod);
                 drawList.AddText(cursorScreen + new Vector2(170, 56 + cy) - new Vector2(ts.X / 2, 0), rname.Color.Abgr(), rnameandmod);
-                ts = ImGui.CalcTextSize(this.TextOrEmpty(desc.Text));
-                drawList.AddText(cursorScreen + new Vector2(170, 72 + cy) - new Vector2(ts.X / 2, 0), desc.Color.Abgr(), this.TextOrEmpty(desc.Text));
-                ts = ImGui.CalcTextSize(this.TextOrEmpty(rcharname.Text));
-                drawList.AddText(cursorScreen + new Vector2(170, 96 + cy) - new Vector2(ts.X / 2, 0), rcharname.Color.Abgr(), this.TextOrEmpty(rcharname.Text));
+                ts = ImGui.CalcTextSize(desc.Text);
+                drawList.AddText(cursorScreen + new Vector2(170, 72 + cy) - new Vector2(ts.X / 2, 0), desc.Color.Abgr(), desc.Text);
+                ts = ImGui.CalcTextSize(rcharname.Text);
+                drawList.AddText(cursorScreen + new Vector2(170, 96 + cy) - new Vector2(ts.X / 2, 0), rcharname.Color.Abgr(), rcharname.Text);
                 drawList.AddLine(cursorScreen + new Vector2(0, 120 + cy), cursorScreen + new Vector2(340, 120 + cy), this.Container.SenderColor.Abgr());
                 uint cArgb = Color.LightGreen.Argb();
                 uint cArgb2 = Color.LightBlue.Argb();

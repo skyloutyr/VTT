@@ -416,7 +416,7 @@
             {
                 if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
                 {
-                    Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.CompressedRgba);
+                    Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
                     AssetPreview prev = new AssetPreview() { GLTex = tex };
                     this.Container.Portraits[aID] = prev;
                     ap = prev;

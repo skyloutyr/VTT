@@ -4,6 +4,7 @@
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.InteropServices;
     using VTT.Asset;
@@ -14,13 +15,18 @@
 
     public partial class GuiRenderer
     {
+        private readonly List<TurnTrackerParticle> _particles = new List<TurnTrackerParticle>();
+        private bool _turnTrackerVisible;
+
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
         {
+            this._turnTrackerVisible = false;
             if (cMap != null && cMap.TurnTracker.Visible)
             {
                 float ww = ImGui.GetMainViewport().WorkSize.X;
                 if (!this._turnTrackerCollapsed)
                 {
+                    this._turnTrackerVisible = true;
                     ImGui.SetNextWindowSize(new System.Numerics.Vector2(640, 132));
                     ImGui.SetNextWindowPos(new(ww / 4, 0));
                     if (ImGui.Begin("##TurnTracker", (window_flags | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollWithMouse) & ~ImGuiWindowFlags.AlwaysAutoResize))
@@ -47,6 +53,7 @@
                                         }
 
                                         var ccXY = ImGui.GetCursorPos();
+                                        System.Numerics.Vector2 cursorScreenC = ImGui.GetCursorScreenPos();
                                         ImGui.Image(this.TurnTrackerBackground, new System.Numerics.Vector2(64, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, (System.Numerics.Vector4)tColor);
                                         if (ImGui.IsItemHovered())
                                         {
@@ -58,7 +65,25 @@
                                             ImGui.EndTooltip();
                                         }
 
-                                        System.Numerics.Vector2 cursorScreenC = ImGui.GetCursorScreenPos();
+                                        Vector4 tclV4 = tColor.Vec4();
+                                        if (e == currentEntry)
+                                        {
+                                            uint particleColor = tColor.Abgr();
+                                            tclV4 = Vector4.Lerp(Color.Gold.Vec4(), Color.White.Vec4(), (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                            for (int i = this._particles.Count - 1; i >= 0; i--)
+                                            {
+                                                TurnTrackerParticle ttp = this._particles[i];
+                                                if (ttp.IsDead)
+                                                {
+                                                    this._particles.RemoveAt(i);
+                                                }
+                                                else
+                                                {
+                                                    idl.AddImage(this.TurnTrackerParticle, ttp.RelativePosition + cursorScreenC - new System.Numerics.Vector2(4, 4) * ttp.Scale, ttp.RelativePosition + cursorScreenC + new System.Numerics.Vector2(4, 4) * ttp.Scale, System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, ttp.Color == 0xffffffffu ? particleColor : ttp.Color);
+                                                }
+                                            }
+                                        }
+
                                         if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap) == AssetStatus.Return)
                                         {
                                             ImGui.SetCursorPos(ccXY);
@@ -76,12 +101,6 @@
 
                                             cursorScreenC = ImGui.GetCursorScreenPos();
                                             ImGui.Image(ap.GLTex, new System.Numerics.Vector2(64, 96), new System.Numerics.Vector2(0.25f, 0), new System.Numerics.Vector2(0.75f, 1), portrairColor);
-                                        }
-
-                                        Vector4 tclV4 = tColor.Vec4();
-                                        if (e == currentEntry)
-                                        {
-                                            tclV4 = Vector4.Lerp(Color.Gold.Vec4(), Color.White.Vec4(), (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                         }
 
                                         idl.AddImage(this.TurnTrackerForeground, cursorScreenC - new System.Numerics.Vector2(4, 4), cursorScreenC + new System.Numerics.Vector2(68, 100), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, new Color(tclV4.SystemVector()).Abgr());
@@ -188,6 +207,51 @@
                 ImGui.PopItemWidth();
                 ImGui.End();
             }
+        }
+
+        private unsafe void UpdateTurnTrackerParticles()
+        {
+            for (int i = this._particles.Count - 1; i >= 0; i--)
+            {
+                TurnTrackerParticle ttp = this._particles[i];
+                ttp.Update();
+            }
+
+            if (this._turnTrackerVisible && Client.Instance.Settings.TurnTrackerParticlesEnabled && Client.Instance.Settings.ParticlesEnabled)
+            {
+                int d = 0;
+                int lt;
+                TurnTrackerParticle ttp;
+                while (this.Random.Next(3) == 0 && d++ < 32)
+                {
+                    bool isSpecial = this.Random.Next(12) == 0;
+                    lt = 360 + this.Random.Next(60) + (isSpecial ? 120 : 0);
+                    ttp = new TurnTrackerParticle()
+                    {
+                        Lifetime = lt,
+                        LifetimeMax = lt,
+                        Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
+                        Motion = new System.Numerics.Vector2(-0.05f + this.Random.NextSingle() * 0.1f, -0.3f + this.Random.NextSingle() * 0.1f),
+                        RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
+                        ScaleMultiplier = isSpecial ? 0.5f : 0.8f + this.Random.NextSingle() * 0.4f,
+                    };
+
+                    this._particles.Add(ttp);
+                }
+
+                lt = 60 + this.Random.Next(60);
+                ttp = new TurnTrackerParticle()
+                {
+                    Lifetime = lt,
+                    LifetimeMax = lt,
+                    Color = 0xffffffffu,
+                    Motion = new System.Numerics.Vector2(-0.05f + this.Random.NextSingle() * 0.1f, -0.3f + this.Random.NextSingle() * 0.1f),
+                    RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
+                    ScaleMultiplier = 1.0f + this.Random.NextSingle() * 0.5f,
+                };
+
+                this._particles.Add(ttp);
+        }
         }
 
         private unsafe void RenderTurnTrackerControls(Map cMap, SimpleLanguage lang, GuiState state)
@@ -496,6 +560,25 @@
                     ImGui.End();
                 }
             }
+        }
+    }
+
+    public class TurnTrackerParticle
+    {
+        public int Lifetime { get; set; }
+        public int LifetimeMax { get; set; }
+        public uint Color { get; set; }
+        public bool IsDead => this.Lifetime < 0;
+        public float ScaleMultiplier { get; set; } = 1;
+        public float Scale => (float)this.Lifetime / this.LifetimeMax * this.ScaleMultiplier;
+
+        public System.Numerics.Vector2 RelativePosition { get; set; }
+        public System.Numerics.Vector2 Motion { get; set; }
+
+        public void Update()
+        {
+            this.RelativePosition += this.Motion;
+            --this.Lifetime;
         }
     }
 }

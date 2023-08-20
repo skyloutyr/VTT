@@ -613,6 +613,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.enable_particles.tt"));
                     }
 
+                    bool sttParticles = Client.Instance.Settings.TurnTrackerParticlesEnabled;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_tt_particles") + "###Enable Turn Tracker Particles", ref sttParticles))
+                    {
+                        Client.Instance.Settings.TurnTrackerParticlesEnabled = sttParticles;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_tt_particles.tt"));
+                    }
+
                     int sPcfQ = Client.Instance.Settings.ShadowsPCF;
                     ImGui.TextUnformatted(lang.Translate("menu.settings.pcf_quality"));
                     ImGui.SameLine();

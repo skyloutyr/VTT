@@ -18,6 +18,7 @@
     public partial class GuiRenderer
     {
         public AssetDirectory CurrentFolder { get; set; }
+        public Random Random { get; set; } = new Random();
 
         #region Textures
         public Texture FolderIcon { get; set; }
@@ -85,6 +86,7 @@
         public Texture TurnTrackerForeground { get; set; }
         public Texture TurnTrackerHighlighter { get; set; }
         public Texture TurnTrackerSeparator { get; set; }
+        public Texture TurnTrackerParticle { get; set; }
 
         public Texture StatusAtlas { get; set; }
 
@@ -236,6 +238,7 @@
             this.TurnTrackerForeground = OpenGLUtil.LoadUIImage("turn-tracker-front");
             this.TurnTrackerHighlighter = OpenGLUtil.LoadUIImage("turn-tracker-highlighter-back");
             this.TurnTrackerSeparator = OpenGLUtil.LoadUIImage("turn-tracker-separator");
+            this.TurnTrackerParticle = OpenGLUtil.LoadUIImage("turn-tracker-particle");
 
             this.MeasureModeCircle = OpenGLUtil.LoadUIImage("icons8-radius-40");
             this.MeasureModeSphere = OpenGLUtil.LoadUIImage("icons8-sphere-58");
@@ -658,6 +661,11 @@
             this._allStatuses.Sort((l, r) => l.Item1.CompareTo(r.Item1));
             this._statusStepX = 64f / o["width"].ToObject<float>();
             this._statusStepY = 64f / o["height"].ToObject<float>();
+        }
+
+        public void Update()
+        {
+            this.UpdateTurnTrackerParticles();
         }
     }
 }

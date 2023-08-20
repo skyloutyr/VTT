@@ -519,6 +519,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float FOV { get; set; } = 60.0f;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool TurnTrackerParticlesEnabled { get; set; } = false;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -560,6 +564,7 @@
                 UseUBO = true,
                 EnableCustomShaders = true,
                 FOV = 60.0f,
+                TurnTrackerParticlesEnabled = false
             };
 
             ret.Save();

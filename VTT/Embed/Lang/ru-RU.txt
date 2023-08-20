@@ -472,3 +472,5 @@ ui.popup.roll_compound=Общий Бросок
 ui.popup.roll_compound.tt=Совершить 1 бросок X костей, где X = число, указаное в поле ниже.\nБросок будет отображён как XdY в чате.
 ui.popup.roll_separate=Суммированный Бросок
 ui.popup.roll_separate.tt=Совершить Х бросков костей, где Х = число, указаное в поле ниже\nБросок будет отображён как (1dY + 1dY + 1dY + ... + 1dY) в чате.
+menu.settings.enable_tt_particles=Частицы Порядка Хода
+menu.settings.enable_tt_particles.tt=Если включено, то за портретом текущего объекта в порядке хода будут отображаться частицы.

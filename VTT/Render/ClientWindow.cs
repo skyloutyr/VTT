@@ -12,6 +12,7 @@
     using System.Threading;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ClientWindow
@@ -213,6 +214,7 @@
 
             this.Renderer.Update(obj.Time);
             this.GuiWrapper.Update(obj.Time);
+            GuiRenderer.Instance.Update();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulseRequest();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulsePreview();
             while (!this.ActionsToDo.IsEmpty)

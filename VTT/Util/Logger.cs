@@ -78,6 +78,7 @@
             private readonly StreamWriter _fs;
             private readonly BlockingCollection<(LogLevel, string)> _internalQueue = new BlockingCollection<(LogLevel, string)>();
             private readonly Thread _writerThread;
+            private volatile bool _forcedStop;
 
             public FileLogListener(string file)
             {
@@ -95,22 +96,65 @@
                 this._writerThread.Start();
             }
 
+            public void Close()
+            {
+                if (!this._forcedStop)
+                {
+                    this._forcedStop = true;
+                    try
+                    {
+                        this._internalQueue.Add((LogLevel.Off, "Logging to filesystem stopped."));
+                    }
+                    catch
+                    {
+                        // NOOP - object may be disposed already if unlucky
+                    }
+
+                    this._writerThread.Join();
+                }
+            }
+
             private void ProcessWrites()
             {
-                while (true)
+                while (!this._forcedStop)
                 {
                     (LogLevel, string) msg = this._internalQueue.Take();
                     this._fs.WriteLine(msg.Item2);
                 }
+
+                // Try a cleanup of the underlying collection first
+                while (this._internalQueue.Count > 0)
+                {
+                    bool b = this._internalQueue.TryTake(out (LogLevel, string) msg, 100);
+                    if (b)
+                    {
+                        this._fs.WriteLine(msg.Item2);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                try
+                {
+                    this._fs.Flush();
+                    this._fs.Close();
+                    this._fs.Dispose();
+                    this._internalQueue.Dispose();
+                }
+                catch
+                {
+                    // NOOP
+                }
             }
 
-            public void WriteLine(LogLevel level, string line) => this._internalQueue.Add((level, line));
-
-            public void Close()
+            public void WriteLine(LogLevel level, string line)
             {
-                this._fs.Flush();
-                this._fs.Close();
-                this._fs.Dispose();
+                if (!this._forcedStop)
+                {
+                    this._internalQueue.Add((level, line));
+                }
             }
         }
     }

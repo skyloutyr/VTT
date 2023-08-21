@@ -133,9 +133,12 @@
         }
 
         private readonly Logger.FileLogListener _fll;
-        private void Cleanup(object sender, EventArgs e)
-        {
+        private void Cleanup(object sender, EventArgs e) =>
             // Try a logger cleanup
+            this.CloseLogger();
+
+        public void CloseLogger()
+        {
             try
             {
                 this._fll?.Close();

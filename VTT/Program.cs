@@ -72,6 +72,7 @@
                 }
 
                 Console.ReadKey();
+                throw e;
             }
 #endif
         }
@@ -90,6 +91,8 @@
                 }
 
                 File.WriteAllText(Path.Combine(IOVTT.AppDir, "crash-" + DateTimeOffset.Now.ToString("dd-MM-yyyy-HH-mm-ss") + ".txt"), eT);
+                Client.Instance?.CloseLogger();
+                Server.Instance?.CloseLogger();
             }
             catch
             {

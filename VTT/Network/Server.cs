@@ -103,7 +103,7 @@
         {
             lock (this.mapsLock)
             {
-                ServerMapPointer smp = new ServerMapPointer(m.ID, m.Name, m.Folder, Path.Combine(this.MapsRoot, m.ID + ".ued"));
+                ServerMapPointer smp = new ServerMapPointer(m.ID, m.Name, m.Folder, Path.Combine(this.MapsRoot, m.ID + ".ued")) { Loaded = true, Map = m };
                 return this.Maps.TryAdd(m.ID, smp);
             }
         }

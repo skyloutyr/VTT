@@ -968,6 +968,8 @@
             Vector3 vE2Snn = end - start;
             float gFac = Client.Instance.CurrentMap?.GridUnit ?? 5;
 
+            bool IsAroundZero(float f, float eps = 1e-5f) => MathF.Abs(f) <= eps;
+
             Vector3 vE2S = vE2Snn.Normalized();
             Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);
 
@@ -975,6 +977,11 @@
             Vector3 scale = new Vector3(radius / gFac, vE2Snn.Length, radius / gFac);
             Quaternion rotation = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitY, vE2S)).Normalized();
             Vector3 translation = start + (vE2Snn / 2);
+            if (IsAroundZero(scale.X) || IsAroundZero(scale.Y) || IsAroundZero(scale.Z) || float.IsNaN(rotation.X) || float.IsNaN(rotation.Y) || float.IsNaN(rotation.Z) || float.IsNaN(rotation.W))
+            {
+                return false;
+            }
+
             Matrix4 model = Matrix4.CreateScale(scale) * Matrix4.CreateFromQuaternion(rotation) * Matrix4.CreateTranslation(translation);
             model.Invert();
             foreach (Vector3 v in box)

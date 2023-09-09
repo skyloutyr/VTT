@@ -176,8 +176,8 @@ The following options are not implemented:
 ## Known issues, suggestions and missing features tracker
 You can see all the currently known issues in the issues section on github.
 These are the features currently missing that are planned to be implemented:
-- [ ] Correct bounding box + raycast position calculation for rotated .glb nodes
-- [ ] More graceful bad data rejection instead of shutting down
+- [x] Correct bounding box + raycast position calculation for rotated .glb nodes
+- [x] More graceful bad data rejection instead of shutting down
 - [ ] Automated reconnect attempts with a finer timeout control for clients
 - [ ] A non-debug interface for connected client information + ability to ban clients.
 - [ ] Allow for multiple administrators and observers

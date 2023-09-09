@@ -1,5 +1,6 @@
 ﻿namespace VTT.Asset
 {
+    using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -37,6 +38,21 @@
                 foreach (KeyValuePair<Guid, byte[]> d in this._binaries)
                 {
                     yield return (d.Key, d.Value.LongLength);
+                }
+            }
+        }
+
+        public void DeleteCache(Guid id)
+        {
+            if (!this._nocache)
+            {
+                lock (this._guiLock)
+                {
+                    if (this._binaries.Remove(id, out byte[] dVal))
+                    {
+                        this._cacheLength -= dVal.LongLength;
+                        this._cacheAccessTimes.Remove(id);
+                    }
                 }
             }
         }

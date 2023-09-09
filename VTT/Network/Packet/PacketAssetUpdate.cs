@@ -32,6 +32,7 @@
 
                 string path = aRef.ServerPointer.FileLocation;
                 File.WriteAllBytes(path, this.NewBinary);
+                server.AssetManager.ServerAssetCache.DeleteCache(aRef.AssetID);
                 if (this.NewPreviewBinary.Length > 0)
                 {
                     string previewDir = Path.Combine(IOVTT.ServerDir, "Previews");

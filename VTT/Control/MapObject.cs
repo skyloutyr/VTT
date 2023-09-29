@@ -246,6 +246,7 @@
             ret.Position = this.Position;
             ret.Rotation = this.Rotation;
             ret.Scale = this.Scale;
+            ret.TintColor = this.TintColor;
             ret.LightsEnabled = this.LightsEnabled;
             ret.LightsCastShadows = this.LightsCastShadows;
             ret.LightsSelfCastsShadow = this.LightsSelfCastsShadow;

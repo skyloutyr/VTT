@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Asset.Obj;
@@ -1345,14 +1346,19 @@
             }
 
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared.CompareTo((l.Position - cam.Position).LengthSquared));
-            GL.Enable(EnableCap.Blend);
-            GL.Enable(EnableCap.CullFace);
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            if (m.Is2D)
             {
-                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                this._auraCollection.Sort((l, r) => l.Auras.Max(x => x.Item1).CompareTo(r.Auras.Max(x => x.Item1)));
+            }
+            else
+            {
+                this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared.CompareTo((l.Position - cam.Position).LengthSquared));
             }
 
+            GL.Disable(EnableCap.Multisample);
+            GL.Enable(EnableCap.Blend);
+            GL.Enable(EnableCap.CullFace);
+            GL.DepthMask(false);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             ShaderProgram shader = this.OverlayShader;
             shader.Bind();
@@ -1379,11 +1385,10 @@
                 }
             }
 
+            GL.DepthMask(true);
             GL.Disable(EnableCap.Blend);
-            GL.Disable(EnableCap.CullFace); if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Disable(EnableCap.SampleAlphaToCoverage);
-            }
+            GL.Disable(EnableCap.CullFace);
+            GL.Enable(EnableCap.Multisample);
         }
     }
 

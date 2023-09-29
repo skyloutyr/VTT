@@ -173,6 +173,7 @@
 
         private readonly List<Vector3> _brushRenderData = new List<Vector3>();
         private readonly List<uint> _brushRenderIndices = new List<uint>();
+        private bool _couldTriangulate;
 
         public void Render(double time)
         {
@@ -225,7 +226,7 @@
                             if (this.FowSelectionPoints.Count >= 3)
                             {
                                 List<Vector2> pos = new List<Vector2>();
-                                Triangulate.Process(this.FowSelectionPoints.Select(v => v.Xy).ToArray(), pos);
+                                Triangulate.Process(this.FowSelectionPoints.Select(v => v.Xy).ToArray(), pos, out this._couldTriangulate);
                                 List<Vector3> v3p = new List<Vector3>(pos.Select(v => new Vector3(v.X, v.Y, 0.0f)));
                                 this._indicesList.Clear();
                                 for (int i = 0; i < v3p.Count; ++i)
@@ -304,7 +305,7 @@
                         shader["view"].Set(cam.View);
                         shader["projection"].Set(cam.Projection);
                         shader["model"].Set(Matrix4.Identity);
-                        shader["u_color"].Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
+                        shader["u_color"].Set((this._couldTriangulate ? Color.RoyalBlue.Vec4() : Color.Crimson.Vec4()) * new Vector4(1, 1, 1, 0.35f));
                         this._vao.Bind();
 
                         GL.DrawElements(PrimitiveType.Triangles, this._numVertices, DrawElementsType.UnsignedInt, IntPtr.Zero);

@@ -1,166 +1,211 @@
 ﻿namespace VTT.Util
 {
     using OpenTK.Mathematics;
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
+    // https://github.com/SebLague/Ear-Clipping-Triangulation
     public static class Triangulate
     {
-        private static float Area(Vector2[] contour)
+        private class Polygon
         {
-            int n = contour.Length;
-            float A = 0.0f;
-            for (int p = n - 1, q = 0; q < n; p = q++)
+            public readonly Vector2[] points;
+
+            public Polygon(Vector2[] points)
             {
-                A += (contour[p].X * contour[q].Y) - (contour[q].X * contour[p].Y);
-            }
+                this.points = new Vector2[points.Length];
 
-            return A * 0.5f;
-        }
 
-        private static bool InsideTriangle(float Ax, float Ay, float Bx, float By, float Cx, float Cy, float Px, float Py)
-        {
-            float ax, ay, bx, by, cx, cy, apx, apy, bpx, bpy, cpx, cpy;
-            float cCROSSap, bCROSScp, aCROSSbp;
-            ax = Cx - Bx; ay = Cy - By;
-            bx = Ax - Cx; by = Ay - Cy;
-            cx = Bx - Ax; cy = By - Ay;
-            apx = Px - Ax; apy = Py - Ay;
-            bpx = Px - Bx; bpy = Py - By;
-            cpx = Px - Cx; cpy = Py - Cy;
-            aCROSSbp = (ax * bpy) - (ay * bpx);
-            cCROSSap = (cx * apy) - (cy * apx);
-            bCROSScp = (bx * cpy) - (by * cpx);
-            return (aCROSSbp >= 0.0f) && (bCROSScp >= 0.0f) && (cCROSSap >= 0.0f);
-        }
-
-        private static bool Snip(Vector2[] contour, int u, int v, int w, int n, int[] V)
-        {
-            int p;
-            float Ax, Ay, Bx, By, Cx, Cy, Px, Py;
-
-            Ax = contour[V[u]].X;
-            Ay = contour[V[u]].Y;
-
-            Bx = contour[V[v]].X;
-            By = contour[V[v]].Y;
-
-            Cx = contour[V[w]].X;
-            Cy = contour[V[w]].Y;
-
-            if (float.Epsilon > (((Bx - Ax) * (Cy - Ay)) - ((By - Ay) * (Cx - Ax))))
-            {
-                return false;
-            }
-
-            for (p = 0; p < n; p++)
-            {
-                if ((p == u) || (p == v) || (p == w))
+                // add hull points, ensuring they wind in counterclockwise order
+                bool reverseHullPointsOrder = !PointsAreCounterClockwise(points);
+                for (int i = 0; i < points.Length; i++)
                 {
-                    continue;
-                }
-
-                Px = contour[V[p]].X;
-                Py = contour[V[p]].Y;
-
-                if (InsideTriangle(Ax, Ay, Bx, By, Cx, Cy, Px, Py))
-                {
-                    return false;
+                    this.points[i] = points[reverseHullPointsOrder ? points.Length - 1 - i : i];
                 }
             }
 
-            return true;
+            private bool PointsAreCounterClockwise(Vector2[] testPoints)
+            {
+                float signedArea = 0;
+                for (int i = 0; i < testPoints.Length; i++)
+                {
+                    int nextIndex = (i + 1) % testPoints.Length;
+                    signedArea += (testPoints[nextIndex].X - testPoints[i].X) * (testPoints[nextIndex].Y + testPoints[i].Y);
+                }
+
+                return signedArea < 0;
+            }
         }
 
-        public static bool Process(Vector2[] contour, List<Vector2> result)
+        private class PolyVertex
         {
-            /* allocate and initialize list of Vertices in polygon */
+            public readonly Vector2 position;
+            public readonly int index;
+            public bool isConvex;
 
-            int n = contour.Length;
-            if (n < 3)
+            public PolyVertex(Vector2 position, int index, bool isConvex)
             {
-                return false;
+                this.position = position;
+                this.index = index;
+                this.isConvex = isConvex;
             }
+        }
 
-            int[] V = new int[n];
+        private static int SideOfLine(Vector2 a, Vector2 b, Vector2 c) => MathF.Sign(((c.X - a.X) * (-b.Y + a.Y)) + ((c.Y - a.Y) * (b.X - a.X)));
+        private static bool IsConvex(Vector2 v0, Vector2 v1, Vector2 v2) => SideOfLine(v0, v2, v1) == -1;
+        private static bool PointInTriangle(Vector2 a, Vector2 b, Vector2 c, Vector2 p)
+        {
+            float area = 0.5f * ((-b.Y * c.X) + (a.Y * (-b.X + c.X)) + (a.X * (b.Y - c.Y)) + (b.X * c.Y));
+            float s = 1 / (2 * area) * ((a.Y * c.X) - (a.X * c.Y) + ((c.Y - a.Y) * p.X) + ((a.X - c.X) * p.Y));
+            float t = 1 / (2 * area) * ((a.X * b.Y) - (a.Y * b.X) + ((a.Y - b.Y) * p.X) + ((b.X - a.X) * p.Y));
+            return s >= 0 && t >= 0 && (s + t) <= 1;
 
-            /* we want a counter-clockwise polygon in V */
+        }
 
-            if (0.0f < Area(contour))
+        public static void Process(IEnumerable<Vector2> vIn, List<Vector2> vOut, out bool s)
+        {
+            Polygon poly = new Polygon(vIn.ToArray());
+            int[] tris = GenTriangles(poly);
+            if (tris != null)
             {
-                for (int v = 0; v < n; v++)
+                for (int i = 0; i < tris.Length; i += 3)
                 {
-                    V[v] = v;
+                    Vector2 a = poly.points[tris[i + 0]];
+                    Vector2 b = poly.points[tris[i + 1]];
+                    Vector2 c = poly.points[tris[i + 2]];
+                    vOut.Add(a);
+                    vOut.Add(b);
+                    vOut.Add(c);
                 }
+
+                s = true;
             }
             else
             {
-                for (int v = 0; v < n; v++)
+                // Panic
+                List<Vector2> ins = vIn.ToList();
+                bool b = false;
+                for (int i = 0; i < ins.Count - 2; ++i)
                 {
-                    V[v] = n - 1 - v;
+                    Vector2 c = ins[i];
+                    Vector2 n = ins[i + 1];
+                    Vector2 p = ins[i + 2];
+                    if (!b)
+                    {
+                        vOut.Add(c);
+                        vOut.Add(n);
+                        vOut.Add(p);
+                        b = true;
+                    }
+                    else
+                    {
+                        vOut.Add(n);
+                        vOut.Add(c);
+                        vOut.Add(p);
+                        b = true;
+                    }
                 }
+
+                s = false;
+            }
+        }
+
+        private static LinkedList<PolyVertex> GenerateVertexList(Polygon polygon)
+        {
+            LinkedList<PolyVertex> vertexList = new LinkedList<PolyVertex>();
+            LinkedListNode<PolyVertex> currentNode = null;
+
+            // Add all hull points to the linked list
+            for (int i = 0; i < polygon.points.Length; i++)
+            {
+                int prevPointIndex = (i - 1 + polygon.points.Length) % polygon.points.Length;
+                int nextPointIndex = (i + 1) % polygon.points.Length;
+
+                bool vertexIsConvex = IsConvex(polygon.points[prevPointIndex], polygon.points[i], polygon.points[nextPointIndex]);
+                PolyVertex currentHullVertex = new PolyVertex(polygon.points[i], i, vertexIsConvex);
+                currentNode = currentNode == null ? vertexList.AddFirst(currentHullVertex) : vertexList.AddAfter(currentNode, currentHullVertex);
             }
 
-            int nv = n;
+            return vertexList;
+        }
 
-            /*  remove nv-2 Vertices, creating 1 triangle every time */
-            int count = 2 * nv;   /* error detection */
-
-            for (int m = 0, v = nv - 1; nv > 2;)
+        private static bool TriangleContainsVertex(LinkedList<PolyVertex> vertsInClippedPolygon, PolyVertex v0, PolyVertex v1, PolyVertex v2)
+        {
+            LinkedListNode<PolyVertex> vertexNode = vertsInClippedPolygon.First;
+            for (int i = 0; i < vertsInClippedPolygon.Count; i++)
             {
-                /* if we loop, it is probably a non-simple polygon */
-                if (0 >= count--)
+                if (!vertexNode.Value.isConvex) // convex verts will never be inside triangle
                 {
-                    //** Triangulate: ERROR - probable bad polygon!
-                    return false;
-                }
-
-                /* three consecutive vertices in current polygon, <u,v,w> */
-                int u = v;
-                if (nv <= u)
-                {
-                    u = 0;     /* previous */
-                }
-
-                v = u + 1;
-                if (nv <= v)
-                {
-                    v = 0;     /* new v    */
-                }
-
-                int w = v + 1;
-                if (nv <= w)
-                {
-                    w = 0;     /* next     */
-                }
-
-                if (Snip(contour, u, v, w, nv, V))
-                {
-                    int a, b, c, s, t;
-
-                    /* true names of the vertices */
-                    a = V[u];
-                    b = V[v];
-                    c = V[w];
-
-                    /* output Triangle */
-                    result.Add(contour[a]);
-                    result.Add(contour[b]);
-                    result.Add(contour[c]);
-
-                    m++;
-
-                    /* remove v from remaining polygon */
-                    for (s = v, t = v + 1; t < nv; s++, t++)
+                    PolyVertex vertexToCheck = vertexNode.Value;
+                    if (vertexToCheck.index != v0.index && vertexToCheck.index != v1.index && vertexToCheck.index != v2.index) // dont check verts that make up triangle
                     {
-                        V[s] = V[t]; nv--;
+                        if (PointInTriangle(v0.position, v1.position, v2.position, vertexToCheck.position))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                vertexNode = vertexNode.Next;
+            }
+
+            return false;
+        }
+
+        private static int[] GenTriangles(Polygon poly)
+        {
+            int[] tris = new int[(poly.points.Length - 2) * 3];
+            int triIndex = 0;
+            LinkedList<PolyVertex> vertsInClippedPolygon = GenerateVertexList(poly);
+            while (vertsInClippedPolygon.Count >= 3)
+            {
+                bool hasRemovedEarThisIteration = false;
+                LinkedListNode<PolyVertex> vertexNode = vertsInClippedPolygon.First;
+                for (int i = 0; i < vertsInClippedPolygon.Count; i++)
+                {
+                    LinkedListNode<PolyVertex> prevPolyVertexNode = vertexNode.Previous ?? vertsInClippedPolygon.Last;
+                    LinkedListNode<PolyVertex> nextPolyVertexNode = vertexNode.Next ?? vertsInClippedPolygon.First;
+
+                    if (vertexNode.Value.isConvex)
+                    {
+                        if (!TriangleContainsVertex(vertsInClippedPolygon, prevPolyVertexNode.Value, vertexNode.Value, nextPolyVertexNode.Value))
+                        {
+                            // check if removal of ear makes prev/next vertex convex (if was previously reflex)
+                            if (!prevPolyVertexNode.Value.isConvex)
+                            {
+                                LinkedListNode<PolyVertex> prevOfPrev = prevPolyVertexNode.Previous ?? vertsInClippedPolygon.Last;
+
+                                prevPolyVertexNode.Value.isConvex = IsConvex(prevOfPrev.Value.position, prevPolyVertexNode.Value.position, nextPolyVertexNode.Value.position);
+                            }
+                            if (!nextPolyVertexNode.Value.isConvex)
+                            {
+                                LinkedListNode<PolyVertex> nextOfNext = nextPolyVertexNode.Next ?? vertsInClippedPolygon.First;
+                                nextPolyVertexNode.Value.isConvex = IsConvex(prevPolyVertexNode.Value.position, nextPolyVertexNode.Value.position, nextOfNext.Value.position);
+                            }
+
+                            // add triangle to tri array
+                            tris[(triIndex * 3) + 2] = prevPolyVertexNode.Value.index;
+                            tris[(triIndex * 3) + 1] = vertexNode.Value.index;
+                            tris[triIndex * 3] = nextPolyVertexNode.Value.index;
+                            triIndex++;
+
+                            hasRemovedEarThisIteration = true;
+                            vertsInClippedPolygon.Remove(vertexNode);
+                            break;
+                        }
                     }
 
-                    /* resest error detection counter */
-                    count = 2 * nv;
+
+                    vertexNode = nextPolyVertexNode;
+                }
+
+                if (!hasRemovedEarThisIteration)
+                {
+                    return null;
                 }
             }
 
-            return true;
+            return tris;
         }
     }
 }

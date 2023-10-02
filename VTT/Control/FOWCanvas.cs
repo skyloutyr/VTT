@@ -82,6 +82,49 @@
             this._cells = null;
         }
 
+        public bool IsVisible(RectangleF rect, out bool partlyObscured, out bool outOfBounds)
+        {
+            outOfBounds = false;
+            partlyObscured = false;
+            Vector2 offset = new Vector2(this.Width, this.Height) / 2f;
+            offset = new Vector2(0.5f) + new Vector2(MathF.Floor(offset.X), MathF.Floor(offset.Y));
+            rect.Offset(offset.X, offset.Y);
+
+            int nXMin = (int)MathF.Floor(rect.Left);
+            int nYMin = (int)MathF.Floor(rect.Top);
+            int nXMax = (int)Math.Ceiling(rect.Right);
+            int nYMax = (int)Math.Ceiling(rect.Bottom);
+
+            bool visible = false;
+
+            for (int y = nYMin; y <= nYMax; ++y)
+            {
+                for (int x = nXMin; x <= nXMax; ++x)
+                {
+                    if (x < 0 || x >= this.Width || y < 0 || y >= this.Height)
+                    {
+                        outOfBounds = true;
+                        continue; // Outside of FOW canvas, do not know how to treat this
+                    }
+
+                    // We know cell intersects at this point, skip to cell testing
+                    Rgba64 rgba = this.GetPixel(x, y);
+
+                    if (rgba.PackedValue != ulong.MaxValue)
+                    {
+                        partlyObscured = true;
+                    }
+
+                    if (rgba.PackedValue != 0L)
+                    {
+                        visible = true;
+                    }
+                }
+            }
+
+            return visible;
+        }
+
         public bool ProcessPolygon(Vector2[] polygon, bool reveal)
         {
             Vector2 offset = new Vector2(this.Width, this.Height) / 2f;

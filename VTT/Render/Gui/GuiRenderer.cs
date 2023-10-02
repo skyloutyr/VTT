@@ -613,7 +613,9 @@
                         ImGui.TextUnformatted(this._inspectedObject.Name);
 
                         ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
-                        ImGui.TextWrapped(this._inspectedObject.Description);
+                        ImGui.PushTextWrapPos();
+                        ImGui.TextUnformatted(this._inspectedObject.Description);
+                        ImGui.PopTextWrapPos();
                         ImGui.EndChild();
 
                         if (ImGui.Button(close + "###Close", new System.Numerics.Vector2(284, 36)))

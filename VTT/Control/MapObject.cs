@@ -21,6 +21,7 @@
 
         public string Name { get; set; }
         public string Description { get; set; }
+        public string Notes { get; set; }
         public bool IsServer { get; set; }
 
         public Guid AssetID { get; set; }
@@ -130,6 +131,7 @@
             ret.Set("IsNameVisible", this.IsNameVisible);
             ret.Set("IsCrossedOut", this.IsCrossedOut);
             ret.Set("Desc", this.Description);
+            ret.Set("Notes", this.Notes);
             ret.SetGuid("AssetID", this.AssetID);
             ret.SetGuid("ShaderID", this.ShaderID);
             ret.SetGuid("OwnerID", this.OwnerID);
@@ -177,6 +179,7 @@
             this.IsNameVisible = e.Get<bool>("IsNameVisible");
             this.IsCrossedOut = e.Get<bool>("IsCrossedOut");
             this.Description = e.Get<string>("Desc");
+            this.Notes = e.Get<string>("Notes");
             this.AssetID = e.GetGuid("AssetID");
             this.ShaderID = e.GetGuid("ShaderID");
             this.OwnerID = e.GetGuid("OwnerID");
@@ -238,6 +241,7 @@
             ret.Name = this.Name;
             ret.IsNameVisible = this.IsNameVisible;
             ret.Description = this.Description;
+            ret.Notes = this.Notes;
             ret.AssetID = this.AssetID;
             ret.ShaderID = this.ShaderID;
             ret.OwnerID = this.OwnerID;

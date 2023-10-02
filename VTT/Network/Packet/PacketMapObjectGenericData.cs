@@ -38,6 +38,12 @@
                             break;
                         }
 
+                        case DataType.Notes:
+                        {
+                            d.Item2.Notes = (string)d.Item3;
+                            break;
+                        }
+
                         case DataType.IsNameVisible:
                         {
                             d.Item2.IsNameVisible = (bool)d.Item3;
@@ -173,6 +179,7 @@
 
                     case DataType.Name:
                     case DataType.Description:
+                    case DataType.Notes:
                     {
                         o = br.ReadString();
                         break;
@@ -236,6 +243,7 @@
 
                     case DataType.Name:
                     case DataType.Description:
+                    case DataType.Notes:
                     {
                         bw.Write((string)d.Item3);
                         break;
@@ -333,7 +341,8 @@
             HasCustomNameplate,
             CustomNameplateID,
             Properties,
-            ShaderID
+            ShaderID,
+            Notes
         }
     }
 }

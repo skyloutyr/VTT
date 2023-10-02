@@ -477,3 +477,6 @@ menu.settings.enable_tt_particles.tt=Если включено, то за пор
 menu.settings.thick_drop_shadow=Жирная тень текста
 menu.settings.thick_drop_shadow.tt=Если включено, то у элементов текста с тенью будет жирная обводка.
 menu.changelog=Список Изменений
+ui.properties.description.tt=Описание объекта.\nПотенциально видимо всем клиентам.
+ui.properties.notes=Заметки
+ui.properties.notes.tt=Заметки к объекту.\nНе видимы никому, кроме администратора.

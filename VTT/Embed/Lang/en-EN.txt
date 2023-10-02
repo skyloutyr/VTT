@@ -477,3 +477,6 @@ menu.settings.enable_tt_particles.tt=Controls whether the turn tracker will emit
 menu.settings.thick_drop_shadow=Thick text drop shadow
 menu.settings.thick_drop_shadow.tt=If enabled, text elements with a drop shadow will instead have a thick outline.
 menu.changelog=Changelog
+ui.properties.description.tt=A general description of the object.\nMay be visible to all clients.
+ui.properties.notes=Notes
+ui.properties.notes.tt=Any object-specific notes.\nNot visible to any clients other than the administrator.

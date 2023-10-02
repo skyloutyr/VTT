@@ -532,11 +532,34 @@
                         }
 
                         string d = mo.Description;
-                        if (ImGui.InputTextMultiline(lang.Translate("ui.properties.description") + "###Description", ref d, ushort.MaxValue, new System.Numerics.Vector2(v.X - 108, 256)))
+                        ImGui.Text(lang.Translate("ui.properties.description"));
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.description.tt"));
+                        }
+
+                        if (ImGui.InputTextMultiline("###Description", ref d, ushort.MaxValue, new System.Numerics.Vector2(v.X - 108, 256)))
                         {
                             mo.Description = d;
                             PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Description, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, d) }, IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
+                        }
+
+                        if (Client.Instance.IsAdmin)
+                        {
+                            ImGui.Text(lang.Translate("ui.properties.notes"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.properties.notes.tt"));
+                            }
+
+                            string dn = mo.Notes;
+                            if (ImGui.InputTextMultiline("###Notes", ref dn, ushort.MaxValue, new System.Numerics.Vector2(v.X - 108, 100)))
+                            {
+                                mo.Notes = dn;
+                                PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Notes, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, dn) }, IsServer = false, Session = Client.Instance.SessionID };
+                                pmogd.Send();
+                            }
                         }
 
                         ImGui.BeginChild("##Statuses", new System.Numerics.Vector2(v.X - 16, 256), true, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);

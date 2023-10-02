@@ -480,3 +480,5 @@ menu.changelog=Changelog
 ui.properties.description.tt=A general description of the object.\nMay be visible to all clients.
 ui.properties.notes=Notes
 ui.properties.notes.tt=Any object-specific notes.\nNot visible to any clients other than the administrator.
+ui.particle.pixel_fow=Do Pixel FOW
+ui.particle.pixel_fow.tt=By default the entire particle will not be drawn if it is in fog of war.\nIf ticked each pixel of the particle will do Fog of War tests and be drawn if visible.\nResource intensive.

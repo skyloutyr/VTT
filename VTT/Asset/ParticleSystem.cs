@@ -26,6 +26,7 @@
 
         public int MaxParticles { get; set; }
         public bool DoBillboard { get; set; } = true;
+        public bool DoFow { get; set; } = false;
         public bool ClusterEmission { get; set; } = false;
 
         public RangeVector3 InitialVelocity { get; set; } = new RangeVector3(Vector3.Zero, Vector3.Zero);
@@ -115,6 +116,7 @@
             ret.SetGuid("AssetID", this.AssetID);
             ret.Set("DoBillboard", this.DoBillboard);
             ret.Set("ClusterEmission", this.ClusterEmission);
+            ret.Set("DoFow", this.DoFow);
             ret.Write(bw);
         }
 
@@ -151,6 +153,7 @@
             this.AssetID = de.GetGuid("AssetID");
             this.DoBillboard = de.Get<bool>("DoBillboard", true);
             this.ClusterEmission = de.Get<bool>("ClusterEmission", false);
+            this.DoFow = de.Get<bool>("DoFow", false);
         }
 
         public void ReadV1(BinaryReader br)
@@ -206,6 +209,7 @@
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
             AssetID = this.AssetID,
             DoBillboard = this.DoBillboard,
+            DoFow = this.DoFow,
             ClusterEmission = this.ClusterEmission
         };
 
@@ -332,6 +336,7 @@
             }
 
             particleShader["billboard"].Set(this.Template.DoBillboard);
+            particleShader["do_fow"].Set(this.Template.DoFow);
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
             GL.ActiveTexture(TextureUnit.Texture14);
             GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);

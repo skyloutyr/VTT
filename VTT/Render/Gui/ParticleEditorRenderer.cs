@@ -220,6 +220,19 @@
                             pr.CurrentlyEditedSystem.DoBillboard = pBillboard;
                         }
 
+                        ImGui.Text(lang.Translate("ui.particle.pixel_fow"));
+                        ImGui.SameLine();
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.particle.pixel_fow.tt"));
+                        }
+
+                        bool pDoFow = pr.CurrentlyEditedSystem.DoFow;
+                        if (ImGui.Checkbox("##DoFow", ref pDoFow))
+                        {
+                            pr.CurrentlyEditedSystem.DoFow = pDoFow;
+                        }
+
                         ImGui.Text(lang.Translate("ui.particle.velocity"));
                         System.Numerics.Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min.SystemVector();
                         if (ImGui.DragFloat3("##VelMin", ref vVec, 0.01f))

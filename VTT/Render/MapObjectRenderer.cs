@@ -1093,6 +1093,8 @@
             plr.UniformLights(shader);
         }
 
+        public Vector3 CachedSkyColor => this._cachedSkyColor.Vec3();
+
         private void UniformCommonData(Map m, double delta)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;

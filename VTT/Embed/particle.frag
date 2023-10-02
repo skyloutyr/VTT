@@ -3,6 +3,7 @@
 in vec4 inst_color;
 in vec4 f_color;
 in vec2 f_texture;
+in vec3 inst_pos;
 flat in int f_frame;
 
 uniform uint frame;
@@ -13,7 +14,41 @@ uniform sampler2D m_texture_diffuse;
 uniform vec4 m_diffuse_frame;
 uniform float gamma_factor;
 
+// FOW
+uniform usampler2D fow_texture;
+uniform vec2 fow_offset;
+uniform vec2 fow_scale;
+uniform float fow_mod;
+uniform bool do_fow;
+uniform vec3 sky_color;
+
 out vec4 g_color;
+
+float getFowMultiplier(vec3 f_world_position)
+{   
+    vec2 uv_fow_world = (f_world_position.xy + fow_offset) * fow_scale;
+    vec2 fow_world = (f_world_position.xy + fow_offset);
+
+    uvec4 data = texture(fow_texture, uv_fow_world);
+    float yIdx = fract(fow_world.y);
+
+    float mulR = float(yIdx <= 0.25);
+    float mulG = float(yIdx <= 0.5 && yIdx > 0.25);
+    float mulB = float(yIdx <= 0.75 && yIdx > 0.5);
+    float mulA = float(yIdx > 0.75);
+
+    uint bitOffsetY = 8u * uint(round(mod(yIdx * 4, 1)));
+    uint bitOffsetX = uint(fract(fow_world.x) * 8);
+
+    uint mask = (1u << bitOffsetY) << bitOffsetX;
+
+    float r = min(1, float(data.r & mask) * mulR);
+    float g = min(1, float(data.g & mask) * mulG);
+    float b = min(1, float(data.b & mask) * mulB);
+    float a = min(1, float(data.a & mask) * mulA);
+
+    return r + g + b + a;
+}
 
 vec4 sampleMap()
 {
@@ -26,6 +61,12 @@ vec4 sampleMap()
 
 void main()
 {
-	g_color = sampleMap() * f_color * inst_color;
+    g_color = sampleMap() * f_color * inst_color;
 	g_color.rgb = pow(g_color.rgb, vec3(1.0/gamma_factor));
+    if (do_fow)
+    {
+        float fowVal = getFowMultiplier(inst_pos) * fow_mod + (1.0 - fow_mod);
+        g_color = mix(vec4(sky_color, g_color.a), g_color, fowVal);
+    }
+	
 }

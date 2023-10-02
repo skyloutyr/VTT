@@ -92,6 +92,8 @@
             this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
             this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+            this.ParticleShader["do_fow"].Set(false);
+            this.ParticleShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
             this.ParticleShader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(this.ParticleShader);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
@@ -205,6 +207,7 @@
             this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
             this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+            this.ParticleShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
             this.ParticleShader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.ParticleShader);
             GL.ActiveTexture(TextureUnit.Texture0);

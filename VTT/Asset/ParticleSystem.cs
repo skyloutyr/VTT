@@ -37,6 +37,9 @@
         public Gradient<Vector4> ColorOverLifetime { get; set; } = new Gradient<Vector4>() { [0] = Vector4.One, [1] = new Vector4(1, 1, 1, 0) };
         public Gradient<float> ScaleOverLifetime { get; set; } = new Gradient<float>() { [0] = 1f, [1] = 1f };
 
+        /// <summary>
+        /// Note - NOT OWN ID! This is the ID of the asset the particles use for rendering.
+        /// </summary>
         public Guid AssetID { get; set; }
 
         public void WriteV1(BinaryWriter bw)

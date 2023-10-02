@@ -442,6 +442,26 @@
                                         Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystem = null;
                                         Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystemInstance = null;
                                     }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.duplicate_particle") + "###Duplicate Particle System"))
+                                    {
+                                        Client.Instance.AssetManager.ClientAssetLibrary.PerformClientAssetAction(aRef.AssetID, AssetType.ParticleSystem, (status, a) =>
+                                        {
+                                            if (status == AssetStatus.Return && a != null && a.Type == AssetType.ParticleSystem)
+                                            {
+                                                ParticleSystem ps = a.ParticleSystem.Copy();
+                                                AssetMetadata metadata = new AssetMetadata() { Name = aRef.Name + " (copy)", Type = AssetType.ParticleSystem, Version = aRef.Meta.Version };
+                                                using MemoryStream ms = new MemoryStream();
+                                                using BinaryWriter bw = new BinaryWriter(ms);
+                                                ps.WriteV2(bw);
+                                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
+                                                using MemoryStream imgMs = new MemoryStream();
+                                                img.SaveAsPng(imgMs);
+                                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                                pau.Send(Client.Instance.NetClient);
+                                            }
+                                        });
+                                    }
                                 }
 
                                 if (aRef.Meta != null && aRef.Meta.Type == AssetType.Shader)

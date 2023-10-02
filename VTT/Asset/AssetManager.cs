@@ -6,6 +6,7 @@
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -472,6 +473,71 @@
             return AssetStatus.Await;
         }
 
+        private readonly ConcurrentDictionary<Guid, ConcurrentQueue<Action<AssetStatus, Asset>>> _assetCallbacks = new ConcurrentDictionary<Guid, ConcurrentQueue<Action<AssetStatus, Asset>>>();
+        private readonly object _assetCallbackLock = new object();
+
+        public void PerformClientAssetAction(Guid aID, AssetType aType, Action<AssetStatus, Asset> callback)
+        {
+            if (this.Container.Assets.TryGetValue(aID, out Asset a))
+            {
+                if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
+                {
+                    Glb.GlbScene mdl = a.Texture.ToGlbModel();
+                    a.Model = new ModelData() { GLMdl = mdl };
+                }
+
+                callback(AssetStatus.Return, a);
+                return;
+            }
+
+            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
+            {
+                callback(ret, null);
+                return;
+            }
+
+            if (this.RequestQueue.Contains(aID))
+            {
+                // Asset already requested, enqueue?
+                lock (this._assetCallbackLock)
+                {
+                    // Try for object status here again, may be present
+                    if (this.Container.Assets.TryGetValue(aID, out a))
+                    {
+                        if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
+                        {
+                            Glb.GlbScene mdl = a.Texture.ToGlbModel();
+                            a.Model = new ModelData() { GLMdl = mdl };
+                        }
+
+                        callback(AssetStatus.Return, a);
+                        return;
+                    }
+
+                    if (this.ErroredAssets.TryGetValue(aID, out ret))
+                    {
+                        callback(ret, null);
+                        return;
+                    }
+
+                    // Enqueue
+                    if (!this._assetCallbacks.TryGetValue(aID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbackQueue))
+                    {
+                        ConcurrentQueue<Action<AssetStatus, Asset>> cq = callbackQueue = new ConcurrentQueue<Action<AssetStatus, Asset>>();
+                        this._assetCallbacks.TryAdd(aID, cq);
+                    }
+
+                    callbackQueue.Enqueue(callback);
+                }
+
+                return;
+            }
+
+            this.RequestQueue.Enqueue(aID);
+            this.RequestTypeQueue.Enqueue(aType);
+            this.PulseRequest();
+        }
+
         public AssetStatus GetOrRequestAsset(Guid aID, AssetType aType, out Asset a)
         {
             if (this.Container.Assets.TryGetValue(aID, out a))
@@ -555,7 +621,26 @@
 
         public void ErrorAsset(Guid assetID, AssetResponseType responseType)
         {
-            this.ErroredAssets[assetID] = responseType == AssetResponseType.InternalError ? AssetStatus.Error : AssetStatus.NoAsset;
+            AssetStatus astat = responseType == AssetResponseType.InternalError ? AssetStatus.Error : AssetStatus.NoAsset;
+            this.ErroredAssets[assetID] = astat;
+
+            // Notify callbacks of error
+            lock (this._assetCallbackLock)
+            {
+                if (this._assetCallbacks.TryGetValue(assetID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbacks))
+                {
+                    while (!callbacks.IsEmpty)
+                    {
+                        if (!callbacks.TryDequeue(out Action<AssetStatus, Asset> callback))
+                        {
+                            break;
+                        }
+
+                        callback(astat, null);
+                    }
+                }
+            }
+
             this.LastRequestTime = 0;
             this.PulseRequest(); // Check for new requests and process them
         }
@@ -640,6 +725,27 @@
 
             this.Container.Assets[assetID] = a;
             this.EraseAssetRecord(assetID);
+
+            // Process callbacks.
+            lock (this._assetCallbackLock)
+            {
+                if (this._assetCallbacks.TryGetValue(assetID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbacks))
+                {
+                    while (!callbacks.IsEmpty)
+                    {
+                        if (!callbacks.TryDequeue(out Action<AssetStatus, Asset> callback))
+                        {
+                            break;
+                        }
+
+                        callback(AssetStatus.Return, a);
+                    }
+
+                    this._assetCallbacks.TryRemove(assetID, out _); // Do not care for out param
+                }
+            }
+
+            
             this.LastRequestTime = 0;
             this.PulseRequest(); // Check for new requests and process them
         }

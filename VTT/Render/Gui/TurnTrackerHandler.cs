@@ -12,11 +12,20 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using Vec2 = System.Numerics.Vector2;
+    using Vec4 = System.Numerics.Vector4;
 
     public partial class GuiRenderer
     {
         private readonly List<TurnTrackerParticle> _particles = new List<TurnTrackerParticle>();
         private bool _turnTrackerVisible;
+        private float _scrollDYChange;
+        private int _ttOffset = 0;
+
+        public void HandleScrollWheelExtra(float dx, float dy)
+        {
+            this._scrollDYChange += dy;
+        }
 
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
         {
@@ -27,7 +36,7 @@
                 if (!this._turnTrackerCollapsed)
                 {
                     this._turnTrackerVisible = true;
-                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(640, 132));
+                    ImGui.SetNextWindowSize(new Vec2(640, 132));
                     ImGui.SetNextWindowPos(new(ww / 4, 0));
                     if (ImGui.Begin("##TurnTracker", (window_flags | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollWithMouse) & ~ImGuiWindowFlags.AlwaysAutoResize))
                     {
@@ -36,9 +45,107 @@
                             lock (cMap.TurnTracker.Lock)
                             {
                                 ImDrawListPtr idl = ImGui.GetWindowDrawList();
+                                Vec2 cursor = ImGui.GetCursorScreenPos();
+                                ImGui.PushClipRect(cursor, cursor + new Vec2(640, 132), false);
                                 TurnTracker.Entry currentEntry = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex);
                                 TurnTracker.Entry last = cMap.TurnTracker.Entries[^1];
                                 TurnTracker.Entry first = cMap.TurnTracker.Entries[0];
+                                Vec2 bgSize = new Vec2(64, 96);
+                                Vec2 smSize = new Vec2(48, 72);
+                                Vec2 separatorSize = new Vec2(12, 72);
+                                Vec2 pen = new Vec2(0, 0);
+                                float oX = 0;
+                                if (this._scrollDYChange != 0 && ImGui.IsMouseHoveringRect(cursor, cursor + new Vec2(640, 132)))
+                                {
+                                    this._ttOffset -= Math.Sign(this._scrollDYChange);
+                                }
+
+                                for (int i = -6; i <= 6; ++i)
+                                {
+                                    TurnTracker.Entry e = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex + i + this._ttOffset);
+                                    Vec2 sz = e == currentEntry ? bgSize : smSize;
+                                    oX += sz.X + 2;
+                                    if (e == last)
+                                    {
+                                        oX += 14;
+                                    }
+                                }
+
+                                cursor.X += (640 - oX) / 2f;
+                                for (int i = -6; i <= 6; ++i)
+                                {
+                                    TurnTracker.Entry e = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex + i + this._ttOffset);
+                                    Vec2 sz = e == currentEntry ? bgSize : smSize;
+                                    bool hasEntryInfo = cMap.TurnTracker.GetEntryInfo(e, out Color tColor, out string tName, out string eName);
+                                    if (cMap.GetObject(e.ObjectID, out MapObject mo))
+                                    {
+                                        idl.AddImage(this.TurnTrackerBackground, cursor + pen, cursor + pen + sz, Vec2.Zero, Vec2.One, tColor.Abgr());
+                                        Vec4 hColor = (Vec4)tColor;
+                                        if (e == currentEntry)
+                                        {
+                                            hColor = Vec4.Lerp((Vec4)Color.Gold, (Vec4)Color.White, (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                            uint particleColor = tColor.Abgr();
+                                            for (int j = this._particles.Count - 1; j >= 0; j--)
+                                            {
+                                                TurnTrackerParticle ttp = this._particles[j];
+                                                if (ttp.IsDead)
+                                                {
+                                                    this._particles.RemoveAt(j);
+                                                }
+                                                else
+                                                {
+                                                    idl.AddImage(this.TurnTrackerParticle, ttp.RelativePosition + cursor + pen - (new Vec2(4, 4) * ttp.Scale), ttp.RelativePosition + cursor + pen + (new Vec2(4, 4) * ttp.Scale), Vec2.Zero, Vec2.One, ttp.Color == 0xffffffffu ? particleColor : ttp.Color);
+                                                }
+                                            }
+                                        }
+
+                                        // TODO portrait rendering
+                                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap) == AssetStatus.Return)
+                                        {
+                                            Vec4 borderColor = Vec4.Zero;
+                                            if (e == currentEntry)
+                                            {
+                                                borderColor = (Vec4)Color.Gold;
+                                            }
+
+                                            Vec4 portrairColor = Vec4.One;
+                                            if (mo.MapLayer > 0)
+                                            {
+                                                portrairColor = !Client.Instance.IsAdmin ? ImColBlack : new Vec4(0.5f, 0.5f, 0.5f, 1.0f);
+                                            }
+
+                                            float ar = 64f / 96f;
+                                            ar *= 0.5f;
+                                            idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(0.25f, 0), new Vec2(0.75f, 1), new Color(portrairColor).Abgr());
+                                        }
+
+                                        idl.AddImage(this.TurnTrackerForeground, cursor + pen, cursor + pen + sz, Vec2.Zero, Vec2.One, new Color(hColor).Abgr());
+                                        if (ImGui.IsMouseHoveringRect(cursor + pen, cursor + pen + sz))
+                                        {
+                                            ImGui.BeginTooltip();
+                                            ImGui.TextUnformatted(eName);
+                                            ImGui.PushStyleColor(ImGuiCol.Text, tColor.Abgr());
+                                            ImGui.TextUnformatted(tName);
+                                            ImGui.PopStyleColor();
+                                            ImGui.EndTooltip();
+                                        }
+
+                                        pen.X += sz.X + 2;
+                                        if (e == last)
+                                        {
+                                            idl.AddImage(this.TurnTrackerSeparator, cursor + pen, cursor + pen + separatorSize);
+                                            pen.X += 14;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        idl.AddImage(this.TurnTrackerBackgroundNoObject, cursor + pen, cursor + pen + sz, Vec2.Zero, Vec2.One, tColor.Abgr());
+                                    }
+                                }
+
+                                ImGui.PopClipRect();
+
+                                /* Old Rendering code
                                 ImGui.SetCursorPosX(320 - 40);
                                 for (int idx = 0; idx <= 5; ++idx)
                                 {
@@ -174,10 +281,11 @@
 
                                     cX -= 70;
                                 }
+                                */
                             }
 
                             float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
-                            ImGui.PushStyleColor(ImGuiCol.Text, (System.Numerics.Vector4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
+                            ImGui.PushStyleColor(ImGuiCol.Text, (Vec4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
                             if (Client.Instance.Settings.TextThickDropShadow)
                             {
                                 for (int i = 0; i < 4; ++i)
@@ -214,8 +322,24 @@
                 }
 
                 ImGui.PopItemWidth();
-                ImGui.End();
+
+                if (!this._turnTrackerCollapsed && this._ttOffset != 0)
+                {
+                    ImGui.SetNextWindowPos(new((ww / 4) - 24, -12));
+                    ImGui.SetNextWindowBgAlpha(0.0f);
+                    ImGui.Begin("##TurnTrackerResetContainer", window_flags | ImGuiWindowFlags.NoBackground);
+                    ImGui.PushItemWidth(48);
+                    if (ImGui.Button("↻###TurnTrackerResetButton", new Vec2(24, 24)))
+                    {
+                        this._ttOffset = 0;
+                    }
+
+                    ImGui.PopItemWidth();
+                    ImGui.End();
+                }
             }
+
+            this._scrollDYChange = 0;
         }
 
         private unsafe void UpdateTurnTrackerParticles()
@@ -240,8 +364,8 @@
                         Lifetime = lt,
                         LifetimeMax = lt,
                         Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
-                        Motion = new System.Numerics.Vector2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                        RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
+                        Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
+                        RelativePosition = new Vec2(4 + this.Random.NextSingle() * 56, 92),
                         ScaleMultiplier = isSpecial ? 0.5f : 0.8f + (this.Random.NextSingle() * 0.4f),
                     };
 
@@ -254,8 +378,8 @@
                     Lifetime = lt,
                     LifetimeMax = lt,
                     Color = 0xffffffffu,
-                    Motion = new System.Numerics.Vector2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                    RelativePosition = new System.Numerics.Vector2(this.Random.NextSingle() * 64, 96),
+                    Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
+                    RelativePosition = new Vec2(4 + this.Random.NextSingle() * 56, 92),
                     ScaleMultiplier = 1.0f + (this.Random.NextSingle() * 0.5f),
                 };
 
@@ -287,10 +411,10 @@
                             }
 
                             ImGui.SameLine();
-                            if (ImGui.ColorButton("##TeamColor" + i, (System.Numerics.Vector4)t.Color))
+                            if (ImGui.ColorButton("##TeamColor" + i, (Vec4)t.Color))
                             {
                                 this._editedTeamName = t.Name;
-                                this._editedTeamColor = (System.Numerics.Vector4)t.Color;
+                                this._editedTeamColor = (Vec4)t.Color;
                                 state.changeTeamColorPopup = true;
                             }
 
@@ -342,7 +466,7 @@
                         ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
                         if (ttVisible)
                         {
-                            ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)Color.RoyalBlue);
+                            ImGui.PushStyleColor(ImGuiCol.Border, (Vec4)Color.RoyalBlue);
                         }
 
                         if (ImGui.ImageButton("TurnTrackerVisibilityButton", this.FOWRevealIcon, Vec12x12))
@@ -424,7 +548,7 @@
                         }
 
                         ImGui.PopItemWidth();
-                        System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                        Vec2 wC = ImGui.GetWindowSize();
                         ImGui.BeginChild("##TirnTrackerInnerEntryList");
                         for (int i = 0; i < cMap.TurnTracker.Entries.Count; i++)
                         {
@@ -447,13 +571,13 @@
                             bool border = i == cMap.TurnTracker.EntryIndex % cMap.TurnTracker.Entries.Count;
                             if (border)
                             {
-                                System.Numerics.Vector4 colorDark = new System.Numerics.Vector4(0.234f, 0, 0.4f, 1.0f);
-                                System.Numerics.Vector4 colorBright = new System.Numerics.Vector4(0.862f, 0, 0.292f, 1.0f);
-                                System.Numerics.Vector4 borderColor = System.Numerics.Vector4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                Vec4 colorDark = new Vec4(0.234f, 0, 0.4f, 1.0f);
+                                Vec4 colorBright = new Vec4(0.862f, 0, 0.292f, 1.0f);
+                                Vec4 borderColor = System.Numerics.Vector4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 
-                            ImGui.BeginChild("turnTrackerNav_" + i, new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings);
+                            ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings);
                             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                             {
                                 IntPtr sIdx = new IntPtr(&i);
@@ -507,7 +631,7 @@
 
                                 ImGui.PopItemWidth();
                                 ImGui.SameLine();
-                                ImGui.ColorButton("##ClrBtnD" + i, (System.Numerics.Vector4)e.Team.Color);
+                                ImGui.ColorButton("##ClrBtnD" + i, (Vec4)e.Team.Color);
                                 ImGui.SameLine();
                             }
 
@@ -581,8 +705,8 @@
         public float ScaleMultiplier { get; set; } = 1;
         public float Scale => (float)this.Lifetime / this.LifetimeMax * this.ScaleMultiplier;
 
-        public System.Numerics.Vector2 RelativePosition { get; set; }
-        public System.Numerics.Vector2 Motion { get; set; }
+        public Vec2 RelativePosition { get; set; }
+        public Vec2 Motion { get; set; }
 
         public void Update()
         {

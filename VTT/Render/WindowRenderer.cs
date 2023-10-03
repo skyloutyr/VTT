@@ -98,7 +98,11 @@
             }
         }
 
-        public void ScrollWheel(float dx, float dy) => this.MapRenderer.ScrollCamera(dy);
+        public void ScrollWheel(float dx, float dy)
+        {
+            this.MapRenderer.ScrollCamera(dy);
+            Client.Instance.Frontend.Renderer.GuiRenderer.HandleScrollWheelExtra(dx, dy);
+        }
 
         public void Render(double time)
         {

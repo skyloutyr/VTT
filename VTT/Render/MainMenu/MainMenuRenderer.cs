@@ -383,6 +383,7 @@
                         ImLink(sp + lang.Translate("credits.vs"), "https://visualstudio.microsoft.com/");
                         ImLink(sp + lang.Translate("credits.emojidata"), "https://www.unicode.org");
                         ImLink(sp + lang.Translate("credits.nsight"), "https://developer.nvidia.com/nsight-graphics");
+                        ImLink(sp + lang.Translate("credits.sfx"), "https://www.storyblocks.com/audio");
                         ImGui.NewLine();
                         ImGui.Text(lang.Translate("credits.special"));
                         ImGui.Text(sp + lang.Translate("credits.stackoverflow"));
@@ -745,6 +746,50 @@
                     ImGui.TreePop();
                 }
 
+                if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound") + "###Sound"))
+                {
+                    ImGui.Text(lang.Translate("menu.settings.sound.master"));
+                    float svMaster = Client.Instance.Settings.SoundMasterVolume;
+                    if (ImGui.SliderFloat("##MasterVolume", ref svMaster, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundMasterVolume = svMaster;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
+                    ImGui.Text(lang.Translate("menu.settings.sound.ui"));
+                    float svUI = Client.Instance.Settings.SoundUIVolume;
+                    if (ImGui.SliderFloat("##UIVolume", ref svUI, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundUIVolume = svUI;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound.individual") + "###Individual sound notifications"))
+                    {
+                        ImGui.TextDisabled(lang.Translate("menu.settings.category.sound.individual.ui"));
+                        bool bEnableChatSound = Client.Instance.Settings.EnableSoundChatMessage;
+                        if (ImGui.Checkbox(lang.Translate("menu.settings.sound.ui.chat"), ref bEnableChatSound))
+                        {
+                            Client.Instance.Settings.EnableSoundChatMessage = bEnableChatSound;
+                            Client.Instance.Settings.Save();
+                        }
+
+                        bool bEnableTurnSound = Client.Instance.Settings.EnableSoundTurnTracker;
+                        if (ImGui.Checkbox(lang.Translate("menu.settings.sound.ui.turn"), ref bEnableTurnSound))
+                        {
+                            Client.Instance.Settings.EnableSoundTurnTracker = bEnableTurnSound;
+                            Client.Instance.Settings.Save();
+                        }
+
+                        ImGui.TreePop();
+                    }
+
+                    ImGui.TreePop();
+                }
+
+
                 if (ImGui.TreeNode(lang.Translate("menu.settings.category.language") + "###Language & Accessibility"))
                 {
                     string[] langs = { lang.Translate("menu.settings.language.en-EN"), lang.Translate("menu.settings.language.ru-RU") };
@@ -781,6 +826,18 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.chat_brightness.tt"));
+                    }
+
+                    bool enableChatWindowNotification = Client.Instance.Settings.EnableChatNotification;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_chat_notification"), ref enableChatWindowNotification))
+                    {
+                        Client.Instance.Settings.EnableChatNotification = enableChatWindowNotification;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_chat_notification.tt"));
                     }
 
                     bool mTextThickShadow = Client.Instance.Settings.TextThickDropShadow;

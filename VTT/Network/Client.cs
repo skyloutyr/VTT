@@ -1,6 +1,5 @@
 ﻿namespace VTT.Network
 {
-    using Microsoft.VisualBasic;
     using NetCoreServer;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
@@ -174,6 +173,18 @@
                 if (this.Chat[^1].Index < line.Index)
                 {
                     this.Chat.Add(line);
+                    if (line.SenderID != this.ID && (Guid.Empty.Equals(line.DestID) || line.DestID.Equals(this.ID)))
+                    {
+                        if (this.Settings.EnableChatNotification)
+                        {
+                            this.Frontend.PushNotification();
+                            if (this.Settings.EnableSoundChatMessage)
+                            {
+                                this.Frontend.Sound.PlaySound(this.Frontend.Sound.ChatMessage, Sound.SoundCategory.UI);
+                            }
+                        }
+                    }
+
                     return;
                 }
 
@@ -563,6 +574,26 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool TextThickDropShadow { get; set; } = true;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableChatNotification { get; set; } = true;
+
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float SoundMasterVolume { get; set; } = 1.0f;
+
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float SoundUIVolume { get; set; } = 1.0f;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableSoundChatMessage { get; set; } = true;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableSoundTurnTracker { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -605,7 +636,12 @@
                 EnableCustomShaders = true,
                 FOV = 60.0f,
                 TurnTrackerParticlesEnabled = false,
-                TextThickDropShadow = true
+                TextThickDropShadow = true,
+                SoundMasterVolume = 1.0f,
+                SoundUIVolume = 1.0f,
+                EnableSoundChatMessage = true,
+                EnableChatNotification = true,
+                EnableSoundTurnTracker = true
             };
 
             ret.Save();

@@ -3,6 +3,7 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Windowing.Common.Input;
     using OpenTK.Windowing.Desktop;
+    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
@@ -13,12 +14,14 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Render.Gui;
+    using VTT.Sound;
     using VTT.Util;
 
     public class ClientWindow
     {
         public ImGuiWrapper GuiWrapper { get; private set; }
         public WindowRenderer Renderer { get; set; }
+        public SoundManager Sound { get; set; }
         public FFmpegWrapper FFmpegWrapper { get; set; }
         public GameWindow GameHandle { get; set; }
 
@@ -126,6 +129,17 @@
             }
         }
 
+        public void PushNotification()
+        {
+            if (!this.GameHandle.IsFocused)
+            {
+                unsafe
+                {
+                    GLFW.RequestWindowAttention(this.GameHandle.WindowPtr);
+                }
+            }
+        }
+
         private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj)
         {
             this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, false);
@@ -212,6 +226,7 @@
                 }
             }
 
+            this.Sound.Update();
             this.Renderer.Update(obj.Time);
             this.GuiWrapper.Update(obj.Time);
             GuiRenderer.Instance.Update();
@@ -234,6 +249,8 @@
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
+            this.Sound = new SoundManager();
+            this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();
             this.Renderer.Create();
             if (ArgsManager.TryGetValue("gldebug", out string val) && Enum.TryParse(val, out this._argsGlSeverity))

@@ -120,6 +120,8 @@
     <None Remove="Embed\pl.frag" />
     <None Remove="Embed\pl.geom" />
     <None Remove="Embed\pl.vert" />
+    <None Remove="Embed\pop-ding-notification-effect-2.wav" />
+    <None Remove="Embed\simple-interface-tone.wav" />
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
     <None Remove="Embed\square.obj" />
@@ -250,6 +252,8 @@
     <EmbeddedResource Include="Embed\pl.frag" />
     <EmbeddedResource Include="Embed\pl.geom" />
     <EmbeddedResource Include="Embed\pl.vert" />
+    <EmbeddedResource Include="Embed\pop-ding-notification-effect-2.wav" />
+    <EmbeddedResource Include="Embed\simple-interface-tone.wav" />
     <EmbeddedResource Include="Embed\sky.frag" />
     <EmbeddedResource Include="Embed\sky.vert" />
     <EmbeddedResource Include="Embed\square.obj" />

@@ -125,6 +125,17 @@
 
             idx %= this.Entries.Count;
             this.EntryIndex = idx;
+            if (!this.Container.IsServer && Client.Instance != null && Client.Instance.Settings.EnableSoundTurnTracker && !Client.Instance.IsAdmin) // Client side only
+            {
+                Entry e = this.GetAt(idx);
+                if (this.Container.GetObject(e.ObjectID, out MapObject mo))
+                {
+                    if (mo.OwnerID.Equals(Client.Instance.ID))
+                    {
+                        Client.Instance.Frontend.Sound.PlaySound(Client.Instance.Frontend.Sound.YourTurn, Sound.SoundCategory.UI);
+                    }
+                }
+            }
         }
 
         public bool GetEntryInfo(Entry e, out Color teamColor, out string teamName, out string entryName)

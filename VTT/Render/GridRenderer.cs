@@ -3,6 +3,7 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
+    using System;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
@@ -155,9 +156,11 @@
             GL.Enable(EnableCap.DepthTest);
             if (renderMisc)
             {
+                Vector3 cwScale = default;
                 if (Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver != null)
                 {
                     cw = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver.Position * new Vector3(1, 1, 0);
+                    cwScale = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver.Scale;
                 }
 
                 if (cw.HasValue)
@@ -165,7 +168,7 @@
                     GL.DepthFunc(DepthFunction.Always);
                     GL.Disable(EnableCap.CullFace);
                     Vector3 snapped = MapRenderer.SnapToGrid(cw.Value, m.GridSize) - new Vector3(0, 0, 0.5f);
-                    modelMatrix = Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f));
+                    modelMatrix = Matrix4.CreateScale(MathF.Round(cwScale.X), MathF.Round(cwScale.Y), 1) * Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f));
                     this.InWorldShader.Bind();
                     this.InWorldShader["view"].Set(cam.View);
                     this.InWorldShader["projection"].Set(cam.Projection);
@@ -193,7 +196,7 @@
                     foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects)
                     {
                         Vector3 snapped = MapRenderer.SnapToGrid(mo.Position * new Vector3(1, 1, 0), m.GridSize);
-                        modelMatrix = Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f) - new Vector3(0, 0, 0.5f));
+                        modelMatrix = Matrix4.CreateScale(MathF.Round(mo.Scale.X), MathF.Round(mo.Scale.Y), 1) * Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f) - new Vector3(0, 0, 0.5f));
                         this.InWorldShader["model"].Set(modelMatrix);
                         this._highlightVao.Bind();
                         GL.DrawArrays(PrimitiveType.Triangles, 0, 24);

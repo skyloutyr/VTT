@@ -581,16 +581,17 @@
             return lookingAtGround;
         }
 
-        public static Vector3 SnapToGrid(Vector3 world, float gridSize)
+        public static Vector3 SnapToGrid(Vector3 world, float gridSize, Vector3i isBigObjectAxis = default)
         {
+            float halfGrid = gridSize / 2;
             int fX = (int)MathF.Round(world.X / gridSize);
             int fY = (int)MathF.Round(world.Y / gridSize);
             int fZ = (int)MathF.Round(world.Z / gridSize);
 
             Vector3 ret = new Vector3(
-                fX,
-                fY,
-                Client.Instance.Frontend.Renderer.MapRenderer?.IsOrtho ?? false ? world.Z : fZ
+                fX - (isBigObjectAxis.X * halfGrid),
+                fY - (isBigObjectAxis.Y * halfGrid),
+                Client.Instance.Frontend.Renderer.MapRenderer?.IsOrtho ?? false ? world.Z : fZ - (isBigObjectAxis.Z * halfGrid)
             );
 
             return ret;

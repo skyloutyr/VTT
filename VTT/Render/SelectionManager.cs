@@ -720,7 +720,16 @@
                                 }
                                 else
                                 {
-                                    mo.Position = alt ? MapRenderer.SnapToGrid(mo.ClientDragMoveResetInitialPosition + delta, map.GridSize) : mo.ClientDragMoveResetInitialPosition + delta;
+                                    float msx = MathF.Abs(mo.Scale.X) % (map.GridSize * 2);
+                                    float msy = MathF.Abs(mo.Scale.Y) % (map.GridSize * 2);
+                                    float msz = MathF.Abs(mo.Scale.Z) % (map.GridSize * 2);
+                                    Vector3i bigScale = new Vector3i(
+                                        msx - 0.075f <= 0 || (map.GridSize * 2) - msx <= 0.075f ? 1 : 0,
+                                        msy - 0.075f <= 0 || (map.GridSize * 2) - msy <= 0.075f ? 1 : 0,
+                                        msz - 0.075f <= 0 || (map.GridSize * 2) - msz <= 0.075f ? 1 : 0
+                                    );
+
+                                    mo.Position = alt ? MapRenderer.SnapToGrid(mo.ClientDragMoveResetInitialPosition + delta, map.GridSize, bigScale) : mo.ClientDragMoveResetInitialPosition + delta;
                                 }
                             }
                         }

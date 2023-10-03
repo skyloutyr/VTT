@@ -792,7 +792,8 @@
                     float nS = ImGui.CalcTextSize(mo.Name).X;
                     float tX = nS;
                     tX = MathF.Max(128, tX + 16);
-                    int h = (renderName ? 32 : 8) + ((renderBars ? mo.Bars.Count : 0) * 16);
+                    bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
+                    int h = (renderName ? 32 : 8) + ((renderBars ? mo.Bars.Count : 0) * 16) + (hasNp && !(renderBars && mo.Bars.Count > 0) ? -8 : 0);
                     ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings;
 
                     if (renderName)
@@ -801,7 +802,6 @@
                     }
 
                     System.Numerics.Vector2 customPadding = ImGui.GetStyle().WindowPadding;
-                    bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
                     ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tX / 2), screen.Y - h));
                     ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h + (hasNp ? customPadding.Y : 0)));
                     if (hasNp)

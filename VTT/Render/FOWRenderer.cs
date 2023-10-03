@@ -38,6 +38,8 @@
         private float[] _data;
         private int _numVertices;
         private Vector2 _inverseFowScale = Vector2.One;
+        private Image<Rgba64> _fowTex;
+        private readonly object _fowLock = new object();
 
         public void Create()
         {
@@ -72,6 +74,7 @@
 
             this._brushRenderIndices.Add(1);
         }
+
 
         public void UploadData(List<Vector3> data, List<uint> indices)
         {
@@ -111,6 +114,11 @@
             this.FOWWorldSize = new Vector2(1, 1);
             this.FOWOffset = new Vector2(-0.5f, -0.5f);
             this.HasFOW = false;
+            lock (this._fowLock)
+            {
+                this._fowTex?.Dispose();
+                this._fowTex = null;
+            }
         }
 
         public void UploadFOW(Vector2 fowSize, Image<Rgba64> texture)
@@ -134,7 +142,171 @@
             }
 
             this.HasFOW = true;
+            lock (this._fowLock)
+            {
+                this._fowTex?.Dispose();
+                this._fowTex = texture.Clone();
+            }
+
             texture.Dispose();
+        }
+
+        public bool FastTestRect(RectangleF rect, out bool wasOOB)
+        {
+            wasOOB = false;
+            lock (this._fowLock)
+            {
+                if (!this.HasFOW || this._fowTex == null)
+                {
+                    return false;
+                }
+
+                int w = this._fowTex.Width;
+                int h = this._fowTex.Height;
+
+                float ox = w / 2f;
+                float oy = h / 2f;
+
+                rect.Offset(ox, oy);
+                int mx = (int)MathF.Floor(rect.Left);
+                int my = (int)MathF.Floor(rect.Top);
+                int Mx = (int)MathF.Ceiling(rect.Right);
+                int My = (int)MathF.Ceiling(rect.Bottom);
+                RectangleF subrect = new RectangleF(0, 0, 0.125f, 0.125f);
+                for (int y = my; y <= My; ++y)
+                {
+                    for (int x = mx; x <= Mx; ++x)
+                    {
+                        if (x < 0 || x >= w || y < 0 || y >= h)
+                        {
+                            wasOOB = true;
+                            continue;
+                        }
+
+                        Rgba64 px = this._fowTex[x, y];
+                        ulong data = px.PackedValue;
+                        if (data == 0)
+                        {
+                            continue;
+                        }
+
+                        if (data == ulong.MaxValue)
+                        {
+                            return true;
+                        }
+
+                        for (int i = 0; i < 64; ++i) // Subpixel test
+                        {
+                            float dx = (i & 7) * 0.125f;
+                            float dy = (i >> 4) * 0.125f;
+                            subrect.X = x + dx;
+                            subrect.Y = y + dy;
+                            if (rect.Contains(subrect) || rect.IntersectsWith(subrect))
+                            {
+                                ulong mask = 1ul << i;
+                                ulong r = data & mask;
+                                if (r == mask) // visible
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public FOWResult TestRect(RectangleF rect)
+        {
+            FOWResult result = 0;
+            lock (this._fowLock)
+            {
+                if (!this.HasFOW || this._fowTex == null)
+                {
+                    return FOWResult.NoFOW;
+                }
+
+                int w = this._fowTex.Width;
+                int h = this._fowTex.Height;
+
+                float ox = w / 2f;
+                float oy = h / 2f;
+
+                rect.Offset(ox, oy);
+                int mx = (int)MathF.Floor(rect.Left);
+                int my = (int)MathF.Floor(rect.Top);
+                int Mx = (int)MathF.Ceiling(rect.Right);
+                int My = (int)MathF.Ceiling(rect.Bottom);
+                bool fullyOOB = true;
+                bool fullyHidden = true;
+                RectangleF subrect = new RectangleF(0, 0, 0.125f, 0.125f);
+                for (int y = my; y <= My; ++y)
+                {
+                    for (int x = mx; x <= Mx; ++x)
+                    {
+                        if (x < 0 || x >= w || y < 0 || y >= h)
+                        {
+                            result |= FOWResult.PartlyOutOfBounds;
+                            continue;
+                        }
+
+                        fullyOOB = false;
+                        Rgba64 px = this._fowTex[x, y];
+                        ulong data = px.PackedValue;
+                        if (data == 0)
+                        {
+                            result |= FOWResult.HasObscuredPixels;
+                            continue;
+                        }
+
+                        if (data == ulong.MaxValue)
+                        {
+                            result |= FOWResult.HasVisiblePixels;
+                            fullyHidden = false;
+                            continue;
+                        }
+
+                        for (int i = 0; i < 64; ++i) // Subpixel test
+                        {
+                            float dx = (i & 7) * 0.125f;
+                            float dy = (i >> 4) * 0.125f;
+                            subrect.X = dx;
+                            subrect.Y = dy;
+                            if (rect.Contains(subrect) || rect.IntersectsWith(subrect))
+                            {
+                                ulong mask = 1ul << i;
+                                ulong r = data & mask;
+                                if (r == mask) // visible
+                                {
+                                    result |= FOWResult.HasVisiblePixels;
+                                    fullyHidden = false;
+                                    continue;
+                                }
+                                else // hidden
+                                {
+                                    result |= FOWResult.HasObscuredPixels;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (fullyOOB)
+                {
+                    result |= FOWResult.FullyOutOfBounds;
+                }
+
+                if (fullyHidden)
+                {
+                    result &= ~FOWResult.Visible;
+                }
+
+            }
+
+            return result;
         }
 
         public void Uniform(ShaderProgram shader)
@@ -427,6 +599,21 @@
             Box,
             Polygon,
             Brush
+        }
+
+        [Flags]
+        public enum FOWResult
+        {
+            FullyObscured = 0,
+            HasVisiblePixels = 1,
+            HasObscuredPixels = 2,
+            IsFullyVisible = 4,
+            PartlyOutOfBounds = 8,
+            FullyOutOfBounds = 16,
+            NoFOW = 1 << 31,
+
+            Visible = HasVisiblePixels | IsFullyVisible | NoFOW,
+            Hidden = ~Visible,
         }
     }
 }

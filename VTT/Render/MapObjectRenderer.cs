@@ -327,6 +327,7 @@
 
 
         private readonly List<(Vector3, MapObject)> _mouseOverList = new List<(Vector3, MapObject)>();
+        private bool _mouseOverInFow = false;
         public void Update(Map m, double delta)
         {
             this.ObjectMouseOver = null;
@@ -338,7 +339,28 @@
                 RaycastResut rr = RaycastResut.Raycast(r, m, o => o.MapLayer == Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer);
                 if (rr.Result)
                 {
-                    this.ObjectMouseOver = rr.ObjectHit;
+                    bool fowTest = true;
+                    if (rr.ObjectHit != null && Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW)
+                    {
+                        AABox bounds = rr.ObjectHit.CameraCullerBox.Offset(rr.ObjectHit.Position + new Vector3(0.5f, 0.5f, 0)); // Not sure why the 0.5 offset is needed here
+                        RectangleF projectedRect = new RectangleF(
+                            bounds.Start.X, bounds.Start.Y,
+                            bounds.End.X - bounds.Start.X, bounds.End.Y - bounds.Start.Y
+                        );
+
+                        fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FastTestRect(projectedRect, out bool oob);
+                        this._mouseOverInFow = !fowTest;
+                        if (oob)
+                        {
+                            fowTest = true; // handle outside of fow objects as always visible?
+                        }
+                    }
+
+                    if (fowTest || Client.Instance.IsAdmin || Client.Instance.IsObserver || (rr.ObjectHit?.CanEdit(Client.Instance.ID) ?? true))
+                    {
+                        this.ObjectMouseOver = rr.ObjectHit;
+                    }
+
                     this.MouseHitWorld = rr.Hit;
                 }
             }
@@ -713,7 +735,7 @@
                 shader["view"].Set(cam.View);
                 shader["projection"].Set(cam.Projection);
                 shader["model"].Set(modelMatrix);
-                shader["u_color"].Set(Color.RoyalBlue.Vec4());
+                shader["u_color"].Set(this._mouseOverInFow ? Color.DarkSlateBlue.Vec4() : Color.RoyalBlue.Vec4());
                 float mD = Client.Instance.Frontend.UpdatesExisted % 180 / 90.0f;
                 mD = mD / 2 % 1 * 2;
                 float sineMod = ((MathF.Min(mD, 2 - mD) * 2) - 1) * 0.025f;

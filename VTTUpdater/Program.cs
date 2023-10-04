@@ -3,6 +3,8 @@
     using System;
     using System.IO.Compression;
     using System.Net;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Text.Json;
     using System.Text.Json.Serialization;
 
@@ -12,6 +14,9 @@
         private static int lastY;
         private static bool isBackground;
 
+        private static string tempFileName;
+        private static string tempDirName;
+
         private static readonly Lazy<HttpClient> client = new Lazy<HttpClient>(() =>
         {
 
@@ -20,7 +25,7 @@
             return c;
         });
 
-        public static async Task<int> Main(string[] args)
+        public static int Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             ServicePointManager.ServerCertificateValidationCallback += (s, cert, chain, err) => true;
@@ -44,7 +49,7 @@
                 Console.SetCursorPosition(0, 0);
                 Console.WriteLine("#---------------------------------------------#");
                 Console.WriteLine("|                  VTT Updater                |");
-                Console.WriteLine("|1.0.0                                        |");
+                Console.WriteLine("|1.0.1                                        |");
                 Console.WriteLine("|     Status:                                 |");
                 Console.WriteLine("|                                             |");
                 Console.WriteLine("|                                             |");
@@ -60,7 +65,7 @@
             WriteStatusString("Startup");
             WriteStatusString("Reading Versions");
             VersionSpec? local = VersionSpec.Local();
-            VersionSpec? remote = await VersionSpec.Remote();
+            VersionSpec? remote = VersionSpec.Remote().GetAwaiter().GetResult();
             if (local != null && remote != null)
             {
                 WriteStatusString("Comparing Versions");
@@ -76,30 +81,48 @@
                     else
                     {
                         WriteStatusString("Downloading Latest");
-                        MemoryStream ms = new MemoryStream();
-                        IProgress<float> p = new Progress<float>(f => WriteProgressBar(f));
-                        await HttpClientHelper.DownloadAsync(client.Value, $"https://github.com/skyloutyr/VSCC/releases/download/{remote.version}/VTT.zip", ms, p);
-                        WriteStatusString("Extracting");
-                        byte[] msBytes = ms.ToArray();
-                        MemoryStream aMs = new MemoryStream(msBytes);
-                        ZipArchive za = new ZipArchive(aMs, ZipArchiveMode.Read, true);
-                        int pEntries = 0;
-                        int tEntries = za.Entries.Count;
-                        ClearProgressBar();
-                        foreach (ZipArchiveEntry zae in za.Entries)
+                        if (DownloadArchive(remote, out string fPath))
                         {
-                            if (zae.Name.ToLower().Contains("updater")) // Updater can't update itself
+                            WriteStatusString("Extracting");
+                            List<string> errs = new List<string>();
+                            DoUpdate(fPath, errs);
+                            WriteStatusString($"Done, {errs.Count} errors.");
+                            if (errs.Count > 0)
                             {
-                                continue;
-                            }
+                                foreach (string err in errs)
+                                {
+                                    Console.WriteLine(err);
+                                }
 
-                            zae.ExtractToFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, zae.FullName), true);
-                            WriteProgressBar((float)pEntries / tEntries);
-                            ++pEntries;
+                                Console.WriteLine("Press any key to continue");
+                                Console.ReadKey();
+                            }
                         }
 
-                        ClearProgressBar();
-                        WriteStatusString("Done");
+                        try
+                        {
+                            if (File.Exists(tempFileName))
+                            {
+                                File.Delete(tempFileName);
+                            }
+                        }
+                        catch
+                        {
+                            // NOOP
+                        }
+
+                        try
+                        {
+                            if (Directory.Exists(tempDirName))
+                            {
+                                Directory.Delete(tempDirName, true);
+                            }
+                        }
+                        catch
+                        {
+                            // NOOP
+                        }
+
                         Console.WriteLine("Press any key to continue");
                         Console.ReadKey();
                         string exe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VTT.exe");
@@ -141,11 +164,116 @@
             return 0;
         }
 
+        private static T GetResult<T>(Task<T> t) => t.GetAwaiter().GetResult();
+
+        private static bool DownloadArchive(VersionSpec remote, out string filePath)
+        {
+            filePath = tempFileName = Path.GetTempFileName();
+            Uri uri = new Uri($"https://github.com/skyloutyr/VSCC/releases/download/{remote.version}/VTT.zip");
+            
+            using HttpResponseMessage response = GetResult(client.Value.GetAsync(uri));
+            if (response.IsSuccessStatusCode)
+            {
+                using FileStream fs = File.OpenWrite(filePath);
+                response.Content.CopyToAsync(fs).GetAwaiter().GetResult();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private static void DoUpdate(string tempFile, List<string> erroredFiles)
+        {
+            string tempDir = tempDirName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            try
+            {
+                ZipFile.ExtractToDirectory(tempFile, tempDir);
+                File.Delete(tempFile);
+                foreach (string file in Directory.EnumerateFiles(tempDir, "*.*", SearchOption.AllDirectories))
+                {
+                    string relativeFile = file.Substring(tempDir.Length + 1);
+                    if (relativeFile.ToLower().Contains("updater.exe"))
+                    {
+                        continue;
+                    }
+
+                    string currentFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativeFile);
+                    if (!File.Exists(currentFile))
+                    {
+                        try
+                        {
+                            File.Move(file, currentFile);
+                        }
+                        catch
+                        {
+                            erroredFiles.Add(currentFile);
+                        }
+                    }
+                    else
+                    {
+                        MD5 currentFileMD5 = MD5.Create();
+                        byte[] hashCurrent = currentFileMD5.ComputeHash(File.ReadAllBytes(currentFile));
+                        MD5 newFileMD5 = MD5.Create();
+                        byte[] hashNew = newFileMD5.ComputeHash(File.ReadAllBytes(file));
+                        if (!string.Equals(GetMd5Hash(hashCurrent), GetMd5Hash(hashNew)))
+                        {
+                            try
+                            {
+                                File.Delete(currentFile);
+                                File.Move(file, currentFile);
+                            }
+                            catch
+                            {
+                                erroredFiles.Add(currentFile);
+                            }
+                        }
+                    }
+                }
+
+                Directory.Delete(tempDir, true);
+            }
+            catch
+            {
+                try
+                {
+                    Directory.Delete(tempDir, true);
+                }
+                catch
+                {
+                    // NOOP
+                }
+
+                throw;
+            }
+        }
+
+        public static string GetMd5Hash(byte[] input)
+        {
+            StringBuilder sBuilder = new StringBuilder();
+            foreach (byte b in input)
+            {
+                sBuilder.Append(b.ToString("x2"));
+            }
+
+            return sBuilder.ToString();
+        }
+
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             if (e.ExceptionObject is Exception exe)
             {
                 LogException(exe);
+            }
+
+            try
+            {
+                File.Delete(tempFileName);
+            }
+            catch
+            {
+                // NOOP - file may not exist
             }
         }
 

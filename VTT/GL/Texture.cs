@@ -74,19 +74,24 @@
             return ret;
         }
 
-        public unsafe void SetImage<T>(Image<T> img, PixelInternalFormat format, int level = 0, PixelType type = PixelType.UnsignedByte) where T : unmanaged, IPixel<T>
+        public unsafe void SetImage<T>(Image<T> img, PixelInternalFormat format, int level = 0, PixelType type = PixelType.UnsignedByte, TextureTarget tType = 0) where T : unmanaged, IPixel<T>
         {
+            if (tType == 0)
+            {
+                tType = this._type;
+            }
+
             this.Size = new Size(img.Width, img.Height);
             if (img.GetConfiguration().PreferContiguousImageBuffers && img.DangerousTryGetSinglePixelMemory(out Memory<T> mem))
             {
                 MemoryHandle mh = mem.Pin();
-                GL.TexImage2D(this._type, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));
                 mh.Dispose();
                 return;
             }
 
-            GL.TexImage2D(this._type, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
-            TextureTarget selfTT = this._type;
+            GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
+            TextureTarget selfTT = tType;
             if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
             {
                 T* pixelBuffer = (T*)Marshal.AllocHGlobal(sizeof(T) * img.Width * 4);

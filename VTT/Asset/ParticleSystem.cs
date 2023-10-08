@@ -274,9 +274,12 @@
     {
         public ParticleSystem Template { get; set; }
         public ParticleContainer Container { get; set; }
-        public Particle[] AllParticles { get; set; }
         public bool IsFake { get; set; }
 
+        private Particle* _allParticles;
+        private GLParticleData* _buffer;
+
+        private int _numParticles;
         private bool _glInit;
         private uint _glBufferTexture;
         private uint _glTextureBuffer;
@@ -286,9 +289,6 @@
         private uint _frameAmount;
         private readonly Random _rand;
 
-        private float* _buffer;
-        private GCHandle _bufferPtr;
-        private readonly List<Particle> _sortedParticles = new List<Particle>();
 
         public ParticleSystemInstance(ParticleSystem template, ParticleContainer container)
         {
@@ -313,17 +313,14 @@
             }
 
             this.Dispose();
-            this.AllParticles = new Particle[numPossibleParticles];
+            this._allParticles = (Particle*)Marshal.AllocHGlobal(numPossibleParticles * sizeof(Particle));
+            this._numParticles = numPossibleParticles;
             this._sizeInBytes = numPossibleParticles * 6 * sizeof(float);
-            this._bufferPtr = GCHandle.Alloc(new float[numPossibleParticles * 6], GCHandleType.Pinned);
-            this._buffer = (float*)this._bufferPtr.AddrOfPinnedObject();
-            for (int i = 0; i < this.AllParticles.Length; ++i)
+            this._buffer = (GLParticleData*)Marshal.AllocHGlobal(numPossibleParticles * sizeof(GLParticleData));
+            for (int i = 0; i < numPossibleParticles; ++i)
             {
-                this.AllParticles[i] = new Particle() { Active = false, Age = 0, Color = Vector4.Zero, Lifespan = 0, Owner = this, Velocity = Vector3.Zero, WorldPosition = Vector3.Zero };
+                this._allParticles[i] = new Particle() { active = 0, age = 0, color = Vector4.Zero, lifespan = 0, velocity = Vector3.Zero, worldPosition = Vector3.Zero };
             }
-
-            this._sortedParticles.Clear();
-            this._sortedParticles.AddRange(this.AllParticles);
         }
 
         public void Render(ShaderProgram particleShader, Vector3 cameraPosition, Camera cam)
@@ -344,41 +341,27 @@
             GL.ActiveTexture(TextureUnit.Texture14);
             GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
             GL.ActiveTexture(TextureUnit.Texture0);
-            a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this.AllParticles.Length));
+            a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
         public void Update(Vector3 cameraPosition)
         {
             int nActive = 0;
-            int bIdx;
-            for (int i = 0; i < this.AllParticles.Length; i++)
+            for (int i = 0; i < this._numParticles; i++)
             {
-                Particle p = this.AllParticles[i];
-                p.Update();
+                this._allParticles[i].Update(this);
             }
 
-            if (this.IsFake)
+            for (int i = 0; i < this._numParticles; ++i)
             {
-                this._sortedParticles.Sort((l, r) =>
-                {
-                    float dL = (l.WorldPosition - cameraPosition).LengthSquared;
-                    float dR = (r.WorldPosition - cameraPosition).LengthSquared;
-                    return dR.CompareTo(dL);
-                });
-            }
-
-            for (int i = 0; i < this._sortedParticles.Count; ++i)
-            {
-                Particle p = this._sortedParticles[i];
-                bIdx = i * 6;
-                this._buffer[bIdx + 0] = p.WorldPosition.X;
-                this._buffer[bIdx + 1] = p.WorldPosition.Y;
-                this._buffer[bIdx + 2] = p.WorldPosition.Z;
-                this._buffer[bIdx + 3] = p.Active ? p.Scale : 0.0f;
-                this._buffer[bIdx + 4] = VTTMath.UInt32BitsToSingle(Extensions.Rgba(p.Color));
-                this._buffer[bIdx + 5] = VTTMath.UInt32BitsToSingle(p.Lifespan == 0 ? 0 : (uint)(this._frameAmount * ((float)p.Age / p.Lifespan)));
-                if (p.Active)
+                Particle* p = this._allParticles + i;
+                GLParticleData* b = this._buffer + i;
+                b->worldPosition = p->worldPosition;
+                b->scale = p->active == 1 ? p->scale : 0.0f;
+                b->color = VTTMath.UInt32BitsToSingle(Extensions.Rgba(p->color));
+                b->animationFrame = VTTMath.UInt32BitsToSingle(p->lifespan == 0 ? 0 : (uint)(this._frameAmount * ((float)p->age / p->lifespan)));
+                if (p->active == 1)
                 {
                     ++nActive;
                 }
@@ -391,13 +374,13 @@
                 Vector3 emissionPoint = default;
                 for (int i = 0; i < nNew; ++i)
                 {
-                    Particle p = this.FindFirstDeactivatedParticle();
-                    p.Active = true;
-                    p.Age = 0;
-                    p.Color = this.Template.ColorOverLifetime.Interpolate(0, GradientInterpolators.LerpVec4);
-                    p.Lifespan = this.Template.Lifetime.Value(this._rand.NextSingle());
-                    p.ScaleMod = this.Template.ScaleVariation.Value(this._rand.NextSingle());
-                    p.Scale = this.Template.ScaleOverLifetime.Interpolate(0, GradientInterpolators.Lerp);
+                    Particle* p = this.FindFirstDeactivatedParticle();
+                    p->active = 1;
+                    p->age = 0;
+                    p->color = this.Template.ColorOverLifetime.Interpolate(0, GradientInterpolators.LerpVec4);
+                    p->lifespan = this.Template.Lifetime.Value(this._rand.NextSingle());
+                    p->scaleMod = this.Template.ScaleVariation.Value(this._rand.NextSingle());
+                    p->scale = this.Template.ScaleOverLifetime.Interpolate(0, GradientInterpolators.Lerp);
                     Vector3 baseOffset;
                     if (this.IsFake)
                     {
@@ -550,8 +533,8 @@
                         baseOffset = emissionPoint;
                     }
 
-                    p.WorldPosition = baseOffset;
-                    p.Velocity = this.Template.InitialVelocity.Value(this._rand.NextSingle(), this._rand.NextSingle(), this._rand.NextSingle());
+                    p->worldPosition = baseOffset;
+                    p->velocity = this.Template.InitialVelocity.Value(this._rand.NextSingle(), this._rand.NextSingle(), this._rand.NextSingle());
                     if (this.Template.InitialVelocityRandomAngle > float.Epsilon)
                     {
                         Vector3 rndUnitVector = new Vector3(
@@ -559,8 +542,8 @@
                                 (this._rand.NextSingle() - this._rand.NextSingle()),
                                 (this._rand.NextSingle() - this._rand.NextSingle())).Normalized();
                         Quaternion rndUnitQuaternion = Quaternion.FromAxisAngle(rndUnitVector, this.Template.InitialVelocityRandomAngle * this._rand.NextSingle());
-                        Vector4 v = (rndUnitQuaternion * new Vector4(p.Velocity, 1.0f));
-                        p.Velocity = v.Xyz / v.W;
+                        Vector4 v = (rndUnitQuaternion * new Vector4(p->velocity, 1.0f));
+                        p->velocity = v.Xyz / v.W;
                     }
                 }
             }
@@ -585,32 +568,32 @@
             GL.BufferSubData(BufferTarget.TextureBuffer, IntPtr.Zero, this._sizeInBytes, (IntPtr)this._buffer);
         }
 
-        public Particle FindFirstDeactivatedParticle()
+        public Particle* FindFirstDeactivatedParticle()
         {
             int initial = this._lastParticleIndex;
             while (true)
             {
-                if (this._lastParticleIndex >= this.AllParticles.Length)
+                if (this._lastParticleIndex >= this._numParticles)
                 {
                     this._lastParticleIndex = 0;
-                    return this.AllParticles[0];
+                    return this._allParticles;
                 }
 
-                Particle p = this.AllParticles[this._lastParticleIndex];
+                int pi = this._lastParticleIndex;
                 ++this._lastParticleIndex;
-                if (this._lastParticleIndex == this.AllParticles.Length)
+                if (this._lastParticleIndex == this._numParticles)
                 {
                     this._lastParticleIndex = 0;
                 }
 
                 if (this._lastParticleIndex == initial) // Could not find particle
                 {
-                    return p;
+                    return this._allParticles + pi;
                 }
 
-                if (!p.Active)
+                if (this._allParticles[pi].active == 0)
                 {
-                    return p;
+                    return this._allParticles + pi;
                 }
             }
         }
@@ -620,50 +603,86 @@
             GL.DeleteBuffer(this._glTextureBuffer);
             GL.DeleteTexture(this._glBufferTexture);
 
-            if (this._bufferPtr.IsAllocated)
+            if (this._buffer != null)
             {
-                this._bufferPtr.Free();
-                this._buffer = (float*)IntPtr.Zero;
+                Marshal.FreeHGlobal((IntPtr)this._buffer);
+                this._buffer = null;
+            }
+
+            if (this._allParticles != null)
+            {
+                Marshal.FreeHGlobal((IntPtr)this._allParticles);
+                this._allParticles = null;
             }
 
             this._glInit = false;
         }
     }
 
-    public class Particle
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]
+    public struct GLParticleData
     {
-        public Vector3 WorldPosition { get; set; }
-        public Vector3 Velocity { get; set; }
-        public int Lifespan { get; set; }
-        public int Age { get; set; }
-        public Vector4 Color { get; set; }
-        public float Scale { get; set; }
-        public float ScaleMod { get; set; }
+        [FieldOffset(0)]
+        public Vector3 worldPosition;
 
-        public bool Active { get; set; }
-        public ParticleSystemInstance Owner { get; set; }
+        [FieldOffset(12)]
+        public float scale;
 
-        public void Update()
+        [FieldOffset(16)]
+        public float color;
+
+        [FieldOffset(20)]
+        public float animationFrame;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 60)]
+    public struct Particle
+    {
+        [FieldOffset(0)]
+        public Vector4 color;
+
+        [FieldOffset(16)]
+        public Vector3 worldPosition;
+
+        [FieldOffset(28)]
+        public Vector3 velocity;
+
+        [FieldOffset(40)]
+        public int lifespan;
+
+        [FieldOffset(44)]
+        public int age;
+
+        [FieldOffset(48)]
+        public float scale;
+
+        [FieldOffset(52)]
+        public float scaleMod;
+
+        [FieldOffset(56)]
+        public int active;
+
+        public void Update(ParticleSystemInstance instance)
         {
-            if (!this.Active)
+            if (this.active == 0)
             {
                 return;
             }
 
-            if (++this.Age >= this.Lifespan)
+            if (++this.age >= this.lifespan)
             {
-                this.Active = false;
+                this.active = 0;
                 return;
             }
 
             // Update position + velocity
-            this.WorldPosition += this.Velocity;
-            this.Velocity *= this.Owner.Template.VelocityDampenFactor;
-            this.Velocity += this.Owner.Template.Gravity;
-            float a = (float)this.Age / this.Lifespan;
+            this.worldPosition += this.velocity;
+            this.velocity *= instance.Template.VelocityDampenFactor;
+            this.velocity += instance.Template.Gravity;
+            float a = (float)this.age / this.lifespan;
 
-            this.Color = this.Owner.Template.ColorOverLifetime.Interpolate(a, GradientInterpolators.LerpVec4);
-            this.Scale = this.Owner.Template.ScaleOverLifetime.Interpolate(a, GradientInterpolators.Lerp) * this.ScaleMod;
+            this.color = instance.Template.ColorOverLifetime.Interpolate(a, GradientInterpolators.LerpVec4);
+            this.scale = instance.Template.ScaleOverLifetime.Interpolate(a, GradientInterpolators.Lerp) * this.scaleMod;
         }
     }
 }

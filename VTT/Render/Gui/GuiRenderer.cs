@@ -282,6 +282,7 @@
         private readonly List<string> _chat = new List<string>();
         private int _cChatIndex;
         public GuiState FrameState { get; } = new GuiState();
+        public DoubleBufferedStopwatch Timer { get; } = new DoubleBufferedStopwatch();
 
         public unsafe void RenderEarly(double time)
         {
@@ -289,6 +290,7 @@
 
         public unsafe void Render(double time)
         {
+            this.Timer.Restart();
             Map cMap = Client.Instance.CurrentMap;
             MapObjectRenderer mor = Client.Instance.Frontend.Renderer.ObjectRenderer;
             SimpleLanguage lang = Client.Instance.Lang;
@@ -332,6 +334,7 @@
             this.RenderLogs(lang);
             this.RenderTurnTrackerControls(cMap, lang, this.FrameState);
             this.RenderTurnTrackerOverlay(cMap, window_flags);
+            this.RenderPerformanceMonitor(lang);
 
             string ok = lang.Translate("ui.generic.ok");
             string cancel = lang.Translate("ui.generic.cancel");
@@ -634,6 +637,8 @@
             this.HandleAssetPtrDrag(this.FrameState);
 
             Client.Instance.Frontend.Renderer.PingRenderer.RenderUI();
+
+            this.Timer.Stop();
         }
 
         private void LoadStatuses()

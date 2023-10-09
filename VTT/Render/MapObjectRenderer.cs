@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Runtime.InteropServices;
     using VTT.Asset;
@@ -54,6 +55,12 @@
         private Vector3 _cachedAmbientColor;
         private Color _cachedSkyColor;
         private readonly ShaderContainerLocalPassthroughData _passthroughData = new ShaderContainerLocalPassthroughData();
+
+        public Stopwatch CPUTimerMain { get; set; }
+        public Stopwatch CPUTimerUBOUpdate { get; set; }
+        public Stopwatch CPUTimerAuras { get; set; }
+        public Stopwatch CPUTimerGizmos { get; set; }
+        public Stopwatch CPUTimerLights { get; set; }
 
         public void Create()
         {
@@ -121,6 +128,13 @@
             }
 
             this.FrameUBOManager = new FrameUBOManager();
+
+            this.CPUTimerAuras = new Stopwatch();
+            this.CPUTimerGizmos = new Stopwatch();
+            this.CPUTimerMain = new Stopwatch();
+            this.CPUTimerUBOUpdate = new Stopwatch();
+            this.CPUTimerLights = new Stopwatch();
+
         }
 
         #region Hightlight Box
@@ -425,9 +439,17 @@
 
         private void RenderEditMode(Map m)
         {
+            this.CPUTimerGizmos.Restart();
+
             SelectionManager sm = Client.Instance.Frontend.Renderer.SelectionManager;
             if (sm.SelectedObjects.Count > 0)
             {
+                if (this.EditMode == EditMode.Select)
+                {
+                    this.CPUTimerGizmos.Stop();
+                    return;
+                }
+
                 Vector3 min = sm.SelectedObjects[0].Position;
                 Vector3 max = sm.SelectedObjects[0].Position;
                 for (int i = 1; i < sm.SelectedObjects.Count; i++)
@@ -449,11 +471,6 @@
                 }
 
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-
-                if (this.EditMode == EditMode.Select)
-                {
-                    return;
-                }
 
                 bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                 float orthozoom = Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho;
@@ -717,6 +734,8 @@
                 GL.Enable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.CullFace);
             }
+
+            this.CPUTimerGizmos.Stop();
         }
 
         private void RenderObjectMouseOver(Map m)
@@ -748,6 +767,8 @@
 
         private void RenderLights(Map m)
         {
+            this.CPUTimerLights.Restart();
+
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             plr.Clear();
@@ -791,6 +812,8 @@
 
                 plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, cam);
             }
+
+            this.CPUTimerLights.Stop();
         }
 
         private void RenderDeferred(Map m, double delta)
@@ -805,6 +828,8 @@
             GL.ActiveTexture(TextureUnit.Texture0);
             this.DeferredPipeline.RenderScene(m);
             GL.ActiveTexture(TextureUnit.Texture0);
+
+            this.CPUTimerMain.Restart();
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             for (int i = -2; i <= maxLayer; ++i)
@@ -964,6 +989,8 @@
             }
 
             GL.ActiveTexture(TextureUnit.Texture0);
+
+            this.CPUTimerMain.Stop();
         }
 
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
@@ -1035,6 +1062,7 @@
 
         private void UpdateUBO(Map m, double delta)
         {
+            this.CPUTimerUBOUpdate.Restart();
             if (Client.Instance.Settings.UseUBO)
             {
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -1072,6 +1100,8 @@
 
                 this.FrameUBOManager.Upload();
             }
+
+            this.CPUTimerUBOUpdate.Stop();
         }
 
         public void UniformMainShaderData(Map m, ShaderProgram shader, double delta)
@@ -1193,6 +1223,8 @@
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             this.RenderLights(m);
             this.UniformCommonData(m, delta);
+
+            this.CPUTimerMain.Restart();
 
             for (int i = -2; i <= maxLayer; ++i)
             {
@@ -1354,12 +1386,16 @@
             {
                 GL.Disable(EnableCap.Multisample);
             }
+
+            this.CPUTimerMain.Stop();
         }
 
         private readonly List<MapObject> _auraCollection = new List<MapObject>();
         private readonly List<(float, Color)> _auraL = new List<(float, Color)>();
         private void RenderAuras(Map m)
         {
+            this.CPUTimerAuras.Restart();
+
             this._auraCollection.Clear();
             foreach (MapObject mo in m.IterateObjects(null))
             {
@@ -1413,6 +1449,8 @@
             GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.CullFace);
             GL.Enable(EnableCap.Multisample);
+
+            this.CPUTimerAuras.Stop();
         }
     }
 

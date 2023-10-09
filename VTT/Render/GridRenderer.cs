@@ -4,6 +4,7 @@
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
+    using System.Diagnostics;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
@@ -20,6 +21,8 @@
         private VertexArray _quadGridHighlightVao;
         private GPUBuffer _highlightVbo;
         private GPUBuffer _quadGridHighlightVbo;
+
+        public Stopwatch CPUTimer { get; set; }
 
         public void Create()
         {
@@ -125,6 +128,8 @@
 
             this._shader = OpenGLUtil.LoadShader("grid", ShaderType.VertexShader, ShaderType.FragmentShader);
             this.InWorldShader = OpenGLUtil.LoadShader("overlay", ShaderType.VertexShader, ShaderType.FragmentShader);
+
+            this.CPUTimer = new Stopwatch();
         }
 
         public void Render(double deltaTime, Camera cam, Map m, bool renderMisc = true)
@@ -134,6 +139,7 @@
                 return;
             }
 
+            this.CPUTimer.Restart();
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(cam.Position.Z < 0 ? CullFaceMode.Front : CullFaceMode.Back);
             GL.Enable(EnableCap.Blend);
@@ -219,6 +225,7 @@
             GL.Disable(EnableCap.Blend);
             GL.CullFace(CullFaceMode.Back);
             GL.Disable(EnableCap.CullFace);
+            this.CPUTimer.Stop();
         }
     }
 }

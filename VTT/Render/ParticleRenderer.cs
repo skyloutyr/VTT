@@ -3,6 +3,7 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using VTT.Asset;
     using VTT.Control;
@@ -24,6 +25,8 @@
         public Texture RenderTexture => this._renderTex;
 
         public Thread SecondaryWorker { get; private set; }
+
+        public Stopwatch CPUTimer { get; set; }
 
         public void Create()
         {
@@ -61,6 +64,8 @@
 
             this.SecondaryWorker = new Thread(this.UpdateOffscreen) { Priority = ThreadPriority.BelowNormal, IsBackground = true };
             this.SecondaryWorker.Start();
+
+            this.CPUTimer = new Stopwatch();
         }
 
         private readonly int[] viewport = new int[4];
@@ -191,6 +196,8 @@
                 return;
             }
 
+            this.CPUTimer.Restart();
+
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
@@ -235,6 +242,8 @@
             }
 
             GL.Disable(EnableCap.Blend);
+
+            this.CPUTimer.Stop();
         }
     }
 }

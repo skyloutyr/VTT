@@ -7,6 +7,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Runtime.InteropServices;
@@ -52,6 +53,8 @@ void main()
 
         private ClientSettings.UISkin? _skinChangeTo;
 
+        public Stopwatch CPUTimer { get; set; }
+
         public ImGuiWrapper()
         {
             this._imCtx = ImGui.CreateContext();
@@ -90,6 +93,7 @@ void main()
             this._vertexArrayObject.PushElement(ElementType.Vec2);
             this._vertexArrayObject.PushElement(ElementType.Vec2);
             this._vertexArrayObject.PushElement(new ElementType(4, 4, VertexAttribPointerType.UnsignedByte, sizeof(byte)), true);
+            this.CPUTimer = new Stopwatch();
         }
 
         public void Update(double time)
@@ -383,6 +387,7 @@ void main()
             if (fbWidth <= 0 || fbHeight <= 0)
                 return;
 
+            this.CPUTimer.Restart();
             SetupRenderState(drawData, fbWidth, fbHeight);
 
             var clipOffset = drawData.DisplayPos;
@@ -438,6 +443,7 @@ void main()
             }
 
             ClearRenderState();
+            this.CPUTimer.Stop();
         }
 
         private void ClearRenderState()

@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using VTT.Asset.Obj;
     using VTT.Control;
@@ -45,6 +46,9 @@
         public Vector3? TerrainHit { get; set; }
 
         private readonly List<(MapObject, Color)> _highlightedObjects = new List<(MapObject, Color)>();
+
+        public Stopwatch CPUTimer { get; } = new Stopwatch();
+
         public void Update(double delta)
         {
             Map m = Client.Instance.CurrentMap;
@@ -429,6 +433,8 @@
                 return;
             }
 
+            this.CPUTimer.Restart();
+
             ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             shader.Bind();
@@ -626,6 +632,8 @@
                 float scaleMod = 1.0f + (d.Item1.ClientRulerRendererAccumData++ / 64.0f);
                 Client.Instance.Frontend.Renderer.ObjectRenderer.RenderHighlightBox(d.Item1, d.Item2, scaleMod);
             }
+
+            this.CPUTimer.Stop();
         }
 
         private readonly List<Vector2> _groundQuadGenTempList = new List<Vector2>();

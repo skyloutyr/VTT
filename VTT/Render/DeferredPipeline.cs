@@ -4,6 +4,7 @@
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
+    using System.Diagnostics;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
@@ -24,6 +25,8 @@
 
         public ShaderProgram DeferredPass { get; set; }
         public ShaderProgram FinalPass { get; set; }
+
+        public Stopwatch CPUTimer { get; set; }
 
         private VertexArray _vao;
         private GPUBuffer _vbo;
@@ -48,6 +51,7 @@
             this._vao.SetVertexSize<float>(4);
             this._vao.PushElement(ElementType.Vec2);
             this._vao.PushElement(ElementType.Vec2);
+            this.CPUTimer = new Stopwatch();
         }
 
         public void Dispose()
@@ -151,6 +155,7 @@
 
         public void RenderScene(Map m)
         {
+            this.CPUTimer.Restart();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             ShaderProgram shader = this.DeferredPass;
             Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
@@ -220,7 +225,6 @@
                         shader["tint_color"].Set(mo.TintColor.Vec4());
                         GL.ActiveTexture(TextureUnit.Texture0);
                         a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN);
-
                     }
                 }
             }
@@ -300,6 +304,7 @@
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.ActiveTexture(TextureUnit.Texture0);
+            this.CPUTimer.Stop();
         }
 
         public void RecompileShaders(bool dirShadows, bool pointShadows, bool noBranches)

@@ -3,6 +3,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using SVec2 = System.Numerics.Vector2;
@@ -14,6 +15,8 @@
 
     public static class Extensions
     {
+        public static double ElapsedMillis(this Stopwatch self) => (double)self.ElapsedTicks / TimeSpan.TicksPerMillisecond;
+
         public static SVec2 SystemVector(this TKVec2 tkVec) => new SVec2(tkVec.X, tkVec.Y);
         public static SVec3 SystemVector(this TKVec3 tkVec) => new SVec3(tkVec.X, tkVec.Y, tkVec.Z);
         public static SVec4 SystemVector(this TKVec4 tkVec) => new SVec4(tkVec.X, tkVec.Y, tkVec.Z, tkVec.W);

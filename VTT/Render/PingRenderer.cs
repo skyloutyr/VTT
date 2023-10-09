@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Numerics;
     using VTT.Asset.Obj;
     using VTT.Control;
@@ -25,6 +26,8 @@
 
         private readonly object _lock = new object();
         public List<Ping> ActivePings { get; } = new List<Ping>();
+
+        public Stopwatch CPUTimer { get; } = new Stopwatch();
 
         public void Create()
         {
@@ -175,6 +178,8 @@
 
         public void Render(double time)
         {
+            this.CPUTimer.Restart();
+
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
                 GL.Enable(EnableCap.Multisample);
@@ -213,6 +218,8 @@
                 GL.Disable(EnableCap.SampleAlphaToCoverage);
                 GL.Disable(EnableCap.Multisample);
             }
+
+            this.CPUTimer.Stop();
         }
 
         private readonly Vector2[] _poly = new Vector2[512];

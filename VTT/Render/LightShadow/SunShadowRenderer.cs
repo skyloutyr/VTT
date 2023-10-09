@@ -3,6 +3,7 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using System;
+    using System.Diagnostics;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
@@ -24,6 +25,8 @@
 
         public Texture DepthTexture => this._sunDepthTexture;
         public Texture DepthFakeTexture => this._fakeDepthTexture;
+
+        public Stopwatch CPUTimer { get; set; }
 
         public void Create()
         {
@@ -62,12 +65,16 @@
             this.SunShader = OpenGLUtil.LoadShader("object_shadow", ShaderType.VertexShader, ShaderType.FragmentShader);
             this.SunView = Matrix4.LookAt(new Vector3(0, -0.1f, 49.5f), Vector3.Zero, new Vector3(0, 1, 0));
             this.SunProjection = Matrix4.CreateOrthographic(48, 48, 0.1f, 100f);
+
+            this.CPUTimer = new Stopwatch();
         }
 
         public static bool ShadowPass { get; set; }
 
         public void Render(Map m, double time)
         {
+            this.CPUTimer.Restart();
+
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows && m.SunEnabled)
             {
                 Vector3 sunCenter = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
@@ -113,6 +120,8 @@
                 GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             }
+
+            this.CPUTimer.Stop();
         }
     }
 }

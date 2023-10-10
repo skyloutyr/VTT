@@ -4,6 +4,8 @@ in vec2 f_tex;
 
 uniform sampler2D g_color;
 uniform sampler2D g_depth;
+uniform sampler2D g_fast_light;
+uniform float gamma;
 
 out layout (location = 0) vec4 o_color;
 
@@ -14,6 +16,9 @@ void main()
 	{
 		discard;
 	}
+
+	o_color.rgb += texture(g_fast_light, f_tex).rgb;
+	o_color.rgb = pow(o_color.rgb, vec3(1.0 / gamma));
 
 	gl_FragDepth = texture(g_depth, f_tex).r;
 }

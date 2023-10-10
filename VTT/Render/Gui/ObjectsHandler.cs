@@ -541,6 +541,93 @@
 
                                 ImGui.TreePop();
                             }
+
+                            if (ImGui.TreeNode(lang.Translate("ui.fast_lights") + "###FastLights"))
+                            {
+                                lock (mo.FastLightsLock)
+                                {
+                                    for (int i = 0; i < mo.FastLights.Count; i++)
+                                    {
+                                        FastLight light = mo.FastLights[i];
+
+                                        System.Numerics.Vector3 offset = light.Translation.SystemVector();
+                                        System.Numerics.Vector3 color = light.LightColor.SystemVector();
+                                        float flSize = light.Radius;
+                                        float flInt = light.Intensity;
+                                        bool bEnable = light.Enabled;
+                                        bool bUOT = light.UseObjectTransform;
+
+                                        ImGui.Text(lang.Translate("ui.fast_light.offset"));
+                                        if (ImGui.DragFloat3("##FLOffset_" + i, ref offset))
+                                        {
+                                            light.Translation = offset.GLVector();
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
+                                        }
+
+                                        ImGui.Text(lang.Translate("ui.fast_light.radius"));
+                                        if (ImGui.SliderFloat("##FLSize_" + i, ref flSize, 0, 10))
+                                        {
+                                            light.Radius = flSize;
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
+                                        }
+
+                                        ImGui.Text(lang.Translate("ui.fast_light.intensity"));
+                                        if (ImGui.SliderFloat("##FLIntensity_" + i, ref flInt, 0, 10))
+                                        {
+                                            light.Intensity = flInt;
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
+                                        }
+
+                                        if (ImGui.Checkbox(lang.Translate("ui.fast_light.enabled") + "###FLEnabled_" + i, ref bEnable))
+                                        {
+                                            light.Enabled = bEnable;
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
+                                        }
+
+                                        if (ImGui.Checkbox(lang.Translate("ui.fast_light.use_object_rotation") + "###FLUOT_" + i, ref bUOT))
+                                        {
+                                            light.UseObjectTransform = bUOT;
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
+                                        }
+
+                                        if (ImGui.ColorButton("##FLChangeColor_" + i, new System.Numerics.Vector4(color, 1.0f)))
+                                        {
+                                            this._editedBarIndex = i;
+                                            this._editedMapObject = mo;
+                                            this._editedBarColor = new System.Numerics.Vector4(color, 1.0f);
+                                            this._initialEditedFastLightColor = color.GLVector();
+                                            state.changeFastLightColorPopup = true;
+                                        }
+
+                                        if (ImGui.Button(lang.Translate("ui.fast_light.delete") + "###FastLightDeleteBtn_" + i))
+                                        {
+                                            new PacketFastLight() { ActionType = PacketFastLight.Action.Delete, Index = i, MapID = mo.MapID, ObjectID = mo.ID }.Send();
+                                        }
+
+                                        ImGui.NewLine();
+                                    }
+                                }
+
+                                if (ImGui.ImageButton("btnAddFastLight", this.AddIcon, Vec12x12))
+                                {
+                                    Random rand = new Random();
+                                    HSVColor hsv = new HSVColor(rand.NextSingle() * 360, 1, 1);
+                                    FastLight fl = new FastLight()
+                                    {
+                                        Offset = new Vector4(0, 0, 0, 0),
+                                        Color = new Vector4(((Color)hsv).Vec3(), 1.0f)
+                                    };
+
+                                    new PacketFastLight() { ActionType = PacketFastLight.Action.Add, MapID = mo.MapID, ObjectID = mo.ID, Light = fl }.Send();
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.fast_light.add"));
+                                }
+
+                                ImGui.TreePop();
+                            }
                         }
 
                         string d = mo.Description;

@@ -50,6 +50,7 @@
         public WavefrontObject Cross { get; set; }
 
         public SunShadowRenderer DirectionalLightRenderer { get; set; }
+        public FastLightRenderer FastLightRenderer { get; set; }
 
         private Vector3 _cachedSunDir;
         private Color _cachedSunColor;
@@ -126,6 +127,8 @@
 
             this.DirectionalLightRenderer = new SunShadowRenderer();
             this.DirectionalLightRenderer.Create();
+            this.FastLightRenderer = new FastLightRenderer();
+            this.FastLightRenderer.Create();
 
             this.FrameUBOManager = new FrameUBOManager();
 
@@ -228,76 +231,6 @@
 
         public FrameUBOManager FrameUBOManager { get; private set; }
 
-        /*
-        public void ReloadObjectShader(bool dirShadows, bool pointShadows, bool noBranches, bool useSpriV)
-        {
-            useSpriV &= IOVTT.DoesResourceExist("VTT.Embed.object.vert.spv");
-            if (!useSpriV)
-            {
-                string lineVert = IOVTT.ResourceToString("VTT.Embed.object.vert");
-                string lineFrag = IOVTT.ResourceToString("VTT.Embed.object.frag");
-                if (!dirShadows)
-                {
-                    RemoveDefine(ref lineVert, "HAS_DIRECTIONAL_SHADOWS");
-                    RemoveDefine(ref lineFrag, "HAS_DIRECTIONAL_SHADOWS");
-                }
-
-                if (!pointShadows)
-                {
-                    RemoveDefine(ref lineVert, "HAS_POINT_SHADOWS");
-                    RemoveDefine(ref lineFrag, "HAS_POINT_SHADOWS");
-                }
-
-                if (noBranches)
-                {
-                    RemoveDefine(ref lineVert, "BRANCHING");
-                    RemoveDefine(ref lineFrag, "BRANCHING");
-                }
-
-                lineFrag = lineFrag.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
-
-                this.RenderShader?.Dispose();
-
-                if (!ShaderProgram.TryCompile(out ShaderProgram sp, lineVert, null, lineFrag, out string err))
-                {
-                    Logger l = Client.Instance.Logger;
-                    l.Log(LogLevel.Fatal, "Could not compile shader! Shader error was " + err);
-                    throw new Exception("Could not compile object shader! Shader error was " + err);
-                }
-
-                this.RenderShader = sp;
-            }
-            else
-            {
-                byte[] vert = IOVTT.ResourceToBytes("VTT.Embed.object.vert.spv");
-                byte[] frag = IOVTT.ResourceToBytes("VTT.Embed.object.vert.frag");
-                int[] constIndices = new int[4] { 0, 1, 2, 3 };
-                int[] constValues = new int[4] { dirShadows ? 1 : 0, pointShadows ? 1 : 0, noBranches ? 0 : 1, Client.Instance.Settings.ShadowsPCF };
-                if (!ShaderProgram.TryLoadBinary(out ShaderProgram sp, vert, null, frag, x => x == ShaderType.FragmentShader ? new SpirVSpecializationData(constIndices, constValues) : default, out string err))
-                {
-                    Logger l = Client.Instance.Logger;
-                    l.Log(LogLevel.Fatal, "Could not compile SPIR-V shader! Shader error was " + err);
-                    throw new Exception("Could not compile SPIR-V object shader! Shader error was " + err);
-                }
-
-                this.RenderShader = sp;
-            }
-
-            this.RenderShader.Bind();
-            this.RenderShader.BindUniformBlock("FrameData", 1);
-            this.RenderShader["m_texture_diffuse"].Set(0);
-            this.RenderShader["m_texture_normal"].Set(1);
-            this.RenderShader["m_texture_emissive"].Set(2);
-            this.RenderShader["m_texture_aomr"].Set(3);
-            this.RenderShader["pl_shadow_maps"].Set(13);
-            this.RenderShader["dl_shadow_map"].Set(14);
-            if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Deferred)
-            {
-                this.DeferredPipeline?.RecompileShaders(dirShadows, pointShadows, noBranches);
-            }
-        }
-        */
-
         public void PrecomputeSelectionBox()
         {
             float[] boxDataArray = new float[5184];
@@ -397,6 +330,7 @@
 
         public void Resize(int w, int h)
         {
+            this.FastLightRenderer.Resize(w, h);
         }
 
         public void Render(Map m, double delta)
@@ -1027,6 +961,7 @@
             }
 
             this.CPUTimerMain.Stop();
+            this.FastLightRenderer.Render(m);
             this.CPUTimerCompound.Restart();
             Client.Instance.Frontend.Renderer.Pipeline.FinishRender();
             GL.ActiveTexture(TextureUnit.Texture0);

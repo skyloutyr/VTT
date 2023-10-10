@@ -146,9 +146,9 @@
         public void Resize(int w, int h)
         {
             GL.Viewport(0, 0, w, h);
+            this.Pipeline?.Resize(w, h);
             this.MapRenderer.Resize(w, h);
             this.ObjectRenderer?.Resize(w, h);
-            this.Pipeline?.Resize(w, h);
         }
 
         public void SetWindowState(bool state) => this._windowNeedsDrawing = state;

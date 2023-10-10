@@ -24,6 +24,7 @@
         public bool newStatusEffectPopup = false;
         public bool changeTintColorPopup = false;
         public bool changeAuraColorPopup = false;
+        public bool changeFastLightColorPopup = false;
         public bool editTexturePopup = false;
         public AssetDirectory moveTo = null;
         public bool mouseOverMoveUp = false;
@@ -59,6 +60,7 @@
             newStatusEffectPopup = false;
             changeTintColorPopup = false;
             changeAuraColorPopup = false;
+            changeFastLightColorPopup = false;
             editTexturePopup = false;
             moveTo = null;
             mouseOverMoveUp = false;

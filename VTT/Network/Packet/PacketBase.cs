@@ -24,6 +24,7 @@
                 }
             }
 
+            ushort maxPId = 0;
             foreach (Type t in pbTypes)
             {
                 PacketBase pb = (PacketBase)Activator.CreateInstance(t);
@@ -35,6 +36,10 @@
 
                 PacketsByID[idx] = t;
                 IDByPacketType[t] = idx;
+                if (idx > maxPId)
+                {
+                    maxPId = idx;
+                }
             }
         }
 

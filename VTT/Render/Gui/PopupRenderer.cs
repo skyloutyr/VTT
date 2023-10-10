@@ -240,6 +240,41 @@
                 ImGui.EndPopup();
             }
 
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_fast_light_color") + "###Change Fast Light Color"))
+            {
+                if (this._editedBarIndex >= this._editedMapObject.FastLights.Count)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+                else
+                {
+                    FastLight aDat = this._editedMapObject.FastLights[this._editedBarIndex];
+                    ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedBarColor);
+                    aDat.LightColor = this._editedBarColor.GLVector().Xyz;
+                    bool bc = ImGui.Button(cancel);
+                    ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                    bool bo = ImGui.Button(ok);
+
+                    if (bo || bc)
+                    {
+                        ImGui.CloseCurrentPopup();
+                    }
+
+                    if (bo)
+                    {
+                        MapObject mo = this._editedMapObject;
+                        new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Light = aDat.Clone(), Index = this._editedBarIndex, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                    }
+
+                    if (bc)
+                    {
+                        aDat.LightColor = this._initialEditedFastLightColor;
+                    }
+                }
+
+                ImGui.EndPopup();
+            }
+
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.delete_map") + "###Delete Map"))
             {
                 ImGui.TextWrapped(lang.Translate("ui.popup.delete_map.text"));
@@ -757,6 +792,8 @@
         }
 
         private TextureData.Metadata _editedTextureMetadataCopy;
+        private Vector3 _initialEditedFastLightColor;
+
         private unsafe void HandlePopupRequests(GuiState state)
         {
             if (state.openNewFolderPopup)
@@ -850,6 +887,11 @@
             if (state.changeAuraColorPopup)
             {
                 ImGui.OpenPopup("###Change Aura Color");
+            }
+
+            if (state.changeFastLightColorPopup)
+            {
+                ImGui.OpenPopup("###Change Fast Light Color");
             }
 
             if (state.editTexturePopup)

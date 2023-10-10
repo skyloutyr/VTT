@@ -70,9 +70,11 @@
         public Map Container { get; set; }
 
         public List<DisplayBar> Bars { get; set; } = new List<DisplayBar>();
+        public List<FastLight> FastLights { get; set; } = new List<FastLight>();
         public List<(float, Color)> Auras { get; set; } = new List<(float, Color)>();
 
         public object Lock = new object();
+        public object FastLightsLock = new object();
         public Dictionary<string, (float, float)> StatusEffects { get; } = new Dictionary<string, (float, float)>();
         public Dictionary<Guid, ParticleContainer> ParticleContainers { get; } = new Dictionary<Guid, ParticleContainer>();
 
@@ -156,6 +158,7 @@
                 c.Set(n, e);
             });
 
+            ret.SetArray("FastLights", this.FastLights.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
             ret.SetArray("Statuses", this.StatusEffects.ToArray(), (n, c, v) =>
             {
                 DataElement e = new DataElement();
@@ -198,6 +201,8 @@
             this.TintColor = e.GetColor("TintColor", Color.White);
             this.Bars.Clear();
             this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
+            this.FastLights.Clear();
+            this.FastLights.AddRange(e.GetArray("FastLights", (n, e) => FastLight.FromData(e.Get<DataElement>(n)), Array.Empty<FastLight>()));
             this.Auras.Clear();
             this.Auras.AddRange(e.GetArray("Auras", (n, e) =>
             {
@@ -258,8 +263,9 @@
             ret.LightsCastShadows = this.LightsCastShadows;
             ret.LightsSelfCastsShadow = this.LightsSelfCastsShadow;
             ret.CastsShadow = this.CastsShadow;
-            ret.Bars.AddRange(this.Bars);
-            ret.Auras.AddRange(this.Auras);
+            ret.Bars.AddRange(this.Bars.Select(x => x.Clone()));
+            ret.Auras.AddRange(this.Auras.Select(x => (x.Item1, x.Item2)));
+            ret.FastLights.AddRange(this.FastLights.Select(x => x.Clone()));
             ret.IsCrossedOut = this.IsCrossedOut;
             ret.HasCustomNameplate = this.HasCustomNameplate;
             ret.CustomNameplateID = this.CustomNameplateID;
@@ -352,6 +358,17 @@
             ret.SetColor("Color", this.DrawColor);
             ret.Set("Compact", this.Compact);
             return ret;
+        }
+
+        public DisplayBar Clone()
+        {
+            return new DisplayBar()
+            {
+                CurrentValue = this.CurrentValue,
+                MaxValue = this.MaxValue,
+                DrawColor = this.DrawColor,
+                Compact = this.Compact
+            };
         }
 
         public static DisplayBar FromData(DataElement de)

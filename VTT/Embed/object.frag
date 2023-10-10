@@ -84,6 +84,8 @@ uniform sampler2DArray unifiedTexture;
 uniform vec2 unifiedTextureData[64];
 uniform vec4 unifiedTextureFrames[64];
 
+uniform bool gamma_correct;
+
 layout (location = 0) out vec4 g_color; // no writing here occurs, needed for consistency
 layout (location = 1) out vec4 g_position;
 layout (location = 2) out vec4 g_normal;
@@ -414,7 +416,10 @@ void main()
 	vec3 color = ambient + light_colors + calcDirectionalLight(world_to_camera, albedo, normal, m, r, ao) + emissive;
     color = mix(color, grid.rgb, grid.a);
 
-    color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
+    if (gamma_correct)
+    {
+        color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
+    }
 
     float a = l_a;
     if (a <= eff_epsilon)

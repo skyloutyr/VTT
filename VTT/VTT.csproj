@@ -28,6 +28,8 @@
     <None Remove="Embed\deferred_final.frag" />
     <None Remove="Embed\deferred_final.vert" />
     <None Remove="Embed\emoji-data.txt" />
+    <None Remove="Embed\fast_light.frag" />
+    <None Remove="Embed\fast_light.vert" />
     <None Remove="Embed\grid.frag" />
     <None Remove="Embed\grid.vert" />
     <None Remove="Embed\highlight.frag" />
@@ -125,6 +127,7 @@
     <None Remove="Embed\simple-interface-tone.wav" />
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
+    <None Remove="Embed\sphere_mediumres.obj" />
     <None Remove="Embed\square.obj" />
     <None Remove="Embed\turn-tracker-back-no-object.png" />
     <None Remove="Embed\turn-tracker-back.png" />
@@ -140,6 +143,10 @@
 
   <ItemGroup>
     <Content Include="icon-alpha.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Embed\fast_light.frag" />
   </ItemGroup>
 
   <ItemGroup>
@@ -163,6 +170,7 @@
     <EmbeddedResource Include="Embed\deferred_final.frag" />
     <EmbeddedResource Include="Embed\deferred_final.vert" />
     <EmbeddedResource Include="Embed\emoji-data.txt" />
+    <EmbeddedResource Include="Embed\fast_light.vert" />
     <EmbeddedResource Include="Embed\grid.frag" />
     <EmbeddedResource Include="Embed\grid.vert" />
     <EmbeddedResource Include="Embed\icon-alpha.png" />
@@ -260,6 +268,7 @@
     <EmbeddedResource Include="Embed\simple-interface-tone.wav" />
     <EmbeddedResource Include="Embed\sky.frag" />
     <EmbeddedResource Include="Embed\sky.vert" />
+    <EmbeddedResource Include="Embed\sphere_mediumres.obj" />
     <EmbeddedResource Include="Embed\square.obj" />
     <EmbeddedResource Include="Embed\turn-tracker-back-no-object.png" />
     <EmbeddedResource Include="Embed\turn-tracker-back.png" />

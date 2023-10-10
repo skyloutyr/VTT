@@ -55,7 +55,7 @@
             {
                 if (!cachedLastFrameFractions.TryGetValue(sectionName, out SmoothedDouble cf))
                 {
-                    cachedLastFrameFractions[sectionName] = cf = new SmoothedDouble(10);
+                    cachedLastFrameFractions[sectionName] = cf = new SmoothedDouble(15);
                 }
 
                 fract = cf.GetAndInsert(fract);
@@ -151,9 +151,9 @@
                 double cpuParticles = Client.Instance.Frontend.Renderer.ParticleRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuPings = Client.Instance.Frontend.Renderer.PingRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuRulers = Client.Instance.Frontend.Renderer.RulerRenderer.CPUTimer?.ElapsedMillis() ?? 0;
+                double cpuFastLights = Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.CPUTimer?.ElapsedMillis() ?? 0;
 
-
-                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender;
+                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender + cpuFastLights;
                 double totalTarget = Math.Max(total, frameTarget);
 
                 double objectsTotal = cpuDeferred + cpuMOMain + cpuMOAuras + cpuMOUBO + cpuMOLights + cpuMOGizmos + cpuMOHighlights + cpuCompoundRender;
@@ -183,6 +183,7 @@
                     RenderSection(lang.Translate("ui.performance.frame_particles"), cpuParticles, cpuParticles / total);
                     RenderSection(lang.Translate("ui.performance.frame_pings"), cpuPings, cpuPings / total);
                     RenderSection(lang.Translate("ui.performance.frame_rulers"), cpuRulers, cpuRulers / total);
+                    RenderSection(lang.Translate("ui.performance.frame_fast_lights"), cpuFastLights, cpuFastLights / total);
                     ImGui.NewLine();
                     ImGui.TreePop();
                 }

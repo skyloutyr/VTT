@@ -3,7 +3,10 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
@@ -27,6 +30,7 @@
         public ShaderProgram DeferredFinal { get; set; }
         public ShaderProgram Forward { get; set; }
         public ShaderProgram FinalPass { get; set; }
+
 
         public VertexArray FullScreenQuad { get; set; }
         private GPUBuffer _vbo;
@@ -118,6 +122,7 @@
             }
 
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+            shader["gamma_correct"].Set(false);
 
             GL.ActiveTexture(TextureUnit.Texture14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
@@ -156,6 +161,7 @@
 
             shader.Bind();
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+            shader["gamma_correct"].Set(false);
             GL.ActiveTexture(TextureUnit.Texture12);
             this.PositionTex.Bind();
             GL.ActiveTexture(TextureUnit.Texture11);
@@ -233,10 +239,13 @@
             GL.DrawBuffer(DrawBufferMode.Back);
 
             this.FinalPass.Bind();
+            this.FinalPass["gamma"].Set(Client.Instance.Settings.Gamma);
             GL.ActiveTexture(TextureUnit.Texture0);
             this.ColorOutputTex.Bind();
             GL.ActiveTexture(TextureUnit.Texture1);
             this.DepthTex.Bind();
+            GL.ActiveTexture(TextureUnit.Texture2);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.TexColor.Bind();
 
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
@@ -298,6 +307,28 @@
             GL.DrawBuffer(DrawBufferMode.Back);
 
             return fbo;
+        }
+
+        public static int UseFBO(int? fbo)
+        {
+            if (!fbo.HasValue)
+            {
+                fbo = GL.GenFramebuffer();
+            }
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo.Value);
+            return fbo.Value;
+        }
+
+        public static void CheckFBO(string fbo)
+        {
+            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (fec != FramebufferErrorCode.FramebufferComplete)
+            {
+                Client.Instance.Logger.Log(LogLevel.Fatal, $"Could not complete {fbo} framebuffer!");
+                Client.Instance.Logger.Log(LogLevel.Fatal, "  " + fec);
+                throw new Exception("Framebuffer could not complete");
+            }
         }
 
         public void CreateFullScreenQuad()
@@ -371,6 +402,7 @@
             this.FinalPass.Bind();
             this.FinalPass["g_color"].Set(0);
             this.FinalPass["g_depth"].Set(1);
+            this.FinalPass["g_fast_light"].Set(2);
         }
         public ShaderProgram CompileShader(string sName, bool dirShadows, bool pointShadows)
         {
@@ -410,7 +442,7 @@
             return sp;
         }
 
-        private static void ResizeTex(Texture t, int w, int h, PixelInternalFormat pif, PixelFormat pf, PixelType pt)
+        public static void ResizeTex(Texture t, int w, int h, PixelInternalFormat pif, PixelFormat pf, PixelType pt)
         {
             t.Bind();
             t.Size = new Size(w, h);
@@ -441,28 +473,6 @@
             this.MRAOGTex = new Texture(TextureTarget.Texture2D);
             this.DepthTex = new Texture(TextureTarget.Texture2D);
             this.ColorOutputTex = new Texture(TextureTarget.Texture2D);
-
-            static int UseFBO(int? fbo)
-            {
-                if (!fbo.HasValue)
-                {
-                    fbo = GL.GenFramebuffer();
-                }
-
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo.Value);
-                return fbo.Value;
-            }
-
-            static void CheckFBO(string fbo)
-            {
-                FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-                if (fec != FramebufferErrorCode.FramebufferComplete)
-                {
-                    Client.Instance.Logger.Log(LogLevel.Fatal, $"Could not complete {fbo} framebuffer!");
-                    Client.Instance.Logger.Log(LogLevel.Fatal, "  " + fec);
-                    throw new Exception("Framebuffer could not complete");
-                }
-            }
 
             ResizeTex(this.PositionTex, w, h, Client.Instance.Settings.UseHalfPrecision ? PixelInternalFormat.Rgba16f : PixelInternalFormat.Rgba32f, PixelFormat.Rgba, PixelType.Float);
             ResizeTex(this.AlbedoTex, w, h, PixelInternalFormat.Rgba, PixelFormat.Rgba, PixelType.UnsignedByte);

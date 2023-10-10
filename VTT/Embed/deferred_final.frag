@@ -54,6 +54,8 @@ uniform vec2 fow_scale;
 uniform float fow_mod;
 uniform float gamma_factor;
 
+uniform bool gamma_correct;
+
 out layout (location = 0) vec4 g_color;
 
 const vec3 surface_reflection_for_dielectrics = vec3(0.04);
@@ -210,7 +212,6 @@ vec3 calcLight(vec3 world_to_light, vec3 radiance, vec3 world_to_camera, vec3 al
     vec3 diffuseBRDF = kd * albedo;
     vec3 specularBRDF = (F * D * G) / max(eff_epsilon, 4.0 * cosLi * cosLo);
     return (diffuseBRDF + specularBRDF) * radiance * cosLi;
-
 }
 
 
@@ -318,7 +319,10 @@ void main()
 	vec4 grid = getGrid(g);
     color = mix(color, grid.rgb, grid.a);
     color = color + texture(g_emission, f_texture).rgb;
-    color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
+    if (gamma_correct)
+    {
+        color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
+    }
 
     if (fow_mod > eff_epsilon)
     {

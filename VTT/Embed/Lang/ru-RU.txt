@@ -511,3 +511,5 @@ ui.performance.frame_sun=Тени Направленного Света
 ui.performance.frame_particles=Частицы
 ui.performance.frame_pings=Пинги
 ui.performance.frame_rulers=Линейки
+ui.properties.do_no_draw=Не Рисовать
+ui.properties.do_no_draw.tt=Отменяет отрисовку объекта на экран.\nЕсли включено, объект не будет отрисован, и не будет отбрасывать тени, но все остальные системы будут работать так, будто объект есть и отрисован.\nМожет быть использовано для отрисовки частиц без отрисовки объекта.

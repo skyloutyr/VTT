@@ -511,3 +511,5 @@ ui.performance.frame_sun=Directional Light Shadows
 ui.performance.frame_particles=Particles
 ui.performance.frame_pings=Pings
 ui.performance.frame_rulers=Rulers
+ui.properties.do_no_draw=Do not Draw
+ui.properties.do_no_draw.tt=Disables the object being drawn onto the screen.\nIf enabled, the object will not be drawn, nor cast shadows, but every other system will still act as if the object was present and drawn.\nUseful for mesh surface particle emission.

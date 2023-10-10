@@ -122,6 +122,12 @@
                             break;
                         }
 
+                        case DataType.DoNotDraw:
+                        {
+                            d.Item2.DoNotRender = (bool)d.Item3;
+                            break;
+                        }
+
                         case DataType.CustomNameplateID:
                         {
                             d.Item2.CustomNameplateID = (Guid)d.Item3;
@@ -172,6 +178,7 @@
                     case DataType.HasCustomNameplate:
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
+                    case DataType.DoNotDraw:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -236,6 +243,7 @@
                     case DataType.HasCustomNameplate:
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
+                    case DataType.DoNotDraw:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -338,6 +346,7 @@
             TintColor,
             IsCrossedOut,
             IsInfo,
+            DoNotDraw,
             HasCustomNameplate,
             CustomNameplateID,
             Properties,

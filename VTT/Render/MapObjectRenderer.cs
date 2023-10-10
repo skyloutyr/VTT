@@ -870,6 +870,11 @@
                             }
 
                             mo.ClientRenderedThisFrame = true;
+                            if (mo.DoNotRender)
+                            {
+                                continue;
+                            }
+
                             Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
                             GL.Enable(EnableCap.Blend);
                             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -931,6 +936,11 @@
                         }
 
                         mo.ClientRenderedThisFrame = true;
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
                         GL.Disable(EnableCap.CullFace);
                         GL.Enable(EnableCap.DepthTest);
                         GL.DepthFunc(DepthFunction.Lequal);
@@ -1263,6 +1273,11 @@
                         }
 
                         mo.ClientRenderedThisFrame = true;
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
                         Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
                         bool transparent = a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < 1.0f - float.Epsilon;
                         if (i > cLayer || transparent)
@@ -1324,6 +1339,11 @@
                         }
 
                         mo.ClientRenderedThisFrame = true;
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
                         GL.Disable(EnableCap.CullFace);
                         GL.Enable(EnableCap.DepthTest);
                         GL.DepthFunc(DepthFunction.Lequal);

@@ -202,6 +202,25 @@
                             ImGui.SetTooltip(lang.Translate("ui.properties.casts_shadow.tt"));
                         }
 
+                        bool mIsInfo = mo.IsInfoObject;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.is_info") + "###Is Info", ref mIsInfo))
+                        {
+                            mo.IsInfoObject = mIsInfo;
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsInfo, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsInfo) } }.Send();
+                        }
+
+                        bool mDoNoDraw = mo.DoNotRender;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.do_no_draw") + "###Do Not Draw", ref mDoNoDraw))
+                        {
+                            mo.DoNotRender = mDoNoDraw;
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DoNotDraw, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mDoNoDraw) } }.Send();
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.do_no_draw.tt"));
+                        }
+
                         if (!isAdmin)
                         {
                             ImGui.EndDisabled();
@@ -212,13 +231,6 @@
                         {
                             mo.IsCrossedOut = mIsCrossed;
                             new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsCrossedOut, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsCrossed) } }.Send();
-                        }
-
-                        bool mIsInfo = mo.IsInfoObject;
-                        if (ImGui.Checkbox(lang.Translate("ui.properties.is_info") + "###Is Info", ref mIsInfo))
-                        {
-                            mo.IsInfoObject = mIsInfo;
-                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsInfo, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsInfo) } }.Send();
                         }
 
                         ImGui.Text(lang.Translate("ui.properties.tint_color"));

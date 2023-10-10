@@ -101,7 +101,7 @@
                 {
                     foreach (MapObject mo in m.IterateObjects(i))
                     {
-                        if (!mo.CastsShadow)
+                        if (!mo.CastsShadow || mo.DoNotRender)
                         {
                             continue;
                         }

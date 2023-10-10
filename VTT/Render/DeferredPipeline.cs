@@ -219,6 +219,11 @@
 
                         mo.ClientRenderedThisFrame = true;
                         mo.ClientDeferredRejectThisFrame = false;
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
                         Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
                         shader["grid_alpha"].Set(i == -2 && m.GridEnabled ? ga : 0.0f);

@@ -263,6 +263,11 @@
                             continue;
                         }
 
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
                         if (mo.MapLayer <= 0 && (mo != pl.ObjectPtr || pl.ObjectPtr.LightsSelfCastsShadow))
                         {
                             AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);

@@ -84,6 +84,7 @@
         public bool HasCustomNameplate { get; set; }
         public Guid CustomNameplateID { get; set; }
         public bool IsInfoObject { get; set; }
+        public bool DoNotRender { get; set; }
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -144,6 +145,7 @@
             ret.Set("LightsCastShadows", this.LightsCastShadows);
             ret.Set("SelfCastsShadow", this.LightsSelfCastsShadow);
             ret.Set("CastsShadow", this.CastsShadow);
+            ret.Set("NoDraw", this.DoNotRender);
             ret.SetColor("TintColor", this.TintColor);
             ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
             ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) =>
@@ -192,6 +194,7 @@
             this.LightsCastShadows = e.Get<bool>("LightsCastShadows");
             this.LightsSelfCastsShadow = e.Get<bool>("SelfCastsShadow");
             this.CastsShadow = e.Get("CastsShadow", true);
+            this.DoNotRender = e.Get("NoDraw", false);
             this.TintColor = e.GetColor("TintColor", Color.White);
             this.Bars.Clear();
             this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
@@ -261,6 +264,7 @@
             ret.HasCustomNameplate = this.HasCustomNameplate;
             ret.CustomNameplateID = this.CustomNameplateID;
             ret.IsInfoObject = this.IsInfoObject;
+            ret.DoNotRender = this.DoNotRender;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

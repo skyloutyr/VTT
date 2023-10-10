@@ -3,12 +3,14 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using System.Runtime.InteropServices;
     using VTT.Asset;
+    using VTT.Asset.Glb;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
@@ -25,7 +27,7 @@
         private GPUBuffer _noAssetVbo;
         private GPUBuffer _noAssetEbo;
 
-        public ShaderProgram RenderShader { get; set; }
+        //public ShaderProgram RenderShader { get; set; }
         public ShaderProgram HighlightShader { get; set; }
         public ShaderProgram OverlayShader { get; set; }
         public MapObject ObjectMouseOver { get; set; }
@@ -48,7 +50,6 @@
         public WavefrontObject Cross { get; set; }
 
         public SunShadowRenderer DirectionalLightRenderer { get; set; }
-        public DeferredPipeline DeferredPipeline { get; set; }
 
         private Vector3 _cachedSunDir;
         private Color _cachedSunColor;
@@ -56,11 +57,16 @@
         private Color _cachedSkyColor;
         private readonly ShaderContainerLocalPassthroughData _passthroughData = new ShaderContainerLocalPassthroughData();
 
+        public GlbScene MissingModel { get; set; }
+
         public Stopwatch CPUTimerMain { get; set; }
         public Stopwatch CPUTimerUBOUpdate { get; set; }
         public Stopwatch CPUTimerAuras { get; set; }
         public Stopwatch CPUTimerGizmos { get; set; }
         public Stopwatch CPUTimerLights { get; set; }
+        public Stopwatch CPUTimerDeferred { get; set; }
+        public Stopwatch CPUTimerHighlights { get; set; }
+        public Stopwatch CPUTimerCompound { get; set; }
 
         public void Create()
         {
@@ -101,7 +107,6 @@
             this._noAssetVao.PushElement(ElementType.Vec2);
 
             this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.VertexShader, ShaderType.FragmentShader);
-            this.ReloadObjectShader(Client.Instance.Settings.EnableSunShadows, Client.Instance.Settings.EnableDirectionalShadows, Client.Instance.Settings.DisableShaderBranching, OpenGLUtil.ShouldUseSPIRV);
             this.HighlightShader = OpenGLUtil.LoadShader("highlight", ShaderType.VertexShader, ShaderType.FragmentShader);
             this.PrecomputeSelectionBox();
 
@@ -121,11 +126,6 @@
 
             this.DirectionalLightRenderer = new SunShadowRenderer();
             this.DirectionalLightRenderer.Create();
-            this.DeferredPipeline = new DeferredPipeline();
-            if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Deferred)
-            {
-                this.DeferredPipeline.Create();
-            }
 
             this.FrameUBOManager = new FrameUBOManager();
 
@@ -134,7 +134,10 @@
             this.CPUTimerMain = new Stopwatch();
             this.CPUTimerUBOUpdate = new Stopwatch();
             this.CPUTimerLights = new Stopwatch();
-
+            this.CPUTimerDeferred = new Stopwatch();
+            this.CPUTimerHighlights = new Stopwatch();
+            this.CPUTimerCompound = new Stopwatch();
+            this.MissingModel = new GlbScene(IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
         }
 
         #region Hightlight Box
@@ -225,6 +228,7 @@
 
         public FrameUBOManager FrameUBOManager { get; private set; }
 
+        /*
         public void ReloadObjectShader(bool dirShadows, bool pointShadows, bool noBranches, bool useSpriV)
         {
             useSpriV &= IOVTT.DoesResourceExist("VTT.Embed.object.vert.spv");
@@ -292,16 +296,7 @@
                 this.DeferredPipeline?.RecompileShaders(dirShadows, pointShadows, noBranches);
             }
         }
-
-        private void RemoveDefine(ref string lines, string define)
-        {
-            string r = "#define " + define;
-            int idx = lines.IndexOf(r);
-            if (idx != -1)
-            {
-                lines = lines.Remove(idx, lines.IndexOf('\n', idx) - idx - 1);
-            }
-        }
+        */
 
         public void PrecomputeSelectionBox()
         {
@@ -402,10 +397,6 @@
 
         public void Resize(int w, int h)
         {
-            if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Deferred)
-            {
-                this.DeferredPipeline.Resize(w, h);
-            }
         }
 
         public void Render(Map m, double delta)
@@ -419,18 +410,77 @@
 
                 this.DirectionalLightRenderer.Render(m, delta);
                 this.UpdateUBO(m, delta);
-                if (Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Forward)
-                {
-                    this.RenderForward(m, delta);
-                }
-                else
-                {
-                    this.RenderDeferred(m, delta);
-                }
-
+                this.RenderDeferred(m, delta);
+                this.RenderHighlights(m, delta);
                 this.RenderObjectMouseOver(m);
                 this.RenderDebug(m);
             }
+        }
+
+        public void RenderHighlights(Map m, double delta)
+        {
+            this.CPUTimerHighlights.Restart();
+            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+            this.OverlayShader.Bind();
+            this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+            GL.Disable(EnableCap.DepthTest);
+            foreach (MapObject mo in this._crossedOutObjects)
+            {
+                Matrix4 modelMatrix;
+                if (mo.ClientAssignedModelBounds)
+                {
+                    modelMatrix = Matrix4.CreateScale(mo.ClientBoundingBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position);
+                }
+                else
+                {
+                    modelMatrix = mo.ClientCachedModelMatrix.ClearRotation();
+                }
+
+                this.OverlayShader["model"].Set(modelMatrix);
+                this.Cross.Render();
+            }
+
+            GL.Enable(EnableCap.DepthTest);
+
+            GL.Disable(EnableCap.CullFace);
+            ShaderProgram shader = this.HighlightShader;
+            shader.Bind();
+            shader["view"].Set(cam.View);
+            shader["projection"].Set(cam.Projection);
+            shader["u_color"].Set(Color.Orange.Vec4());
+            foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects)
+            {
+                if (mo.ClientRenderedThisFrame)
+                {
+                    AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+                    Vector3 size = cBB.Size;
+                    Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
+                    Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
+                    shader["model"].Set(modelMatrix);
+                    shader["bounds"].Set(size);
+                    this._boxVao.Bind();
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                }
+            }
+
+            shader["u_color"].Set(Color.SkyBlue.Vec4());
+            foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates)
+            {
+                if (mo.ClientRenderedThisFrame)
+                {
+                    AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+                    Vector3 size = cBB.Size;
+                    Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
+                    Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
+                    shader["model"].Set(modelMatrix);
+                    shader["bounds"].Set(size);
+                    this._boxVao.Bind();
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                }
+            }
+
+            GL.Enable(EnableCap.CullFace);
+            this.CPUTimerHighlights.Stop();
         }
 
         public void RenderDebug(Map m)
@@ -816,25 +866,79 @@
             this.CPUTimerLights.Stop();
         }
 
+        private readonly List<MapObject> _crossedOutObjects = new List<MapObject>();
         private void RenderDeferred(Map m, double delta)
         {
+            this.CPUTimerDeferred.Restart();
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-            this.UniformCommonData(m, delta);
             GL.ActiveTexture(TextureUnit.Texture0);
             this.RenderLights(m);
             GL.ActiveTexture(TextureUnit.Texture0);
-            this.DeferredPipeline.RenderScene(m);
-            GL.ActiveTexture(TextureUnit.Texture0);
 
+            ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
+
+            this._crossedOutObjects.Clear();
+            for (int i = -2; i <= 0; ++i)
+            {
+                foreach (MapObject mo in m.IterateObjects(i))
+                {
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
+                    bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false);
+                    if (ready)
+                    {
+                        if (!mo.ClientAssignedModelBounds)
+                        {
+                            mo.ClientBoundingBox = a.Model.GLMdl.CombinedBounds;
+                            mo.ClientAssignedModelBounds = true;
+                        }
+
+                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
+                        {
+                            mo.ClientRenderedThisFrame = false;
+                            continue;
+                        }
+
+                        if (a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon) || !mo.ShaderID.IsEmpty())
+                        {
+                            mo.ClientDeferredRejectThisFrame = true;
+                            continue;
+                        }
+
+                        mo.ClientRenderedThisFrame = true;
+                        mo.ClientDeferredRejectThisFrame = false;
+                        if (mo.DoNotRender)
+                        {
+                            continue;
+                        }
+
+                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
+                        float ga = m.GridColor.Vec4().W;
+                        shader["grid_alpha"].Set(i == -2 && m.GridEnabled ? ga : 0.0f);
+                        shader["tint_color"].Set(mo.TintColor.Vec4());
+                        GL.ActiveTexture(TextureUnit.Texture0);
+                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN);
+                    }
+                    else
+                    {
+                        mo.ClientDeferredRejectThisFrame = true;
+                    }
+                }
+            }
+
+            Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
+
+            ShaderProgram forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             for (int i = -2; i <= maxLayer; ++i)
             {
-                ShaderProgram shader = this.RenderShader;
+                shader = forwardShader;
                 shader.Bind();
                 if (i <= 0)
                 {
@@ -853,9 +957,10 @@
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
+                    bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false);
+                    if (i > 0 || mo.ClientDeferredRejectThisFrame)
                     {
-                        if (i > 0 || mo.ClientDeferredRejectThisFrame)
+                        if (assetReady)
                         {
                             if (!mo.ClientAssignedModelBounds)
                             {
@@ -868,71 +973,6 @@
                                 mo.ClientRenderedThisFrame = false;
                                 continue;
                             }
-
-                            mo.ClientRenderedThisFrame = true;
-                            if (mo.DoNotRender)
-                            {
-                                continue;
-                            }
-
-                            Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                            GL.Enable(EnableCap.Blend);
-                            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-                            {
-                                GL.Enable(EnableCap.SampleAlphaToCoverage);
-                            }
-                            shader = this.RenderShader;
-                            this._passthroughData.TintColor = mo.TintColor.Vec4();
-                            shader["tint_color"].Set(this._passthroughData.TintColor);
-                            bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out ShaderProgram customShader);
-                            if (hadCustomRenderShader)
-                            {
-                                if (i <= 0)
-                                {
-                                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
-                                }
-                                else
-                                {
-                                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
-                                }
-                            }
-
-                            a.Model.GLMdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN);
-                            if (hadCustomRenderShader)
-                            {
-                                this.RenderShader.Bind();
-                            }
-
-                            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-                            {
-                                GL.Disable(EnableCap.SampleAlphaToCoverage);
-                            }
-
-                            GL.Disable(EnableCap.Blend);
-                        }
-
-                        if (mo.IsCrossedOut && mo.ClientRenderedThisFrame)
-                        {
-                            Matrix4 modelMatrix = mo.ClientCachedModelMatrix.ClearRotation();
-                            shader = this.OverlayShader;
-                            shader.Bind();
-                            shader["model"].Set(modelMatrix);
-                            shader["u_color"].Set(Color.Red.Vec4());
-                            GL.Disable(EnableCap.DepthTest);
-                            this.Cross.Render();
-                            GL.Enable(EnableCap.DepthTest);
-                            shader = this.RenderShader;
-                            shader.Bind();
-                        }
-                    }
-                    else
-                    {
-                        AABox assumedBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f).Scale(mo.Scale);
-                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(assumedBox, mo.Position))
-                        {
-                            mo.ClientRenderedThisFrame = false;
-                            continue;
                         }
 
                         mo.ClientRenderedThisFrame = true;
@@ -941,66 +981,56 @@
                             continue;
                         }
 
-                        GL.Disable(EnableCap.CullFace);
-                        GL.Enable(EnableCap.DepthTest);
-                        GL.DepthFunc(DepthFunction.Lequal);
                         Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(status == AssetStatus.Await ? Color.Blue.Vec4() : Color.Red.Vec4());
-                        GL.ActiveTexture(TextureUnit.Texture0);
-                        Client.Instance.Frontend.Renderer.White.Bind();
-                        this._noAssetVao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, 12 * 6, DrawElementsType.UnsignedInt, IntPtr.Zero);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
+                        GL.Enable(EnableCap.Blend);
+                        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                        if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                        {
+                            GL.Enable(EnableCap.SampleAlphaToCoverage);
+                        }
+
+                        shader = forwardShader;
+                        this._passthroughData.TintColor = mo.TintColor.Vec4();
+                        shader["tint_color"].Set(this._passthroughData.TintColor);
+                        bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out ShaderProgram customShader);
+                        if (hadCustomRenderShader)
+                        {
+                            if (i <= 0)
+                            {
+                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
+                            }
+                            else
+                            {
+                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
+                            }
+                        }
+
+                        (assetReady ? a.Model.GLMdl : this.MissingModel).Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN);
+                        if (hadCustomRenderShader)
+                        {
+                            forwardShader.Bind();
+                        }
+
+                        if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+                        {
+                            GL.Disable(EnableCap.SampleAlphaToCoverage);
+                        }
+
+                        GL.Disable(EnableCap.Blend);
                     }
 
-                    if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Contains(mo))
+                    if (mo.IsCrossedOut && mo.ClientRenderedThisFrame)
                     {
-                        GL.Disable(EnableCap.CullFace);
-                        AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
-                        Vector3 size = cBB.Size;
-                        Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                        Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(Color.Orange.Vec4());
-                        shader["bounds"].Set(size);
-                        this._boxVao.Bind();
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
-                    }
-
-                    if (Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Contains(mo))
-                    {
-                        GL.Disable(EnableCap.CullFace);
-                        AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
-                        Vector3 size = cBB.Size;
-                        Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                        Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(Color.SkyBlue.Vec4());
-                        shader["bounds"].Set(size);
-                        this._boxVao.Bind();
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
+                        this._crossedOutObjects.Add(mo);
                     }
                 }
             }
 
-            GL.ActiveTexture(TextureUnit.Texture0);
-
             this.CPUTimerMain.Stop();
+            this.CPUTimerCompound.Restart();
+            Client.Instance.Frontend.Renderer.Pipeline.FinishRender();
+            GL.ActiveTexture(TextureUnit.Texture0);
+            this.CPUTimerCompound.Stop();
         }
 
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
@@ -1156,259 +1186,9 @@
         }
 
         public Vector3 CachedSkyColor => this._cachedSkyColor.Vec3();
-
-        private void UniformCommonData(Map m, double delta)
-        {
-            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-
-            ShaderProgram shader = this.RenderShader;
-            shader.Bind();
-            if (!Client.Instance.Settings.UseUBO)
-            {
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["camera_position"].Set(cam.Position);
-                shader["camera_direction"].Set(cam.Direction);
-                shader["dl_direction"].Set(this._cachedSunDir);
-                shader["dl_color"].Set(this._cachedSunColor.Vec3() * m.SunIntensity);
-                shader["al_color"].Set(this._cachedAmbientColor * m.AmbietIntensity);
-                shader["sun_view"].Set(this.DirectionalLightRenderer.SunView);
-                shader["sun_projection"].Set(this.DirectionalLightRenderer.SunProjection);
-                shader["sky_color"].Set(this._cachedSkyColor.Vec3());
-                shader["grid_color"].Set(m.GridColor.Vec4());
-                shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
-                shader["dv_data"].Set(Vector4.Zero);
-                shader["frame_delta"].Set((float)delta);
-                if (m.EnableDarkvision)
-                {
-                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                    {
-                        if (m.GetObject(kv.Item1, out MapObject mo))
-                        {
-                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2));
-                        }
-                    }
-                }
-            }
-
-            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-
-            GL.ActiveTexture(TextureUnit.Texture14);
-            if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
-            {
-                this.DirectionalLightRenderer.DepthTexture.Bind();
-            }
-            else
-            {
-                Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
-            }
-
-            GL.ActiveTexture(TextureUnit.Texture13);
-            plr.DepthMap.Bind();
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            plr.UniformLights(shader);
-
-            shader = this.HighlightShader;
-            shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-        }
-
-        private void RenderForward(Map m, double delta)
-        {
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Enable(EnableCap.Multisample);
-            }
-
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Lequal);
-            int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
-            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-            this.RenderLights(m);
-            this.UniformCommonData(m, delta);
-
-            this.CPUTimerMain.Restart();
-
-            for (int i = -2; i <= maxLayer; ++i)
-            {
-                ShaderProgram shader = this.RenderShader;
-                shader.Bind();
-                if (i <= 0)
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
-                }
-                else
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
-                }
-
-                int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
-                this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
-                this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
-                shader["alpha"].Set(this._passthroughData.Alpha);
-                shader["grid_alpha"].Set(this._passthroughData.GridAlpha);
-
-                foreach (MapObject mo in m.IterateObjects(i))
-                {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
-                    {
-                        if (!mo.ClientAssignedModelBounds)
-                        {
-                            mo.ClientBoundingBox = a.Model.GLMdl.CombinedBounds;
-                            mo.ClientAssignedModelBounds = true;
-                        }
-
-                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
-                        {
-                            mo.ClientRenderedThisFrame = false;
-                            continue;
-                        }
-
-                        mo.ClientRenderedThisFrame = true;
-                        if (mo.DoNotRender)
-                        {
-                            continue;
-                        }
-
-                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                        bool transparent = a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < 1.0f - float.Epsilon;
-                        if (i > cLayer || transparent)
-                        {
-                            GL.Enable(EnableCap.Blend);
-                            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                            GL.Enable(EnableCap.SampleAlphaToCoverage);
-                        }
-
-                        shader = this.RenderShader;
-                        this._passthroughData.TintColor = mo.TintColor.Vec4();
-                        shader["tint_color"].Set(this._passthroughData.TintColor);
-                        bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out ShaderProgram customShader);
-                        if (hadCustomRenderShader)
-                        {
-                            if (i <= 0)
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
-                            }
-                            else
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
-                            }
-                        }
-
-                        a.Model.GLMdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN);
-                        if (hadCustomRenderShader)
-                        {
-                            this.RenderShader.Bind();
-                        }
-
-                        if (i > cLayer || transparent)
-                        {
-                            GL.Disable(EnableCap.Blend);
-                            GL.Disable(EnableCap.SampleAlphaToCoverage);
-                        }
-
-                        if (mo.IsCrossedOut)
-                        {
-                            modelMatrix = mo.ClientCachedModelMatrix.ClearRotation();
-                            shader = this.OverlayShader;
-                            shader.Bind();
-                            shader["model"].Set(modelMatrix);
-                            shader["u_color"].Set(Color.Red.Vec4());
-                            GL.Disable(EnableCap.DepthTest);
-                            this.Cross.Render();
-                            GL.Enable(EnableCap.DepthTest);
-                            shader = this.RenderShader;
-                            shader.Bind();
-                        }
-                    }
-                    else
-                    {
-                        AABox assumedBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f).Scale(mo.Scale);
-                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(assumedBox, mo.Position))
-                        {
-                            mo.ClientRenderedThisFrame = false;
-                            continue;
-                        }
-
-                        mo.ClientRenderedThisFrame = true;
-                        if (mo.DoNotRender)
-                        {
-                            continue;
-                        }
-
-                        GL.Disable(EnableCap.CullFace);
-                        GL.Enable(EnableCap.DepthTest);
-                        GL.DepthFunc(DepthFunction.Lequal);
-                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(status == AssetStatus.Await ? Color.Blue.Vec4() : Color.Red.Vec4());
-                        GL.ActiveTexture(TextureUnit.Texture0);
-                        Client.Instance.Frontend.Renderer.White.Bind();
-                        this._noAssetVao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, 12 * 6, DrawElementsType.UnsignedInt, IntPtr.Zero);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
-                    }
-
-                    if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Contains(mo))
-                    {
-                        GL.Disable(EnableCap.CullFace);
-                        AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
-                        Vector3 size = cBB.Size;
-                        Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                        Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(Color.Orange.Vec4());
-                        shader["bounds"].Set(size);
-                        this._boxVao.Bind();
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
-                    }
-
-                    if (Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Contains(mo))
-                    {
-                        GL.Disable(EnableCap.CullFace);
-                        AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
-                        Vector3 size = cBB.Size;
-                        Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                        Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
-                        shader = this.HighlightShader;
-                        shader.Bind();
-                        shader["model"].Set(modelMatrix);
-                        shader["u_color"].Set(Color.SkyBlue.Vec4());
-                        shader["bounds"].Set(size);
-                        this._boxVao.Bind();
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                        GL.Enable(EnableCap.CullFace);
-                        shader = this.RenderShader;
-                        shader.Bind();
-                    }
-                }
-            }
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Disable(EnableCap.Multisample);
-            }
-
-            this.CPUTimerMain.Stop();
-        }
+        public Vector3 CachedSunDirection => this._cachedSunDir;
+        public Vector3 CachedSunColor => this._cachedSunColor.Vec3();
+        public Vector3 CachedAmbientColor => this._cachedAmbientColor;
 
         private readonly List<MapObject> _auraCollection = new List<MapObject>();
         private readonly List<(float, Color)> _auraL = new List<(float, Color)>();

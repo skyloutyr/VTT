@@ -1,5 +1,4 @@
 ﻿#version 330 core
-#define BRANCHING
 
 #undef NODEGRAPH
 
@@ -52,11 +51,12 @@ uniform vec4 tint_color;
 
 uniform float grid_alpha;
 
-layout (location = 0) out vec4 g_position;
-layout (location = 1) out vec4 g_normal;
-layout (location = 2) out vec4 g_albedo;
-layout (location = 3) out vec4 g_aomrg;
-layout (location = 4) out vec4 g_emission;
+layout (location = 0) out vec4 g_color; // no writing here occurs, needed for consistency
+layout (location = 1) out vec4 g_position;
+layout (location = 2) out vec4 g_normal;
+layout (location = 3) out vec4 g_albedo;
+layout (location = 4) out vec4 g_aomrg;
+layout (location = 5) out vec4 g_emission;
 
 vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 {
@@ -87,11 +87,7 @@ float getGrid()
 {
     vec3 normal = f_tbn[2];
     float d = dot(normal, unitZ);
-#ifndef BRANCHING
-    d = min(1, floor(0.45 + abs(d)));
-#else
     d = float(abs(d) >= 0.45);
-#endif
 
     float cameraDistanceFactor = length(camera_position - f_world_position);
 	float m = cameraDistanceFactor - 32.0;
@@ -142,15 +138,10 @@ void main()
     float l_a = 0.0;
     shaderGraph(albedo, normal, emissive, ao, m, r, l_a);
     float g = 0;
-
-#ifndef BRANCHING
-	g = getGrid();
-#else
     if (grid_alpha > eff_epsilon)
     {
         g = getGrid();
     }
-#endif
 
     g_position = vec4(f_world_position, 1.0);
     g_normal = vec4(normal, 1.0);

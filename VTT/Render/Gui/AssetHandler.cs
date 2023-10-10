@@ -36,7 +36,7 @@
                             byte[] binary = File.ReadAllBytes(s);
                             using MemoryStream str = new MemoryStream(binary);
                             glbm = new GlbScene(str);
-                            img = glbm.CreatePreview(Client.Instance.Frontend.Renderer.ObjectRenderer.RenderShader, 256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
+                            img = glbm.CreatePreview(256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
                             using MemoryStream imgMs = new MemoryStream();
                             img.SaveAsPng(imgMs);
                             Asset a = new Asset()
@@ -470,7 +470,6 @@
                                     {
                                         state.editShaderPopup = true;
                                         this._editedShaderId = aRef.AssetID;
-                                        // TODO shader node graph editor
                                     }
                                 }
 

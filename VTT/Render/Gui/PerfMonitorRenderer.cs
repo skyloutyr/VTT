@@ -136,7 +136,8 @@
                     }
                 }
 
-                double cpuDeferred = Client.Instance.Frontend.Renderer.ObjectRenderer.DeferredPipeline.CPUTimer?.ElapsedMillis() ?? 0;
+                double cpuDeferred = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerDeferred?.ElapsedMillis() ?? 0;
+                double cpuCompoundRender = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerCompound?.ElapsedMillis() ?? 0;
                 double cpuGrid = Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuGuiQueue = Client.Instance.Frontend.Renderer.GuiRenderer.Timer?.Buffer.ElapsedMillis() ?? 0;
                 double cpuGui = Client.Instance.Frontend.GuiWrapper.CPUTimer?.ElapsedMillis() ?? 0;
@@ -145,16 +146,17 @@
                 double cpuMOGizmos = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerGizmos?.ElapsedMillis() ?? 0;
                 double cpuMOUBO = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerUBOUpdate?.ElapsedMillis() ?? 0;
                 double cpuMOLights = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerLights?.ElapsedMillis() ?? 0;
+                double cpuMOHighlights = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerHighlights?.ElapsedMillis() ?? 0;
                 double cpuSun = Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuParticles = Client.Instance.Frontend.Renderer.ParticleRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuPings = Client.Instance.Frontend.Renderer.PingRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuRulers = Client.Instance.Frontend.Renderer.RulerRenderer.CPUTimer?.ElapsedMillis() ?? 0;
 
 
-                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles;
+                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender;
                 double totalTarget = Math.Max(total, frameTarget);
 
-                double objectsTotal = cpuDeferred + cpuMOMain + cpuMOAuras + cpuMOUBO + cpuMOLights + cpuMOGizmos;
+                double objectsTotal = cpuDeferred + cpuMOMain + cpuMOAuras + cpuMOUBO + cpuMOLights + cpuMOGizmos + cpuMOHighlights + cpuCompoundRender;
 
                 RenderSection(lang.Translate("ui.performance.frame_total"), total, total / totalTarget);
                 if (ImGui.TreeNode(lang.Translate("ui.performance.frame_info")))
@@ -164,10 +166,12 @@
                     {
                         RenderSection(lang.Translate("ui.performance.frame_objects_deferred"), cpuDeferred, cpuDeferred / objectsTotal);
                         RenderSection(lang.Translate("ui.performance.frame_objects_forward"), cpuMOMain, cpuMOMain / objectsTotal);
+                        RenderSection(lang.Translate("ui.performance.frame_objects_compound"), cpuCompoundRender, cpuCompoundRender / objectsTotal);
                         RenderSection(lang.Translate("ui.performance.frame_objects_auras"), cpuMOAuras, cpuMOAuras / objectsTotal);
                         RenderSection(lang.Translate("ui.performance.frame_objects_ubo"), cpuMOUBO, cpuMOUBO / objectsTotal);
                         RenderSection(lang.Translate("ui.performance.frame_objects_gizmos"), cpuMOGizmos, cpuMOGizmos / objectsTotal);
                         RenderSection(lang.Translate("ui.performance.frame_objects_lights"), cpuMOLights, cpuMOLights / objectsTotal);
+                        RenderSection(lang.Translate("ui.performance.frame_objects_highlights"), cpuMOHighlights, cpuMOHighlights / objectsTotal);
                         ImGui.TreePop();
                     }
 

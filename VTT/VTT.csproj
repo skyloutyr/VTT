@@ -106,6 +106,7 @@
     <None Remove="Embed\Logo\beta-switch.png" />
     <None Remove="Embed\Logo\beta-wires.png" />
     <None Remove="Embed\Logo\Logo-Main.png" />
+    <None Remove="Embed\missing.glb" />
     <None Remove="Embed\moverlay.frag" />
     <None Remove="Embed\moverlay.vert" />
     <None Remove="Embed\object.frag" />
@@ -133,6 +134,8 @@
     <None Remove="Embed\turn-tracker-separator.png" />
     <None Remove="Embed\unifont-14.0.04.ttf" />
     <None Remove="Embed\unifont-14.0.04.zip" />
+    <None Remove="Embed\universal_final.frag" />
+    <None Remove="Embed\universal_final.vert" />
   </ItemGroup>
 
   <ItemGroup>
@@ -226,6 +229,7 @@
     <EmbeddedResource Include="Embed\Logo\beta-switch.png" />
     <EmbeddedResource Include="Embed\Logo\beta-wires.png" />
     <EmbeddedResource Include="Embed\Logo\logo-main.png" />
+    <EmbeddedResource Include="Embed\missing.glb" />
     <EmbeddedResource Include="Embed\moverlay.frag" />
     <EmbeddedResource Include="Embed\moverlay.vert" />
     <EmbeddedResource Include="Embed\icons8-cursor-40.png" />
@@ -264,6 +268,8 @@
     <EmbeddedResource Include="Embed\turn-tracker-particle.png" />
     <EmbeddedResource Include="Embed\turn-tracker-separator.png" />
     <EmbeddedResource Include="Embed\unifont-14.0.04.zip" />
+    <EmbeddedResource Include="Embed\universal_final.frag" />
+    <EmbeddedResource Include="Embed\universal_final.vert" />
   </ItemGroup>
 
   <ItemGroup>

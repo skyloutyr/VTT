@@ -426,7 +426,7 @@
 
                 if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.glReady ?? false))
                 {
-                    using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(Client.Instance.Frontend.Renderer.ObjectRenderer.RenderShader, 256, 256, new OpenTK.Mathematics.Vector4(0, 0, 0, 0), true);
+                    using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new OpenTK.Mathematics.Vector4(0, 0, 0, 0), true);
                     Texture tex = new Texture(TextureTarget.Texture2D);
                     tex.Bind();
                     tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
@@ -436,6 +436,7 @@
                     AssetPreview prev = new AssetPreview() { GLTex = tex };
                     this.Container.Portraits[aID] = prev;
                     ap = prev;
+
                     return AssetStatus.Return;
                 }
 
@@ -590,7 +591,6 @@
 
         private void InternalRequestAssetPreview(Guid guid)
         {
-            // TODO request asset preview
             PacketAssetPreview pap = new PacketAssetPreview() { ID = guid, Session = Client.Instance.SessionID, IsServer = false };
             pap.Send(Client.Instance.NetClient);
         }
@@ -664,7 +664,6 @@
 
         public void ReceiveAsset(Guid assetID, AssetType assetType, byte[] binary, AssetMetadata meta)
         {
-            // TODO receive asset!
             Asset a = new Asset() { ID = assetID, Type = assetType };
             byte[] rawBinary = AssetBinaryPointer.GetRawAssetBinary(binary);
             ThreadPool.QueueUserWorkItem((token) =>

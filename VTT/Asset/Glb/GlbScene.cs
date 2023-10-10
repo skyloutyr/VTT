@@ -790,7 +790,7 @@
             this._modelStack.Pop();
         }
 
-        public Image<Rgba32> CreatePreview(ShaderProgram shader, int width, int height, Vector4 clearColor, bool portrait = false)
+        public Image<Rgba32> CreatePreview(int width, int height, Vector4 clearColor, bool portrait = false)
         {
             // Create camera
             glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera.Camera) : this.Camera.Camera;
@@ -820,29 +820,13 @@
             }
 
             // Create framebuffer
-            VTT.GL.Texture tex = new VTT.GL.Texture(TextureTarget.Texture2D);
-            int fbo = GL.GenFramebuffer();
-            int lastFbo = GL.GetInteger(GetPName.FramebufferBinding);
+            int fbo = Client.Instance.Frontend.Renderer.Pipeline.CreateDummyForwardFBO(new Size(width, height), out VTT.GL.Texture d0, out VTT.GL.Texture d1, out VTT.GL.Texture d2, out VTT.GL.Texture d3, out VTT.GL.Texture d4, out VTT.GL.Texture d5, out VTT.GL.Texture tex);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
             GL.ActiveTexture(TextureUnit.Texture0);
-            tex.Bind();
-            tex.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
-            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.SrgbAlpha, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, tex, 0);
-            int rbo = GL.GenRenderbuffer();
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, rbo);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width, height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, rbo);
-            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (fec != FramebufferErrorCode.FramebufferComplete)
-            {
-                throw new Exception("Could not complete renderbuffer!");
-            }
-
+            
             int[] data = new int[4];
             GL.GetInteger(GetPName.Viewport, data);
-
+            ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
             shader.Bind();
             Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader);
             shader["ambient_intensity"].Set(0.03f);
@@ -870,7 +854,6 @@
             GL.Viewport(0, 0, width, height);
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
-            //GL.ClearColor(0.03f, 0.03f, 0.03f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             this.Render(shader, Matrix4.Identity, camera.Projection, camera.View, 0);
@@ -882,8 +865,13 @@
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.DeleteFramebuffer(fbo);
+            d0.Dispose();
+            d1.Dispose();
+            d2.Dispose();
+            d3.Dispose();
+            d4.Dispose();
+            d5.Dispose();
             tex.Dispose();
-            GL.DeleteRenderbuffer(rbo);
             GL.Viewport(data[0], data[1], data[2], data[3]);
 
             retImg.Mutate(x => x.Flip(FlipMode.Vertical));

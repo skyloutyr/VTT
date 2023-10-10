@@ -7,8 +7,6 @@
 #define HAS_POINT_SHADOWS
 #define HAS_DIRECTIONAL_SHADOWS
 
-#define BRANCHING
-
 in vec2 f_texture;
 
 layout (std140) uniform FrameData {
@@ -56,7 +54,7 @@ uniform vec2 fow_scale;
 uniform float fow_mod;
 uniform float gamma_factor;
 
-out vec4 g_color;
+out layout (location = 0) vec4 g_color;
 
 const vec3 surface_reflection_for_dielectrics = vec3(0.04);
 const float PI = 3.14159265359;
@@ -162,48 +160,6 @@ float getShadowDepth2D(sampler2D sampler, vec2 coords, float depth)
     return shadow / pcf_itr_con;
 }
 
-#ifndef BRANCHING
-vec2 project2CubemapTexture(vec3 vec, int side)
-{
-	float x = vec.x;
-	float y = vec.y;
-	float z = vec.z;
-	float ma = (max(0, min(1, 2 - side)) * x) + (max(0, min(1, 4 - side) * min(1, max(0, side - 1))) * y) + (max(0, min(1, max(0, side - 3))) * z);
-	float sc = (max(0, 1 - side) * -z) + (((1 - (1 - side)) * max(0, 2 - side)) * z) + (max(0, min(1, 5 - side) * min(1, max(0, side - 1))) * x) + (max(0, min(1, side - 4)) * -x);
-	float tc = (((max(0, min(1, 2 - side))) | (min(1, max(0, side - 3)))) * -y) + (max(0, min(1, 3 - side) * min(1, max(0, side - 1))) * z) + (max(0, min(1, 4 - side) * min(1, max(0, side - 2))) * -z);
-	float s = ((sc / abs(ma)) + 1) * 0.5;
-	float t = ((tc / abs(ma)) + 1) * 0.5;
-	return vec2(s, t);
-}
-
-float computeShadowForSide(int light, vec3 light2frag, vec3 norm, int side, int offset)
-{
-	vec2 coords = project2CubemapTexture(light2frag, side);
-	float current_depth = length(light2frag) / pl_cutout[light].x;
-	float bias = 0.0;  
-	//float shadow_depth = texture(pl_shadow_maps, vec4(coords.x, coords.y, offset + side, current_depth - bias));
-	float shadow_depth = getShadowDepth2DArray(pl_shadow_maps, vec3(coords.x, coords.y, offset + side), current_depth - bias);
-	return clamp(shadow_depth * pl_cutout[light].y, 0, 1);
-}
-
-float computeShadow(int light, vec3 light2frag, vec3 norm)
-{
-	vec3 norm_l2f = normalize(light2frag);
-	int mxy = int(max(0, ceil(abs(norm_l2f.x) - abs(norm_l2f.y)) + (1 - ceil(abs(abs(norm_l2f.x) - abs(norm_l2f.y))))));
-	int mxz = int(max(0, ceil(abs(norm_l2f.x) - abs(norm_l2f.z)) + (1 - ceil(abs(abs(norm_l2f.x) - abs(norm_l2f.z))))));
-	int myz = int(max(0, ceil(abs(norm_l2f.y) - abs(norm_l2f.z)) + (1 - ceil(abs(abs(norm_l2f.y) - abs(norm_l2f.z))))));
-	int xC = mxy * mxz;
-	int yC = (1 - mxy) * myz;
-	int zC = (1 - mxz) * (1 - myz);
-	int index = pl_index[light] * 6;
-	return max(0, computeShadowForSide(light, light2frag, norm, 
-		int(
-			 (xC * -sign(norm_l2f.x) + 1 * xC) / 2 + 
-			((yC * -sign(norm_l2f.y) + 1 * yC) / 2 + 2 * yC) + 
-			((zC * -sign(norm_l2f.z) + 1 * zC) / 2 + 4 * zC)), 
-	index));
-}
-#else
 vec3 cubemap(vec3 r) 
 {
     vec3 uvw;
@@ -229,7 +185,6 @@ float texCubemap(vec3 uvw, float offset, float currentDepth)
 {
     vec3 st = cubemap(uvw);
     st.z += offset;
-    //return texture(pl_shadow_maps, vec4(st, currentDepth));
     return getShadowDepth2DArray(pl_shadow_maps, st, currentDepth);
 }
 
@@ -240,7 +195,6 @@ float computeShadow(int light, vec3 light2frag, vec3 norm)
     float bias = 0.0;
     return clamp(texCubemap(norm_l2f, pl_index[light] * 6, current_depth - bias), 0, 1);
 }
-#endif
 
 vec3 calcLight(vec3 world_to_light, vec3 radiance, vec3 world_to_camera, vec3 albedo, vec3 normal, float metallic, float roughness)
 {
@@ -268,11 +222,7 @@ vec3 calcPointLight(int light_index, vec3 f_world_position, vec3 world_to_camera
     float attenuation = pl_cutout[light_index].x / (light_distance * light_distance * PI * PI * 4);
     vec3 radiance = pl_color[light_index] * attenuation;
 #ifdef HAS_POINT_SHADOWS
-#ifndef BRANCHING
-    float shadow = computeShadow(light_index, f_world_position - pl_position[light_index], normal);
-#else
     float shadow = pl_cutout[light_index].y < eff_epsilon ? 1.0 : computeShadow(light_index, f_world_position - pl_position[light_index], normal);
-#endif
 #else
     float shadow = 1.0;
 #endif
@@ -341,14 +291,12 @@ float getFowMultiplier(vec3 f_world_position)
 void main()
 {
     vec4 world_position = texture(g_positions, f_texture);
-    #ifdef BRANCHING
     if (world_position.a <= eff_epsilon)
     {
         discard;
     }
     
     gl_FragDepth = texture(g_depth, f_texture).r;
-    #endif
     vec3 world_to_camera = normalize(camera_position - world_position.rgb);
     vec4 aomrg = texture(g_aomrg, f_texture);
     vec3 albedo = texture(g_albedo, f_texture).rgb;
@@ -372,10 +320,6 @@ void main()
     color = color + texture(g_emission, f_texture).rgb;
     color.rgb = pow(color.rgb, vec3(1.0/gamma_factor));
 
-#ifndef BRANCHING
-    float fowVal = getFowMultiplier(world_position.rgb) * fow_mod + (1.0 * (1.0 - fow_mod));
-    g_color = vec4(mix(sky_color, color, fowVal), world_position.a);
-#else
     if (fow_mod > eff_epsilon)
     {
         float fowVal = getFowMultiplier(world_position.rgb) * fow_mod + (1.0 * (1.0 - fow_mod));
@@ -385,5 +329,4 @@ void main()
     {
         g_color = vec4(color, world_position.a);
     }
-#endif
 }

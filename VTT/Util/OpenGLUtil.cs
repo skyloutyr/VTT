@@ -129,5 +129,15 @@
             tex.SetImage(img, format);
             return tex;
         }
+
+        public static Texture LoadBasicTexture(Image<Rgba32> img, PixelInternalFormat format = PixelInternalFormat.Rgba)
+        {
+            Texture tex = new Texture(TextureTarget.Texture2D);
+            tex.Bind();
+            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+            tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+            tex.SetImage(img, format);
+            return tex;
+        }
     }
 }

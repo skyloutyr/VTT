@@ -599,7 +599,8 @@
                     {
                         Client.Instance.Settings.EnableSunShadows = sShadowsSun;
                         Client.Instance.Settings.Save();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        //Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        Client.Instance.Frontend.Renderer.Pipeline.RecompileShaders(sShadowsDir, sShadowsSun);
                     }
 
                     if (ImGui.IsItemHovered())
@@ -611,7 +612,8 @@
                     {
                         Client.Instance.Settings.EnableDirectionalShadows = sShadowsDir;
                         Client.Instance.Settings.Save();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        //Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        Client.Instance.Frontend.Renderer.Pipeline.RecompileShaders(sShadowsDir, sShadowsSun);
                     }
 
                     if (ImGui.IsItemHovered())
@@ -667,7 +669,8 @@
                     if (ImGui.SliderInt("###PCF Quality", ref sPcfQ, 1, 5))
                     {
                         Client.Instance.Settings.ShadowsPCF = sPcfQ;
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        //Client.Instance.Frontend.Renderer.ObjectRenderer.ReloadObjectShader(sShadowsSun, sShadowsDir, sNoBranches, OpenGLUtil.ShouldUseSPIRV);
+                        Client.Instance.Frontend.Renderer.Pipeline.RecompileShaders(sShadowsDir, sShadowsSun);
                         Client.Instance.Settings.Save();
                     }
 
@@ -899,6 +902,7 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    /*
                     ImGui.Text(lang.Translate("menu.settings.pipeline"));
                     string[] pps = { lang.Translate("menu.settings.pipeline.forward"), lang.Translate("menu.settings.pipeline.deferred") };
                     int cpp = Client.Instance.Settings.Pipeline == ClientSettings.PipelineType.Forward ? 0 : 1;
@@ -921,11 +925,13 @@
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.pipeline.tt"));
                     }
+                    */
 
                     bool sNoBranches = Client.Instance.Settings.DisableShaderBranching;
                     bool sShadowsSun = Client.Instance.Settings.EnableSunShadows;
                     bool sShadowsDir = Client.Instance.Settings.EnableDirectionalShadows;
                     bool sUseUBO = Client.Instance.Settings.UseUBO;
+                    /*
                     if (ImGui.Checkbox(lang.Translate("menu.settings.disable_branching") + "###Disable Shader Branching", ref sNoBranches))
                     {
                         Client.Instance.Settings.DisableShaderBranching = sNoBranches;
@@ -937,6 +943,7 @@
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.disable_branching.tt"));
                     }
+                    */
 
                     if (ImGui.Checkbox(lang.Translate("menu.settings.use_ubo") + "###Use UBO", ref sUseUBO))
                     {

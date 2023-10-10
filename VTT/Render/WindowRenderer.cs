@@ -22,6 +22,7 @@
         public RulerRenderer RulerRenderer { get; set; }
         public PingRenderer PingRenderer { get; set; }
         public ParticleRenderer ParticleRenderer { get; set; }
+        public UniversalPipeline Pipeline { get; set; }
 
         public Texture White { get; set; }
         public Texture Black { get; set; }
@@ -47,6 +48,8 @@
             this.PingRenderer.Create();
             this.ParticleRenderer = new ParticleRenderer();
             this.ParticleRenderer.Create();
+            this.Pipeline = new UniversalPipeline();
+            this.Pipeline.Create();
             int[] lMax = new int[1];
             GL.GetInteger(GetPName.MaxTextureSize, lMax);
             Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax[0];
@@ -145,6 +148,7 @@
             GL.Viewport(0, 0, w, h);
             this.MapRenderer.Resize(w, h);
             this.ObjectRenderer?.Resize(w, h);
+            this.Pipeline?.Resize(w, h);
         }
 
         public void SetWindowState(bool state) => this._windowNeedsDrawing = state;

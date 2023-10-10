@@ -64,7 +64,6 @@
                     if (ImGui.Button(lang.Translate("ui.maps.clear_marks") + "###Clear Marks"))
                     {
                         new PacketClearMarks().Send();
-                        // TODO clear marks
                     }
 
                     if (ImGui.IsItemHovered())

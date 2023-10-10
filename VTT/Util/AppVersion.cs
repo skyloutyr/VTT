@@ -7,14 +7,14 @@
     public class AppVersion
     {
         [JsonProperty("version")]
-        [JsonConverter(typeof(VersionConverter))] 
+        [JsonConverter(typeof(VersionConverter))]
         public Version Version { get; set; }
 
 
-        [JsonProperty("link")] 
+        [JsonProperty("link")]
         public string Link { get; set; }
-            
-        [JsonProperty("changelog")] 
+
+        [JsonProperty("changelog")]
         public Dictionary<string, string> Changelog { get; set; }
 
         private List<(Version, string)> _formattedChangelog;

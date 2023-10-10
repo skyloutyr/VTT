@@ -823,7 +823,7 @@
             int fbo = Client.Instance.Frontend.Renderer.Pipeline.CreateDummyForwardFBO(new Size(width, height), out VTT.GL.Texture d0, out VTT.GL.Texture d1, out VTT.GL.Texture d2, out VTT.GL.Texture d3, out VTT.GL.Texture d4, out VTT.GL.Texture d5, out VTT.GL.Texture tex);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
             GL.ActiveTexture(TextureUnit.Texture0);
-            
+
             int[] data = new int[4];
             GL.GetInteger(GetPName.Viewport, data);
             ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;

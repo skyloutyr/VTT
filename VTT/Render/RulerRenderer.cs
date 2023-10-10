@@ -112,7 +112,7 @@
                                 }
                             }
                         }
-                        
+
                     }
                 }
 
@@ -161,7 +161,7 @@
                             this.CurrentInfo.Start = this.CurrentInfo.End;
                             this.UpdateCurrentInfo();
                         }
-                        
+
                         if (this.CurrentInfo.Type == RulerType.Polyline)
                         {
                             Vector3[] nArr = new Vector3[this.CurrentInfo.Points.Length + 1];
@@ -976,7 +976,7 @@
             Vector3 vE2Snn = end - start;
             float gFac = Client.Instance.CurrentMap?.GridUnit ?? 5;
 
-            bool IsAroundZero(float f, float eps = 1e-5f) => MathF.Abs(f) <= eps;
+            static bool IsAroundZero(float f, float eps = 1e-5f) => MathF.Abs(f) <= eps;
 
             Vector3 vE2S = vE2Snn.Normalized();
             Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);

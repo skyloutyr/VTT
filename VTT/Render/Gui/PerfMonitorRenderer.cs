@@ -11,7 +11,8 @@
 
     public partial class GuiRenderer
     {
-        private Lazy<int> CachedRefreshRate { get; } = new Lazy<int>(() => {
+        private readonly Lazy<int> _cachedRefreshRate = new Lazy<int>(() =>
+        {
             unsafe
             {
                 VideoMode* vm = GLFW.GetVideoMode((Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
@@ -19,7 +20,7 @@
             }
         });
 
-        private Gradient<Vector4> _gradColors = new Gradient<Vector4>()
+        private readonly Gradient<Vector4> _gradColors = new Gradient<Vector4>()
         {
             [0] = ((Vector4)Color.LawnGreen),
             [0.125f] = ((Vector4)Color.LimeGreen),
@@ -65,55 +66,11 @@
                 ImDrawListPtr ptr = ImGui.GetWindowDrawList();
                 Vector2 c = ImGui.GetCursorScreenPos();
                 ptr.AddRectFilled(c, c + new Vector2(600, 16), Color.Black.Abgr());
-                ptr.AddRectFilled(c + new Vector2(1, 1), c + new Vector2((float)(1 + 598 * fract), 15), sectionColor.Abgr());
+                ptr.AddRectFilled(c + new Vector2(1, 1), c + new Vector2((float)(1 + (598 * fract)), 15), sectionColor.Abgr());
                 string t = $"{time:0.000}ms";
                 Vector2 ts = ImGui.CalcTextSize(t);
                 ptr.AddText(c + new Vector2(592 - ts.X, -1), Color.White.Abgr(), t);
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 20);
-            }
-
-            void RenderCPUAndGPUSection(string sectionName, double tGpu, double tCpu, double tTotal)
-            {
-                double fractGpu = tGpu / tTotal;
-                double fractCpu = tCpu / tTotal;
-
-                if (double.IsNaN(fractGpu) || double.IsNaN(fractCpu))
-                {
-                    return;
-                }
-
-                if (!cachedLastFrameFractions.TryGetValue(sectionName + "C", out SmoothedDouble cf))
-                {
-                    cachedLastFrameFractions[sectionName + "C"] = cf = new SmoothedDouble(10);
-                }
-
-                fractCpu = cf.GetAndInsert(fractCpu);
-
-                if (!cachedLastFrameFractions.TryGetValue(sectionName + "G", out cf))
-                {
-                    cachedLastFrameFractions[sectionName + "G"] = cf = new SmoothedDouble(10);
-                }
-
-                fractGpu = cf.GetAndInsert(fractGpu);
-
-                ImGui.TextDisabled(sectionName);
-                ImDrawListPtr ptr = ImGui.GetWindowDrawList();
-                Vector2 c = ImGui.GetCursorScreenPos();
-                Color sectionColor = GetColorForFraction(fractGpu);
-                ptr.AddRectFilled(c, c + new Vector2(600, 16), Color.Black.Abgr());
-                ptr.AddRectFilled(c + new Vector2(1, 1), c + new Vector2((float)(1 + 598 * fractGpu), 15), sectionColor.Abgr());
-                string t = $"{tGpu:0.000}ms";
-                Vector2 ts = ImGui.CalcTextSize(t);
-                ptr.AddText(c + new Vector2(592 - ts.X, -1), Color.White.Abgr(), t);
-
-                ptr.AddRectFilled(c + new Vector2(0, 17), c + new Vector2(600, 33), Color.Black.Abgr());
-                sectionColor = GetColorForFraction(fractCpu);
-                ptr.AddRectFilled(c + new Vector2(1, 18), c + new Vector2((float)(1 + 598 * fractCpu), 32), sectionColor.Abgr());
-                t = $"{tCpu:0.000}ms";
-                ts = ImGui.CalcTextSize(t);
-                ptr.AddText(c + new Vector2(592 - ts.X, 16), Color.White.Abgr(), t);
-
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 41);
             }
 
             if (ImGui.Begin(lang.Translate("ui.performance") + "###Performance Monitor"))
@@ -127,7 +84,7 @@
                 {
                     if (Client.Instance.Frontend.GameHandle.VSync != OpenTK.Windowing.Common.VSyncMode.Off)
                     {
-                        int rr = this.CachedRefreshRate.Value;
+                        int rr = this._cachedRefreshRate.Value;
                         frameTarget = rr != 0 ? 1000d / rr : 0;
                     }
                     else

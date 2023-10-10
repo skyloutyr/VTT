@@ -3,7 +3,6 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -328,10 +327,7 @@
             }
         }
 
-        public void Resize(int w, int h)
-        {
-            this.FastLightRenderer.Resize(w, h);
-        }
+        public void Resize(int w, int h) => this.FastLightRenderer.Resize(w, h);
 
         public void Render(Map m, double delta)
         {
@@ -360,16 +356,9 @@
             GL.Disable(EnableCap.DepthTest);
             foreach (MapObject mo in this._crossedOutObjects)
             {
-                Matrix4 modelMatrix;
-                if (mo.ClientAssignedModelBounds)
-                {
-                    modelMatrix = Matrix4.CreateScale(mo.ClientBoundingBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position);
-                }
-                else
-                {
-                    modelMatrix = mo.ClientCachedModelMatrix.ClearRotation();
-                }
-
+                Matrix4 modelMatrix = mo.ClientAssignedModelBounds
+                    ? Matrix4.CreateScale(mo.ClientBoundingBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position)
+                    : mo.ClientCachedModelMatrix.ClearRotation();
                 this.OverlayShader["model"].Set(modelMatrix);
                 this.Cross.Render();
             }

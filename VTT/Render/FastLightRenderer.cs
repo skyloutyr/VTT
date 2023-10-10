@@ -2,8 +2,6 @@
 {
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using VTT.Asset.Obj;
     using VTT.Control;
@@ -55,7 +53,6 @@
         public void Render(Map m)
         {
             this.CPUTimer.Restart();
-            Random rand = new Random(1337);
             UniversalPipeline pipeline = Client.Instance.Frontend.Renderer.Pipeline;
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 

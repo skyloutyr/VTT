@@ -744,7 +744,7 @@
                 }
             }
 
-            
+
             this.LastRequestTime = 0;
             this.PulseRequest(); // Check for new requests and process them
         }

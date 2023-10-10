@@ -22,10 +22,7 @@
         private float _scrollDYChange;
         private int _ttOffset = 0;
 
-        public void HandleScrollWheelExtra(float dx, float dy)
-        {
-            this._scrollDYChange += dy;
-        }
+        public void HandleScrollWheelExtra(float dx, float dy) => this._scrollDYChange += dy;
 
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
         {
@@ -364,7 +361,7 @@
                         LifetimeMax = lt,
                         Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
                         Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                        RelativePosition = new Vec2(4 + this.Random.NextSingle() * 56, 92),
+                        RelativePosition = new Vec2(4 + (this.Random.NextSingle() * 56), 92),
                         ScaleMultiplier = isSpecial ? 0.5f : 0.8f + (this.Random.NextSingle() * 0.4f),
                     };
 
@@ -378,12 +375,12 @@
                     LifetimeMax = lt,
                     Color = 0xffffffffu,
                     Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                    RelativePosition = new Vec2(4 + this.Random.NextSingle() * 56, 92),
+                    RelativePosition = new Vec2(4 + (this.Random.NextSingle() * 56), 92),
                     ScaleMultiplier = 1.0f + (this.Random.NextSingle() * 0.5f),
                 };
 
                 this._particles.Add(ttp);
-        }
+            }
         }
 
         private unsafe void RenderTurnTrackerControls(Map cMap, SimpleLanguage lang, GuiState state)

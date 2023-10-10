@@ -2,12 +2,10 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
-    using System.Collections.Generic;
     using System;
     using System.Numerics;
     using VTT.GL;
     using VTT.Network;
-    using VTT.Network.Packet;
     using VTT.Util;
 
     public partial class GuiRenderer

@@ -1,16 +1,11 @@
 ﻿namespace VTT.Util
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     public class DoubleBufferedStopwatch
     {
-        private Stopwatch _sw1;
-        private Stopwatch _sw2;
+        private readonly Stopwatch _sw1;
+        private readonly Stopwatch _sw2;
         private Stopwatch _current;
 
         public DoubleBufferedStopwatch()

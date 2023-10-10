@@ -3,10 +3,7 @@
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
-    using System.Runtime.CompilerServices;
-    using System.Runtime.InteropServices;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
@@ -268,7 +265,7 @@
             mraog = new Texture(TextureTarget.Texture2D);
             depth = new Texture(TextureTarget.Texture2D);
             colorOut = new Texture(TextureTarget.Texture2D);
-            
+
             static void CheckFBO(string fbo)
             {
                 FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
@@ -348,7 +345,7 @@
             });
 
             this._ebo.Bind();
-            this._ebo.SetData(new byte[] { 
+            this._ebo.SetData(new byte[] {
                 0, 1, 2, 0, 3, 1
             });
 
@@ -406,7 +403,7 @@
         }
         public ShaderProgram CompileShader(string sName, bool dirShadows, bool pointShadows)
         {
-            void RemoveDefine(ref string lines, string define)
+            static void RemoveDefine(ref string lines, string define)
             {
                 string r = "#define " + define;
                 int idx = lines.IndexOf(r);

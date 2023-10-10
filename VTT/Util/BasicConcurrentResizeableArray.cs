@@ -6,7 +6,7 @@
 
     public class BasicConcurrentResizeableArray<T> : IList<T>
     {
-        private ConcurrentDictionary<int, T> _kvs = new ConcurrentDictionary<int, T>();
+        private readonly ConcurrentDictionary<int, T> _kvs = new ConcurrentDictionary<int, T>();
         private int _index;
         public int Count => this._index;
         public T this[int i]

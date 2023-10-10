@@ -170,7 +170,7 @@
     }
 
     public enum SoundCategory
-    { 
+    {
         Unknown,
         UI
     }

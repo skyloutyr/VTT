@@ -1,23 +1,15 @@
 ﻿namespace VTT.GL
 {
     using OpenTK.Graphics.OpenGL;
-    using System;
-    using System.Threading;
 
     public class GPUStopwatch
     {
-        private uint _id;
+        private readonly uint _id;
         private long _lastTimeNanos;
         private bool _wasEverStarted;
         private bool _started = false;
 
-        public long TimeElapsedNanos
-        {
-            get
-            {
-                return this._lastTimeNanos;
-            }
-        }
+        public long TimeElapsedNanos => this._lastTimeNanos;
 
         public double ElapsedMillis => this.TimeElapsedNanos / 1000000d;
 

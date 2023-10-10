@@ -5,7 +5,7 @@
 
     public class ALSoundContainer
     {
-        private int _alId;
+        private readonly int _alId;
         public bool IsValid { get; private set; }
         public bool IsDataLoaded { get; private set; }
         public WaveAudio WaveData { get; }

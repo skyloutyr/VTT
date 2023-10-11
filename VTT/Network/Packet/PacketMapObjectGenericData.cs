@@ -98,6 +98,12 @@
                             break;
                         }
 
+                        case DataType.NameColor:
+                        {
+                            d.Item2.NameColor = (Color)d.Item3;
+                            break;
+                        }
+
                         case DataType.IsCrossedOut:
                         {
                             d.Item2.IsCrossedOut = (bool)d.Item3;
@@ -207,6 +213,7 @@
                     }
 
                     case DataType.TintColor:
+                    case DataType.NameColor:
                     {
                         o = Extensions.FromArgb(br.ReadUInt32());
                         break;
@@ -272,6 +279,7 @@
                     }
 
                     case DataType.TintColor:
+                    case DataType.NameColor:
                     {
                         bw.Write(((Color)d.Item3).Argb());
                         break;
@@ -344,6 +352,7 @@
             SelfCastsShadow,
             CastsShadow,
             TintColor,
+            NameColor,
             IsCrossedOut,
             IsInfo,
             DoNotDraw,

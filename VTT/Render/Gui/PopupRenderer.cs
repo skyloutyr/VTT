@@ -211,6 +211,32 @@
                 ImGui.EndPopup();
             }
 
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_name_color") + "###Change Name Color"))
+            {
+                System.Numerics.Vector4 tColor = ((System.Numerics.Vector4)this._editedMapObject.NameColor);
+                if (ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref tColor))
+                {
+                    this._editedMapObject.NameColor = Extensions.FromVec4(tColor.GLVector());
+                }
+
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                bool bo = ImGui.Button(ok);
+
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (bo)
+                {
+                    MapObject mo = this._editedMapObject;
+                    new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.NameColor, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mo.NameColor) } }.Send();
+                }
+
+                ImGui.EndPopup();
+            }
+
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_aura_color") + "###Change Aura Color"))
             {
                 if (this._editedBarIndex >= this._editedMapObject.Auras.Count)
@@ -882,6 +908,11 @@
             if (state.changeTintColorPopup)
             {
                 ImGui.OpenPopup("###Change Tint Color");
+            }
+
+            if (state.changeNameColorPopup)
+            {
+                ImGui.OpenPopup("###Change Name Color");
             }
 
             if (state.changeAuraColorPopup)

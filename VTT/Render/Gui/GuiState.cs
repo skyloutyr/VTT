@@ -23,6 +23,7 @@
         public bool journalPopup = false;
         public bool newStatusEffectPopup = false;
         public bool changeTintColorPopup = false;
+        public bool changeNameColorPopup = false;
         public bool changeAuraColorPopup = false;
         public bool changeFastLightColorPopup = false;
         public bool editTexturePopup = false;
@@ -59,6 +60,7 @@
             journalPopup = false;
             newStatusEffectPopup = false;
             changeTintColorPopup = false;
+            changeNameColorPopup = false;
             changeAuraColorPopup = false;
             changeFastLightColorPopup = false;
             editTexturePopup = false;

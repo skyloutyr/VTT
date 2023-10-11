@@ -606,14 +606,23 @@
                            screenPos + new System.Numerics.Vector2(96, 96),
                            screenPos + new System.Numerics.Vector2(0, 96),
                            Extensions.FromVec4(winBorder.GLVector()).Abgr()
-                       );
+                        );
 
-                        drawList.AddImage(ap.GLTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96));
+                        drawList.AddImage(ap.GLTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
 
                         System.Numerics.Vector2 tSize = ImGui.CalcTextSize(this._inspectedObject.Name);
                         ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
                         ImGui.SetCursorPosY(72);
+
+                        uint nClr = this._inspectedObject.NameColor.Abgr();
+                        if (this._inspectedObject.NameColor.Alpha() < 0.5f)
+                        {
+                            nClr = ImGui.GetColorU32(ImGuiCol.Text);
+                        }
+
+                        ImGui.PushStyleColor(ImGuiCol.Text, nClr);
                         ImGui.TextUnformatted(this._inspectedObject.Name);
+                        ImGui.PopStyleColor();
 
                         ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         ImGui.PushTextWrapPos();

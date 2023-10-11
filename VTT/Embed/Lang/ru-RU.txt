@@ -525,3 +525,4 @@ ui.fast_light.use_object_rotation=Использовать Поворот Объ
 ui.popup.change_fast_light_color=Изменение Цвета Быстрого Источника Света
 ui.performance.frame_fast_lights=Быстрые Источники Света
 ui.fast_light.intensity=Яркость
+ui.properties.name_color.tt=Цвет Имени.\nЕсли прозрачен, будет использован стандартный цвет интерфейса.

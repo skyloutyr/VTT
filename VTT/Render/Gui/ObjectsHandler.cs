@@ -78,6 +78,18 @@
                         }
 
                         ImGui.SameLine();
+                        if (ImGui.ColorButton("##NameColor", ((System.Numerics.Vector4)mo.NameColor)))
+                        {
+                            this._editedMapObject = mo;
+                            state.changeNameColorPopup = true;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.name_color.tt"));
+                        }
+
+                        ImGui.SameLine();
                         if (ImGui.InputText(lang.Translate("ui.properties.name") + "###Name", ref n, ushort.MaxValue))
                         {
                             mo.Name = n;
@@ -928,7 +940,16 @@
                     if (renderName)
                     {
                         ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + (tX * 0.5f) - (nS * 0.5f));
+
+                        uint nClr = mo.NameColor.Abgr();
+                        if (mo.NameColor.Alpha() < 0.5f)
+                        {
+                            nClr = ImGui.GetColorU32(ImGuiCol.Text);
+                        }
+
+                        ImGui.PushStyleColor(ImGuiCol.Text, nClr);
                         ImGui.TextUnformatted(mo.Name);
+                        ImGui.PopStyleColor();
                     }
 
                     if (renderBars)

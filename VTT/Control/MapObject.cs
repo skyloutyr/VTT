@@ -62,6 +62,7 @@
         }
 
         public Color TintColor { get; set; } = Color.White;
+        public Color NameColor { get; set; } = Color.Transparent;
 
         public Matrix4 ClientCachedModelMatrix { get; set; } = Matrix4.Identity;
 
@@ -149,6 +150,7 @@
             ret.Set("CastsShadow", this.CastsShadow);
             ret.Set("NoDraw", this.DoNotRender);
             ret.SetColor("TintColor", this.TintColor);
+            ret.SetColor("NameColor", this.NameColor);
             ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
             ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) =>
             {
@@ -199,6 +201,7 @@
             this.CastsShadow = e.Get("CastsShadow", true);
             this.DoNotRender = e.Get("NoDraw", false);
             this.TintColor = e.GetColor("TintColor", Color.White);
+            this.NameColor = e.GetColor("NameColor", Color.Transparent);
             this.Bars.Clear();
             this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
             this.FastLights.Clear();
@@ -259,6 +262,7 @@
             ret.Rotation = this.Rotation;
             ret.Scale = this.Scale;
             ret.TintColor = this.TintColor;
+            ret.NameColor = this.NameColor;
             ret.LightsEnabled = this.LightsEnabled;
             ret.LightsCastShadows = this.LightsCastShadows;
             ret.LightsSelfCastsShadow = this.LightsSelfCastsShadow;

@@ -169,7 +169,7 @@
         private static bool DownloadArchive(VersionSpec remote, out string filePath)
         {
             filePath = tempFileName = Path.GetTempFileName();
-            Uri uri = new Uri($"https://github.com/skyloutyr/VSCC/releases/download/{remote.version}/VTT.zip");
+            Uri uri = new Uri($"https://github.com/skyloutyr/VTT/releases/download/{remote.version}/VTT.zip");
             
             using HttpResponseMessage response = GetResult(client.Value.GetAsync(uri));
             if (response.IsSuccessStatusCode)

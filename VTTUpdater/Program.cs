@@ -194,7 +194,7 @@
                 foreach (string file in Directory.EnumerateFiles(tempDir, "*.*", SearchOption.AllDirectories))
                 {
                     string relativeFile = file.Substring(tempDir.Length + 1);
-                    if (relativeFile.ToLower().Contains("updater.exe"))
+                    if (relativeFile.ToLower().Contains("updater.exe") || relativeFile.ToLower().Contains("updater.dll"))
                     {
                         continue;
                     }

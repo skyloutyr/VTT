@@ -859,6 +859,13 @@
             ShaderProgram forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(EnableCap.SampleAlphaToCoverage);
+            }
+
             for (int i = -2; i <= maxLayer; ++i)
             {
                 shader = forwardShader;
@@ -905,12 +912,6 @@
                         }
 
                         Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                        GL.Enable(EnableCap.Blend);
-                        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                        if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-                        {
-                            GL.Enable(EnableCap.SampleAlphaToCoverage);
-                        }
 
                         shader = forwardShader;
                         this._passthroughData.TintColor = mo.TintColor.Vec4();
@@ -933,13 +934,6 @@
                         {
                             forwardShader.Bind();
                         }
-
-                        if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-                        {
-                            GL.Disable(EnableCap.SampleAlphaToCoverage);
-                        }
-
-                        GL.Disable(EnableCap.Blend);
                     }
 
                     if (mo.IsCrossedOut && mo.ClientRenderedThisFrame)
@@ -948,6 +942,13 @@
                     }
                 }
             }
+
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(EnableCap.SampleAlphaToCoverage);
+            }
+
+            GL.Disable(EnableCap.Blend);
 
             this.CPUTimerMain.Stop();
             this.FastLightRenderer.Render(m);

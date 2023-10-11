@@ -110,10 +110,7 @@
         }
 
         private bool _volumeChangedNotification;
-        public void NotifyOfVolumeChanges()
-        {
-            this._volumeChangedNotification = true;
-        }
+        public void NotifyOfVolumeChanges() => this._volumeChangedNotification = true;
 
         private void SetSourceVolume(SoundCategory cat, int src)
         {

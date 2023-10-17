@@ -924,7 +924,7 @@
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
                     if (hasNp)
                     {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null)
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
                         {
                             System.Numerics.Vector2 cPn = ImGui.GetCursorPos();
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();
@@ -932,7 +932,7 @@
                             GL.Texture tex = a.Texture.GetOrCreateGLTexture(out VTT.Asset.Glb.TextureAnimation anim);
                             VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
                             System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
-                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Zw.SystemVector());
+                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Xy.SystemVector() + frame.LocationUniform.Zw.SystemVector());
                             ImGui.SetCursorPos(cPn + customPadding);
                         }
                     }

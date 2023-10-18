@@ -146,6 +146,14 @@
                 }
             }
 
+            if (this.DebugEnabled)
+            {
+                if (ImGui.Button("Debug Crash"))
+                {
+                    throw new Exception("Manual exception triggered");
+                }
+            }
+
             ImGui.End();
         }
     }

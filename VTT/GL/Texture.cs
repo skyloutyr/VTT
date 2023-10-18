@@ -14,6 +14,7 @@
         private readonly TextureTarget _type;
 
         public Size Size { get; set; }
+        public const int ImageMaximumContiguousMemoryAllowance = 1024 * 1024 * 128; // 128 mb
 
         public Texture(TextureTarget tt, bool gl = true)
         {
@@ -90,33 +91,9 @@
                 return;
             }
 
-            GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
-            TextureTarget selfTT = tType;
-            if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
+            if (img.Width * img.Height * sizeof(T) <= ImageMaximumContiguousMemoryAllowance)
             {
-                T* pixelBuffer = (T*)Marshal.AllocHGlobal(sizeof(T) * img.Width * 4);
-                img.ProcessPixelRows(x =>
-                {
-                    for (int y = 0; y < x.Height; ++y)
-                    {
-                        Span<T> rowSpan = x.GetRowSpan(y);
-                        if (y != 0 && y % 4 == 0)
-                        {
-                            GL.TexSubImage2D(selfTT, level, 0, y - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
-                        }
-
-                        T* tOffsetB = pixelBuffer + (y % 4 * img.Width);
-                        Span<T> s = new Span<T>(tOffsetB, img.Width);
-                        rowSpan.CopyTo(s);
-                    }
-
-                    GL.TexSubImage2D(selfTT, level, 0, img.Height - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
-                });
-
-                Marshal.FreeHGlobal((IntPtr)pixelBuffer);
-            }
-            else
-            {
+                T* pixels = (T*)Marshal.AllocHGlobal(img.Width * img.Height * sizeof(T));
                 img.ProcessPixelRows(x =>
                 {
                     for (int y = 0; y < x.Height; ++y)
@@ -124,10 +101,56 @@
                         Span<T> rowSpan = x.GetRowSpan(y);
                         fixed (void* span = rowSpan)
                         {
-                            GL.TexSubImage2D(selfTT, level, 0, y, x.Width, 1, GetFormatFromPixelType(typeof(T)), type, new IntPtr(span));
+                            int spanLength = rowSpan.Length * sizeof(T);
+                            System.Buffer.MemoryCopy(span, pixels + (y * x.Width), spanLength, spanLength);
                         }
                     }
                 });
+
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixels);
+                Marshal.FreeHGlobal((IntPtr)pixels);
+            }
+            else
+            {
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
+                TextureTarget selfTT = tType;
+                if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
+                {
+                    T* pixelBuffer = (T*)Marshal.AllocHGlobal(sizeof(T) * img.Width * 4);
+                    img.ProcessPixelRows(x =>
+                    {
+                        for (int y = 0; y < x.Height; ++y)
+                        {
+                            Span<T> rowSpan = x.GetRowSpan(y);
+                            if (y != 0 && y % 4 == 0)
+                            {
+                                GL.TexSubImage2D(selfTT, level, 0, y - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
+                            }
+
+                            T* tOffsetB = pixelBuffer + (y % 4 * img.Width);
+                            Span<T> s = new Span<T>(tOffsetB, img.Width);
+                            rowSpan.CopyTo(s);
+                        }
+
+                        GL.TexSubImage2D(selfTT, level, 0, img.Height - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
+                    });
+
+                    Marshal.FreeHGlobal((IntPtr)pixelBuffer);
+                }
+                else
+                {
+                    img.ProcessPixelRows(x =>
+                    {
+                        for (int y = 0; y < x.Height; ++y)
+                        {
+                            Span<T> rowSpan = x.GetRowSpan(y);
+                            fixed (void* span = rowSpan)
+                            {
+                                GL.TexSubImage2D(selfTT, level, 0, y, x.Width, 1, GetFormatFromPixelType(typeof(T)), type, new IntPtr(span));
+                            }
+                        }
+                    });
+                }
             }
         }
 

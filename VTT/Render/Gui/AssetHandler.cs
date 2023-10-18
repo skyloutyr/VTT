@@ -198,8 +198,7 @@
             {
                 if (ImGui.Begin(lang.Translate("ui.assets") + "###Assets"))
                 {
-                    this._mouseOverAssets = ImGui.IsWindowHovered();
-
+                    
                     ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
                     if (ImGui.ImageButton("btn_asset_back", this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
                     {
@@ -494,7 +493,9 @@
                     }
                 }
 
+                this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem | ImGuiHoveredFlags.RootAndChildWindows);
                 ImGui.End();
+
             }
         }
 

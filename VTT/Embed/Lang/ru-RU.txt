@@ -526,3 +526,4 @@ ui.popup.change_fast_light_color=Изменение Цвета Быстрого 
 ui.performance.frame_fast_lights=Быстрые Источники Света
 ui.fast_light.intensity=Яркость
 ui.properties.name_color.tt=Цвет Имени.\nЕсли прозрачен, будет использован стандартный цвет интерфейса.
+menu.settings.sound.disable_all=Отключить Звуки

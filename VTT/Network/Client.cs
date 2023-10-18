@@ -594,6 +594,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableSoundTurnTracker { get; set; } = true;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool DisableSounds { get; set; } = false;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -641,7 +645,8 @@
                 SoundUIVolume = 1.0f,
                 EnableSoundChatMessage = true,
                 EnableChatNotification = true,
-                EnableSoundTurnTracker = true
+                EnableSoundTurnTracker = true,
+                DisableSounds = false
             };
 
             ret.Save();

@@ -21,6 +21,12 @@
 
         public void Init()
         {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                Client.Instance.Logger.Log(Util.LogLevel.Warn, $"Sound system disabled.");
+                return;
+            }
+
             try
             {
                 List<string> devices = ALC.GetString(AlcGetStringList.DeviceSpecifier);
@@ -103,6 +109,11 @@
         private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer)>();
         public void PlaySound(ALSoundContainer sc, SoundCategory cat)
         {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                return;
+            }
+
             if (this.IsAvailable && sc != null)
             {
                 this._queuedSounds.Enqueue((cat, sc));
@@ -114,6 +125,11 @@
 
         private void SetSourceVolume(SoundCategory cat, int src)
         {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                return;
+            }
+
             float volume = Client.Instance.Settings.SoundMasterVolume;
             if (cat == SoundCategory.UI)
             {
@@ -125,6 +141,11 @@
 
         public void Update()
         {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                return;
+            }
+
             if (this.IsAvailable)
             {
                 ALC.MakeContextCurrent(this._ctx);

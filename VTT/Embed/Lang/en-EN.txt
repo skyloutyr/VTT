@@ -526,3 +526,4 @@ ui.popup.change_fast_light_color=Change Fast Light Color
 ui.performance.frame_fast_lights=Fast Lights
 ui.fast_light.intensity=Intensity
 ui.properties.name_color.tt=Change Name Color.\nIf transparent, the default interface color will be used.
+menu.settings.sound.disable_all=Disable All Sounds

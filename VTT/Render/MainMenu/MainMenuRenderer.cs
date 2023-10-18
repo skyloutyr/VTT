@@ -751,6 +751,13 @@
 
                 if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound") + "###Sound"))
                 {
+                    bool bDisableSounds = Client.Instance.Settings.DisableSounds;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.sound.disable_all"), ref bDisableSounds))
+                    {
+                        Client.Instance.Settings.DisableSounds = bDisableSounds;
+                        Client.Instance.Settings.Save();
+                    }
+
                     ImGui.Text(lang.Translate("menu.settings.sound.master"));
                     float svMaster = Client.Instance.Settings.SoundMasterVolume;
                     if (ImGui.SliderFloat("##MasterVolume", ref svMaster, 0, 1))

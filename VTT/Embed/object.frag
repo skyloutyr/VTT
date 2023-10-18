@@ -95,7 +95,7 @@ layout (location = 5) out vec4 g_emission;
 
 const vec3 surface_reflection_for_dielectrics = vec3(0.04);
 const float PI = 3.14159265359;
-const float eff_epsilon = 0.00001;
+const float eff_epsilon = 0.0001;
 
 vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 {

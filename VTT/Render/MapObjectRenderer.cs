@@ -860,6 +860,11 @@
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             GL.Enable(EnableCap.Blend);
+            GL.Disable(IndexedEnableCap.Blend, 1);
+            GL.Disable(IndexedEnableCap.Blend, 2);
+            GL.Disable(IndexedEnableCap.Blend, 3);
+            GL.Disable(IndexedEnableCap.Blend, 4);
+            GL.Disable(IndexedEnableCap.Blend, 5);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {

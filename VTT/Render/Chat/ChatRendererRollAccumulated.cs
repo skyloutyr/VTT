@@ -53,7 +53,7 @@
             drawList.AddTriangleFilled(new(cX + 2, cY + 31), new(cX + 1.5f, cY + 16), new(cX + 2, cY + 31), color);
 
             System.Numerics.Vector2 padding = ImGui.GetStyle().CellPadding;
-            System.Numerics.Vector2 tLen = ImGui.CalcTextSize(this.Container.Blocks[0].Text) + (padding * 2);
+            System.Numerics.Vector2 tLen = ImGuiHelper.CalcTextSize(this.Container.Blocks[0].Text) + (padding * 2);
 
             bool overRect = ImGui.IsMouseHoveringRect(new(cX + (w / 2) - (tLen.X / 2), cY + 16 - (tLen.Y / 2)), new(cX + (w / 2) + (tLen.X / 2), cY + 16 + (tLen.Y / 2)));
             if (overRect)

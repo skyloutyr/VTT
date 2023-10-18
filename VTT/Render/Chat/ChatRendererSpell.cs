@@ -70,17 +70,17 @@
                 Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
                 drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), name.Text);
-                Vector2 ts = ImGui.CalcTextSize(cname.Text);
+                Vector2 ts = ImGuiHelper.CalcTextSize(cname.Text);
                 drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), cname.Text);
                 drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color.Abgr(), schoollevel.Text);
                 uint bcl = this.Container.SenderColor.Abgr();
                 uint fcl = ImGui.GetColorU32(ImGuiCol.Text);
                 float maxW = MathF.Max(
-                    ImGui.CalcTextSize(lang.Translate("chat.spell.components")).X,
-                    MathF.Max(ImGui.CalcTextSize(lang.Translate("chat.spell.cast_time")).X,
-                    MathF.Max(ImGui.CalcTextSize(lang.Translate("chat.spell.duration")).X,
-                    MathF.Max(ImGui.CalcTextSize(lang.Translate("chat.spell.range")).X,
-                    ImGui.CalcTextSize(lang.Translate("chat.spell.target")).X)))
+                    ImGuiHelper.CalcTextSize(lang.Translate("chat.spell.components")).X,
+                    MathF.Max(ImGuiHelper.CalcTextSize(lang.Translate("chat.spell.cast_time")).X,
+                    MathF.Max(ImGuiHelper.CalcTextSize(lang.Translate("chat.spell.duration")).X,
+                    MathF.Max(ImGuiHelper.CalcTextSize(lang.Translate("chat.spell.range")).X,
+                    ImGuiHelper.CalcTextSize(lang.Translate("chat.spell.target")).X)))
                 ) + 8;
 
                 string unspecified = lang.Translate("chat.spell.unspecified");

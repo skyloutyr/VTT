@@ -280,7 +280,7 @@
                                 */
                             }
 
-                            float tW = ImGui.CalcTextSize(cMap.TurnTracker.EntryName).X;
+                            float tW = ImGuiHelper.CalcTextSize(cMap.TurnTracker.EntryName).X;
                             ImGui.PushStyleColor(ImGuiCol.Text, (Vec4)cMap.TurnTracker.CurrentColor.Darker(0.3f));
                             if (Client.Instance.Settings.TextThickDropShadow)
                             {

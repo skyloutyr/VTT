@@ -289,7 +289,7 @@
                 Texture pTex = p.Type == Ping.PingType.Question ? this.PingQuestion : p.Type == Ping.PingType.Attack ? this.PingAttack : p.Type == Ping.PingType.Exclamation ? this.PingExclamation : p.Type == Ping.PingType.Generic ? this.PingGeneric : this.PingDefend;
                 winDrawList.AddImage(pTex, screenxy2 - new Vector2(16, 16), screenxy2 + new Vector2(16, 16));
                 string oName = p.OwnerName;
-                Vector2 tSize = ImGui.CalcTextSize(oName);
+                Vector2 tSize = ImGuiHelper.CalcTextSize(oName);
                 winDrawList.AddText(screenxy2 + new Vector2(2, 26) - (tSize / 2), Color.Black.Abgr(), oName);
                 winDrawList.AddText(screenxy2 + new Vector2(1, 25) - (tSize / 2), Color.White.Abgr(), oName);
                 winDrawList.AddText(screenxy2 + new Vector2(0, 24) - (tSize / 2), p.OwnerColor.Abgr(), oName);

@@ -20,7 +20,7 @@
         public override void Cache(out float width, out float height)
         {
             Vector2 imPadding = ImGui.GetStyle().CellPadding;
-            Vector2 imSeparatorSize = ImGui.CalcTextSize(" + ");
+            Vector2 imSeparatorSize = ImGuiHelper.CalcTextSize(" + ");
             float cX = 8;
             float cY = 8;
             float maxX = ImGui.GetWindowContentRegionMax().X - imPadding.X - 24;
@@ -31,7 +31,7 @@
             for (int i = 0; i < this.Container.Blocks.Count; i++)
             {
                 ChatBlock block = this.Container.Blocks[i];
-                Vector2 imTextSize = ImGui.CalcTextSize(block.Text) + (imPadding * 2);
+                Vector2 imTextSize = ImGuiHelper.CalcTextSize(block.Text) + (imPadding * 2);
                 if (cX + imTextSize.X > maxX && rollContainers.Count > 0)
                 {
                     this._lines.Add(rollContainers.ToArray());
@@ -60,7 +60,7 @@
             }
 
             resString += " = " + result;
-            Vector2 imResultSize = ImGui.CalcTextSize(result.ToString()) + (imPadding * 2);
+            Vector2 imResultSize = ImGuiHelper.CalcTextSize(result.ToString()) + (imPadding * 2);
             if (cX + imResultSize.X > maxX && rollContainers.Count > 0)
             {
                 this._lines.Add(rollContainers.ToArray());
@@ -154,7 +154,7 @@
                         ImGui.EndTooltip();
                     }
 
-                    aW = block.x + block.w + ImGui.CalcTextSize(" + ").X;
+                    aW = block.x + block.w + ImGuiHelper.CalcTextSize(" + ").X;
                 }
 
                 cH += mh;

@@ -54,7 +54,7 @@
             {
                 string text = this.Container.Blocks[0].Text;
                 Vector2 center = localPos + (new Vector2(size.X, h) / 2);
-                ImGui.SetCursorPos(center - (ImGui.CalcTextSize(text) / 2));
+                ImGui.SetCursorPos(center - (ImGuiHelper.CalcTextSize(text) / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[0].Color.Abgr());
                 ImGui.TextUnformatted(text);
                 ImGui.PopStyleColor();
@@ -65,7 +65,7 @@
                 {
                     string text = this.Container.Blocks[1].Text;
                     Vector2 center = localPos + (new Vector2(size.X, h) / 2);
-                    ImGui.SetCursorPos(center - (ImGui.CalcTextSize(text) / 2));
+                    ImGui.SetCursorPos(center - (ImGuiHelper.CalcTextSize(text) / 2));
                     ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[1].Color.Abgr());
                     ImGui.TextUnformatted(text);
                     ImGui.PopStyleColor();

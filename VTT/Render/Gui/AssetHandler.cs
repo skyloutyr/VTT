@@ -309,7 +309,7 @@
                         if (hover)
                         {
                             txt = d.Name;
-                            label_size = ImGui.CalcTextSize(txt);
+                            label_size = ImGuiHelper.CalcTextSize(txt);
                             ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
                             ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
                             ImGui.TextUnformatted(txt);
@@ -400,7 +400,7 @@
                         if (hover)
                         {
                             txt = aRef.Name;
-                            label_size = ImGui.CalcTextSize(txt);
+                            label_size = ImGuiHelper.CalcTextSize(txt);
                             ImGui.SetNextWindowSize(label_size + new System.Numerics.Vector2(16, 16));
                             ImGui.Begin("Name Highlight", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.Tooltip);
                             ImGui.TextUnformatted(txt);
@@ -652,7 +652,7 @@
             while (c < original.Length && label_size.X < 64)
             {
                 txt += original[c++];
-                label_size = ImGui.CalcTextSize(txt);
+                label_size = ImGuiHelper.CalcTextSize(txt);
             }
 
             if (c < original.Length)

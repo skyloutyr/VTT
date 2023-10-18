@@ -68,7 +68,7 @@
                 ptr.AddRectFilled(c, c + new Vector2(600, 16), Color.Black.Abgr());
                 ptr.AddRectFilled(c + new Vector2(1, 1), c + new Vector2((float)(1 + (598 * fract)), 15), sectionColor.Abgr());
                 string t = $"{time:0.000}ms";
-                Vector2 ts = ImGui.CalcTextSize(t);
+                Vector2 ts = ImGuiHelper.CalcTextSize(t);
                 ptr.AddText(c + new Vector2(592 - ts.X, -1), Color.White.Abgr(), t);
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 20);
             }

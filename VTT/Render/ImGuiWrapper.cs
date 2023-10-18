@@ -6,11 +6,13 @@
     using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Runtime.InteropServices;
+    using System.Text;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
@@ -334,9 +336,13 @@ void main()
                             break;
                         }
 
+                        if (Rune.TryCreate(start, out Rune r))
+                        {
+                            builder.AddText(r.ToString());
+                        }
 
-                        builder.AddChar((ushort)start++);
-                        if (start > end)
+                        //builder.AddChar((ushort)start++);
+                        if (++start > end)
                         {
                             break;
                         }
@@ -347,7 +353,10 @@ void main()
                     uint cp = Convert.ToUInt32(codepoints, 16);
                     if (cp <= ushort.MaxValue)
                     {
-                        builder.AddChar((ushort)cp);
+                        if (Rune.TryCreate(cp, out Rune r))
+                        {
+                            builder.AddText(r.ToString());
+                        }
                     }
                 }
             }
@@ -403,7 +412,7 @@ void main()
 
             for (var n = 0; n < drawData.CmdListsCount; n++)
             {
-                var cmdList = drawData.CmdListsRange[n];
+                var cmdList = drawData.CmdLists[n];
 
                 _vertexArrayObject.Bind();
                 // Upload vertex/index buffers
@@ -465,6 +474,19 @@ void main()
                 _vertexArrayObject.Dispose();
                 _fontTexture.Dispose();
             }
+        }
+    }
+
+    public static class ImGuiHelper
+    { 
+        public static System.Numerics.Vector2 CalcTextSize(string tIn)
+        {
+            if (string.IsNullOrEmpty(tIn))
+            {
+                return System.Numerics.Vector2.Zero;
+            }
+
+            return ImGui.CalcTextSize(tIn);
         }
     }
 }

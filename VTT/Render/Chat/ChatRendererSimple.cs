@@ -50,8 +50,8 @@
 
                 string tR1 = r1.Text;
                 string tR2 = r2.Text;
-                Vector2 sR1 = ImGui.CalcTextSize(tR1);
-                Vector2 sR2 = ImGui.CalcTextSize(tR2);
+                Vector2 sR1 = ImGuiHelper.CalcTextSize(tR1);
+                Vector2 sR2 = ImGuiHelper.CalcTextSize(tR2);
 
                 uint cell = Extensions.FromHex("202020").Abgr();
                 uint cellOutline = Color.Gray.Abgr();
@@ -123,12 +123,12 @@
                     ImGui.EndTooltip();
                 }
 
-                Vector2 sRn = ImGui.CalcTextSize(rnameAndMod.Text);
+                Vector2 sRn = ImGuiHelper.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color.Abgr());
                 ImGui.TextUnformatted(rnameAndMod.Text);
                 ImGui.PopStyleColor();
-                sRn = ImGui.CalcTextSize(rcharname.Text);
+                sRn = ImGuiHelper.CalcTextSize(rcharname.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 60) - (sRn / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color.Abgr());
                 ImGui.TextUnformatted(rcharname.Text);

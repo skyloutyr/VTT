@@ -28,7 +28,7 @@
             List<ImCachedLine> lines = new List<ImCachedLine>();
             float wMax = 0;
             float cW = 0;
-            System.Numerics.Vector2 ssize = ImGui.CalcTextSize(" ");
+            System.Numerics.Vector2 ssize = ImGuiHelper.CalcTextSize(" ");
             this._spacebarWidth = ssize.X;
             this._spacebarHeight = ssize.Y;
 

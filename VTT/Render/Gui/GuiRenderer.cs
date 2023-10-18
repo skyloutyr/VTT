@@ -361,9 +361,9 @@
                             {
                                 float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
-                                System.Numerics.Vector2 tLen = ImGui.CalcTextSize(ri.OwnerName);
-                                System.Numerics.Vector2 tLen2 = ImGui.CalcTextSize(ri.Tooltip);
-                                System.Numerics.Vector2 tLen3 = ImGui.CalcTextSize(text);
+                                System.Numerics.Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
+                                System.Numerics.Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
+                                System.Numerics.Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
                                 float maxW = MathF.Max(tLen.X, MathF.Max(tLen2.X, tLen3.X));
                                 ImGui.SetNextWindowPos(screen.Xy.SystemVector() - (new System.Numerics.Vector2(maxW, tLen.Y) / 2));
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
@@ -420,7 +420,7 @@
                             {
                                 float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
-                                var tLen = ImGui.CalcTextSize(text);
+                                var tLen = ImGuiHelper.CalcTextSize(text);
                                 ImGui.SetNextWindowPos(halfScreen.Xy.SystemVector() - (tLen / 2));
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
                                 if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
@@ -610,7 +610,7 @@
 
                         drawList.AddImage(ap.GLTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
 
-                        System.Numerics.Vector2 tSize = ImGui.CalcTextSize(this._inspectedObject.Name);
+                        System.Numerics.Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
                         ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
                         ImGui.SetCursorPosY(72);
 

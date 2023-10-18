@@ -15,7 +15,7 @@
         {
             this.Owner = owner;
             this.Text = text;
-            var systemSize = ImGui.CalcTextSize(this.Text);
+            var systemSize = ImGuiHelper.CalcTextSize(this.Text);
             this.IsExpression = owner.Type.HasFlag(ChatBlockType.Expression);
             this.Width = systemSize.X + (this.IsExpression ? 8 : 0);
             this.Height = systemSize.Y + (this.IsExpression ? 8 : 0);

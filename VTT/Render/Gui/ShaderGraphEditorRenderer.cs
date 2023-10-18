@@ -291,7 +291,7 @@
 
                                     drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 6, mOverThisOut ? Color.RoyalBlue.Abgr() : Color.Blue.Abgr());
                                     drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 4, GetColorForType(no.SelfType).Abgr());
-                                    SVec2 ts = ImGui.CalcTextSize(no.Name);
+                                    SVec2 ts = ImGuiHelper.CalcTextSize(no.Name);
                                     drawPtr.AddText(nSPos + new SVec2(-12 - ts.X, yOffset - 10), Color.White.Abgr(), no.Name);
                                     yOffset += 20;
                                 }

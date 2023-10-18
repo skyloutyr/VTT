@@ -900,7 +900,7 @@
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
 
-                    float nS = ImGui.CalcTextSize(mo.Name).X;
+                    float nS = ImGuiHelper.CalcTextSize(mo.Name).X;
                     float tX = nS;
                     tX = MathF.Max(128, tX + 16);
                     bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
@@ -974,7 +974,7 @@
                                 ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 12), string.Empty);
                                 ImGui.PopStyleVar();
 
-                                float tW = ImGui.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
+                                float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
                                 ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0, 0, 0, 1));
                                 if (Client.Instance.Settings.TextThickDropShadow)
                                 {
@@ -1007,7 +1007,7 @@
                                 ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (System.Numerics.Vector4)db.DrawColor);
                                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5);
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 7);
-                                float tW = ImGui.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
+                                float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
                                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW + (hasNp ? customPadding.X : 0));
                                 ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));

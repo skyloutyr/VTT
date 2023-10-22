@@ -9,6 +9,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
@@ -198,7 +199,8 @@
             {
                 if (ImGui.Begin(lang.Translate("ui.assets") + "###Assets"))
                 {
-                    
+                    // Old asset rendering code
+                    /*
                     ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
                     if (ImGui.ImageButton("btn_asset_back", this.BackIcon, Vec12x12) && this.CurrentFolder.Parent != null)
                     {
@@ -494,8 +496,287 @@
                 }
 
                 this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem | ImGuiHoveredFlags.RootAndChildWindows);
-                ImGui.End();
+                */
 
+                    System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
+
+                    ImGui.BeginChildFrame(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X, 24), ImGuiWindowFlags.MenuBar);
+                    if (ImGui.BeginMenuBar())
+                    {
+                        if (ImGui.BeginMenu(lang.Translate("ui.menu.new")))
+                        {
+                            if (ImGui.MenuItem(lang.Translate("ui.asset.new.folder")))
+                            {
+                                state.openNewFolderPopup = true;
+                            }
+
+                            if (ImGui.MenuItem(lang.Translate("ui.asset.new.particle")))
+                            {
+                                ParticleSystem ps = new ParticleSystem();
+                                AssetMetadata metadata = new AssetMetadata() { Name = "New Particle System", Type = AssetType.ParticleSystem, Version = 2 };
+                                using MemoryStream ms = new MemoryStream();
+                                using BinaryWriter bw = new BinaryWriter(ms);
+                                ps.WriteV2(bw);
+                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
+                                using MemoryStream imgMs = new MemoryStream();
+                                img.SaveAsPng(imgMs);
+                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                pau.Send(Client.Instance.NetClient);
+                            }
+
+                            if (ImGui.MenuItem(lang.Translate("ui.asset.new.shader")))
+                            {
+                                ShaderGraph sn = new ShaderGraph();
+                                sn.FillDefaultLayout();
+                                AssetMetadata metadata = new AssetMetadata() { Name = "New Shader", Type = AssetType.Shader, Version = 1 };
+                                using MemoryStream ms = new MemoryStream();
+                                using BinaryWriter bw = new BinaryWriter(ms);
+                                sn.Serialize().Write(bw);
+                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                using MemoryStream imgMs = new MemoryStream();
+                                img.SaveAsPng(imgMs);
+                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                pau.Send(Client.Instance.NetClient);
+                            }
+
+                            ImGui.EndMenu();
+                        }
+
+                        ImGui.MenuItem(this.CurrentFolder.GetPath(), false);
+                        ImGui.EndMenuBar();
+                    }
+
+                    ImGui.EndChildFrame();
+
+                    var winPadding = ImGui.GetStyle().WindowPadding;
+                    var framePadding = ImGui.GetStyle().FramePadding;
+
+                    ImGui.Columns(2);
+                    ImGui.SetColumnWidth(0, 240);
+                    float cw = ImGui.GetColumnWidth();
+                    ImGui.BeginChildFrame(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - winPadding.Y * 2 - framePadding.Y * 2 - 20), ImGuiWindowFlags.HorizontalScrollbar);
+                    void RecursivelyDrawDirectories(AssetDirectory dir)
+                    {
+                        bool isCurrent = dir.Equals(this.CurrentFolder);
+                        bool haveMoreDirs = dir.Directories.Count > 0;
+                        ImGuiTreeNodeFlags tnf = ImGuiTreeNodeFlags.None;
+                        if (!haveMoreDirs)
+                        {
+                            tnf |= ImGuiTreeNodeFlags.Leaf;
+                        }
+
+                        if (isCurrent)
+                        {
+                            System.Numerics.Vector4 clr = *ImGui.GetStyleColorVec4(ImGuiCol.HeaderHovered);
+                            ImGui.PushStyleColor(ImGuiCol.Text, clr);
+                            ImGui.SetNextItemOpen(true);
+                        }
+
+                        if (ImGui.TreeNodeEx(dir.Name, tnf))
+                        {
+                            if (isCurrent)
+                            {
+                                ImGui.PopStyleColor();
+                            }
+
+                            if ((ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) || (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()))
+                            {
+                                this.CurrentFolder = dir;
+                            }
+
+                            if (haveMoreDirs)
+                            {
+                                foreach (AssetDirectory ad in dir.Directories)
+                                {
+                                    RecursivelyDrawDirectories(ad);
+                                }
+                            }
+
+                            ImGui.TreePop();
+                        }
+                        else
+                        {
+                            if ((ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) || (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()))
+                            {
+                                this.CurrentFolder = dir;
+                            }
+
+                            if (isCurrent)
+                            {
+                                ImGui.PopStyleColor();
+                            }
+                        }
+                    }
+
+                    RecursivelyDrawDirectories(Client.Instance.AssetManager.Root);
+
+                    ImGui.EndChildFrame();
+
+                    ImGui.NextColumn();
+                    cw = ImGui.GetColumnWidth();
+                    ImGui.BeginChildFrame(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - winPadding.Y * 2 - framePadding.Y * 2 - 20));
+                    this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
+                    foreach (AssetRef aRef in this.CurrentFolder.Refs.OrderBy(x => x.Name))
+                    {
+                        float cursorXBeforeElement = ImGui.GetCursorPosX();
+                        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, System.Numerics.Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, System.Numerics.Vector2.Zero);
+                        ImGui.BeginChildFrame(ImGui.GetID("Asset_" + aRef.AssetID), new System.Numerics.Vector2(96, 112));
+                        AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
+
+                        bool hover = ImGui.IsWindowHovered();
+                        bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+
+                        var cursorCurrent = ImGui.GetCursorScreenPos();
+                        ImDrawListPtr idlp = ImGui.GetWindowDrawList();
+
+                        if (a == AssetStatus.Await)
+                        {
+                            int frame =
+                                (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
+                            float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
+                            float texelSize = 1f / this.LoadingSpinnerFrames;
+                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : this.LoadingSpinner, cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), new System.Numerics.Vector2(texelIndexStart, 0), new System.Numerics.Vector2(texelIndexStart + texelSize, 1));
+                            if (hover)
+                            {
+                                idlp.AddRect(cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
+                            }
+                        }
+                        else
+                        {
+                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96));
+                            if (hover)
+                            {
+                                idlp.AddRect(cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
+                            }
+                        }
+
+                        string aName = aRef.Name;
+                        System.Numerics.Vector2 ts = FitLabelByBinarySearch(aRef.Name, ref aName);
+                        idlp.AddText(cursorCurrent + new System.Numerics.Vector2(48 - ts.X * 0.5f, 96), hover ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Text), aName);
+                        idlp.AddImage(
+                            aRef.Type switch
+                            { 
+                                AssetType.Texture => this.AssetImageIcon,
+                                AssetType.Model => this.AssetModelIcon,
+                                AssetType.Shader => this.AssetShaderIcon,
+                                AssetType.ParticleSystem => this.AssetParticleIcon,
+                                _ => this.ErrorIcon
+                            },
+
+                            cursorCurrent + new System.Numerics.Vector2(80, 80),
+                            cursorCurrent + new System.Numerics.Vector2(96, 96)
+                        );
+
+                        if (hover)
+                        {
+                            if (!this._lmbDown && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+                            {
+                                this._lmbDown = true;
+                                this._draggedRef = aRef;
+                            }
+                        }
+
+                        #region Context Menu
+                        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsItemHovered())
+                        {
+                            if (ImGui.BeginPopupContextWindow(aRef.AssetID.ToString()))
+                            {
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.rename") + "###Rename"))
+                                {
+                                    state.editAssetPopup = true;
+                                    this._editedRef = aRef;
+                                    this._newFolderNameString = aRef.Name;
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Texture)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit.tex") + "###Edit Texture"))
+                                    {
+                                        state.editTexturePopup = true;
+                                        this._editedRef = aRef;
+                                        this._editedTextureMetadataCopy = aRef.Meta.TextureInfo.Copy();
+                                    }
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.ParticleSystem)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit_particle") + "###Edit Particle System"))
+                                    {
+                                        state.editParticleSystemPopup = true;
+                                        this._editedParticleSystemId = aRef.AssetID;
+                                        Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystem = null;
+                                        Client.Instance.Frontend.Renderer.ParticleRenderer.CurrentlyEditedSystemInstance = null;
+                                    }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.duplicate_particle") + "###Duplicate Particle System"))
+                                    {
+                                        Client.Instance.AssetManager.ClientAssetLibrary.PerformClientAssetAction(aRef.AssetID, AssetType.ParticleSystem, (status, a) =>
+                                        {
+                                            if (status == AssetStatus.Return && a != null && a.Type == AssetType.ParticleSystem)
+                                            {
+                                                ParticleSystem ps = a.ParticleSystem.Copy();
+                                                AssetMetadata metadata = new AssetMetadata() { Name = aRef.Name + " (copy)", Type = AssetType.ParticleSystem, Version = aRef.Meta.Version };
+                                                using MemoryStream ms = new MemoryStream();
+                                                using BinaryWriter bw = new BinaryWriter(ms);
+                                                ps.WriteV2(bw);
+                                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0.39f, 0.39f, 0.39f, 1.0f));
+                                                using MemoryStream imgMs = new MemoryStream();
+                                                img.SaveAsPng(imgMs);
+                                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                                pau.Send(Client.Instance.NetClient);
+                                            }
+                                        });
+                                    }
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Shader)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit_shader") + "###Edit Shader"))
+                                    {
+                                        state.editShaderPopup = true;
+                                        this._editedShaderId = aRef.AssetID;
+                                    }
+                                }
+
+                                if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))
+                                {
+                                    state.deleteAssetPopup = true;
+                                    this._editedRef = aRef;
+                                }
+
+                                ImGui.EndPopup();
+                            }
+                        }
+                        #endregion
+
+                        ImGui.EndChildFrame();
+                        if (hover)
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                            ImGui.TextUnformatted(aRef.AssetID.ToString());
+                            ImGui.PopStyleColor();
+
+                            ImGui.TextUnformatted(aRef.Name);
+                            ImGui.TextUnformatted(lang.Translate("ui.asset_type." + aRef.Type.ToString().ToLower()));
+
+                            ImGui.EndTooltip();
+                        }
+
+                        ImGui.PopStyleVar();
+                        ImGui.PopStyleVar();
+                        if (cursorXBeforeElement + 192 < cw)
+                        {
+                            ImGui.SameLine();
+                        }
+
+                    }
+
+                    ImGui.EndChildFrame();
+                }
+
+                ImGui.End();
             }
         }
 
@@ -650,7 +931,7 @@
             System.Numerics.Vector2 label_size = default;
             txt = original[..1];
             int c = 1;
-            while (c < original.Length && label_size.X < 64)
+            while (c < original.Length && label_size.X < 96)
             {
                 txt += original[c++];
                 label_size = ImGuiHelper.CalcTextSize(txt);
@@ -658,8 +939,8 @@
 
             if (c < original.Length)
             {
-                txt = txt[..^3];
-                txt += "...";
+                txt = txt[..^1];
+                txt += "…";
             }
 
             return label_size;

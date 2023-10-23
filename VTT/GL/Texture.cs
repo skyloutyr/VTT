@@ -180,9 +180,14 @@
 
         private static PixelFormat GetFormatFromPixelType(Type t)
         {
-            return t == typeof(Rgba32)
+            return 
+                t == typeof(Rgba32)
                 ? PixelFormat.Rgba
-                : t == typeof(Rgba64) ? PixelFormat.RgbaInteger : t == typeof(Rgb24) ? PixelFormat.Rgb : PixelFormat.DepthComponent;
+                : t == typeof(Rgba64) 
+                    ? PixelFormat.RgbaInteger 
+                    : t == typeof(Rgb24) 
+                        ? PixelFormat.Rgb 
+                        : t == typeof(RgbaVector) ? PixelFormat.Rgba : PixelFormat.DepthComponent;
         }
 
         public void Dispose()

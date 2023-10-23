@@ -36,7 +36,7 @@
                         {
                             byte[] binary = File.ReadAllBytes(s);
                             using MemoryStream str = new MemoryStream(binary);
-                            glbm = new GlbScene(str);
+                            glbm = new GlbScene(new ModelData.Metadata() { CompressNormal = false, CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false }, str);
                             img = glbm.CreatePreview(256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
                             using MemoryStream imgMs = new MemoryStream();
                             img.SaveAsPng(imgMs);
@@ -47,7 +47,7 @@
                                 Type = AssetType.Model
                             };
 
-                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model };
+                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model, ModelInfo = new ModelData.Metadata() { CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false, CompressNormal = false } };
                             AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
                             PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(binary), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
                             pau.Send(Client.Instance.NetClient);
@@ -696,6 +696,16 @@
                                         state.editTexturePopup = true;
                                         this._editedRef = aRef;
                                         this._editedTextureMetadataCopy = aRef.Meta.TextureInfo.Copy();
+                                    }
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Model)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.edit.model") + "###Edit Model"))
+                                    {
+                                        state.editModelPopup = true;
+                                        this._editedRef = aRef;
+                                        this._editedModelMetadataCopy = aRef.Meta.ModelInfo.Copy();
                                     }
                                 }
 

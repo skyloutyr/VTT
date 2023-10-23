@@ -38,14 +38,17 @@
         private readonly bool _createdOnGlThread;
         private volatile int _glRequestsTodo;
         private readonly bool _checkGlRequests;
+        private ModelData.Metadata _meta;
 
         public GlbScene()
         {
         }
 
-        public unsafe GlbScene(Stream modelStream)
+        public unsafe GlbScene(ModelData.Metadata meta, Stream modelStream)
         {
             this._createdOnGlThread = Client.Instance.Frontend.CheckThread();
+            this._meta = meta;
+
             // Have to do these stream gymnastics because khronos' Gltf implementation implicitly closes the stream it reads data from...
             this.LoadGLBFromStream(modelStream, out Gltf g, out byte[] bin);
             List<GlbObject> objs = new List<GlbObject>();
@@ -595,17 +598,25 @@
                 glmat.AlphaMode = mat.AlphaMode;
                 this.HasTransparency |= mat.AlphaMode != Material.AlphaModeEnum.OPAQUE;
                 glmat.BaseColorFactor = new Vector4(mat.PbrMetallicRoughness.BaseColorFactor[0], mat.PbrMetallicRoughness.BaseColorFactor[1], mat.PbrMetallicRoughness.BaseColorFactor[2], mat.PbrMetallicRoughness.BaseColorFactor[3]);
-                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), PixelInternalFormat.SrgbAlpha);
+                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressAlbedo ? PixelInternalFormat.CompressedSrgbAlpha : PixelInternalFormat.SrgbAlpha);
                 glmat.BaseColorAnimation = new TextureAnimation(null);
                 glmat.CullFace = !mat.DoubleSided;
-                glmat.EmissionTexture = this.LoadIndependentTextureFromBinary(g, mat.EmissiveTexture?.Index, bin, new Rgba32(0, 0, 0, 1f));
+                glmat.EmissionTexture = this.LoadIndependentTextureFromBinary(g, mat.EmissiveTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressEmissive ? PixelInternalFormat.CompressedSrgbAlpha : PixelInternalFormat.SrgbAlpha);
                 glmat.EmissionAnimation = new TextureAnimation(null);
                 glmat.MetallicFactor = mat.PbrMetallicRoughness.MetallicFactor;
-                glmat.OcclusionMetallicRoughnessTexture = this.LoadAOMRTextureFromBinary(g, mat.OcclusionTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, bin); ;
+                glmat.OcclusionMetallicRoughnessTexture = this.LoadAOMRTextureFromBinary(g, mat.OcclusionTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, bin);
                 glmat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
                 glmat.Name = mat.Name;
                 glmat.Index = (uint)i;
-                glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0, 1, 0, 1f));
+                if (this._meta.FullRangeNormals)
+                {
+                    glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new RgbaVector(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.Rgb16f : PixelInternalFormat.Rgb32f);
+                }
+                else
+                {
+                    glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.CompressedRgb : PixelInternalFormat.Rgb);
+                }
+
                 glmat.NormalAnimation = new TextureAnimation(null);
                 glmat.RoughnessFactor = mat.PbrMetallicRoughness.RoughnessFactor;
                 this.Materials.Add(glmat);
@@ -670,7 +681,7 @@
             // All images are present and refer to the same internal image, assume compressed rgb imgage, read and pass along as independant
             if (ao != null && m != null && r != null && ao.Value == m.Value && m.Value == r.Value)
             {
-                return this.LoadIndependentTextureFromBinary(g, ao, bin, default, PixelInternalFormat.Rgba, i => i.ProcessPixelRows(a =>
+                return this.LoadIndependentTextureFromBinary<Rgba32>(g, ao, bin, default, this._meta.CompressAOMR ? PixelInternalFormat.CompressedRgba : PixelInternalFormat.Rgba, i => i.ProcessPixelRows(a =>
                     {
                         for (int r = 0; r < a.Height; ++r)
                         {
@@ -705,9 +716,9 @@
                 return texb;
             }
 
-            Image<Rgba32> imgAO = ao.HasValue ? this.LoadBinaryImage(g, bin, ao.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
-            Image<Rgba32> imgM = m.HasValue ? this.LoadBinaryImage(g, bin, m.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
-            Image<Rgba32> imgR = r.HasValue ? this.LoadBinaryImage(g, bin, r.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgAO = ao.HasValue ? this.LoadBinaryImage<Rgba32>(g, bin, ao.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgM = m.HasValue ? this.LoadBinaryImage<Rgba32>(g, bin, m.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
+            Image<Rgba32> imgR = r.HasValue ? this.LoadBinaryImage<Rgba32>(g, bin, r.Value) : new Image<Rgba32>(1, 1) { [0, 0] = new Rgba32(1, 1, 1, 1f) };
             int w = Math.Max(Math.Max(imgAO.Width, imgM.Width), imgR.Width);
             int h = Math.Max(Math.Max(imgAO.Height, imgM.Height), imgR.Height);
             imgb = new Image<Rgba32>(w, h);
@@ -729,7 +740,7 @@
                 }
             }
 
-            VTT.GL.Texture glTex = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT });
+            VTT.GL.Texture glTex = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT }, this._meta.CompressAOMR ? PixelInternalFormat.CompressedRgba : PixelInternalFormat.Rgba);
             imgAO.Dispose();
             imgM.Dispose();
             imgR.Dispose();
@@ -737,11 +748,11 @@
             return glTex;
         }
 
-        private VTT.GL.Texture LoadIndependentTextureFromBinary(Gltf g, int? tIndex, byte[] bin, Rgba32 defaultValue, PixelInternalFormat pif = PixelInternalFormat.Rgba, Action<Image<Rgba32>> processor = null)
+        private VTT.GL.Texture LoadIndependentTextureFromBinary<TPixel>(Gltf g, int? tIndex, byte[] bin, TPixel defaultValue, PixelInternalFormat pif = PixelInternalFormat.Rgba, Action<Image<TPixel>> processor = null) where TPixel : unmanaged, IPixel<TPixel>
         {
             if (tIndex == null) // No independent texture present
             {
-                Image<Rgba32> imgb = new Image<Rgba32>(1, 1);
+                Image<TPixel> imgb = new Image<TPixel>(1, 1);
                 imgb[0, 0] = defaultValue;
                 processor?.Invoke(imgb);
                 VTT.GL.Texture texb = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT });
@@ -749,16 +760,16 @@
             }
 
             glTFLoader.Schema.Texture tex = g.Textures[tIndex.Value];
-            Image<Rgba32> img = this.LoadBinaryImage(g, bin, tex.Source.Value);
+            Image<TPixel> img = this.LoadBinaryImage<TPixel>(g, bin, tex.Source.Value);
             processor?.Invoke(img);
             Sampler s = tex.Sampler.HasValue
                 ? g.Samplers[tex.Sampler.Value]
                 : new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT };
-            VTT.GL.Texture glTex = this.LoadGLTexture(img, s);
+            VTT.GL.Texture glTex = this.LoadGLTexture(img, s, pif);
             return glTex;
         }
 
-        private Image<Rgba32> LoadBinaryImage(Gltf g, byte[] bin, int id)
+        private Image<TPixel> LoadBinaryImage<TPixel>(Gltf g, byte[] bin, int id) where TPixel : unmanaged, IPixel<TPixel>
         {
             glTFLoader.Schema.Image refImg = g.Images[id];
             if (refImg.BufferView == null)
@@ -769,7 +780,7 @@
             BufferView bv = g.BufferViews[refImg.BufferView.Value];
             byte[] imgData = new byte[bv.ByteLength];
             Array.Copy(bin, bv.ByteOffset, imgData, 0, bv.ByteLength);
-            Image<Rgba32> img = SixLabors.ImageSharp.Image.Load<Rgba32>(imgData);
+            Image<TPixel> img = SixLabors.ImageSharp.Image.Load<TPixel>(imgData);
             return img;
         }
 
@@ -921,7 +932,7 @@
             }
         }
 
-        private VTT.GL.Texture LoadGLTexture<TPixel>(Image<TPixel> img, Sampler s) where TPixel : unmanaged, IPixel<TPixel>
+        private VTT.GL.Texture LoadGLTexture<TPixel>(Image<TPixel> img, Sampler s, PixelInternalFormat pif = PixelInternalFormat.Rgba) where TPixel : unmanaged, IPixel<TPixel>
         {
             void LoadTexture(VTT.GL.Texture glTex)
             {
@@ -939,7 +950,7 @@
 
                 FilterParam fMag = s.MagFilter == Sampler.MagFilterEnum.LINEAR ? FilterParam.Linear : FilterParam.Nearest;
                 glTex.SetFilterParameters(fMin, fMag);
-                glTex.SetImage(img, PixelInternalFormat.Rgba);
+                glTex.SetImage(img, OpenGLUtil.MapCompressedFormat(pif), type: pif is PixelInternalFormat.Rgb16f or PixelInternalFormat.Rgb32f ? PixelType.Float : PixelType.UnsignedByte);
                 if (fMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest)
                 {
                     glTex.GenerateMipMaps();

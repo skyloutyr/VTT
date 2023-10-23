@@ -363,6 +363,8 @@
                 this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha :
                     PixelInternalFormat.Rgba;
 
+                pif = OpenGLUtil.MapCompressedFormat(pif);
+
                 this._glTex.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
                 this._glTex.SetWrapParameters(this.Meta.WrapS, this.Meta.WrapT, WrapParam.Repeat);
                 this._glTex.SetImage(img, pif);

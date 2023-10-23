@@ -51,6 +51,7 @@
             this.Pipeline = new UniversalPipeline();
             this.Pipeline.Create();
             int[] lMax = new int[1];
+            OpenGLUtil.DetermineCompressedFormats();
             GL.GetInteger(GetPName.MaxTextureSize, lMax);
             Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax[0];
             this.White = OpenGLUtil.LoadFromOnePixel(new SixLabors.ImageSharp.PixelFormats.Rgba32(1, 1, 1, 1f));

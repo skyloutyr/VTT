@@ -9,9 +9,97 @@
     using VTT.Asset.Obj;
     using VTT.GL;
     using VTT.Network;
+    using static VTT.Network.ClientSettings;
 
     public static class OpenGLUtil
     {
+        public static PixelInternalFormat SrgbCompressedFormat { get; set; }
+        public static PixelInternalFormat SrgbAlphaCompressedFormat { get; set; }
+        public static PixelInternalFormat RgbCompressedFormat { get; set; }
+        public static PixelInternalFormat RgbaCompressedFormat { get; set; }
+
+        public static PixelInternalFormat MapCompressedFormat(PixelInternalFormat fmtIn)
+        {
+            return fmtIn switch
+            {
+                PixelInternalFormat.CompressedSrgb => SrgbCompressedFormat,
+                PixelInternalFormat.CompressedSrgbAlpha => SrgbAlphaCompressedFormat,
+                PixelInternalFormat.CompressedRgb => RgbCompressedFormat,
+                PixelInternalFormat.CompressedRgba => RgbaCompressedFormat,
+                _ => fmtIn
+            };
+        }
+
+        public static void DetermineCompressedFormats()
+        {
+            SrgbCompressedFormat = PixelInternalFormat.CompressedSrgb;
+            SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlpha;
+            RgbCompressedFormat = PixelInternalFormat.CompressedRgb;
+            RgbaCompressedFormat = PixelInternalFormat.CompressedRgba;
+
+            TextureCompressionPreference tcp = Client.Instance.Settings.CompressionPreference;
+            if (tcp == TextureCompressionPreference.Disabled)
+            {
+                return;
+            }
+
+            int exts = GL.GetInteger(GetPName.NumExtensions);
+            string[] allExtensions = new string[exts];
+            for (int i = 0; i < exts; ++i)
+            {
+                string extension = GL.GetString(StringNameIndexed.Extensions, i);
+                if (!extension.StartsWith("GL_"))
+                {
+                    extension = "GL_" + extension;
+                }
+
+                allExtensions[i] = extension.ToLower();
+            }
+
+            bool bptcAvailable = allExtensions.Contains("gl_arb_texture_compression_bptc");
+            bool dxtAvailable = allExtensions.Contains("gl_ext_texture_compression_s3tc") && allExtensions.Contains("gl_ext_texture_srgb");
+            if (tcp == TextureCompressionPreference.BPTC)
+            {
+                if (bptcAvailable)
+                {
+                    SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
+                    SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
+                    RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                    RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                }
+                else
+                {
+                    if (dxtAvailable)
+                    {
+                        SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaS3tcDxt5Ext;
+                        SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
+                        RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
+                        RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                    }
+                }
+            }
+            else
+            {
+                if (dxtAvailable)
+                {
+                    SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaS3tcDxt5Ext;
+                    SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
+                    RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
+                    RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                }
+                else
+                {
+                    if (bptcAvailable)
+                    {
+                        SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
+                        SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
+                        RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                        RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                    }
+                }
+            }
+        }
+
         public static WavefrontObject LoadModel(string name, VertexFormat desiredFormat)
         {
             string[] lines = IOVTT.ResourceToLines("VTT.Embed." + name + ".obj");

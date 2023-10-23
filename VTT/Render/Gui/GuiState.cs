@@ -27,6 +27,7 @@
         public bool changeAuraColorPopup = false;
         public bool changeFastLightColorPopup = false;
         public bool editTexturePopup = false;
+        public bool editModelPopup = false;
         public AssetDirectory moveTo = null;
         public bool mouseOverMoveUp = false;
         public AssetDirectory dirHovered = null;
@@ -78,6 +79,7 @@
             shaderGraphExtraTexturesHoveredIndex = -1;
             clientMap = Client.Instance.CurrentMap;
             editShaderPopup = false;
+            editModelPopup = false;
         }
     }
 }

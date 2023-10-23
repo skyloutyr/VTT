@@ -139,7 +139,7 @@
             this.CPUTimerDeferred = new Stopwatch();
             this.CPUTimerHighlights = new Stopwatch();
             this.CPUTimerCompound = new Stopwatch();
-            this.MissingModel = new GlbScene(IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
+            this.MissingModel = new GlbScene(new ModelData.Metadata(), IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
         }
 
         #region Hightlight Box

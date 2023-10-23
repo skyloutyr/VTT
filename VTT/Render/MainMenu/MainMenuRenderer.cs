@@ -746,6 +746,22 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.fov.tt"));
                     }
 
+                    string[] tcompression = { lang.Translate("menu.settings.compression.off"), lang.Translate("menu.settings.compression.bptc"), lang.Translate("menu.settings.compression.dxt") };
+                    int tcompressionIndex = (int)Client.Instance.Settings.CompressionPreference;
+                    ImGui.Text(lang.Translate("menu.settings.compression"));
+                    if (ImGui.Combo("##TextureCompression", ref tcompressionIndex, tcompression, tcompression.Length))
+                    {
+                        ClientSettings.TextureCompressionPreference newMode = (ClientSettings.TextureCompressionPreference)tcompressionIndex;
+                        Client.Instance.Settings.CompressionPreference = newMode;
+                        Client.Instance.Settings.Save();
+                        OpenGLUtil.DetermineCompressedFormats();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.compression.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

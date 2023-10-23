@@ -1,9 +1,11 @@
 ﻿namespace VTT.Asset
 {
+    using Newtonsoft.Json.Converters;
     using System;
     using System.IO;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
+    using VTT.GL;
     using VTT.Util;
 
     /*
@@ -65,14 +67,54 @@
     public class ModelData : IAssetData
     {
         public GlbScene GLMdl { get; set; }
+        public Metadata Meta { get; set; }
 
         public void Accept(byte[] binary)
         {
             using MemoryStream ms = new MemoryStream(binary);
-            this.GLMdl = new GlbScene(ms);
+            this.GLMdl = new GlbScene(this.Meta, ms);
         }
 
         public void Dispose() => this.GLMdl?.Dispose();
+
+        public class Metadata : ISerializable
+        {
+            public bool CompressAlbedo { get; set; }
+            public bool CompressAOMR { get; set; }
+            public bool CompressNormal { get; set; }
+            public bool CompressEmissive { get; set; }
+            public bool FullRangeNormals { get; set; }
+
+            public Metadata Copy() =>
+                new Metadata()
+                {
+                    CompressAlbedo = CompressAlbedo,
+                    CompressAOMR = CompressAOMR,
+                    CompressNormal = CompressNormal,
+                    CompressEmissive = CompressEmissive,
+                    FullRangeNormals = FullRangeNormals
+                };
+
+            public void Deserialize(DataElement e)
+            {
+                this.CompressAlbedo = e.Get<bool>("CompressA");
+                this.CompressAOMR = e.Get<bool>("CompressC");
+                this.CompressNormal = e.Get<bool>("CompressN");
+                this.CompressEmissive = e.Get<bool>("CompressE");
+                this.FullRangeNormals = e.Get<bool>("FRN", false);
+            }
+
+            public DataElement Serialize()
+            {
+                DataElement ret = new DataElement();
+                ret.Set("CompressA", this.CompressAlbedo);
+                ret.Set("CompressC", this.CompressAOMR);
+                ret.Set("CompressN", this.CompressNormal);
+                ret.Set("CompressE", this.CompressEmissive);
+                ret.Set("FRN", this.FullRangeNormals);
+                return ret;
+            }
+        }
     }
 
     public class ShaderData : IAssetData

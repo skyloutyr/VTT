@@ -598,6 +598,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool DisableSounds { get; set; } = false;
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue(TextureCompressionPreference.DXT)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public TextureCompressionPreference CompressionPreference { get; set; } = TextureCompressionPreference.DXT;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -646,7 +651,8 @@
                 EnableSoundChatMessage = true,
                 EnableChatNotification = true,
                 EnableSoundTurnTracker = true,
-                DisableSounds = false
+                DisableSounds = false,
+                CompressionPreference = TextureCompressionPreference.BPTC
             };
 
             ret.Save();
@@ -722,6 +728,13 @@
             Low,
             Standard,
             High
+        }
+
+        public enum TextureCompressionPreference
+        {
+            Disabled,
+            BPTC,
+            DXT
         }
     }
 

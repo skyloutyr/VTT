@@ -815,9 +815,61 @@
 
                 ImGui.EndPopup();
             }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.model_properties") + "###Edit Model"))
+            {
+                AssetRef cRef = this._editedRef;
+                bool cAlbedo = this._editedModelMetadataCopy.CompressAlbedo;
+                bool cEmissive = this._editedModelMetadataCopy.CompressEmissive;
+                bool cNormal = this._editedModelMetadataCopy.CompressNormal;
+                bool cAOMR = this._editedModelMetadataCopy.CompressAOMR;
+                bool fullRangeNormals = this._editedModelMetadataCopy.FullRangeNormals;
+
+                if (ImGui.Checkbox(lang.Translate("ui.model.compress.albedo"), ref cAlbedo))
+                {
+                    this._editedModelMetadataCopy.CompressAlbedo = cAlbedo;
+                }
+
+                if (ImGui.Checkbox(lang.Translate("ui.model.compress.normal"), ref cNormal))
+                {
+                    this._editedModelMetadataCopy.CompressNormal = cNormal;
+                }
+
+                if (ImGui.Checkbox(lang.Translate("ui.model.compress.aomrg"), ref cAOMR))
+                {
+                    this._editedModelMetadataCopy.CompressAOMR = cAOMR;
+                }
+
+                if (ImGui.Checkbox(lang.Translate("ui.model.compress.emissive"), ref cEmissive))
+                {
+                    this._editedModelMetadataCopy.CompressAlbedo = cAlbedo;
+                }
+
+                if (ImGui.Checkbox(lang.Translate("ui.model.full_range_normals"), ref fullRangeNormals))
+                {
+                    this._editedModelMetadataCopy.FullRangeNormals = fullRangeNormals;
+                }
+
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                bool bo = ImGui.Button(ok);
+
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (bo)
+                {
+                    new PacketChangeModelMetadata() { AssetID = cRef.AssetID, RefID = cRef.AssetID, Metadata = this._editedModelMetadataCopy }.Send();
+                }
+
+                ImGui.EndPopup();
+            }
         }
 
         private TextureData.Metadata _editedTextureMetadataCopy;
+        private ModelData.Metadata _editedModelMetadataCopy;
         private Vector3 _initialEditedFastLightColor;
 
         private unsafe void HandlePopupRequests(GuiState state)
@@ -928,6 +980,11 @@
             if (state.editTexturePopup)
             {
                 ImGui.OpenPopup("###Edit Texture");
+            }
+
+            if (state.editModelPopup)
+            {
+                ImGui.OpenPopup("###Edit Model");
             }
 
             if (state.editParticleSystemPopup && !this.ParticleEditorRenderer.popupState)

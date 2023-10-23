@@ -17,6 +17,7 @@
         public int Version { get; set; }
 
         public TextureData.Metadata TextureInfo { get; set; }
+        public ModelData.Metadata ModelInfo { get; set; }
 
         [JsonIgnore]
         public bool Invalid { get; set; }
@@ -44,6 +45,12 @@
                 this.TextureInfo = new TextureData.Metadata();
                 this.TextureInfo.Deserialize(e.Get<DataElement>("TextureInfo"));
             }
+
+            if (e.Has("ModelInfo", DataType.Map))
+            {
+                this.ModelInfo = new ModelData.Metadata();
+                this.ModelInfo.Deserialize(e.Get<DataElement>("ModelInfo"));
+            }
         }
 
         public DataElement Serialize()
@@ -55,6 +62,11 @@
             if (this.TextureInfo != null)
             {
                 ret.Set("TextureInfo", this.TextureInfo.Serialize());
+            }
+
+            if (this.ModelInfo != null)
+            {
+                ret.Set("ModelInfo", this.ModelInfo.Serialize());
             }
 
             return ret;

@@ -168,6 +168,7 @@
                 {
                     AssetBinaryPointer abp = new AssetBinaryPointer() { FileLocation = x.file, PreviewPointer = aId };
                     AssetRef aRef = new AssetRef() { AssetID = aId, AssetPreviewID = aId, IsServer = true, ServerPointer = abp, Meta = meta };
+
                     x.assetDir.Refs.Add(aRef);
                     lock (localRefLock)
                     {
@@ -681,6 +682,7 @@
                     case AssetType.Model:
                     {
                         a.Model = new ModelData();
+                        a.Model.Meta = meta.ModelInfo;
                         a.Model.Accept(rawBinary);
                         break;
                     }

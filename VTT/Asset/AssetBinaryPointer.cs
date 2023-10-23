@@ -36,6 +36,13 @@
                         File.WriteAllText(aMeta, JsonConvert.SerializeObject(metadata));
                     }
 
+                    if (metadata.Type == AssetType.Model && metadata.ModelInfo == null) // Broken model info
+                    {
+                        Server.Instance.Logger.Log(Util.LogLevel.Warn, "Model for " + path + " doesn't specify model info, converted from earlier versions?");
+                        metadata.ModelInfo = new ModelData.Metadata() { CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false, CompressNormal = false };
+                        File.WriteAllText(aMeta, JsonConvert.SerializeObject(metadata));
+                    }
+
                     return true;
                 }
                 catch (Exception e)
@@ -62,6 +69,11 @@
                     AssetType type = (AssetType)br.ReadInt32();
                     string name = br.ReadString();
                     metadata = new AssetMetadata() { Name = name, Type = type, ConstructedFromOldBinaryEncoding = true };
+                    if (type == AssetType.Model && metadata.ModelInfo == null) // Pretty much always true, 1.2.7 added meta support, moved from old binary encoding before 1.1
+                    {
+                        metadata.ModelInfo = new ModelData.Metadata(); // Just init to empty, any changes will force a new version save anyway
+                    }
+
                     return true;
                 }
                 else

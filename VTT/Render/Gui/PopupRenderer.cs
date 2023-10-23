@@ -747,6 +747,7 @@
                 bool alpha = this._editedTextureMetadataCopy.EnableBlending;
                 bool compress = this._editedTextureMetadataCopy.Compress;
                 bool gamma = this._editedTextureMetadataCopy.GammaCorrect;
+                bool a2e = this._editedTextureMetadataCopy.AlbedoIsEmissive;
 
                 string[] wrapModes = { lang.Translate("ui.texture.wrap.repeat"), lang.Translate("ui.texture.wrap.mirror"), lang.Translate("ui.texture.wrap.clamp") };
                 string[] filterModes = { lang.Translate("ui.texture.filter.nearest"), lang.Translate("ui.texture.filter.linear"), lang.Translate("ui.texture.filter.linear_mipmaps_nearest"), lang.Translate("ui.texture.filter.linear_mipmaps_linear") };
@@ -797,6 +798,11 @@
                 if (ImGui.Checkbox(lang.Translate("ui.texture.gamma"), ref gamma))
                 {
                     this._editedTextureMetadataCopy.GammaCorrect = gamma;
+                }
+
+                if (ImGui.Checkbox(lang.Translate("ui.texture.albedo_is_emissive"), ref a2e))
+                {
+                    this._editedTextureMetadataCopy.AlbedoIsEmissive = a2e;
                 }
 
                 bool bc = ImGui.Button(cancel);

@@ -37,14 +37,23 @@
             mat.AlphaMode = this.Meta.EnableBlending ? glTFLoader.Schema.Material.AlphaModeEnum.BLEND : glTFLoader.Schema.Material.AlphaModeEnum.OPAQUE;
             mat.NormalTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0.5f, 0.5f, 1f, 1f));
             mat.NormalAnimation = new TextureAnimation(null);
-            mat.EmissionTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 0));
-            mat.EmissionAnimation = new TextureAnimation(null);
             mat.OcclusionMetallicRoughnessTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(1f, 0, 1f, 1f));
             mat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
             mat.RoughnessFactor = 1f;
             mat.AlphaCutoff = 0f;
             mat.BaseColorTexture = this.GetOrCreateGLTexture(out TextureAnimation dta);
             mat.BaseColorAnimation = dta;
+            if (this.Meta.AlbedoIsEmissive)
+            {
+                mat.EmissionTexture = this.GetOrCreateGLTexture(out dta);
+                mat.EmissionAnimation = dta;
+            }
+            else
+            {
+                mat.EmissionTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 0));
+                mat.EmissionAnimation = new TextureAnimation(null);
+            }
+
             mat.BaseColorFactor = Vector4.One;
             mat.CullFace = true;
             mat.MetallicFactor = 0f;
@@ -469,6 +478,7 @@
             public bool EnableBlending { get; set; }
             public bool Compress { get; set; }
             public bool GammaCorrect { get; set; }
+            public bool AlbedoIsEmissive { get; set; }
 
             public Metadata Copy() =>
                 new Metadata()
@@ -479,7 +489,8 @@
                     FilterMag = this.FilterMag,
                     EnableBlending = this.EnableBlending,
                     Compress = this.Compress,
-                    GammaCorrect = this.GammaCorrect
+                    GammaCorrect = this.GammaCorrect,
+                    AlbedoIsEmissive = this.AlbedoIsEmissive,
                 };
 
             public void Deserialize(DataElement e)
@@ -491,6 +502,7 @@
                 this.EnableBlending = e.Get<bool>("Blend");
                 this.Compress = e.Get<bool>("Compress");
                 this.GammaCorrect = e.Get<bool>("Gamma");
+                this.AlbedoIsEmissive = e.Get("A2E", false);
             }
 
             public DataElement Serialize()
@@ -503,6 +515,7 @@
                 ret.Set("Blend", this.EnableBlending);
                 ret.Set("Compress", this.Compress);
                 ret.Set("Gamma", this.GammaCorrect);
+                ret.Set("A2E", this.AlbedoIsEmissive);
                 return ret;
             }
         }

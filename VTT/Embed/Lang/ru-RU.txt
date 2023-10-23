@@ -548,3 +548,4 @@ ui.model.compress.normal=Сжатие Нормалей
 ui.model.compress.aomrg=Сжатие Вспомогательных Текстур
 ui.model.compress.emissive=Сжатие Текстуры Яркости
 ui.model.full_range_normals=Полные Нормали
+ui.texture.albedo_is_emissive=Является Текстурой Яркости

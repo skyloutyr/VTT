@@ -232,6 +232,9 @@ In case you don't wish to use Visual Studio the following nuget packages are use
 * Newtonsoft.Json
 * OpenTK
 * SixLabours.ImageSharp
+* Microsoft.Toolkit.HighPerformance (deprecated, needed for BCnEncoder .Net)
+* BCnEncoder .Net
+* BCnEncoder .Net.ImageSharp
 
 Everything in the Embed folder is a manifest resource of the resulting VTT.dll
 

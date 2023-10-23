@@ -603,6 +603,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public TextureCompressionPreference CompressionPreference { get; set; } = TextureCompressionPreference.DXT;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AsyncDXTCompression { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -652,7 +656,8 @@
                 EnableChatNotification = true,
                 EnableSoundTurnTracker = true,
                 DisableSounds = false,
-                CompressionPreference = TextureCompressionPreference.BPTC
+                CompressionPreference = TextureCompressionPreference.DXT,
+                AsyncDXTCompression = true
             };
 
             ret.Save();

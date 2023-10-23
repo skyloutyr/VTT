@@ -6,6 +6,8 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Buffers;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Runtime.InteropServices;
 
     public class Texture
@@ -16,16 +18,26 @@
         public Size Size { get; set; }
         public const int ImageMaximumContiguousMemoryAllowance = 1024 * 1024 * 128; // 128 mb
 
+        private static readonly ConcurrentDictionary<uint, Guid> _textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
+
         public Texture(TextureTarget tt, bool gl = true)
         {
             this._type = tt;
             if (gl)
             {
                 GL.GenTextures(1, out this._glId);
+                _textureProtection[this._glId] = Guid.NewGuid();
             }
         }
 
-        public void Allocate() => GL.GenTextures(1, out this._glId);
+        public void Allocate()
+        {
+            GL.GenTextures(1, out this._glId);
+            _textureProtection[this._glId] = Guid.NewGuid();
+        }
+
+        public Guid GetUniqueID() => _textureProtection[this._glId];
+        public bool CheckUniqueID(Guid id) => id.Equals(_textureProtection[this._glId]);
 
         public void Bind() => GL.BindTexture(this._type, this._glId);
 

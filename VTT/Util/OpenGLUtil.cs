@@ -18,6 +18,8 @@
         public static PixelInternalFormat RgbCompressedFormat { get; set; }
         public static PixelInternalFormat RgbaCompressedFormat { get; set; }
 
+        public static bool UsingDXTCompression { get; set; }
+
         public static PixelInternalFormat MapCompressedFormat(PixelInternalFormat fmtIn)
         {
             return fmtIn switch
@@ -40,6 +42,7 @@
             TextureCompressionPreference tcp = Client.Instance.Settings.CompressionPreference;
             if (tcp == TextureCompressionPreference.Disabled)
             {
+                UsingDXTCompression = false;
                 return;
             }
 
@@ -66,6 +69,7 @@
                     SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
                     RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
                     RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                    UsingDXTCompression = false;
                 }
                 else
                 {
@@ -75,6 +79,7 @@
                         SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
                         RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
                         RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                        UsingDXTCompression = true;
                     }
                 }
             }
@@ -86,6 +91,7 @@
                     SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
                     RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
                     RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                    UsingDXTCompression = true;
                 }
                 else
                 {
@@ -95,6 +101,7 @@
                         SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
                         RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
                         RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                        UsingDXTCompression = false;
                     }
                 }
             }

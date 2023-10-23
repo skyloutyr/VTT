@@ -1,5 +1,6 @@
 ﻿namespace VTT.Asset
 {
+    using BCnEncoder.ImageSharp;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using OpenTK.Graphics.OpenGL;
@@ -10,6 +11,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
     using VTT.Asset.Glb;
     using VTT.GL;
     using VTT.Network;
@@ -361,7 +363,7 @@
         {
             if (this._glTex == null)
             {
-                using Image<Rgba32> img = this.CompoundImage();
+                Image<Rgba32> img = this.CompoundImage();
 
                 this._glTex = new Texture(TextureTarget.Texture2D);
                 this._glTex.Bind();
@@ -372,14 +374,84 @@
                 this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha :
                     PixelInternalFormat.Rgba;
 
-                pif = OpenGLUtil.MapCompressedFormat(pif);
-
                 this._glTex.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
                 this._glTex.SetWrapParameters(this.Meta.WrapS, this.Meta.WrapT, WrapParam.Repeat);
-                this._glTex.SetImage(img, pif);
-                if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
+
+                bool useDXTCompression = OpenGLUtil.UsingDXTCompression;
+                bool useHWCompression = Client.Instance.Settings.AsyncDXTCompression;
+
+                if (useDXTCompression && this.Meta.Compress && useHWCompression)
                 {
-                    this._glTex.GenerateMipMaps();
+                    Guid protectedID = this._glTex.GetUniqueID();
+                    // Load DXT async.
+                    ThreadPool.QueueUserWorkItem(x =>
+                    {
+                        BCnEncoder.Encoder.BcEncoder encoder = new BCnEncoder.Encoder.BcEncoder(BCnEncoder.Shared.CompressionFormat.Bc3); // Bc3 == dxt apparently
+                        encoder.OutputOptions.GenerateMipMaps = this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest;
+                        encoder.OutputOptions.Quality = BCnEncoder.Encoder.CompressionQuality.Fast;
+                        encoder.OutputOptions.Format = BCnEncoder.Shared.CompressionFormat.Bc3;
+                        encoder.OutputOptions.FileFormat = BCnEncoder.Shared.OutputFileFormat.Dds;
+                        byte[][] mipArray = encoder.EncodeToRawBytes(img);
+                        img.Dispose();
+                        Client.Instance.DoTask(() =>
+                        {
+                            Texture gTex = this._glTex;
+                            if (gTex != null)
+                            {
+                                bool isTexture = GL.IsTexture(gTex); // At least test that the texture still exists. This is GL thread so no race conditions.
+                                bool sameID = gTex.CheckUniqueID(protectedID); // ID protection system to prevent accidental texture overrides.
+                                if (isTexture && sameID)
+                                {
+                                    GL.BindTexture(TextureTarget.Texture2D, gTex);
+                                    InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
+                                    if (mipArray.Length > 1)
+                                    {
+                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mipArray.Length - 1);
+                                        int dw = img.Width;
+                                        int dh = img.Height;
+
+                                        for (int i = 0; i < mipArray.Length; ++i)
+                                        {
+                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray[i].Length, mipArray[i]);
+                                            dw = (int)MathF.Floor(dw / 2f);
+                                            dh = (int)MathF.Floor(dh / 2f);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, img.Width, img.Height, 0, mipArray[0].Length, mipArray[0]);
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    // Meanwhile use a placeholder. Can't race condition due to same thread.
+                    using Image<Rgba32> ph = new Image<Rgba32>(2, 2);
+                    ph[0, 0] = new Rgba32(1, 0, 1, 1f);
+                    ph[1, 1] = new Rgba32(1, 0, 1, 1f);
+                    ph[1, 0] = new Rgba32(0, 0, 0, 1f);
+                    ph[0, 1] = new Rgba32(0, 0, 0, 1f);
+                    pif = OpenGLUtil.MapCompressedFormat(pif);
+                    this._glTex.SetImage(img, pif);
+                    if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
+                    {
+                        this._glTex.GenerateMipMaps();
+                    }
+
+                    ph.Dispose();
+                }
+                else
+                {
+                    pif = OpenGLUtil.MapCompressedFormat(pif);
+                    this._glTex.SetImage(img, pif);
+                    if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
+                    {
+                        this._glTex.GenerateMipMaps();
+                    }
+
+                    img.Dispose();
                 }
             }
 

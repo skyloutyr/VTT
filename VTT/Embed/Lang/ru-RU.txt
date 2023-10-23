@@ -551,3 +551,5 @@ ui.model.full_range_normals=Полные Нормали
 ui.texture.albedo_is_emissive=Является Текстурой Яркости
 ui.particle.orient_velocity_by_container=Поворачивать Скорость
 ui.particle.orient_velocity_by_container.tt=Управляет поворотом изначальной скорости частицы относительно вращения контейнера.
+menu.settings.async_dxt_compression=Асинхронное DXT Сжатие
+menu.settings.async_dxt_compression.tt=Если включено, текстуры будут сжаты процессором на заднем плане, в противном случае видеокартой в реальном времени.\nПрименимо только если режим сжатия текстур - DXT/S3TC.\nСжатие на заднем плане быстрее, но качество текстур ниже, и изредка может вызывать ошибки.

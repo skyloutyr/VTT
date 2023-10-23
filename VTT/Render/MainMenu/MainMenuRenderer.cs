@@ -762,6 +762,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.compression.tt"));
                     }
 
+                    bool hwDXTCompression = Client.Instance.Settings.AsyncDXTCompression;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.async_dxt_compression") + "###Compress DXT Async", ref hwDXTCompression))
+                    {
+                        Client.Instance.Settings.AsyncDXTCompression = hwDXTCompression;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.async_dxt_compression.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 

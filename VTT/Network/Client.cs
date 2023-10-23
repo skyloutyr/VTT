@@ -1,5 +1,6 @@
 ﻿namespace VTT.Network
 {
+    using BCnEncoder.Encoder;
     using NetCoreServer;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
@@ -486,11 +487,6 @@
         public bool DisableShaderBranching { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        [DefaultValue(PipelineType.Deferred)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public PipelineType Pipeline { get; set; } = PipelineType.Deferred;
-
-        [JsonConverter(typeof(StringEnumConverter))]
         [DefaultValue(FullscreenMode.Normal)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public FullscreenMode ScreenMode { get; set; } = FullscreenMode.Normal;
@@ -607,6 +603,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool AsyncDXTCompression { get; set; } = true;
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue(CompressionQuality.Balanced)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public CompressionQuality DXTCompressionMode { get; set; } = CompressionQuality.Balanced;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -635,7 +636,6 @@
                 ChatBackgroundBrightness = 0.0f,
                 Language = "en-EN",
                 InterfaceSkin = UISkin.Dark,
-                Pipeline = PipelineType.Deferred,
                 PointShadowsQuality = GraphicsSetting.Medium,
                 ScreenMode = FullscreenMode.Normal,
                 RaycastMultithreading = RaycastMultithreadingType.Eager,
@@ -657,7 +657,8 @@
                 EnableSoundTurnTracker = true,
                 DisableSounds = false,
                 CompressionPreference = TextureCompressionPreference.DXT,
-                AsyncDXTCompression = true
+                AsyncDXTCompression = true,
+                DXTCompressionMode = CompressionQuality.Balanced
             };
 
             ret.Save();
@@ -669,12 +670,6 @@
             Client.Instance.Logger.Log(LogLevel.Info, "Saved client settings");
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
-        }
-
-        public enum PipelineType
-        {
-            Forward,
-            Deferred
         }
 
         public enum FullscreenMode

@@ -388,28 +388,30 @@
                     {
                         BCnEncoder.Encoder.BcEncoder encoder = new BCnEncoder.Encoder.BcEncoder(BCnEncoder.Shared.CompressionFormat.Bc3); // Bc3 == dxt apparently
                         encoder.OutputOptions.GenerateMipMaps = this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest;
-                        encoder.OutputOptions.Quality = BCnEncoder.Encoder.CompressionQuality.Fast;
+                        encoder.OutputOptions.Quality = Client.Instance.Settings.DXTCompressionMode;
                         encoder.OutputOptions.Format = BCnEncoder.Shared.CompressionFormat.Bc3;
                         encoder.OutputOptions.FileFormat = BCnEncoder.Shared.OutputFileFormat.Dds;
                         byte[][] mipArray = encoder.EncodeToRawBytes(img);
+                        Size imgS = new Size(img.Width, img.Height);
                         img.Dispose();
                         Client.Instance.DoTask(() =>
                         {
                             Texture gTex = this._glTex;
                             if (gTex != null)
                             {
-                                bool isTexture = GL.IsTexture(gTex); // At least test that the texture still exists. This is GL thread so no race conditions.
+                                bool isTexture = GL.IsTexture(gTex); // Test that the texture still exists. This is GL thread so no race conditions.
                                 bool sameID = gTex.CheckUniqueID(protectedID); // ID protection system to prevent accidental texture overrides.
                                 if (isTexture && sameID)
                                 {
                                     GL.BindTexture(TextureTarget.Texture2D, gTex);
+                                    gTex.Size = imgS;
                                     InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
                                     if (mipArray.Length > 1)
                                     {
                                         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
                                         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mipArray.Length - 1);
-                                        int dw = img.Width;
-                                        int dh = img.Height;
+                                        int dw = imgS.Width;
+                                        int dh = imgS.Height;
 
                                         for (int i = 0; i < mipArray.Length; ++i)
                                         {
@@ -420,7 +422,7 @@
                                     }
                                     else
                                     {
-                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, img.Width, img.Height, 0, mipArray[0].Length, mipArray[0]);
+                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray[0].Length, mipArray[0]);
                                     }
                                 }
                             }

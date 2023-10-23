@@ -211,6 +211,7 @@ These are the features currently missing that are planned to be implemented:
 - [x] Sounds (in app and assets)
 - [x] Custom material shaders
 - [ ] Moving away from imgui to a custom interface library
+- [ ] Moving away from BCnEncoder .Net to manual stb_dxt implementation (for memory management reasons)
 
 If you have any suggestions on what you would like to see implemented, please leave them in the issues tracker here.
 ### The following features will probably never be implemented:

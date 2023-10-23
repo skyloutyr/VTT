@@ -185,7 +185,7 @@ These are the features currently missing that are planned to be implemented:
 - [ ] Path curves and path following for particles
 - [ ] Animations for 3D models
 - [ ] Automatic decimation for shadow meshes
-- [ ] In app asset deletion
+- [x] In app asset deletion
 - [x] Better asset management interface
 - [ ] Sounds (in app and assets)
 - [x] Custom material shaders

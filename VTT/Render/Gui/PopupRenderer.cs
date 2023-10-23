@@ -619,7 +619,7 @@
 
                 if (bo)
                 {
-                    // TODO asset deletion packet!
+                    new PacketAssetDelete() { RefID = this._editedRef.AssetID }.Send(); // AssetID and RefID match
                 }
 
                 ImGui.EndPopup();

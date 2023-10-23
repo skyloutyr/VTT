@@ -560,7 +560,7 @@
                     {
                         if (cName.Length > 0)
                         {
-                            Client.Instance.Settings.Name = cName;
+                            Client.Instance.Settings.Name = cName.Replace(" ", "_"); //Please no spacebar in name, spacebar conflicts with the /w command slightly
                             Client.Instance.Settings.Save();
                             if (Client.Instance.NetClient != null && Client.Instance.NetClient.IsConnected)
                             {

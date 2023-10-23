@@ -187,7 +187,7 @@ These are the features currently missing that are planned to be implemented:
 - [ ] Automatic decimation for shadow meshes
 - [x] In app asset deletion
 - [x] Better asset management interface
-- [ ] Sounds (in app and assets)
+- [x] Sounds (in app and assets)
 - [x] Custom material shaders
 - [ ] Moving away from imgui to a custom interface library
 

@@ -23,6 +23,7 @@
         public Guid SenderID { get; set; }
         public Guid DestID { get; set; } = Guid.Empty;
         public Guid PortraitID { get; set; } = Guid.Empty;
+        public DateTime SendTime { get; set; } = DateTime.UnixEpoch;
 
         public Color SenderColor { get => senderColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : senderColor; set => senderColor = value; }
         public Color DestColor { get => destColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : destColor; set => destColor = value; }
@@ -141,6 +142,21 @@
                     }
                 }
 
+                if (!this.SendTime.Equals(DateTime.UnixEpoch))
+                {
+                    string time = this.SendTime.ToString("HH:mm:ss");
+                    float ocpx = ImGui.GetCursorPosX();
+                    ImGui.SetCursorPosX(350 - ImGui.CalcTextSize(time).X);
+                    ImGui.Text(time);
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(this.SendTime.ToLongDateString() + "\n" + this.SendTime.ToLongTimeString());
+                    }
+
+                    ImGui.SameLine();
+                    ImGui.SetCursorPosX(ocpx);
+                }
+
                 ImGui.PushStyleColor(ImGuiCol.Text, this.SenderColor.Abgr());
                 ImGui.TextUnformatted(this.SenderDisplayName);
                 ImGui.PopStyleColor();
@@ -198,7 +214,7 @@
 
         public void Write(BinaryWriter bw)
         {
-            bw.Write((byte)1);
+            bw.Write((byte)2);
             bw.Write(this.SenderID.ToByteArray());
             bw.Write(this.DestID.ToByteArray());
             bw.Write(this.PortraitID.ToByteArray());
@@ -208,6 +224,7 @@
             bw.Write((byte)this.Type);
             bw.Write(this.senderColor.Argb());
             bw.Write(this.destColor.Argb());
+            bw.Write(this.SendTime.ToBinary());
             bw.Write(this.Blocks.Select(b => !b.DoNotPersist).Count());
             foreach (ChatBlock cb in this.Blocks)
             {
@@ -220,7 +237,7 @@
 
         public void Read(BinaryReader br)
         {
-            br.ReadByte(); // Version
+            byte version = br.ReadByte(); // Version
             this.SenderID = new Guid(br.ReadBytes(16));
             this.DestID = new Guid(br.ReadBytes(16));
             this.PortraitID = new Guid(br.ReadBytes(16));
@@ -230,6 +247,11 @@
             this.Type = (RenderType)br.ReadByte();
             this.SenderColor = Extensions.FromArgb(br.ReadUInt32());
             this.DestColor = Extensions.FromArgb(br.ReadUInt32());
+            if (version == 2) // have time data
+            {
+                this.SendTime = DateTime.FromBinary(br.ReadInt64());
+            }
+
             this.Blocks.Clear();
             int c = br.ReadInt32();
             for (int i = 0; i < c; ++i)

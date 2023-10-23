@@ -27,6 +27,7 @@
                     cl = ChatParser.Parse(this.Message, this.Sender.Color, this.Sender.Name);
                     cl.Index = server.ServerChat.Count;
                     cl.SenderID = this.Sender.ID;
+                    cl.SendTime = DateTime.Now;
                     server.AppendedChat.Enqueue(cl);
                     server.ServerChat.Add(cl);
                 }

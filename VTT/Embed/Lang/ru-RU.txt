@@ -549,3 +549,5 @@ ui.model.compress.aomrg=Сжатие Вспомогательных Тексту
 ui.model.compress.emissive=Сжатие Текстуры Яркости
 ui.model.full_range_normals=Полные Нормали
 ui.texture.albedo_is_emissive=Является Текстурой Яркости
+ui.particle.orient_velocity_by_container=Поворачивать Скорость
+ui.particle.orient_velocity_by_container.tt=Управляет поворотом изначальной скорости частицы относительно вращения контейнера.

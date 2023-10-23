@@ -13,6 +13,7 @@
         public Guid SystemID { get; set; }
         public Vector3 ContainerPositionOffset { get; set; }
         public bool UseContainerOrientation { get; set; }
+        public bool RotateVelocityByOrientation { get; set; }
         public bool IsActive { get; set; }
         public string AttachmentPoint { get; set; } = string.Empty;
 
@@ -80,6 +81,7 @@
             ret.Set("UseOrientation", this.UseContainerOrientation);
             ret.Set("Active", this.IsActive);
             ret.Set("Attach", this.AttachmentPoint);
+            ret.Set("DoVRot", this.RotateVelocityByOrientation);
             return ret;
         }
 
@@ -96,6 +98,7 @@
             this.UseContainerOrientation = e.Get<bool>("UseOrientation");
             this.IsActive = e.Get<bool>("Active");
             this.AttachmentPoint = e.Get<string>("Attach");
+            this.RotateVelocityByOrientation = e.Get("DoVRot", false);
         }
     }
 }

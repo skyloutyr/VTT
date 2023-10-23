@@ -545,6 +545,16 @@
                         Vector4 v = (rndUnitQuaternion * new Vector4(p->velocity, 1.0f));
                         p->velocity = v.Xyz / v.W;
                     }
+
+                    if (!this.IsFake)
+                    {
+                        if (this.Container.RotateVelocityByOrientation && this.Container?.Container != null)
+                        {
+                            Quaternion cRot = this.Container.Container.Rotation;
+                            Vector4 v = (cRot * new Vector4(p->velocity, 1.0f));
+                            p->velocity = v.Xyz / v.W;
+                        }
+                    }
                 }
             }
         }

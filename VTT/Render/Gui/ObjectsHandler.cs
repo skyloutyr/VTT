@@ -509,6 +509,18 @@
                                             new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
                                         }
 
+                                        bool pDoVRot = pc.RotateVelocityByOrientation;
+                                        if (ImGui.Checkbox(lang.Translate("ui.particle.orient_velocity_by_container") + "###OrientVelocityByContainer_" + pc.ID, ref pDoVRot))
+                                        {
+                                            pc.RotateVelocityByOrientation = pDoVRot;
+                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                        }
+
+                                        if (ImGui.IsItemHovered())
+                                        {
+                                            ImGui.SetTooltip(lang.Translate("ui.particle.orient_velocity_by_container.tt"));
+                                        }
+
                                         bool pActive = pc.IsActive;
                                         if (ImGui.Checkbox(lang.Translate("ui.particle_containers.active") + "###ParticleContainerIsActive_" + pc.ID, ref pActive))
                                         {

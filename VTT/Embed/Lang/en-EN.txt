@@ -549,3 +549,5 @@ ui.model.compress.aomrg=Compress Misc Textures
 ui.model.compress.emissive=Compress Emissive
 ui.model.full_range_normals=Full Range Normals
 ui.texture.albedo_is_emissive=Emissive Texture
+ui.particle.orient_velocity_by_container=Container Influences Velocity
+ui.particle.orient_velocity_by_container.tt=Controls whether a particle's initial velocity will be rotated by the rotation of the particle's container.

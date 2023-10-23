@@ -44,6 +44,10 @@
                         {
                             W32ConsoleInterlop.ShowConsole(false);
                         }
+                        else
+                        {
+                            W32ConsoleInterlop.ShowConsole(true);
+                        }
                     }
                     catch
                     {

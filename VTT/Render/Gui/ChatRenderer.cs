@@ -72,6 +72,27 @@
                     this._chatString = inputCopy;
                 }
 
+                if (ImGui.IsItemHovered())
+                {
+                    if (inputCopy.StartsWith("/w ") || inputCopy.StartsWith("/whisper ") || inputCopy.StartsWith("[d:")) // Whisper help
+                    {
+                        ImGui.BeginTooltip();
+                        foreach (ClientInfo client in Client.Instance.ClientInfos.Values)
+                        {
+                            if (client.ID.Equals(Guid.Empty) || !client.IsLoggedOn)
+                            {
+                                continue;
+                            }
+
+                            ImGui.PushStyleColor(ImGuiCol.Text, client.Color.Abgr());
+                            ImGui.Text(client.Name);
+                            ImGui.PopStyleColor();
+                        }
+
+                        ImGui.EndTooltip();
+                    }
+                }
+
                 if (!b && ImGui.IsItemFocused() && (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl)))
                 {
                     if (this._chat.Count > 0)

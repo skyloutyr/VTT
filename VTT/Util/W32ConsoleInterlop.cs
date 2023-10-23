@@ -22,15 +22,9 @@
         private static extern IntPtr GetForegroundWindow();
 
         private static IntPtr _cWin;
-        private static bool _consoleStatus = true;
 
         public static void ShowConsole(bool show)
         {
-            if (_consoleStatus == show)
-            {
-                return;
-            }
-
             try
             {
                 if (_cWin == IntPtr.Zero)
@@ -46,7 +40,6 @@
                 if (_cWin != IntPtr.Zero)
                 {
                     ShowWindow(_cWin, show ? 5 : 0);
-                    _consoleStatus = show;
                 }
             }
             catch

@@ -34,7 +34,10 @@
     <None Remove="Embed\grid.vert" />
     <None Remove="Embed\highlight.frag" />
     <None Remove="Embed\highlight.vert" />
-    <None Remove="Embed\icon-alpha.png" />
+    <None Remove="Embed\icon-beta.png" />
+    <None Remove="Embed\icon-beta_small.png" />
+    <None Remove="Embed\icon-beta_smaller.png" />
+    <None Remove="Embed\icon-beta_smallest.png" />
     <None Remove="Embed\icons8-3d-64.png" />
     <None Remove="Embed\icons8-abscissa-40.png" />
     <None Remove="Embed\icons8-accuracy-40.png" />
@@ -173,7 +176,10 @@
     <EmbeddedResource Include="Embed\fast_light.vert" />
     <EmbeddedResource Include="Embed\grid.frag" />
     <EmbeddedResource Include="Embed\grid.vert" />
-    <EmbeddedResource Include="Embed\icon-alpha.png" />
+    <EmbeddedResource Include="Embed\icon-beta.png" />
+    <EmbeddedResource Include="Embed\icon-beta_small.png" />
+    <EmbeddedResource Include="Embed\icon-beta_smaller.png" />
+    <EmbeddedResource Include="Embed\icon-beta_smallest.png" />
     <EmbeddedResource Include="Embed\icons8-3d-64.png" />
     <EmbeddedResource Include="Embed\icons8-abscissa-40.png" />
     <EmbeddedResource Include="Embed\icons8-accuracy-40.png" />

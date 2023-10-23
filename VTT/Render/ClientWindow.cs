@@ -42,10 +42,7 @@
         public ClientWindow()
         {
             Configuration.Default.PreferContiguousImageBuffers = true;
-            Image<Rgba32> icon = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-alpha.png");
-            icon.DangerousTryGetSinglePixelMemory(out var imageSpan);
-            byte[] imageBytes = MemoryMarshal.AsBytes(imageSpan.Span).ToArray();
-            WindowIcon windowIcon = new WindowIcon(new OpenTK.Windowing.Common.Input.Image(icon.Width, icon.Height, imageBytes));
+            WindowIcon windowIcon = this.LoadIcon();
             OpenTK.Windowing.Common.ContextFlags winFlags = OpenTK.Windowing.Common.ContextFlags.ForwardCompatible;
             if (ArgsManager.TryGetValue("gldebug", out string val))
             {
@@ -108,6 +105,30 @@
             this.GameHandle.MouseDown += this.Instance_MouseDown;
             this.GameHandle.MouseUp += this.Instance_MouseUp;
             this.GameHandle.FocusedChanged += this.Instance_Focus;
+        }
+
+        private unsafe WindowIcon LoadIcon()
+        {
+            using Image<Rgba32> normal = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta.png");
+            using Image<Rgba32> small = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_small.png");
+            using Image<Rgba32> smaller = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_smaller.png");
+            using Image<Rgba32> smallest = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_smallest.png");
+            Span<byte> normalBytes = new Span<byte>(new byte[sizeof(Rgba32) * 256 * 256]);
+            Span<byte> smallBytes = new Span<byte>(new byte[sizeof(Rgba32) * 48 * 48]);
+            Span<byte> smallerBytes = new Span<byte>(new byte[sizeof(Rgba32) * 32 * 32]);
+            Span<byte> smallestBytes = new Span<byte>(new byte[sizeof(Rgba32) * 16 * 16]);
+            normal.CopyPixelDataTo(normalBytes);
+            small.CopyPixelDataTo(smallBytes);
+            smaller.CopyPixelDataTo(smallerBytes);
+            smallest.CopyPixelDataTo(smallestBytes);
+            WindowIcon ret = new WindowIcon(new OpenTK.Windowing.Common.Input.Image[4] { 
+                new OpenTK.Windowing.Common.Input.Image(256, 256, normalBytes.ToArray()),
+                new OpenTK.Windowing.Common.Input.Image(48, 48, smallBytes.ToArray()),
+                new OpenTK.Windowing.Common.Input.Image(32, 32, smallerBytes.ToArray()),
+                new OpenTK.Windowing.Common.Input.Image(16, 16, smallestBytes.ToArray())
+            });
+
+            return ret;
         }
 
         private void Instance_Focus(OpenTK.Windowing.Common.FocusedChangedEventArgs obj) => this.GuiWrapper.Focus(obj.IsFocused);

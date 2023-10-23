@@ -1,5 +1,5 @@
 # VTT
-*Dream. Create. Inspire.*
+
 ## Introduction
 
 **VTT is a multiplayer environment for you and your friends to host and play tabletop roleplaying games. Create magnificent 3D environments or more traditional 2D ones.**
@@ -109,13 +109,13 @@ You can read more about PBR [here](https://substance3d.adobe.com/tutorials/cours
 ### Node In/Out colors, and on conversions
 Certain inputs expect a certain value - a pixel albedo value is a combination of 3 float values, each controling the Red, Green and Blue channels. To help distinguish different required values VTT uses colors.
 
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NIO7vqPwAGVwLdh0OFRAAAAABJRU5ErkJggg==" width="12"> A boolean value
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12Ow2Vz4HwAE7wJgOnTs/wAAAABJRU5ErkJggg==" width="12"> An integer value
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12Ng+DXrPwAFJgKU8sMxDAAAAABJRU5ErkJggg==" width="12"> An unsigned integer value
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12MwOmv0HwAElwIx0ewwSgAAAABJRU5ErkJggg==" width="12"> A float (number with a decimal point) value
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P48KznPwAIjgNiBMwsygAAAABJRU5ErkJggg==" width="12"> A 2D vector (2 floats)
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P4f53hPwAHhQLWFrY87gAAAABJRU5ErkJggg==" width="12"> A 3D vector (3 floats)
-* <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12O4tVThPwAGmwKfYQj+rwAAAABJRU5ErkJggg==" width="12"> A 4D vector (4 floats)
+* ![#66ddaa](https://placehold.co/15x15/66ddaa/66ddaa.png) A boolean value
+* ![#3cb371](https://placehold.co/15x15/3cb371/3cb371.png) An integer value
+* ![#00fa9a](https://placehold.co/15x15/00fa9a/00fa9a.png) An unsigned integer value
+* ![#32cd32](https://placehold.co/15x15/32cd32/32cd32.png) A float (number with a decimal point) value
+* ![#f0e68c](https://placehold.co/15x15/f0e68c/f0e68c.png) A 2D vector (2 floats)
+* ![#ffd700](https://placehold.co/15x15/ffd700/ffd700.png) A 3D vector (3 floats)
+* ![#daa520](https://placehold.co/15x15/daa520/daa520.png) A 4D vector (4 floats)
 
 If a wrong output type is connected to the input it will automatically convert. Note that some data may be lost (a 4d vector converting to a 3d one drops the 4th component entirely). This will also show a warning at the bottom-left of the node graph editor.
 
@@ -171,6 +171,27 @@ Start the "Roll20" server in VSCC, then in VTT press the "Connect VSCC" button i
 The following options are not implemented:
 * Custom scripts that send raw R20 messages, such as the initiative script.
 * The "Poll Roll Result" macro action
+
+---
+## Chat Commands
+VTT's chat supports a few commands that a user can input to manipulate the resulting message. 
+* /r or /roll interprets the next text as a mathematical expression, with xdy syntax for roll commands. Example: /r 10d20 + 3 will roll 10 20-sided dice, and add 3 to a result. It also causes the chat line to be uniquely displayed.
+* /w or /whisper will cause the message to only be sent to the recepient specified by a nickname after the first space. Example: /whisper Ally hello! will send the "hello!" message to a player named Ally. Instead of a player nickname, a user may write gm, to send the message to a server admin. Example: /w gm what do they say? Will send the "what do they say?" message to the administrator only.
+* /gr, /gm roll or /gmroll functions as a combination of the /roll and /whisper gm commands, sending an expression result to the administrator only.
+* /as will send a message as if a currently selected object was the sender. It will display the object's name instead of the sender's and will try to display a little icon (portrait) of that object. Note that this will only work if the currently active map contains that exact selected object.
+* /session start and /session end mark the start or the end of a game session. It will display the text "Session Start" or "Session End" respectively aswell as the current timestamp (client's).
+
+Additionally, it is possible to manipulate the chat in a more advanced way with the square bracket syntax. Unlike slash commands these can be present anywhere within the message.
+* Simply putting anything in a set of square brackets will interpret it as a mathematical expression and evaluate it. Example: The result is \[10 + 20\] will display the message "The result is 30", with 30 being hoverable for a preview.
+* \[d:NAME\] is the equivalent of the /w and /whisper commands. Accepts gm as a valid name, which causes the destination to be a server admin, but unlike a typical whisper command accepts spaces and direct client IDs in the form of GUIDs. Example: [d:Alice] you hear a squeal! Will show " you hear a squeal!" message to a player named Alice.
+* \[c:COLOR\] allows you to specify the text color of all text that comes afterwards for this message. It accepts either a hexadecimal number (that may start with #, 0x, or nothing at all and simply be input as a number) in the Argb format a letter u, which will set the color to that of the sender, or the letter r to reset the color to the default. Example: [c:0xffff2222]The Blade[c:r] [c:0xff770077]whispers into your mind[c:r] the command word... will display the message "The Blade whispers into your mind the command word..." with "The Blade" being colored red and "whispers into your mind" being colored purple.
+* \[t:TEXT\] will create a tooltip when mousing over the message with the tooltip's text being the contents of the block.
+* \[p:TEXT\] will not display anything written inside of the block.
+* \[r:\] allows recursive block nesting. Anything past the : will be treated as a chat line to be interpreted.
+* \[n:TEXT\] will replace the sender's name in chat with the contents of the block. Mousing over the name will reveal the real sender's name.
+* \[o:GUID\] replicates the effects of the /as command but allows a direct GUID input instead of the object selection.
+* \[m:MODE\] specifies the message render mode. This is highly internal and will cause crashes if used improperly, but you are welcome to see the expected message structure in this repo's VSCC integration namespace.
+	
 
 ---
 ## Known issues, suggestions and missing features tracker

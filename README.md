@@ -235,4 +235,6 @@ The following command line arguments are available (do not include the square br
 -nocache [true]: If this argument is encountered the server will startup with the asset caching system disabled, regardless of the -servercache parameter.
 
 -servercache [number][postfix]: Sets the maximum server cache buffer before it is trimmed. Number is any positive number. Postfix indicates the rank, and can be b(bytes), kb(kilobytes), mb(megabytes) or gb(gigabytes)
+
+-console [true/false]: forces the console window being shown (true) or hidden (false). If not present the -debug parameter may force the console window to stay open. Win32 only.
 ```

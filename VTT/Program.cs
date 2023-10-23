@@ -35,6 +35,21 @@
                 }
                 else
                 {
+                    try
+                    {
+                        bool haveDebug = ArgsManager.TryGetValue<bool>("debug", out _); // if debug is present always show
+                        bool haveConsole = ArgsManager.TryGetValue<bool>("console", out bool bfConsole);
+
+                        if ((!haveDebug && !haveConsole) || (haveConsole && !bfConsole)) // Hide console if we are not in debug and console arg not present or if the arg is present and explicitly set to false
+                        {
+                            W32ConsoleInterlop.ShowConsole(false);
+                        }
+                    }
+                    catch
+                    {
+                        // NOOP
+                    }
+
                     Client c = new Client();
                     if (ArgsManager.TryGetValue("connect", out IPEndPoint ip))
                     {
@@ -64,6 +79,15 @@
             }
             catch (Exception e)
             {
+                try
+                {
+                    W32ConsoleInterlop.ShowConsole(true); // Always show console when exception occured
+                }
+                catch
+                {
+                    // NOOP
+                }
+
                 Console.WriteLine("A critical exception occured!");
                 Console.WriteLine(e.Message);
                 foreach (string s in e.StackTrace.Split('\n'))

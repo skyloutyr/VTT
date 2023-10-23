@@ -54,6 +54,20 @@
                     break;
                 }
 
+                case "-console":
+                {
+                    if (!bool.TryParse(value, out bool b))
+                    {
+                        if (int.TryParse(value, out int i))
+                        {
+                            b = i > 0;
+                        }
+                    }
+
+                    args["console"] = b;
+                    break;
+                }
+
                 case "-server":
                 {
                     if (int.TryParse(value, out int i))

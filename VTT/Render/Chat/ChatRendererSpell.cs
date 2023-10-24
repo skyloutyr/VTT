@@ -69,10 +69,10 @@
 
                 Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
-                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), name.Text);
-                Vector2 ts = ImGuiHelper.CalcTextSize(cname.Text);
-                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), cname.Text);
-                drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color.Abgr(), schoollevel.Text);
+                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), ImGuiHelper.TextOrEmpty(name.Text));
+                Vector2 ts = ImGuiHelper.CalcTextSize(ImGuiHelper.TextOrEmpty(cname.Text));
+                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), ImGuiHelper.TextOrEmpty(cname.Text));
+                drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color.Abgr(), ImGuiHelper.TextOrEmpty(schoollevel.Text));
                 uint bcl = this.Container.SenderColor.Abgr();
                 uint fcl = ImGui.GetColorU32(ImGuiCol.Text);
                 float maxW = MathF.Max(
@@ -169,7 +169,7 @@
 
                 ImGui.SetCursorPos(localPos + new Vector2(8, 162));
                 ImGui.PushTextWrapPos(maxWindowW);
-                ImGui.TextUnformatted(desc.Text);
+                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(desc.Text));
                 ImGui.PopTextWrapPos();
                 ImGui.SetCursorPosY(localPos.Y + h);
             }

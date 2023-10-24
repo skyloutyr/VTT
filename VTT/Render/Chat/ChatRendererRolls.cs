@@ -132,7 +132,7 @@
 
                     ImGui.SetCursorPos(new(ccX + block.x + imPadding.X, ccY + block.y));
                     ImGui.PushStyleColor(ImGuiCol.Text, block.color);
-                    ImGui.TextUnformatted(block.text);
+                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(block.text));
                     ImGui.PopStyleColor();
                     ImGui.SetCursorPos(new(ccX + block.x + block.w, ccY + block.y));
                     if (i != this._lines.Count - 1 || (i1 != line.Length - 2 && i1 != line.Length - 1))
@@ -150,7 +150,7 @@
                     if (!string.IsNullOrEmpty(block.tooltip) && overRect)
                     {
                         ImGui.BeginTooltip();
-                        ImGui.TextUnformatted(block.tooltip);
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(block.tooltip));
                         ImGui.EndTooltip();
                     }
 

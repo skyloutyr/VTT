@@ -162,7 +162,7 @@
                         }
 
                         ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color.Abgr());
-                        ImGui.TextUnformatted(icw.Text);
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Text));
                         ImGui.PopStyleColor();
                         pX += icw.Width + (i == icl.Words.Length - 1 ? 0 : this._spacebarWidth);
                         ImGui.SetCursorPos(new(pX, pY));
@@ -170,7 +170,7 @@
                         if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
                         {
                             ImGui.BeginTooltip();
-                            ImGui.TextUnformatted(icw.Owner.Tooltip);
+                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Owner.Tooltip));
                             ImGui.EndTooltip();
                         }
                     }

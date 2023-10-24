@@ -80,12 +80,12 @@
 
                 ImGui.SetCursorPos(cursorLocal + new Vector2(cXL, 24) - (sR1 / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, r1.Color.Abgr());
-                ImGui.TextUnformatted(tR1);
+                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(tR1));
                 ImGui.PopStyleColor();
                 if (!string.IsNullOrEmpty(r1.Tooltip) && overRect)
                 {
                     ImGui.BeginTooltip();
-                    ImGui.TextUnformatted(r1.Tooltip);
+                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(r1.Tooltip));
                     ImGui.EndTooltip();
                 }
 
@@ -114,24 +114,24 @@
 
                 ImGui.SetCursorPos(cursorLocal + new Vector2(cXR, 24) - (sR2 / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, r2.Color.Abgr());
-                ImGui.TextUnformatted(tR2);
+                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(tR2));
                 ImGui.PopStyleColor();
                 if (!string.IsNullOrEmpty(r2.Tooltip) && overRect)
                 {
                     ImGui.BeginTooltip();
-                    ImGui.TextUnformatted(r2.Tooltip);
+                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(r2.Tooltip));
                     ImGui.EndTooltip();
                 }
 
                 Vector2 sRn = ImGuiHelper.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color.Abgr());
-                ImGui.TextUnformatted(rnameAndMod.Text);
+                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(rnameAndMod.Text));
                 ImGui.PopStyleColor();
                 sRn = ImGuiHelper.CalcTextSize(rcharname.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 60) - (sRn / 2));
                 ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color.Abgr());
-                ImGui.TextUnformatted(rcharname.Text);
+                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(rcharname.Text));
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPosY(cursorLocal.Y + 88);
             }
@@ -144,7 +144,7 @@
                     s += cb.Text;
                 }
 
-                ImGui.TextWrapped(s);
+                ImGui.TextWrapped(ImGuiHelper.TextOrEmpty(s));
             }
         }
     }

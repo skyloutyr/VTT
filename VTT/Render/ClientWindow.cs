@@ -152,13 +152,16 @@
 
         public void PushNotification()
         {
-            if (!this.GameHandle.IsFocused)
+            this.ActionsToDo.Enqueue(() =>
             {
-                unsafe
+                if (!this.GameHandle.IsFocused)
                 {
-                    GLFW.RequestWindowAttention(this.GameHandle.WindowPtr);
+                    unsafe
+                    {
+                        GLFW.RequestWindowAttention(this.GameHandle.WindowPtr);
+                    }
                 }
-            }
+            });
         }
 
         private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj)

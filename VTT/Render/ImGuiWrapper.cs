@@ -276,35 +276,44 @@ void main()
 
         private unsafe void RebuildFontAtlas()
         {
-            var fonts = ImGui.GetIO().Fonts;
-
-            string temp = Path.Combine(IOVTT.ClientDir, "unifont.ttf");
-            if (!File.Exists(temp))
+            try
             {
-                using Stream s = IOVTT.ResourceToStream("VTT.Embed.unifont-14.0.04.zip");
-                using ZipArchive za = new ZipArchive(s);
-                za.Entries[0].ExtractToFile(temp);
+                var fonts = ImGui.GetIO().Fonts;
+
+                string temp = Path.Combine(IOVTT.ClientDir, "unifont.ttf");
+                if (!File.Exists(temp))
+                {
+                    using Stream s = IOVTT.ResourceToStream("VTT.Embed.unifont-14.0.04.zip");
+                    using ZipArchive za = new ZipArchive(s);
+                    za.Entries[0].ExtractToFile(temp);
+                }
+
+                ImFontGlyphRangesBuilderPtr builder = new ImFontGlyphRangesBuilderPtr(ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder());
+                builder.AddRanges(fonts.GetGlyphRangesDefault());
+                builder.AddRanges(fonts.GetGlyphRangesCyrillic());
+                builder.AddRanges(fonts.GetGlyphRangesJapanese());
+                builder.AddRanges(fonts.GetGlyphRangesChineseSimplifiedCommon());
+                LoadEmoji(builder);
+                builder.BuildRanges(out ImVector ranges);
+                fonts.AddFontFromFileTTF(temp, 16, null, ranges.Data);
+                fonts.Build();
+
+                _fontTexture = new Texture(TextureTarget.Texture2D);
+                _fontTexture.Bind();
+                _fontTexture.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+                _fontTexture.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
+                ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int w, out int h);
+                _fontTexture.Size = new Size(w, h);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, w, h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+                fonts.TexID = _fontTexture;
+                fonts.ClearTexData();
             }
-
-            ImFontGlyphRangesBuilderPtr builder = new ImFontGlyphRangesBuilderPtr(ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder());
-            builder.AddRanges(fonts.GetGlyphRangesDefault());
-            builder.AddRanges(fonts.GetGlyphRangesCyrillic());
-            builder.AddRanges(fonts.GetGlyphRangesJapanese());
-            builder.AddRanges(fonts.GetGlyphRangesChineseSimplifiedCommon());
-            LoadEmoji(builder);
-            builder.BuildRanges(out ImVector ranges);
-            fonts.AddFontFromFileTTF(temp, 16, null, ranges.Data);
-            fonts.Build();
-
-            _fontTexture = new Texture(TextureTarget.Texture2D);
-            _fontTexture.Bind();
-            _fontTexture.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
-            _fontTexture.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
-            ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int w, out int h);
-            _fontTexture.Size = new Size(w, h);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, w, h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
-            fonts.TexID = _fontTexture;
-            fonts.ClearTexData();
+            catch (Exception e)
+            {
+                Client.Instance.Logger.Log(LogLevel.Fatal, "A fatal exception loading fonts had occured!");
+                Client.Instance.Logger.Exception(LogLevel.Fatal, e);
+                throw;
+            }
         }
 
         private void LoadEmoji(ImFontGlyphRangesBuilderPtr builder)
@@ -488,5 +497,7 @@ void main()
 
             return ImGui.CalcTextSize(tIn);
         }
+
+        public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
     }
 }

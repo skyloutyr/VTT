@@ -100,7 +100,7 @@
                 }
 
                 Console.ReadKey();
-                throw e;
+                throw;
             }
 #endif
         }

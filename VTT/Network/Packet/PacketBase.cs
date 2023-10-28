@@ -69,7 +69,7 @@
             if (this.Compressed)
             {
                 using MemoryStream ms2 = new MemoryStream();
-                using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Compress);
+                using DeflateStream ds = new DeflateStream(ms2, System.IO.Compression.CompressionMode.Compress);
                 using BinaryWriter bw2 = new BinaryWriter(ds);
                 this.Encode(bw2);
                 ds.Close();
@@ -109,7 +109,7 @@
             if (this.Compressed)
             {
                 using MemoryStream ms2 = new MemoryStream();
-                using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Compress);
+                using DeflateStream ds = new DeflateStream(ms2, System.IO.Compression.CompressionMode.Compress);
                 using BinaryWriter bw2 = new BinaryWriter(ds);
                 this.Encode(bw2);
                 ds.Close();

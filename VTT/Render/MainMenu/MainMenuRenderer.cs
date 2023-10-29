@@ -933,8 +933,9 @@
                         ImGui.BeginDisabled();
                     }
 
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.comprehensive_auras_multiplier"));
                     float cAurasMul = Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier;
-                    if (ImGui.SliderFloat(lang.Translate("menu.settings.comprehensive_auras_multiplier"), ref cAurasMul, 0, 1))
+                    if (ImGui.SliderFloat("##Aura Opacity", ref cAurasMul, 0, 1))
                     {
                         Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier = cAurasMul;
                         Client.Instance.Settings.Save();

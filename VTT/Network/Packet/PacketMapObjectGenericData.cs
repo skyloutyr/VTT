@@ -16,6 +16,7 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             List<(Guid, Guid, object)> changes = new List<(Guid, Guid, object)>();
+            this.GetContextLogger().Log(LogLevel.Debug, $"Got object data change packet for {this.Data.Count} objects, of type {this.ChangeType}");
             foreach ((Map, MapObject, object) d in this.ListObjects())
             {
                 bool hasAccess = true;

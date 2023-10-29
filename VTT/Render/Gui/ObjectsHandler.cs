@@ -17,6 +17,10 @@
     {
         private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state)
         {
+            List<(Guid, Guid)> SelectedToPacket2(List<MapObject> os) => os.Select(x => (x.MapID, x.ID)).ToList();
+            List<(Guid, Guid, object)> SelectedToPacket3(List<MapObject> os, object data) => os.Select(x => (x.MapID, x.ID, data)).ToList();
+            List<(Guid, Guid, T)> SelectedToPacketEx<T>(List<MapObject> os, Func<MapObject, T> data) => os.Select(x => (x.MapID, x.ID, data(x))).ToList();
+
             if (state.clientMap != null)
             {
                 if (ImGui.Begin(lang.Translate("ui.properties") + "###Properties"))
@@ -39,8 +43,7 @@
 
                         if (ImGui.ImageButton("btnDeleteObject", this.DeleteIcon, new System.Numerics.Vector2(16, 16)) && canEdit)
                         {
-                            List<(Guid, Guid)> l = new List<(Guid, Guid)>() { (mo.MapID, mo.ID) };
-                            PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = l, SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
+                            PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = SelectedToPacket2(os), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
                             pdmo.Send();
                         }
 
@@ -67,8 +70,8 @@
                         bool nVisible = mo.IsNameVisible;
                         if (ImGui.Checkbox("##NameVisible", ref nVisible))
                         {
-                            mo.IsNameVisible = nVisible;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsNameVisible, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, nVisible) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.IsNameVisible = nVisible);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsNameVisible, Data = SelectedToPacket3(os, nVisible), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -92,16 +95,17 @@
                         ImGui.SameLine();
                         if (ImGui.InputText(lang.Translate("ui.properties.name") + "###Name", ref n, ushort.MaxValue))
                         {
-                            mo.Name = n;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Name, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, n) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.Name = n);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Name, Data = SelectedToPacket3(os, n), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
                         System.Numerics.Vector3 oPos = mo.Position.SystemVector();
                         if (ImGui.InputFloat3(lang.Translate("ui.properties.position") + "###Position", ref oPos) && canEdit)
                         {
-                            mo.Position = oPos.GLVector();
-                            List<(Guid, Guid, Vector4)> changes = new List<(Guid, Guid, Vector4)>() { (mo.MapID, mo.ID, new Vector4(mo.Position, 1.0f)) };
+                            Vector3 deltaMain = oPos.GLVector() - mo.Position;
+                            os.ForEach(x => x.Position += deltaMain);
+                            List<(Guid, Guid, Vector4)> changes = SelectedToPacketEx(os, x => new Vector4(x.Position, 1.0f));
                             PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = PacketChangeObjectModelMatrix.ChangeType.Position };
                             pmo.Send();
                         }
@@ -109,12 +113,14 @@
                         System.Numerics.Vector3 oScale = mo.Scale.SystemVector();
                         if (ImGui.InputFloat3(lang.Translate("ui.properties.scale") + "###Scale", ref oScale) && canEdit)
                         {
-                            mo.Scale = oScale.GLVector();
-                            List<(Guid, Guid, Vector4)> changes = new List<(Guid, Guid, Vector4)>() { (mo.MapID, mo.ID, new Vector4(mo.Scale, 1.0f)) };
+                            Vector3 deltaMain = oScale.GLVector() - mo.Scale;
+                            os.ForEach(x => x.Scale += deltaMain);
+                            List<(Guid, Guid, Vector4)> changes = SelectedToPacketEx(os, x => new Vector4(x.Scale, 1.0f));
                             PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = PacketChangeObjectModelMatrix.ChangeType.Scale };
                             pmo.Send();
                         }
 
+                        // Can't do multi-select rotation changes because quaternion delta is whacky
                         System.Numerics.Vector4 oRot = new System.Numerics.Vector4(mo.Rotation.X, mo.Rotation.Y, mo.Rotation.Z, mo.Rotation.W);
                         if (ImGui.InputFloat4(lang.Translate("ui.properties.rotation") + "###Rotation", ref oRot) && canEdit)
                         {
@@ -143,16 +149,16 @@
                         if (ImGui.Combo(lang.Translate("ui.properties.owner") + "###Owner", ref id, names, names.Length))
                         {
                             Guid nOID = ids[id];
-                            mo.OwnerID = nOID;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Owner, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, nOID) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.OwnerID = nOID);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Owner, Data = SelectedToPacket3(os, nOID), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
                         int layer = mo.MapLayer;
                         if (ImGui.SliderInt(lang.Translate("ui.properties.layer") + "###Layer", ref layer, -2, 2))
                         {
-                            mo.MapLayer = layer;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.MapLayer, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, layer) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.MapLayer = layer);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.MapLayer, Data = SelectedToPacket3(os, layer), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -164,8 +170,8 @@
                         bool mEnableLights = mo.LightsEnabled;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.enable_lights") + "###Enable Lights", ref mEnableLights))
                         {
-                            mo.LightsEnabled = mEnableLights;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LightsEnabled, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mEnableLights) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.LightsEnabled = mEnableLights);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LightsEnabled, Data = SelectedToPacket3(os, mEnableLights), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -178,8 +184,8 @@
                         bool mCastShadows = mo.LightsCastShadows;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.cast_shadows") + "###Cast Shadows", ref mCastShadows))
                         {
-                            mo.LightsCastShadows = mCastShadows;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LightsCastShadows, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mCastShadows) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.LightsCastShadows = mCastShadows);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LightsCastShadows, Data = SelectedToPacket3(os, mCastShadows), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -191,8 +197,8 @@
                         bool mSelfShadows = mo.LightsSelfCastsShadow;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.self_shadow") + "###Cast Own Shadows", ref mSelfShadows))
                         {
-                            mo.LightsSelfCastsShadow = mSelfShadows;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.SelfCastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mSelfShadows) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.LightsSelfCastsShadow = mSelfShadows);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.SelfCastsShadow, Data = SelectedToPacket3(os, mSelfShadows), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -204,8 +210,8 @@
                         bool mCastsShadows = mo.CastsShadow;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.casts_shadow") + "###Casts Shadow", ref mCastsShadows))
                         {
-                            mo.CastsShadow = mCastsShadows;
-                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CastsShadow, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mCastsShadows) }, IsServer = false, Session = Client.Instance.SessionID };
+                            os.ForEach(x => x.CastsShadow = mCastsShadows);
+                            PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CastsShadow, Data = SelectedToPacket3(os, mCastsShadows), IsServer = false, Session = Client.Instance.SessionID };
                             pmogd.Send();
                         }
 
@@ -217,15 +223,15 @@
                         bool mIsInfo = mo.IsInfoObject;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.is_info") + "###Is Info", ref mIsInfo))
                         {
-                            mo.IsInfoObject = mIsInfo;
-                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsInfo, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsInfo) } }.Send();
+                            os.ForEach(x => x.IsInfoObject = mIsInfo);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsInfo, Data = SelectedToPacket3(os, mIsInfo) }.Send();
                         }
 
                         bool mDoNoDraw = mo.DoNotRender;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.do_no_draw") + "###Do Not Draw", ref mDoNoDraw))
                         {
-                            mo.DoNotRender = mDoNoDraw;
-                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DoNotDraw, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mDoNoDraw) } }.Send();
+                            os.ForEach(x => x.DoNotRender = mDoNoDraw);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DoNotDraw, Data = SelectedToPacket3(os, mDoNoDraw) }.Send();
                         }
 
                         if (ImGui.IsItemHovered())
@@ -241,8 +247,8 @@
                         bool mIsCrossed = mo.IsCrossedOut;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.crossed") + "###Crossed Out", ref mIsCrossed))
                         {
-                            mo.IsCrossedOut = mIsCrossed;
-                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsCrossedOut, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mIsCrossed) } }.Send();
+                            os.ForEach(x => x.IsCrossedOut = mIsCrossed);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsCrossedOut, Data = SelectedToPacket3(os, mIsCrossed) }.Send();
                         }
 
                         ImGui.Text(lang.Translate("ui.properties.tint_color"));
@@ -270,8 +276,8 @@
                             bool mHasCustomNameplate = mo.HasCustomNameplate;
                             if (ImGui.Checkbox(lang.Translate("ui.properties.has_custom_nameplate") + "###Has Custom Nameplate", ref mHasCustomNameplate))
                             {
-                                mo.HasCustomNameplate = mHasCustomNameplate;
-                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.HasCustomNameplate, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mHasCustomNameplate) } }.Send();
+                                os.ForEach(x => x.HasCustomNameplate = mHasCustomNameplate);
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.HasCustomNameplate, Data = SelectedToPacket3(os, mHasCustomNameplate) }.Send();
                             }
 
                             if (ImGui.IsItemHovered())
@@ -303,8 +309,8 @@
 
                             if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
                             {
-                                mo.ShaderID = Guid.Empty;
-                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, Guid.Empty) } }.Send();
+                                os.ForEach(x => x.ShaderID = Guid.Empty);
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = SelectedToPacket3(os, Guid.Empty) }.Send();
                             }
                         }
 

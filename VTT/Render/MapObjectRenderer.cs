@@ -48,6 +48,8 @@
         public WavefrontObject RotateCircle { get; set; }
         public WavefrontObject Cross { get; set; }
 
+        public WavefrontObject AuraSphere { get; set; }
+
         public SunShadowRenderer DirectionalLightRenderer { get; set; }
         public FastLightRenderer FastLightRenderer { get; set; }
 
@@ -123,6 +125,8 @@
 
             this.RotateCircle = OpenGLUtil.LoadModel("arrow_ring", VertexFormat.Pos);
             this.Cross = OpenGLUtil.LoadModel("cross", VertexFormat.Pos);
+
+            this.AuraSphere = OpenGLUtil.LoadModel("sphere_uhd", VertexFormat.Pos);
 
             this.DirectionalLightRenderer = new SunShadowRenderer();
             this.DirectionalLightRenderer.Create();
@@ -1170,9 +1174,9 @@
                     shader["model"].Set(model);
                     shader["u_color"].Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f * (halfAura ? Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier : 1.0f)));
                     GL.CullFace(CullFaceMode.Front);
-                    Client.Instance.Frontend.Renderer.RulerRenderer.ModelSphere.Render();
+                    this.AuraSphere.Render();
                     GL.CullFace(CullFaceMode.Back);
-                    Client.Instance.Frontend.Renderer.RulerRenderer.ModelSphere.Render();
+                    this.AuraSphere.Render();
                 }
             }
 

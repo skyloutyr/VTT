@@ -131,6 +131,7 @@
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
     <None Remove="Embed\sphere_mediumres.obj" />
+    <None Remove="Embed\sphere_uhd.obj" />
     <None Remove="Embed\square.obj" />
     <None Remove="Embed\turn-tracker-back-no-object.png" />
     <None Remove="Embed\turn-tracker-back.png" />
@@ -146,6 +147,10 @@
 
   <ItemGroup>
     <Content Include="icon-alpha.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 
   <ItemGroup>

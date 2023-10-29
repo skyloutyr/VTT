@@ -558,3 +558,6 @@ menu.settings.compression_dxt.fast=Скорость
 menu.settings.compression_dxt.balanced=Баланс
 menu.settings.compression_dxt.quality=Качество
 menu.settings.compression_dxt.tt=Управляет режимом сжатия DXT изображений за кадром.\nНе имеет эффекта если Асинхронное DXT Сжатие отключено.
+menu.settings.comprehensive_auras=Прозрачные Ауры
+menu.settings.comprehensive_auras.tt=Когда включено, ауры не выделенных объектов будут более прозрачны.
+menu.settings.comprehensive_auras_multiplier=Прозрачность Аур

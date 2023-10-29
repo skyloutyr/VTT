@@ -1162,12 +1162,13 @@
                     this._auraL.AddRange(mo.Auras);
                 }
 
+                bool halfAura = Client.Instance.Settings.ComprehensiveAuras && !Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Contains(mo) && this.ObjectMouseOver != mo;
                 this._auraL.Sort((l, r) => l.Item1.CompareTo(r.Item1));
                 foreach ((float, Color) aData in this._auraL)
                 {
                     Matrix4 model = Matrix4.CreateScale(aData.Item1 * 2.0f / m.GridUnit) * Matrix4.CreateTranslation(mo.Position);
                     shader["model"].Set(model);
-                    shader["u_color"].Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f));
+                    shader["u_color"].Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f * (halfAura ? Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier : 1.0f)));
                     GL.CullFace(CullFaceMode.Front);
                     Client.Instance.Frontend.Renderer.RulerRenderer.ModelSphere.Render();
                     GL.CullFace(CullFaceMode.Back);

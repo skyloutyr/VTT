@@ -608,6 +608,14 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public CompressionQuality DXTCompressionMode { get; set; } = CompressionQuality.Balanced;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool ComprehensiveAuras { get; set; } = true;
+
+        [DefaultValue(0.25f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float ComprehensiveAuraAlphaMultiplier { get; set; } = 0.25f;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");

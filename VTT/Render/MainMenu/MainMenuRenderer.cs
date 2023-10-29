@@ -812,6 +812,18 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    bool enableChatWindowNotification = Client.Instance.Settings.EnableChatNotification;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_chat_notification"), ref enableChatWindowNotification))
+                    {
+                        Client.Instance.Settings.EnableChatNotification = enableChatWindowNotification;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_chat_notification.tt"));
+                    }
+
                     ImGui.Text(lang.Translate("menu.settings.sound.master"));
                     float svMaster = Client.Instance.Settings.SoundMasterVolume;
                     if (ImGui.SliderFloat("##MasterVolume", ref svMaster, 0, 1))
@@ -892,18 +904,6 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.chat_brightness.tt"));
                     }
 
-                    bool enableChatWindowNotification = Client.Instance.Settings.EnableChatNotification;
-                    if (ImGui.Checkbox(lang.Translate("menu.settings.enable_chat_notification"), ref enableChatWindowNotification))
-                    {
-                        Client.Instance.Settings.EnableChatNotification = enableChatWindowNotification;
-                        Client.Instance.Settings.Save();
-                    }
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("menu.settings.enable_chat_notification.tt"));
-                    }
-
                     bool mTextThickShadow = Client.Instance.Settings.TextThickDropShadow;
                     if (ImGui.Checkbox(lang.Translate("menu.settings.thick_drop_shadow"), ref mTextThickShadow))
                     {
@@ -914,6 +914,35 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.thick_drop_shadow.tt"));
+                    }
+
+                    bool enableComprehensiveAuras = Client.Instance.Settings.ComprehensiveAuras;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.comprehensive_auras"), ref enableComprehensiveAuras))
+                    {
+                        Client.Instance.Settings.ComprehensiveAuras = enableComprehensiveAuras;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.comprehensive_auras.tt"));
+                    }
+
+                    if (!enableComprehensiveAuras)
+                    {
+                        ImGui.BeginDisabled();
+                    }
+
+                    float cAurasMul = Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier;
+                    if (ImGui.SliderFloat(lang.Translate("menu.settings.comprehensive_auras_multiplier"), ref cAurasMul, 0, 1))
+                    {
+                        Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier = cAurasMul;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (!enableComprehensiveAuras)
+                    {
+                        ImGui.EndDisabled();
                     }
 
                     ClientSettings.UISkin dSkin = Client.Instance.Settings.InterfaceSkin;

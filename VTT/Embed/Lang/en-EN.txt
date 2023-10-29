@@ -558,3 +558,6 @@ menu.settings.compression_dxt.fast=Fast
 menu.settings.compression_dxt.balanced=Balanced
 menu.settings.compression_dxt.quality=Quality
 menu.settings.compression_dxt.tt=Controls the async DXT compression mode.\nDoes nothing if Async DXT Compression is disabled.
+menu.settings.comprehensive_auras=Comprehensive Auras
+menu.settings.comprehensive_auras.tt=If enabled, auras of not selected or moused over objects will be more transparent.
+menu.settings.comprehensive_auras_multiplier=Aura Opacity

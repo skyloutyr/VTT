@@ -2153,7 +2153,7 @@ r = $INPUT@6$;
             }
        },
 
-@"$OUTPUT@0$ = mod($INPUT@0$, $INPUT@1$);
+@"$OUTPUT@0$ = $INPUT@0$ % $INPUT@1$;
 ");
 
         public static ShaderNodeTemplate IntPow { get; } = new ShaderNodeTemplate(Guid.Parse("51209d85-1375-4309-b821-025e788a13fb"), ShaderTemplateCategory.MathInt, "Int ^ Int", true, new NodeInput[] {

@@ -409,15 +409,28 @@
                                     if (mipArray.Length > 1)
                                     {
                                         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
-                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mipArray.Length - 1);
                                         int dw = imgS.Width;
                                         int dh = imgS.Height;
 
-                                        for (int i = 0; i < mipArray.Length; ++i)
+                                        int sMin = Math.Min(dw, dh);
+                                        int nPossibleSteps = 0;
+                                        while (true)
+                                        {
+                                            ++nPossibleSteps;
+                                            sMin >>= 1;
+                                            if (sMin == 0)
+                                            {
+                                                break;
+                                            }
+                                        }
+
+                                        nPossibleSteps = Math.Min(nPossibleSteps, mipArray.Length);
+                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nPossibleSteps - 1);
+                                        for (int i = 0; i < nPossibleSteps; ++i)
                                         {
                                             GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray[i].Length, mipArray[i]);
-                                            dw = (int)MathF.Floor(dw / 2f);
-                                            dh = (int)MathF.Floor(dh / 2f);
+                                            dw >>= 1;
+                                            dh >>= 1;
                                         }
                                     }
                                     else

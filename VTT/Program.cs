@@ -118,9 +118,21 @@
                     }
                 }
 
-                File.WriteAllText(Path.Combine(IOVTT.AppDir, "crash-" + DateTimeOffset.Now.ToString("dd-MM-yyyy-HH-mm-ss") + ".txt"), eT);
+                string dateTimeString = DateTimeOffset.Now.ToString("dd-MM-yyyy-HH-mm-ss");
+                File.WriteAllText(Path.Combine(IOVTT.AppDir, "crash-" + dateTimeString + ".txt"), eT);
                 Client.Instance?.CloseLogger();
                 Server.Instance?.CloseLogger();
+                if (ArgsManager.TryGetValue("debug", out bool b))
+                {
+                    try
+                    {
+                        W32MinidumpInterlop.GenerateMiniDump("dump-" + dateTimeString + ".dmp");
+                    }
+                    catch
+                    {
+                        // NOOP
+                    }
+                }
             }
             catch
             {

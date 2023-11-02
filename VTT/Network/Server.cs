@@ -574,7 +574,7 @@
             }
         }
 
-        private Map GetOrLoadMap(ServerMapPointer mapPointer) => mapPointer.Loaded ? mapPointer.Map : mapPointer.Valid ? this.LoadMap(mapPointer) : null;
+        private Map GetOrLoadMap(ServerMapPointer mapPointer) => mapPointer == null ? null : mapPointer.Loaded ? mapPointer.Map : mapPointer.Valid ? this.LoadMap(mapPointer) : null;
 
         private Map LoadMap(ServerMapPointer mapPointerData)
         {
@@ -710,6 +710,12 @@
         {
             get => this.Info.IsObserver;
             set => this.Info.IsObserver = value;
+        }
+
+        public bool CanDraw
+        {
+            get => this.Info.CanDraw;
+            set => this.Info.CanDraw = value;
         }
 
         public PacketNetworkManager LocalNetManager { get; set; }

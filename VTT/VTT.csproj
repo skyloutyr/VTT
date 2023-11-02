@@ -27,6 +27,8 @@
     <None Remove="Embed\deferred.vert" />
     <None Remove="Embed\deferred_final.frag" />
     <None Remove="Embed\deferred_final.vert" />
+    <None Remove="Embed\drawing.frag" />
+    <None Remove="Embed\drawing.vert" />
     <None Remove="Embed\emoji-data.txt" />
     <None Remove="Embed\fast_light.frag" />
     <None Remove="Embed\fast_light.vert" />
@@ -150,6 +152,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Embed\drawing.frag" />
+    <EmbeddedResource Include="Embed\drawing.vert" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

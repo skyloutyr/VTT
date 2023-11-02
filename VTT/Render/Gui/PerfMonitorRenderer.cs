@@ -3,6 +3,7 @@
     using ImGuiNET;
     using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.ColorSpaces;
     using System;
     using System.Collections.Generic;
     using System.Numerics;
@@ -109,8 +110,9 @@
                 double cpuPings = Client.Instance.Frontend.Renderer.PingRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuRulers = Client.Instance.Frontend.Renderer.RulerRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuFastLights = Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.CPUTimer?.ElapsedMillis() ?? 0;
+                double cpuDrawings = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer?.CPUTimer?.ElapsedMillis() ?? 0;
 
-                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender + cpuFastLights;
+                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender + cpuFastLights + cpuDrawings;
                 double totalTarget = Math.Max(total, frameTarget);
 
                 double objectsTotal = cpuDeferred + cpuMOMain + cpuMOAuras + cpuMOUBO + cpuMOLights + cpuMOGizmos + cpuMOHighlights + cpuCompoundRender;
@@ -141,6 +143,7 @@
                     RenderSection(lang.Translate("ui.performance.frame_pings"), cpuPings, cpuPings / total);
                     RenderSection(lang.Translate("ui.performance.frame_rulers"), cpuRulers, cpuRulers / total);
                     RenderSection(lang.Translate("ui.performance.frame_fast_lights"), cpuFastLights, cpuFastLights / total);
+                    RenderSection(lang.Translate("ui.performance.frame_drawings"), cpuDrawings, cpuDrawings / total);
                     ImGui.NewLine();
                     ImGui.TreePop();
                 }

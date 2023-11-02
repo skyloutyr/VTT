@@ -1,6 +1,7 @@
 ﻿namespace VTT
 {
     using System;
+    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Net;
@@ -122,7 +123,7 @@
                 File.WriteAllText(Path.Combine(IOVTT.AppDir, "crash-" + dateTimeString + ".txt"), eT);
                 Client.Instance?.CloseLogger();
                 Server.Instance?.CloseLogger();
-                if (ArgsManager.TryGetValue("debug", out bool b))
+                if (ArgsManager.TryGetValue("debug", out bool b) && !Debugger.IsAttached)
                 {
                     try
                     {

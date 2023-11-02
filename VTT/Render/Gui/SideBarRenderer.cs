@@ -21,7 +21,7 @@
             ImGui.SetNextWindowPos(Vector2.Zero);
             if (ImGui.Begin("Mode Controls", window_flags))
             {
-                for (int i = 0; i < 6; ++i)
+                for (int i = 0; i < 7; ++i)
                 {
                     if (!Client.Instance.IsAdmin && i == (int)EditMode.FOW)
                     {
@@ -54,7 +54,7 @@
 
                     ImGui.PopStyleColor();
                     ImGui.PopStyleVar();
-                    if (i != 5)
+                    if (i != 6)
                     {
                         ImGui.NewLine();
                     }
@@ -509,6 +509,95 @@
                 if (ccm == CameraControlMode.Rotate)
                 {
                     ImGui.PopStyleColor();
+                }
+
+                ImGui.PopStyleColor();
+                ImGui.PopStyleVar();
+                ImGui.End();
+            }
+        }
+
+        private unsafe void RenderDrawControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
+            if (mor.EditMode == EditMode.Draw)
+            {
+                ImGui.SetNextWindowBgAlpha(0.35f);
+                ImGui.SetNextWindowPos(Vec56x70);
+                ImGui.Begin("##DrawControls", window_flags);
+
+                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+
+                bool selected = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing;
+                if (ImImageButton("##DrawModeBtnDraw", this.FOWModeBrush, Vec32x32, selected))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = true;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.draw.brush.tt"));
+                }
+
+                ImGui.SameLine();
+
+                if (ImImageButton("##DrawModeBtnErase", this.MeasureModeErase, Vec32x32, !selected))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = false;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.draw.erase.tt"));
+                }
+
+                float radius = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius;
+                if (ImGui.SliderFloat("##DrawModeRadius", ref radius, 0.1f, 10f))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius = MathF.Max(0.025f, radius);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.draw.radius.tt"));
+                }
+
+                if (!Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing)
+                {
+                    Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
+                    if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###DrawEraserMask", ref id, names, names.Length))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask = ids[id];
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                    }
+                }
+
+                ImGui.Separator();
+                if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###DrawColorPicker"))
+                {
+                    Vector3 cclr = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor.Xyz.SystemVector();
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.ColorPicker3("##DrawColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = new OpenTK.Mathematics.Vector4(cclr.GLVector(), 1.0f);
+                    }
+
+                    if (ImGui.Button(lang.Translate("ui.generic.reset") + "###DrawClear"))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
+                    }
+
+                    ImGui.PopItemWidth();
+                    ImGui.TreePop();
                 }
 
                 ImGui.PopStyleColor();

@@ -6,6 +6,7 @@
     using System.Numerics;
     using VTT.Asset;
     using VTT.Network;
+    using VTT.Network.Packet;
     using VTT.Util;
 
     public partial class GuiRenderer
@@ -61,8 +62,25 @@
                     }
 
                     ImGui.Text(lang.Translate("ui.network.id_client_mappings"));
-                    if (ImGui.BeginTable("TableClientMapping", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
+                    if (ImGui.BeginTable("TableClientMapping", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
                     {
+                        ImGui.TableHeadersRow();
+                        ImGui.TableSetColumnIndex(0);
+                        ImGui.Text(lang.Translate("ui.network.client.color"));
+                        ImGui.TableSetColumnIndex(1);
+                        ImGui.Text(lang.Translate("ui.network.client.id"));
+                        ImGui.TableSetColumnIndex(2);
+                        ImGui.Text(lang.Translate("ui.network.client.name"));
+                        ImGui.TableSetColumnIndex(3);
+                        ImGui.Text(lang.Translate("ui.network.client.status"));
+                        ImGui.TableSetColumnIndex(4);
+                        ImGui.Text(lang.Translate("ui.network.client.can_draw"));
+                        ImGui.TableSetColumnIndex(5);
+                        ImGui.Text(lang.Translate("ui.network.client.admin"));
+                        ImGui.TableSetColumnIndex(6);
+                        ImGui.Text(lang.Translate("ui.network.client.observer"));
+                        ImGui.TableSetColumnIndex(7);
+                        ImGui.Text(lang.Translate("ui.network.client.banned"));
                         foreach (ClientInfo ci in Client.Instance.ClientInfos.Values)
                         {
                             if (ci.ID.Equals(Guid.Empty))
@@ -85,6 +103,31 @@
                             else
                             {
                                 ImGui.TextColored(((System.Numerics.Vector4)Color.Gray), lang.Translate("ui.network.offline"));
+                            }
+
+                            ImGui.TableSetColumnIndex(4);
+                            bool bDrawings = ci.CanDraw;
+                            if (ImGui.Checkbox("##CanDrawClient_" + ci.ID, ref bDrawings))
+                            {
+                                new PacketChangeClientPermissions() { ChangeeID = ci.ID, ChangeType = PacketChangeClientPermissions.PermissionType.CanDraw, ChangeValue = bDrawings }.Send();
+                            }
+
+                            ImGui.TableSetColumnIndex(5);
+                            bool bAdm = ci.IsAdmin;
+                            ImGui.Checkbox("##IsAdmClient_" + ci.ID, ref bAdm);
+
+                            ImGui.TableSetColumnIndex(6);
+                            bool bObs = ci.IsObserver;
+                            if (ImGui.Checkbox("##IsObsClient_" + ci.ID, ref bObs))
+                            {
+                                new PacketChangeClientPermissions() { ChangeeID = ci.ID, ChangeType = PacketChangeClientPermissions.PermissionType.IsObserver, ChangeValue = bObs }.Send();
+                            }
+
+                            ImGui.TableSetColumnIndex(7);
+                            bool bBan = ci.IsBanned;
+                            if (ImGui.Checkbox("##IsBannedClient_" + ci.ID, ref bBan))
+                            {
+                                new PacketChangeClientPermissions() { ChangeeID = ci.ID, ChangeType = PacketChangeClientPermissions.PermissionType.IsBanned, ChangeValue = bBan }.Send();
                             }
                         }
 

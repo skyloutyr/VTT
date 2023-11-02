@@ -800,6 +800,23 @@
                         ImGui.EndDisabled();
                     }
 
+                    string[] drawingsPerformance = { lang.Translate("menu.settings.drawings.none"), lang.Translate("menu.settings.drawings.minimum"), lang.Translate("menu.settings.drawings.limited"), lang.Translate("menu.settings.drawings.standard"), lang.Translate("menu.settings.drawings.extra"), lang.Translate("menu.settings.drawings.unlimited") };
+                    int dPerfIndex = (int)Client.Instance.Settings.DrawingsPerformance;
+
+                    ImGui.Text(lang.Translate("menu.settings.drawings.performance"));
+                    if (ImGui.Combo("##Drawings Restrictions", ref dPerfIndex, drawingsPerformance, 6))
+                    {
+                        ClientSettings.DrawingsResourceAllocationMode nVal = (ClientSettings.DrawingsResourceAllocationMode)dPerfIndex;
+                        Client.Instance.Settings.DrawingsPerformance = nVal;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.performance.tt"));
+                    }
+
+
                     ImGui.TreePop();
                 }
 

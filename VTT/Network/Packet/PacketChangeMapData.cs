@@ -187,6 +187,12 @@
 
                         break;
                     }
+
+                    case DataType.EnableDrawing:
+                    {
+                        m.EnableDrawing = (bool)this.Data;
+                        break;
+                    }
                 }
 
                 if (isServer)
@@ -227,6 +233,7 @@
                 case DataType.SunEnabled:
                 case DataType.DarkvisionEnabled:
                 case DataType.Is2D:
+                case DataType.EnableDrawing:
                 {
                     this.Data = br.ReadBoolean();
                     break;
@@ -283,6 +290,7 @@
                 case DataType.SunEnabled:
                 case DataType.DarkvisionEnabled:
                 case DataType.Is2D:
+                case DataType.EnableDrawing:
                 {
                     bw.Write((bool)this.Data);
                     break;
@@ -346,7 +354,8 @@
             DarkvisionEnabled,
             Is2D,
             Camera2DHeight,
-            SunColor
+            SunColor,
+            EnableDrawing
         }
     }
 }

@@ -240,5 +240,66 @@
                 GL.DrawArrays(PrimitiveType.Triangles, 0, this._numElements);
             }
         }
+
+        public static void ReadPositionsAndIndices(string[] lines, out float[] vertices, out uint[] indices)
+        {
+            List<Vector3> positions = new List<Vector3>();
+
+            List<Vector3i> faces = new List<Vector3i>();
+
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
+
+            foreach (string line in lines)
+            {
+                if (line.StartsWith("v ")) // Vertex data
+                {
+                    string[] d = line.Split(' ');
+                    float x = float.Parse(d[1]);
+                    float y = float.Parse(d[2]);
+                    float z = float.Parse(d[3]);
+                    positions.Add(new Vector3(x, y, z));
+                    continue;
+                }
+
+                if (line.StartsWith("f "))
+                {
+                    string[] d = line.Split(' ');
+                    for (int i = 1; i < d.Length; i++)
+                    {
+                        string dt = d[i];
+                        string[] dd = dt.Split('/');
+                        int x = int.Parse(dd[0]);
+                        int y = dd.Length == 2 ? -1 : int.Parse(dd[1]); // Format may be v1//vn1
+                        int z = dd.Length == 1 ? -1 : int.Parse(dd[^1]);
+                        faces.Add(new Vector3i(x, y, z));
+                    }
+
+                    continue;
+                }
+            }
+
+            if (faces.Count % 3 != 0)
+            {
+                throw new System.Exception("Model not triangulated!");
+            }
+
+            // If asking for position only we can use EBOs
+            indices = new uint[faces.Count];
+            for (int i = 0; i < faces.Count; ++i)
+            {
+                indices[i] = (uint)(faces[i].X - 1);
+            }
+
+            vertices = new float[positions.Count * 3];
+            for (int i = 0; i < positions.Count; ++i)
+            {
+                int idx = i * 3;
+                Vector3 p = positions[i];
+                vertices[idx + 0] = p.X;
+                vertices[idx + 1] = p.Y;
+                vertices[idx + 2] = p.Z;
+            }
+        }
     }
 }

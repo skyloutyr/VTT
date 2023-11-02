@@ -71,6 +71,17 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.clear_marks.tt"));
                     }
 
+                    ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
+                    if (ImGui.Button(lang.Translate("ui.maps.clear_drawings") + "###Clear Drawings"))
+                    {
+                        new PacketRemoveAllDrawings() { MapID = Client.Instance.CurrentMap.ID }.Send();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.clear_drawings.tt"));
+                    }
+
                     ImGui.SetCursorPos(origPos);
 
                     int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
@@ -423,6 +434,19 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("ui.maps.point_shadows.tt"));
+                    }
+
+                    bool mDrawings = state.clientMap.EnableDrawing;
+                    if (ImGui.Checkbox(lang.Translate("ui.maps.drawing") + "###Enable Drawing", ref mDrawings))
+                    {
+                        state.clientMap.EnableDrawing = mDrawings;
+                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mDrawings, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnableDrawing };
+                        pcmd.Send();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.drawing.tt"));
                     }
 
                     #region Darkvision

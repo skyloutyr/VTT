@@ -65,7 +65,7 @@
             Map m = Client.Instance.CurrentMap;
             this.ObjectRenderer?.Update(m, time);
             this.SelectionManager?.Update();
-            this.MapRenderer?.Update(time);
+            this.MapRenderer?.Update(m, time);
             this.RulerRenderer?.Update(time);
             this.GuiRenderer?.MainMenuRenderer?.Update(time);
             this.ParticleRenderer?.CurrentlyEditedSystemInstance?.Update(new OpenTK.Mathematics.Vector3(5, 5, 5));
@@ -131,6 +131,7 @@
                 this.RulerRenderer?.Render(time);
                 this.ParticleRenderer.RenderFake();
                 this.ParticleRenderer.RenderAll();
+                this.MapRenderer.DrawingRenderer.Render(this.MapRenderer.ClientCamera);
                 this.GuiRenderer.Render(time);
                 this.SelectionManager.Render(time);
                 this.SkyRenderer.Render(time);

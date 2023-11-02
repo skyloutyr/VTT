@@ -1196,7 +1196,8 @@
         Rotate,
         Scale,
         FOW,
-        Measure
+        Measure,
+        Draw
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 420, Pack = 0)]

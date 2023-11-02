@@ -3,6 +3,7 @@
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
     using System;
+    using System.ComponentModel;
     using System.IO;
     using VTT.Util;
 
@@ -37,6 +38,10 @@
             set => this.Secret = string.IsNullOrEmpty(value) ? null : Convert.FromBase64String(value);
         }
 
+        [DefaultValue(true)]
+        [JsonProperty(PropertyName = "CanDraw", DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool CanDraw { get; set; } = true;
+
         public static ClientInfo Empty { get; } = new ClientInfo()
         {
             ID = Guid.Empty,
@@ -44,7 +49,8 @@
             Name = "All",
             Color = Color.White,
             IsAdmin = false,
-            IsObserver = false
+            IsObserver = false,
+            CanDraw = false
         };
 
         public ClientInfo()
@@ -85,6 +91,7 @@
             bw.Write(this.IsObserver);
             bw.Write(this.IsLoggedOn);
             bw.Write(this.IsBanned);
+            bw.Write(this.CanDraw);
         }
 
         public void Read(BinaryReader br)
@@ -97,6 +104,7 @@
             this.IsObserver = br.ReadBoolean();
             this.IsLoggedOn = br.ReadBoolean();
             this.IsBanned = br.ReadBoolean();
+            this.CanDraw = br.ReadBoolean();
         }
     }
 }

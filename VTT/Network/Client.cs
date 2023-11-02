@@ -322,6 +322,8 @@
                     this.Frontend.Renderer.MapRenderer.Switch2D(map.Is2D, map.DefaultCameraPosition.Z);
                     this.Frontend.Renderer.RulerRenderer.ActiveInfos.Clear();
                     this.Frontend.Renderer.RulerRenderer.ActiveInfos.AddRange(map.PermanentMarks);
+                    this.Frontend.Renderer.MapRenderer.DrawingRenderer.FreeAll();
+                    this.Frontend.Renderer.MapRenderer.DrawingRenderer.AddContainers(map.Drawings);
                 });
             }
 
@@ -616,6 +618,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float ComprehensiveAuraAlphaMultiplier { get; set; } = 0.25f;
 
+        [DefaultValue(DrawingsResourceAllocationMode.Standard)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DrawingsResourceAllocationMode DrawingsPerformance { get; set; } = DrawingsResourceAllocationMode.Standard;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -666,7 +673,8 @@
                 DisableSounds = false,
                 CompressionPreference = TextureCompressionPreference.DXT,
                 AsyncDXTCompression = true,
-                DXTCompressionMode = CompressionQuality.Balanced
+                DXTCompressionMode = CompressionQuality.Balanced,
+                DrawingsPerformance = DrawingsResourceAllocationMode.Standard
             };
 
             ret.Save();
@@ -743,6 +751,16 @@
             Disabled,
             BPTC,
             DXT
+        }
+
+        public enum DrawingsResourceAllocationMode
+        {
+            None,
+            Minimum,
+            Limited,
+            Standard,
+            Extra,
+            Unlimited
         }
     }
 

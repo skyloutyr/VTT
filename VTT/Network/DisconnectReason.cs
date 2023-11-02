@@ -9,6 +9,7 @@
         ProtocolMismatch,
         Banned,
         AlreadyConnected,
-        ManualDisconnect
+        ManualDisconnect,
+        IllegalOperation
     }
 }

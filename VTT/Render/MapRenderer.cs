@@ -18,6 +18,7 @@
 
         public GridRenderer GridRenderer { get; set; }
         public FOWRenderer FOWRenderer { get; set; }
+        public DrawingRenderer DrawingRenderer { get; set; }
 
         public Vector3? CursorWorld { get; set; }
 
@@ -25,7 +26,11 @@
         public float ZoomOrtho => this.camera2dzoom;
         public CameraControlMode CameraControlMode { get; set; } = CameraControlMode.Standard;
 
-        public void Update(double time) => this.HandleCamera(time);
+        public void Update(Map m, double time)
+        {
+            this.HandleCamera(time);
+            this.DrawingRenderer?.Update(m);
+        }
 
         public void Render(Map m, double time)
         {
@@ -43,6 +48,8 @@
             this.FOWRenderer = new FOWRenderer();
             this.FOWRenderer.Create();
             this.FOWRenderer.DeleteFOW();
+            this.DrawingRenderer = new DrawingRenderer();
+            this.DrawingRenderer.Init();
         }
 
         public void Resize(int w, int h)

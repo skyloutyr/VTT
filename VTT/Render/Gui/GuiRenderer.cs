@@ -264,7 +264,7 @@
             this.CameraMove = OpenGLUtil.LoadUIImage("icons8-video-camera-move-40");
             this.CameraRotate = OpenGLUtil.LoadUIImage("icons8-video-camera-rotate-40");
 
-            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure };
+            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
@@ -322,6 +322,7 @@
             this.RenderTranslationControls(mor, lang, window_flags);
             this.RenderCameraControls(mor, lang, window_flags);
             this.RenderMeasureControls(mor, lang, window_flags);
+            this.RenderDrawControls(mor, lang, window_flags);
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);
             this.RenderObjectProperties(lang, this.FrameState);

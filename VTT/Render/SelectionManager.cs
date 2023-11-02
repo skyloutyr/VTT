@@ -72,7 +72,7 @@
                 }
             }
 
-            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
                 bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
                 if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))

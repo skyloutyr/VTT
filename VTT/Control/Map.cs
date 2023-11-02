@@ -36,6 +36,7 @@
         public bool EnableShadows { get; set; } = true;
         public bool EnableDirectionalShadows { get; set; } = false;
         public bool EnableDarkvision { get; set; }
+        public bool EnableDrawing { get; set; } = true;
 
         public bool Is2D { get; set; }
         public float Camera2DHeight { get; set; } = 5.0f;
@@ -50,6 +51,7 @@
 
         public List<MapObject> Objects { get; } = new List<MapObject>();
         public List<RulerInfo> PermanentMarks { get; } = new List<RulerInfo>();
+        public List<DrawingPointContainer> Drawings { get; } = new List<DrawingPointContainer>();
 
         public Dictionary<Guid, MapObject> ObjectsByID { get; } = new Dictionary<Guid, MapObject>();
 
@@ -184,6 +186,7 @@
             this.EnableDarkvision = e.Get<bool>("EnableDarkvision");
             this.DefaultCameraPosition = e.GetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             this.DefaultCameraRotation = e.GetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
+            this.EnableDrawing = e.Get("EnableDrawing", true);
             (Guid, Guid, float)[] dvData = e.GetArray("DarkvisionData", (n, c) =>
             {
                 DataElement de = c.Get<DataElement>(n);
@@ -203,6 +206,15 @@
                 ri.Deserialize(de);
                 return ri;
             }, Array.Empty<RulerInfo>()));
+
+            this.Drawings.Clear();
+            this.Drawings.AddRange(e.GetArray("Drawings", (n, c) =>
+            {
+                DataElement de = c.Get<DataElement>(n);
+                DrawingPointContainer dpc = new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, Vector4.Zero);
+                dpc.Deserialize(de);
+                return dpc;
+            }, Array.Empty<DrawingPointContainer>()));
 
             this.Is2D = e.Get("Is2D", false);
             this.Camera2DHeight = e.Get("Camera2DHeight", 5.0f);
@@ -262,6 +274,7 @@
             ret.Set("EnableDarkvision", this.EnableDarkvision);
             ret.SetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
+            ret.Set("EnableDrawing", this.EnableDrawing);
             ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) =>
             {
                 DataElement d = new DataElement();
@@ -272,6 +285,7 @@
             });
 
             ret.SetArray("PermanentMarks", this.PermanentMarks.ToArray(), (n, c, e) => c.Set(n, e.Serialize()));
+            ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.Set(n, e.Serialize()));
             ret.Set("Is2D", this.Is2D);
             ret.Set("Camera2DHeight", this.Camera2DHeight);
             return ret;

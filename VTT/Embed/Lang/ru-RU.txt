@@ -588,3 +588,4 @@ ui.network.client.observer=Наб
 ui.disconnected.reason.illegaloperation=Нелегальная Операция
 ui.disconnected.reason.illegaloperation.tt=Сервер обнаружил нелегальную операцию исходящую от данного клиента.\nАдминистратор сервера был оповещён.
 ui.network.client.banned=Бан
+ui.maps.default=Карта по умолчанию

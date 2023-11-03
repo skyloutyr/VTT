@@ -122,6 +122,7 @@
                     server.Logger.Log(Util.LogLevel.Debug, "AssetRef data sent");
                     PacketMapPointer pmp = new PacketMapPointer() { Data = server.EnumerateMapData().Select(x => (x.MapID, x.MapFolder, x.MapName)).ToList(), IsServer = true, Remove = false, Session = sessionID };
                     pmp.Send(sc);
+                    new PacketSetDefaultMap() { MapID = server.Settings.DefaultMapID }.Send(sc);
                 }
 
                 foreach (TextJournal tj in server.Journals.Values)

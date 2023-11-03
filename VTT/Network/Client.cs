@@ -354,6 +354,8 @@
 
         public List<(string, string, Guid)> RawClientMPMapsData { get; } = new List<(string, string, Guid)>();
         public MPMapPointer ClientMPMapsRoot { get; } = new MPMapPointer() { Name = "/" };
+        public Guid DefaultMPMapID { get; set; } = Guid.Empty;
+
         public void SortClientMaps()
         {
             lock (this.ServerMapPointersLock)

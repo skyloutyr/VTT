@@ -609,13 +609,24 @@
                                 }
 
                                 ImGui.SameLine();
-                                ImGui.TextUnformatted(d.Name + "(" + d.MapID.ToString() + ")");
+                                string mName = d.Name + "(" + d.MapID.ToString() + ")";
+                                if (d.MapID.Equals(Client.Instance.DefaultMPMapID))
+                                {
+                                    mName = "★ " + mName;
+                                }
+
+                                ImGui.TextUnformatted(mName);
 
                                 ImGui.EndChild();
                                 bool hover = ImGui.IsItemHovered();
                                 if (hover && !hadTT)
                                 {
                                     ImGui.BeginTooltip();
+                                    if (d.MapID.Equals(Client.Instance.DefaultMPMapID))
+                                    {
+                                        ImGui.TextUnformatted(lang.Translate("ui.maps.default"));
+                                    }
+
                                     ImGui.Text(lang.Translate("ui.maps.players_here"));
                                     foreach (KeyValuePair<Guid, ClientInfo> ckv in Client.Instance.ClientInfos)
                                     {

@@ -15,6 +15,12 @@
                 server.Logger.Log(Util.LogLevel.Info, "Changing default map");
                 server.Settings.DefaultMapID = this.MapID;
                 server.Settings.Save();
+                this.Broadcast();
+            }
+
+            if (!isServer)
+            {
+                client.DefaultMPMapID = this.MapID;
             }
         }
 

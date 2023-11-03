@@ -589,3 +589,5 @@ ui.disconnected.reason.illegaloperation=Нелегальная Операция
 ui.disconnected.reason.illegaloperation.tt=Сервер обнаружил нелегальную операцию исходящую от данного клиента.\nАдминистратор сервера был оповещён.
 ui.network.client.banned=Бан
 ui.maps.default=Карта по умолчанию
+menu.settings.sound.map_fx=Эффекты
+menu.settings.sound.fx.ping=Пинг

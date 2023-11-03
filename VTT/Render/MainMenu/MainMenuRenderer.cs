@@ -859,6 +859,15 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    ImGui.Text(lang.Translate("menu.settings.sound.map_fx"));
+                    float svMFX = Client.Instance.Settings.SoundMapFXVolume;
+                    if (ImGui.SliderFloat("##MFXVolume", ref svMFX, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundMapFXVolume = svMFX;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
                     if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound.individual") + "###Individual sound notifications"))
                     {
                         ImGui.TextDisabled(lang.Translate("menu.settings.category.sound.individual.ui"));
@@ -873,6 +882,13 @@
                         if (ImGui.Checkbox(lang.Translate("menu.settings.sound.ui.turn"), ref bEnableTurnSound))
                         {
                             Client.Instance.Settings.EnableSoundTurnTracker = bEnableTurnSound;
+                            Client.Instance.Settings.Save();
+                        }
+
+                        bool bEnablePingSound = Client.Instance.Settings.EnableSoundPing;
+                        if (ImGui.Checkbox(lang.Translate("menu.settings.sound.fx.ping"), ref bEnablePingSound))
+                        {
+                            Client.Instance.Settings.EnableSoundPing = bEnablePingSound;
                             Client.Instance.Settings.Save();
                         }
 

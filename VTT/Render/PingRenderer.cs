@@ -12,6 +12,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Sound;
     using VTT.Util;
 
     public class PingRenderer
@@ -125,6 +126,10 @@
             {
                 p.DeathTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 10000;
                 this.ActivePings.Add(p);
+                if (Client.Instance.Settings.EnableSoundPing)
+                {
+                    Client.Instance.Frontend.Sound.PlaySound(Client.Instance.Frontend.Sound.PingAny, SoundCategory.MapFX);
+                }
             }
         }
 
@@ -277,17 +282,38 @@
                 winDrawList.AddImage(this.PingQuestion, uic - new Vector2(78, -40), uic - new Vector2(40, -78));
             }
 
+            long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             for (int i = this.ActivePings.Count - 1; i >= 0; i--)
             {
                 Ping p = this.ActivePings[i];
                 Vector3 world2 = (p.Position + OpenTK.Mathematics.Vector3.UnitZ).SystemVector();
                 Vector3 screen2 = cam.ToScreenspace(world2.GLVector()).SystemVector();
                 Vector2 screenxy2 = new Vector2(screen2.X, screen2.Y);
+                bool anyOOB = screenxy2.X < 16 || screenxy2.X > Client.Instance.Frontend.Width - 16 ||
+                                screenxy2.Y < 16 || screenxy2.Y > Client.Instance.Frontend.Height - 16;
                 screenxy2.X = OpenTK.Mathematics.MathHelper.Clamp(screenxy2.X, 16, Client.Instance.Frontend.Width - 16);
                 screenxy2.Y = OpenTK.Mathematics.MathHelper.Clamp(screenxy2.Y, 16, Client.Instance.Frontend.Height - 16);
 
                 Texture pTex = p.Type == Ping.PingType.Question ? this.PingQuestion : p.Type == Ping.PingType.Attack ? this.PingAttack : p.Type == Ping.PingType.Exclamation ? this.PingExclamation : p.Type == Ping.PingType.Generic ? this.PingGeneric : this.PingDefend;
                 winDrawList.AddImage(pTex, screenxy2 - new Vector2(16, 16), screenxy2 + new Vector2(16, 16));
+
+                if (anyOOB)
+                {
+                    long delta = p.DeathTime - now;
+                    if (delta > 0)
+                    {
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            long deltaMod = (delta + (j * 500)) % 3000;
+                            float deltaF = deltaMod / 3000.0f;
+
+                            Vector2 sVec = new Vector2(16, 16);
+                            sVec += new Vector2(64, 64) * (deltaF < 0.5 ? 2 * deltaF * deltaF : 1 - (MathF.Pow((-2 * deltaF) + 2, 2) / 2));
+                            winDrawList.AddImage(pTex, screenxy2 - sVec, screenxy2 + sVec);
+                        }
+                    }
+                }
+
                 string oName = p.OwnerName;
                 Vector2 tSize = ImGuiHelper.CalcTextSize(oName);
                 winDrawList.AddText(screenxy2 + new Vector2(2, 26) - (tSize / 2), Color.Black.Abgr(), oName);

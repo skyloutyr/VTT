@@ -32,6 +32,7 @@
     <None Remove="Embed\emoji-data.txt" />
     <None Remove="Embed\fast_light.frag" />
     <None Remove="Embed\fast_light.vert" />
+    <None Remove="Embed\game-radar-ping-3.wav" />
     <None Remove="Embed\grid.frag" />
     <None Remove="Embed\grid.vert" />
     <None Remove="Embed\highlight.frag" />
@@ -154,6 +155,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Embed\drawing.frag" />
     <EmbeddedResource Include="Embed\drawing.vert" />
+    <EmbeddedResource Include="Embed\game-radar-ping-3.wav" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

@@ -16,6 +16,7 @@
 
         public ALSoundContainer ChatMessage { get; set; }
         public ALSoundContainer YourTurn { get; set; }
+        public ALSoundContainer PingAny { get; set; }
 
         public List<(SoundCategory, int)> ActiveSources { get; } = new List<(SoundCategory, int)>();
 
@@ -79,6 +80,7 @@
         {
             this.ChatMessage = this.LoadEmbedSound("simple-interface-tone");
             this.YourTurn = this.LoadEmbedSound("pop-ding-notification-effect-2");
+            this.PingAny = this.LoadEmbedSound("game-radar-ping-3");
         }
 
         private ALSoundContainer LoadEmbedSound(string name)
@@ -136,6 +138,11 @@
                 volume *= Client.Instance.Settings.SoundUIVolume;
             }
 
+            if (cat == SoundCategory.MapFX)
+            {
+                volume *= Client.Instance.Settings.SoundMapFXVolume;
+            }
+
             AL.Source(src, ALSourcef.Gain, volume);
         }
 
@@ -190,6 +197,7 @@
     public enum SoundCategory
     {
         Unknown,
-        UI
+        UI,
+        MapFX
     }
 }

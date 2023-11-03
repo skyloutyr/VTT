@@ -586,6 +586,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float SoundUIVolume { get; set; } = 1.0f;
 
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float SoundMapFXVolume { get; set; } = 1.0f;
+
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableSoundChatMessage { get; set; } = true;
@@ -593,6 +597,10 @@
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableSoundTurnTracker { get; set; } = true;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableSoundPing { get; set; } = true;
 
         [DefaultValue(false)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -669,9 +677,11 @@
                 TextThickDropShadow = true,
                 SoundMasterVolume = 1.0f,
                 SoundUIVolume = 1.0f,
+                SoundMapFXVolume = 1.0f,
                 EnableSoundChatMessage = true,
                 EnableChatNotification = true,
                 EnableSoundTurnTracker = true,
+                EnableSoundPing = true,
                 DisableSounds = false,
                 CompressionPreference = TextureCompressionPreference.DXT,
                 AsyncDXTCompression = true,

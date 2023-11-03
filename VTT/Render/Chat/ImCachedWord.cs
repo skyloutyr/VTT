@@ -1,6 +1,5 @@
 ﻿namespace VTT.Render.Chat
 {
-    using ImGuiNET;
     using VTT.Control;
 
     public readonly struct ImCachedWord

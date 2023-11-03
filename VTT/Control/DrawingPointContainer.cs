@@ -5,7 +5,6 @@
     using System.Collections.Generic;
     using VTT.Asset.Obj;
     using VTT.GL;
-    using VTT.Render;
     using VTT.Util;
     using OGL = OpenTK.Graphics.OpenGL.GL;
 

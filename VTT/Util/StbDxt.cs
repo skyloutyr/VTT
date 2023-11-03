@@ -135,11 +135,11 @@ public static unsafe class StbDxt
         int gv = (v & 0x07e0) >> 5;
         int bv = (v & 0x001f) >> 0;
 
-       // expand to 8 bits via bit replication
-       bOut[0] = unchecked((byte)((rv * 33) >> 2));
-       bOut[1] = unchecked((byte)((gv * 65) >> 4));
-       bOut[2] = unchecked((byte)((bv * 33) >> 2));
-       bOut[3] = 0;
+        // expand to 8 bits via bit replication
+        bOut[0] = unchecked((byte)((rv * 33) >> 2));
+        bOut[1] = unchecked((byte)((gv * 65) >> 4));
+        bOut[2] = unchecked((byte)((bv * 33) >> 2));
+        bOut[3] = 0;
     }
 
     static ushort As16Bit(int r, int g, int b) => (ushort)((Mul8Bit(r, 31) << 11) + (Mul8Bit(g, 63) << 5) + Mul8Bit(b, 31));
@@ -245,7 +245,7 @@ public static unsafe class StbDxt
 
         for (ch = 0; ch < 3; ch++)
         {
-            byte* bp =  block + ch;
+            byte* bp = block + ch;
             int muv, minv, maxv;
 
             muv = minv = maxv = bp[0];
@@ -282,12 +282,12 @@ public static unsafe class StbDxt
             int g = block[i * 4 + 1] - mu[1];
             int b = block[i * 4 + 2] - mu[2];
 
-            cov[0] += r* r;
-            cov[1] += r* g;
-            cov[2] += r* b;
-            cov[3] += g* g;
-            cov[4] += g* b;
-            cov[5] += b* b;
+            cov[0] += r * r;
+            cov[1] += r * g;
+            cov[2] += r * b;
+            cov[3] += g * g;
+            cov[4] += g * b;
+            cov[5] += b * b;
         }
 
         // convert covariance matrix to float, find principal axis via power iter
@@ -296,9 +296,9 @@ public static unsafe class StbDxt
             covf[i] = cov[i] / 255.0f;
         }
 
-        vfr = (float) (max[0] - min[0]);
-        vfg = (float) (max[1] - min[1]);
-        vfb = (float) (max[2] - min[2]);
+        vfr = (float)(max[0] - min[0]);
+        vfg = (float)(max[1] - min[1]);
+        vfb = (float)(max[2] - min[2]);
 
         for (iter = 0; iter < nIterPower; iter++)
         {
@@ -459,11 +459,11 @@ public static unsafe class StbDxt
 
             f = 3.0f / 255.0f / (xx * yy - xy * xy);
 
-            max16 =  unchecked((ushort)(Quantize5((At1_r * yy - At2_r * xy) * f) << 11));
+            max16 = unchecked((ushort)(Quantize5((At1_r * yy - At2_r * xy) * f) << 11));
             max16 |= unchecked((ushort)(Quantize6((At1_g * yy - At2_g * xy) * f) << 5));
             max16 |= unchecked((ushort)(Quantize5((At1_b * yy - At2_b * xy) * f) << 0));
 
-            min16 =  unchecked((ushort)(Quantize5((At2_r * xx - At1_r * xy) * f) << 11));
+            min16 = unchecked((ushort)(Quantize5((At2_r * xx - At1_r * xy) * f) << 11));
             min16 |= unchecked((ushort)(Quantize6((At2_g * xx - At1_g * xy) * f) << 5));
             min16 |= unchecked((ushort)(Quantize5((At2_b * xx - At1_b * xy) * f) << 0));
         }
@@ -489,7 +489,7 @@ public static unsafe class StbDxt
             if (((uint*)block)[i] != ((uint*)block)[0])
             {
                 break;
-            } 
+            }
         }
 
         if (i == 16)
@@ -548,14 +548,14 @@ public static unsafe class StbDxt
             mask ^= 0x55555555;
         }
 
-        dest[0] = (byte) (max16);
-        dest[1] = (byte) (max16 >> 8);
-        dest[2] = (byte) (min16);
-        dest[3] = (byte) (min16 >> 8);
-        dest[4] = (byte) (mask);
-        dest[5] = (byte) (mask >> 8);
-        dest[6] = (byte) (mask >> 16);
-        dest[7] = (byte) (mask >> 24);
+        dest[0] = (byte)(max16);
+        dest[1] = (byte)(max16 >> 8);
+        dest[2] = (byte)(min16);
+        dest[3] = (byte)(min16 >> 8);
+        dest[4] = (byte)(mask);
+        dest[5] = (byte)(mask >> 8);
+        dest[6] = (byte)(mask >> 16);
+        dest[7] = (byte)(mask >> 24);
     }
 
     static void CompressAlphaBlock(byte* dest, byte* src, int stride)

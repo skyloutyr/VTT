@@ -38,7 +38,7 @@
         private readonly bool _createdOnGlThread;
         private volatile int _glRequestsTodo;
         private readonly bool _checkGlRequests;
-        private ModelData.Metadata _meta;
+        private readonly ModelData.Metadata _meta;
 
         public GlbScene()
         {
@@ -608,14 +608,9 @@
                 glmat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
                 glmat.Name = mat.Name;
                 glmat.Index = (uint)i;
-                if (this._meta.FullRangeNormals)
-                {
-                    glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new RgbaVector(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.Rgb16f : PixelInternalFormat.Rgb32f);
-                }
-                else
-                {
-                    glmat.NormalTexture = this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.CompressedRgb : PixelInternalFormat.Rgb);
-                }
+                glmat.NormalTexture = this._meta.FullRangeNormals
+                    ? this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new RgbaVector(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.Rgb16f : PixelInternalFormat.Rgb32f)
+                    : this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.CompressedRgb : PixelInternalFormat.Rgb);
 
                 glmat.NormalAnimation = new TextureAnimation(null);
                 glmat.RoughnessFactor = mat.PbrMetallicRoughness.RoughnessFactor;

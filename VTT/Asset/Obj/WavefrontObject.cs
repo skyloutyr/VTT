@@ -1,12 +1,10 @@
 ﻿namespace VTT.Asset.Obj
 {
-    using Microsoft.Toolkit.HighPerformance;
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Linq;
     using System.Threading;
     using VTT.GL;
     using VTT.Util;

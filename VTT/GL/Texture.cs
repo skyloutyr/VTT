@@ -7,7 +7,6 @@
     using System;
     using System.Buffers;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Runtime.InteropServices;
 
     public class Texture
@@ -192,13 +191,13 @@
 
         private static PixelFormat GetFormatFromPixelType(Type t)
         {
-            return 
+            return
                 t == typeof(Rgba32)
                 ? PixelFormat.Rgba
-                : t == typeof(Rgba64) 
-                    ? PixelFormat.RgbaInteger 
-                    : t == typeof(Rgb24) 
-                        ? PixelFormat.Rgb 
+                : t == typeof(Rgba64)
+                    ? PixelFormat.RgbaInteger
+                    : t == typeof(Rgb24)
+                        ? PixelFormat.Rgb
                         : t == typeof(RgbaVector) ? PixelFormat.Rgba : PixelFormat.DepthComponent;
         }
 

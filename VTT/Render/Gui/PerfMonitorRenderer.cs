@@ -3,7 +3,6 @@
     using ImGuiNET;
     using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.ColorSpaces;
     using System;
     using System.Collections.Generic;
     using System.Numerics;

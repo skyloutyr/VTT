@@ -6,7 +6,6 @@
     using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
@@ -487,16 +486,8 @@ void main()
     }
 
     public static class ImGuiHelper
-    { 
-        public static System.Numerics.Vector2 CalcTextSize(string tIn)
-        {
-            if (string.IsNullOrEmpty(tIn))
-            {
-                return System.Numerics.Vector2.Zero;
-            }
-
-            return ImGui.CalcTextSize(tIn);
-        }
+    {
+        public static System.Numerics.Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? System.Numerics.Vector2.Zero : ImGui.CalcTextSize(tIn);
 
         public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
     }

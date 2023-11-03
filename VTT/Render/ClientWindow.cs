@@ -121,7 +121,7 @@
             small.CopyPixelDataTo(smallBytes);
             smaller.CopyPixelDataTo(smallerBytes);
             smallest.CopyPixelDataTo(smallestBytes);
-            WindowIcon ret = new WindowIcon(new OpenTK.Windowing.Common.Input.Image[4] { 
+            WindowIcon ret = new WindowIcon(new OpenTK.Windowing.Common.Input.Image[4] {
                 new OpenTK.Windowing.Common.Input.Image(256, 256, normalBytes.ToArray()),
                 new OpenTK.Windowing.Common.Input.Image(48, 48, smallBytes.ToArray()),
                 new OpenTK.Windowing.Common.Input.Image(32, 32, smallerBytes.ToArray()),

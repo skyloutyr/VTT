@@ -45,14 +45,8 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.MapID = br.ReadGuid();
-        }
+        public override void Decode(BinaryReader br) => this.MapID = br.ReadGuid();
 
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-        }
+        public override void Encode(BinaryWriter bw) => bw.Write(this.MapID);
     }
 }

@@ -1,11 +1,9 @@
 ﻿namespace VTT.Asset
 {
-    using Newtonsoft.Json.Converters;
     using System;
     using System.IO;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
-    using VTT.GL;
     using VTT.Util;
 
     /*

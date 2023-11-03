@@ -554,7 +554,7 @@
                     ImGui.Columns(2);
                     ImGui.SetColumnWidth(0, 240);
                     float cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChildFrame(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - winPadding.Y * 2 - framePadding.Y * 2 - 20), ImGuiWindowFlags.HorizontalScrollbar);
+                    ImGui.BeginChildFrame(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20), ImGuiWindowFlags.HorizontalScrollbar);
                     void RecursivelyDrawDirectories(AssetDirectory dir)
                     {
                         bool isCurrent = dir.Equals(this.CurrentFolder);
@@ -614,7 +614,7 @@
 
                     ImGui.NextColumn();
                     cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChildFrame(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - winPadding.Y * 2 - framePadding.Y * 2 - 20));
+                    ImGui.BeginChildFrame(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
                     this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
                     foreach (AssetRef aRef in this.CurrentFolder.Refs.OrderBy(x => x.Name))
                     {
@@ -653,10 +653,10 @@
 
                         string aName = aRef.Name;
                         System.Numerics.Vector2 ts = FitLabelByBinarySearch(aRef.Name, ref aName);
-                        idlp.AddText(cursorCurrent + new System.Numerics.Vector2(48 - ts.X * 0.5f, 96), hover ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Text), aName);
+                        idlp.AddText(cursorCurrent + new System.Numerics.Vector2(48 - (ts.X * 0.5f), 96), hover ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Text), aName);
                         idlp.AddImage(
                             aRef.Type switch
-                            { 
+                            {
                                 AssetType.Texture => this.AssetImageIcon,
                                 AssetType.Model => this.AssetModelIcon,
                                 AssetType.Shader => this.AssetShaderIcon,

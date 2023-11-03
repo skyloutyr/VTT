@@ -170,7 +170,7 @@
         {
             filePath = tempFileName = Path.GetTempFileName();
             Uri uri = new Uri($"https://github.com/skyloutyr/VTT/releases/download/{remote.version}/VTT.zip");
-            
+
             using HttpResponseMessage response = GetResult(client.Value.GetAsync(uri));
             if (response.IsSuccessStatusCode)
             {
@@ -193,7 +193,7 @@
                 File.Delete(tempFile);
                 foreach (string file in Directory.EnumerateFiles(tempDir, "*.*", SearchOption.AllDirectories))
                 {
-                    string relativeFile = file.Substring(tempDir.Length + 1);
+                    string relativeFile = file[(tempDir.Length + 1)..];
                     if (relativeFile.ToLower().Contains("updater.exe") || relativeFile.ToLower().Contains("updater.dll"))
                     {
                         continue;

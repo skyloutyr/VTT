@@ -5,9 +5,6 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Linq;
-    using System.Runtime.Intrinsics.Arm;
-    using System.Security.Cryptography;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
@@ -258,7 +255,7 @@
             };
 
             int maxDrawCalls = Client.Instance.Settings.DrawingsPerformance switch
-            { 
+            {
                 DrawingsResourceAllocationMode.None => 0,
                 DrawingsResourceAllocationMode.Minimum => 100,
                 DrawingsResourceAllocationMode.Limited => 255,
@@ -323,5 +320,5 @@
         }
     }
 
-    
+
 }

@@ -494,21 +494,81 @@
         {
             this.Logger.Log(LogLevel.Info, "Scanning for maps at " + this.MapsRoot);
             Directory.CreateDirectory(this.MapsRoot);
-            List<string> mapsPtrs = new List<string>();
+            Dictionary<Guid, (string, string)> mapsPtrs = new Dictionary<Guid, (string, string)>();
             foreach (string file in Directory.EnumerateFiles(this.MapsRoot))
             {
                 if (file.EndsWith(".ued"))
                 {
-                    mapsPtrs.Add(file);
-                    this.Logger.Log(LogLevel.Info, "Found map candidate " + file);
+                    try
+                    {
+                        Guid gId = Guid.Parse(Path.GetFileNameWithoutExtension(file));
+                        if (mapsPtrs.TryGetValue(gId, out (string, string) dat))
+                        {
+                            // Have value, update it
+                            mapsPtrs[gId] = (file, dat.Item2);
+                        }
+                        else
+                        {
+                            mapsPtrs[gId] = (file, string.Empty);
+                        }
+
+                        this.Logger.Log(LogLevel.Info, "Found map candidate " + file);
+                    }
+                    catch
+                    {
+                        this.Logger.Log(LogLevel.Error, "A file in the maps folder doesn't follow correct map filename format - " + file);
+                    }
+                }
+
+                if (file.EndsWith(".ued.bak"))
+                {
+                    try
+                    {
+                        string fnext = Path.GetFileNameWithoutExtension(file);
+                        fnext = fnext[..^4];
+                        Guid gId = Guid.Parse(fnext);
+                        if (mapsPtrs.TryGetValue(gId, out (string, string) dat))
+                        {
+                            // Have value, update it
+                            mapsPtrs[gId] = (dat.Item1, file);
+                        }
+                        else
+                        {
+                            mapsPtrs[gId] = (string.Empty, file);
+                        }
+                    }
+                    catch
+                    {
+                        this.Logger.Log(LogLevel.Error, "A backup file in the maps folder doesn't follow correct map filename format - " + file);
+                    }
                 }
             }
 
-            Parallel.ForEach(mapsPtrs, file =>
+            Parallel.ForEach(mapsPtrs, kv =>
             {
-                string fnNoExtension = Path.GetFileNameWithoutExtension(file);
-                Guid mID = Guid.Parse(fnNoExtension);
-                string js = file.Replace(".ued", ".json");
+                string file, js;
+                if (string.IsNullOrEmpty(kv.Value.Item1) || !File.Exists(kv.Value.Item1)) // Do not have main map data
+                {
+                    if (!string.IsNullOrEmpty(kv.Value.Item2) && File.Exists(kv.Value.Item2)) // But have the backup
+                    {
+                        this.Logger.Log(LogLevel.Warn, $"Map {kv.Key} doesn't have main data. Restoring backup!");
+                        file = kv.Value.Item2;
+                        js = file.Replace(".ued.bak", ".json");
+                        File.Copy(file, file[..^4]); // Restore backup
+                    }
+                    else
+                    {
+                        // Unreachable, but maybe fs shenanigans?
+                        return;
+                    }
+                }
+                else
+                {
+                    file = kv.Value.Item1;
+                    js = file.Replace(".ued", ".json");
+                }
+
+                Guid mID = kv.Key;
                 if (!File.Exists(js))
                 {
                     ServerMapPointer smp = new ServerMapPointer(mID, string.Empty, string.Empty, file);

@@ -19,6 +19,15 @@
             {
                 server.Logger.Log(Util.LogLevel.Debug, "Client handshake initiated for " + this.ClientID);
                 ServerClient sc = (ServerClient)server.FindSession(sessionID);
+
+                if (ClientID.Equals(Guid.Empty))
+                {
+                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ", illegal client ID!");
+                    new PacketDisconnectReason() { DCR = DisconnectReason.IllegalOperation }.Send(sc);
+                    sc.Disconnect();
+                    return;
+                }
+
                 ClientInfo ci = server.GetOrCreateClientInfo(this.ClientID);
                 sc.Info = ci;
 

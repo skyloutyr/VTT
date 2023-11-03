@@ -290,7 +290,7 @@
                 }
             }
 
-            if (!this.IsDrawing)
+            if (!this.IsDrawing && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Draw)
             {
                 Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                 if (tHit.HasValue)

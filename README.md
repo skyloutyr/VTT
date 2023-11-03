@@ -200,8 +200,8 @@ These are the features currently missing that are planned to be implemented:
 - [x] Correct bounding box + raycast position calculation for rotated .glb nodes
 - [x] More graceful bad data rejection instead of shutting down
 - [ ] Automated reconnect attempts with a finer timeout control for clients
-- [ ] A non-debug interface for connected client information + ability to ban clients.
-- [ ] Allow for multiple administrators and observers
+- [x] A non-debug interface for connected client information + ability to ban clients.
+- [x] Allow for multiple administrators and observers
 - [ ] Improvements on shadow maps, maybe cascade shadow maps implementation
 - [ ] Path curves and path following for particles
 - [ ] Animations for 3D models

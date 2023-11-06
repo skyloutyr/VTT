@@ -1,6 +1,5 @@
 ﻿namespace VTT.Asset
 {
-    using BCnEncoder.ImageSharp;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using OpenTK.Graphics.OpenGL;
@@ -379,19 +378,16 @@
 
                 bool useDXTCompression = OpenGLUtil.UsingDXTCompression;
                 bool useHWCompression = Client.Instance.Settings.AsyncDXTCompression;
+                bool haveMips = this.Meta.FilterMin == FilterParam.LinearMipmapLinear || this.Meta.FilterMin == FilterParam.LinearMipmapNearest;
 
                 if (useDXTCompression && this.Meta.Compress && useHWCompression)
                 {
                     Guid protectedID = this._glTex.GetUniqueID();
+
                     // Load DXT async.
                     ThreadPool.QueueUserWorkItem(x =>
                     {
-                        BCnEncoder.Encoder.BcEncoder encoder = new BCnEncoder.Encoder.BcEncoder(BCnEncoder.Shared.CompressionFormat.Bc3); // Bc3 == dxt apparently
-                        encoder.OutputOptions.GenerateMipMaps = this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest;
-                        encoder.OutputOptions.Quality = Client.Instance.Settings.DXTCompressionMode;
-                        encoder.OutputOptions.Format = BCnEncoder.Shared.CompressionFormat.Bc3;
-                        encoder.OutputOptions.FileFormat = BCnEncoder.Shared.OutputFileFormat.Dds;
-                        byte[][] mipArray = encoder.EncodeToRawBytes(img);
+                        StbDxt.CompressedMipmapData mipArray = StbDxt.CompressImageWithMipmaps(img, haveMips);
                         Size imgS = new Size(img.Width, img.Height);
                         img.Dispose();
                         Client.Instance.DoTask(() =>
@@ -406,38 +402,35 @@
                                     GL.BindTexture(TextureTarget.Texture2D, gTex);
                                     gTex.Size = imgS;
                                     InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
-                                    if (mipArray.Length > 1)
+                                    int nMips = mipArray.numMips;
+                                    if (nMips > 1)
                                     {
                                         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nMips - 1);
                                         int dw = imgS.Width;
                                         int dh = imgS.Height;
-
-                                        int sMin = Math.Min(dw, dh);
-                                        int nPossibleSteps = 0;
-                                        while (true)
+                                        for (int i = 0; i < nMips; ++i)
                                         {
-                                            ++nPossibleSteps;
-                                            sMin >>= 1;
-                                            if (sMin == 0)
-                                            {
-                                                break;
-                                            }
-                                        }
-
-                                        nPossibleSteps = Math.Min(nPossibleSteps, mipArray.Length);
-                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nPossibleSteps - 1);
-                                        for (int i = 0; i < nPossibleSteps; ++i)
-                                        {
-                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray[i].Length, mipArray[i]);
+                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray.dataLength[i], mipArray.data[i]);
                                             dw >>= 1;
                                             dh >>= 1;
                                         }
                                     }
                                     else
                                     {
-                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray[0].Length, mipArray[0]);
+                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray.dataLength[0], mipArray.data[0]);
                                     }
+
+                                    mipArray.Free();
                                 }
+                                else
+                                {
+                                    mipArray.Free();
+                                }
+                            }
+                            else
+                            {
+                                mipArray.Free();
                             }
                         });
                     });
@@ -456,6 +449,7 @@
                     }
 
                     ph.Dispose();
+
                 }
                 else
                 {

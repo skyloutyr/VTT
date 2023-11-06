@@ -42,7 +42,11 @@
 
 namespace VTT.Util;
 
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
 using System;
+using System.Runtime.InteropServices;
+using SixLabors.ImageSharp.Processing;
 
 [Flags]
 public enum CompressionMode
@@ -626,13 +630,153 @@ public static unsafe class StbDxt
             Buffer.MemoryCopy(src, data, 4 * 16, 4 * 16);
             for (i = 0; i < 16; ++i)
             {
-                data[i * 16 + 3] = 255;
+                data[i * 4 + 3] = 255;
             }
 
             src = data;
         }
 
         CompressColorBlock(dest, src, mode);
+    }
+
+    public static CompressedMipmapData CompressImageWithMipmaps(Image<Rgba32> img, bool actuallyMip)
+    {
+        int minWH = Math.Min(img.Width, img.Height);
+        int numMipmaps = 1;
+        if (actuallyMip)
+        {
+            while (true)
+            {
+                minWH >>= 1;
+                if (minWH < 4) // Normally would do a <0 comparison here but it doesn't make sense to compress less than block size anyway
+                {
+                    break;
+                }
+
+                numMipmaps += 1;
+            }
+        }
+
+        IntPtr[] ret = new IntPtr[numMipmaps];
+        int[] sizes = new int[numMipmaps];
+        ret[0] = (IntPtr)CompressImage(img, out int nBytesMip);
+        sizes[0] = nBytesMip;
+        int mW = img.Width;
+        int mH = img.Height;
+        for (int i = 1; i < numMipmaps; ++i)
+        {
+            mW >>= 1;
+            mH >>= 1;
+            Image<Rgba32> mipped = img.Clone();
+            mipped.Mutate(x => x.Resize(mW, mH, KnownResamplers.Box));
+            ret[i] = (IntPtr)CompressImage(mipped, out nBytesMip);
+            sizes[i] = nBytesMip;
+            mipped.Dispose();
+        }
+
+        return new CompressedMipmapData(ret, sizes);
+    }
+
+    public static byte* CompressImage(Image<Rgba32> img, out int nBytes)
+    {
+        ImageMemoryView imv = CommitToMemory(img);
+        int nBlocksX = ((img.Width + 3) & ~3) >> 2;
+        int nBlocksY = ((img.Height + 3) & ~3) >> 2;
+        nBytes = nBlocksX * nBlocksY * 16;
+        byte* ret = (byte*)Marshal.AllocHGlobal(nBytes);
+        byte* blockData = stackalloc byte[16];
+        for (int y = 0; y < nBlocksY; ++y)
+        {
+            for (int x = 0; x < nBlocksX; ++x)
+            {
+                int blockX = x << 2;
+                int blockY = y << 2;
+                Rgba32* mem = imv.GetBlock(blockX, blockY);
+                StbDxt.CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
+                Marshal.FreeHGlobal((IntPtr)mem);
+                Buffer.MemoryCopy(blockData, (void*)(ret + x * 16 + y * nBlocksX * 16), 16, 16);
+            }
+        }
+
+        imv.Free();
+        return ret;
+    }
+
+    private static unsafe ImageMemoryView CommitToMemory(Image<Rgba32> img)
+    {
+        int adjWidth = ((img.Width + 3) & ~3);
+        int adjHeight = ((img.Height + 3) & ~3);
+        int nBytes = sizeof(Rgba32) * adjWidth * adjHeight;
+        Rgba32* mem = (Rgba32*)Marshal.AllocHGlobal(nBytes);
+        int bL = img.Width * sizeof(Rgba32);
+        img.ProcessPixelRows(x =>
+        {
+            for (int y = 0; y < img.Height; ++y)
+            {
+                Span<Rgba32> s = x.GetRowSpan(y);
+                fixed (Rgba32* m = &MemoryMarshal.GetReference(s))
+                {
+                    Buffer.MemoryCopy(m, (void*)(mem + (y * adjWidth)), bL, bL);
+                }
+            }
+        });
+
+        return new ImageMemoryView(mem, adjWidth, adjHeight);
+    }
+
+    public unsafe class CompressedMipmapData
+    {
+        public IntPtr[] data;
+        public int[] dataLength;
+        public int numMips => data.Length;
+
+        public CompressedMipmapData(IntPtr[] data, int[] dataLength)
+        {
+            this.data = data;
+            this.dataLength = dataLength;
+        }
+
+        public void Free()
+        {
+            foreach (IntPtr ptr in data)
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+    }
+
+    private unsafe class ImageMemoryView
+    {
+        private Rgba32* mem;
+        private int w;
+        private int h;
+
+        public ImageMemoryView(Rgba32* mem, int w, int h)
+        {
+            this.mem = mem;
+            this.w = w;
+            this.h = h;
+        }
+
+        public Rgba32* GetBlock(int x, int y)
+        {
+            int s = 4 * 4 * sizeof(Rgba32);
+            Rgba32* ret = (Rgba32*)Marshal.AllocHGlobal(s);
+            Rgba32 e = new Rgba32(0, 0, 0, 0);
+            for (int j = 0; j < 4; ++j)
+            {
+                int dy = y + j;
+                Rgba32* m = this.mem + (dy * w) + x;
+                Buffer.MemoryCopy(m, (void*)(ret + (4 * j)), 16, 16);
+            }
+
+            return ret;
+        }
+
+        public void Free()
+        {
+            Marshal.FreeHGlobal((IntPtr)this.mem);
+        }
     }
 }
 

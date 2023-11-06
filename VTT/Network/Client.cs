@@ -1,6 +1,5 @@
 ﻿namespace VTT.Network
 {
-    using BCnEncoder.Encoder;
     using NetCoreServer;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
@@ -615,11 +614,6 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool AsyncDXTCompression { get; set; } = true;
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [DefaultValue(CompressionQuality.Balanced)]
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public CompressionQuality DXTCompressionMode { get; set; } = CompressionQuality.Balanced;
-
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool ComprehensiveAuras { get; set; } = true;
@@ -685,7 +679,6 @@
                 DisableSounds = false,
                 CompressionPreference = TextureCompressionPreference.DXT,
                 AsyncDXTCompression = true,
-                DXTCompressionMode = CompressionQuality.Balanced,
                 DrawingsPerformance = DrawingsResourceAllocationMode.Standard
             };
 

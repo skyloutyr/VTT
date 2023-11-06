@@ -1,6 +1,5 @@
 ﻿namespace VTT.Render.MainMenu
 {
-    using BCnEncoder.Encoder;
     using ImGuiNET;
     using OpenTK.Windowing.Common;
     using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -773,31 +772,6 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.async_dxt_compression.tt"));
-                    }
-
-                    if (!hwDXTCompression)
-                    {
-                        ImGui.BeginDisabled();
-                    }
-
-                    string[] dxtCompressionMode = { lang.Translate("menu.settings.compression_dxt.fast"), lang.Translate("menu.settings.compression_dxt.balanced"), lang.Translate("menu.settings.compression_dxt.quality") };
-                    int dxtCompressionModeIndex = (int)Client.Instance.Settings.DXTCompressionMode;
-                    ImGui.Text(lang.Translate("menu.settings.compression_dxt"));
-                    if (ImGui.Combo("##DXTCompressionMode", ref dxtCompressionModeIndex, dxtCompressionMode, dxtCompressionMode.Length))
-                    {
-                        CompressionQuality newMode = (CompressionQuality)dxtCompressionModeIndex;
-                        Client.Instance.Settings.DXTCompressionMode = newMode;
-                        Client.Instance.Settings.Save();
-                    }
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("menu.settings.compression_dxt.tt"));
-                    }
-
-                    if (!hwDXTCompression)
-                    {
-                        ImGui.EndDisabled();
                     }
 
                     string[] drawingsPerformance = { lang.Translate("menu.settings.drawings.none"), lang.Translate("menu.settings.drawings.minimum"), lang.Translate("menu.settings.drawings.limited"), lang.Translate("menu.settings.drawings.standard"), lang.Translate("menu.settings.drawings.extra"), lang.Translate("menu.settings.drawings.unlimited") };

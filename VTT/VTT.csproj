@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon>icon-alpha.ico</ApplicationIcon>
+    <ApplicationIcon>icon-beta.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -149,7 +149,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="icon-alpha.ico" />
+    <Content Include="icon-beta.ico" />
   </ItemGroup>
 
   <ItemGroup>

@@ -190,6 +190,8 @@
                     l.Log(LogLevel.Fatal, "A fatal exception has occured:");
                     l.Exception(LogLevel.Fatal, e);
                 }
+
+                throw;
             }
 #endif
         }

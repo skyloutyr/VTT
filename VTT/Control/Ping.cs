@@ -38,13 +38,28 @@
             return ret;
         }
 
+        public bool IsEmote() => this.Type > PingType.Defend;
+
         public enum PingType
         {
             Generic,
             Exclamation,
             Question,
             Attack,
-            Defend
+            Defend,
+
+            Smiling,
+            Laughing,
+            Thinking,
+            HappyTear,
+            Suggestive,
+            StarryEyes,
+            Sunglasses,
+            HeartEyes,
+            Feared,
+            Crying,
+            VeryAngry,
+            Vomiting,
         }
     }
 }

@@ -388,7 +388,7 @@
                         {
                             this._blockSelection = true;
                             this._moveMode = 4;
-                            Client.Instance.Frontend.Renderer.PingRenderer.BeginPingUI();
+                            Client.Instance.Frontend.Renderer.PingRenderer.BeginPingUI(Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl));
                         }
                     }
                 }

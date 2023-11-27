@@ -341,7 +341,7 @@
             GL.ActiveTexture(TextureUnit.Texture14);
             GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
             GL.ActiveTexture(TextureUnit.Texture0);
-            a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
+            a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, null, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();

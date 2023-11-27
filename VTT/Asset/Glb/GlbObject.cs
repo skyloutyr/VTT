@@ -63,7 +63,7 @@
 
         public GlbObject(Node node) => this._node = node;
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4 projection, Matrix4 view, double textureAnimationIndex, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
         {
             matrixStack.Push(this._matCached);
 
@@ -71,13 +71,13 @@
             {
                 foreach (GlbMesh mesh in this.Meshes)
                 {
-                    mesh.Render(shader, matrixStack, projection, view, textureAnimationIndex, renderer);
+                    mesh.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
                 }
             }
 
             foreach (GlbObject child in this.Children)
             {
-                child.Render(shader, matrixStack, projection, view, textureAnimationIndex, renderer);
+                child.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
             }
 
             matrixStack.Pop();

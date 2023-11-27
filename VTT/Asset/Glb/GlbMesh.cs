@@ -4,6 +4,7 @@
     using OpenTK.Mathematics;
     using System;
     using VTT.GL;
+    using VTT.Network;
     using VTT.Util;
 
     public unsafe class GlbMesh
@@ -19,6 +20,8 @@
         public float[] VertexBuffer { get; set; }
         public uint[] IndexBuffer { get; set; }
         public GlbMaterial Material { get; set; }
+        public bool IsAnimated { get; set; }
+        public GlbArmature AnimationArmature { get; set; }
 
         public AABox Bounds { get; set; }
 
@@ -35,24 +38,38 @@
             this._ebo.SetData(this.IndexBuffer);
 
             this._vao.Reset();
-            this._vao.SetVertexSize<float>(3 + 2 + 3 + 3 + 3 + 4);
+            this._vao.SetVertexSize<float>(3 + 2 + 3 + 3 + 3 + 4 + 4 + 2);
             this._vao.PushElement(ElementType.Vec3);
             this._vao.PushElement(ElementType.Vec2);
             this._vao.PushElement(ElementType.Vec3);
             this._vao.PushElement(ElementType.Vec3);
             this._vao.PushElement(ElementType.Vec3);
             this._vao.PushElement(ElementType.Vec4);
+            this._vao.PushElement(ElementType.Vec4);
+            this._vao.PushElement(ElementType.Vec2);
 
             this.VertexBuffer = null;
             this.IndexBuffer = null;
         }
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4 projection, Matrix4 view, double textureAnimationIndex, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
             Matrix4 cm = matrixStack.Current;
             shader["model"].Set(cm);
             shader["mvp"].Set(cm * view * projection);
+            if (this.IsAnimated && animation != null && this.AnimationArmature != null)
+            {
+                this.AnimationArmature.ResetAllBones();
+                this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime);
+                Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
+                shader["is_animated"].Set(true);
+            }
+            else
+            {
+                shader["is_animated"].Set(false);
+            }
+
             this.Material.Uniform(shader, textureAnimationIndex);
             this._vao.Bind();
             if (renderer == null)

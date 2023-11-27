@@ -134,6 +134,7 @@
             this.FastLightRenderer.Create();
 
             this.FrameUBOManager = new FrameUBOManager();
+            this.BonesUBOManager = new BonesUBO();
 
             this.CPUTimerAuras = new Stopwatch();
             this.CPUTimerGizmos = new Stopwatch();
@@ -233,6 +234,7 @@
         };
 
         public FrameUBOManager FrameUBOManager { get; private set; }
+        public BonesUBO BonesUBOManager { get; private set; }
 
         public void PrecomputeSelectionBox()
         {
@@ -742,7 +744,7 @@
             }
         }
 
-        private void RenderLights(Map m)
+        private void RenderLights(Map m, double delta)
         {
             this.CPUTimerLights.Restart();
 
@@ -787,7 +789,7 @@
                     }
                 }
 
-                plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, cam);
+                plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
             }
 
             this.CPUTimerLights.Stop();
@@ -802,7 +804,7 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             GL.ActiveTexture(TextureUnit.Texture0);
-            this.RenderLights(m);
+            this.RenderLights(m, delta);
             GL.ActiveTexture(TextureUnit.Texture0);
 
             ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
@@ -846,7 +848,8 @@
                         shader["grid_alpha"].Set(i == -2 && m.GridEnabled ? ga : 0.0f);
                         shader["tint_color"].Set(mo.TintColor.Vec4());
                         GL.ActiveTexture(TextureUnit.Texture0);
-                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN);
+                        mo.LastRenderModel = a.Model.GLMdl;
+                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
                     }
                     else
                     {
@@ -938,7 +941,9 @@
                             }
                         }
 
-                        (assetReady ? a.Model.GLMdl : this.MissingModel).Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN);
+                        GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
+                        mo.LastRenderModel = mdl;
+                        mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
                         if (hadCustomRenderShader)
                         {
                             forwardShader.Bind();
@@ -1250,6 +1255,38 @@
             this._ubo.Bind();
             this._ubo.SetSubData((IntPtr)this.memory, 420, 0);
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+        }
+    }
+
+    public class BonesUBO
+    {
+        private GPUBuffer _ubo;
+        private unsafe Matrix4* _matrixArray;
+
+        public BonesUBO()
+        {
+            this._ubo = new GPUBuffer(BufferTarget.UniformBuffer, BufferUsageHint.StreamDraw);
+            this._ubo.Bind();
+            this._ubo.SetData(IntPtr.Zero, sizeof(float) * 4 * 4 * 256);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 2, this._ubo);
+            unsafe
+            {
+                this._matrixArray = (Matrix4*)Marshal.AllocHGlobal(sizeof(Matrix4) * 256);
+            }
+        }
+
+        public unsafe void LoadAll(GlbArmature armature)
+        {
+            this._ubo.Bind();
+
+            for (int i = 0; i < armature.UnsortedBones.Count; i++)
+            {
+                GlbBone bone = armature.UnsortedBones[i];
+                this._matrixArray[i] = bone.Transform;
+            }
+
+            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4) * armature.UnsortedBones.Count, 0);
         }
     }
 }

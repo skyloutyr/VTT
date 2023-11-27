@@ -22,7 +22,7 @@
 
 ---
 
-## Feature List
+## Feature List (Incomplete as there are too many to mention in a short list)
 * Displays 3d models or 2d sprites in complex environments of any scale.
 * 3D and 2D square grids with customizable grid sizes and grid snapping, extending to infinity.
 * A sky system, with the sun positioned according to pitch/yaw controls.
@@ -39,6 +39,8 @@
 * Journals for storing arbitrary text information.
 * A rich chat system that uses cryptography for random dice rolls, allows up to 10 million rolls (in a single chat message) that are all rolled and delivered within milliseconds, that supports advanced templates (such as attacks, spells, fancy dice rolls and more) and images (including animated gifs)
 * An advanced asset system that supports .glb models and image (.png, .jpeg, .tiff, .gif and similar) sprites. If the required libraries are present on the uploader's side, supports animated images (.webm) too!
+* Skeletal animation support for 3d models.
+* Custom shaders for objects through a powerful node graph editor.
 * Good performance - both the networking and rendering parts of the application offer many optimizations and are built for older hardware, allowing the rendering of very complex scenes with millions upon millions of triangles, dynamic shadows, particles and high-resolution textures, that get delivered to the clients within seconds, all that with a consistently high framerate.
 
 ---
@@ -60,6 +62,8 @@ There is no installation process, simply unpack the application into any directo
 - **Application doesn't start-up**: Make sure that you have the required components installed and they match the architecture of your os.
 - **Your players can't connect**: Make sure that they are using the right ip address and port, and you have port-forwarded the port you are using for the application.
 - **Application crashes**: Whenever VTT encounters an unrecoverable problem it will shutdown, generating a crash report file in the main application directory. Please submit a bug report in the issues section here, including this file and other relevant information (such as log files).
+- **My 2D map is fully black for players after switching it from 3D!**: Make sure that if you have disabled the sun in your map settings you also disable the sun shadows. If there is no sun, everything is considered to be in shadow by default.
+- **I can't delete a player's ruler marker**: Sometimes the players somehow place their markers slightly above the terrain in 2D mode. You can use the eraser tool to fix that. Make sure to set the radius for the eraser - an eraser with aa radius of 0 won't erase anything. This applies to the eraser for drawings too. Also make sure you are using the right eraser - there is one for drawings, and one for ruler markers.
 
 ---
 
@@ -74,12 +78,12 @@ You can import any 3d model that is a .glb _embedded_ file format. However to di
 
 ### Some additional tips on 3d models
 * If your modelling software allows, it is recommended to export tangents and bitangents with the model, as automatically generated ones may differ from those of the software and cause rendering differences.
-* While animations are not currently supported the support is planned and they will simply be ignored, so you can export animated glb models.
 * If multiple cameras are used the first one encountered in the file structure will be used as the preview one. If you want a custom camera for the portrait (turn tracker, inspect menu, etc) you can name the camera object node exactly **portrait_camera**.
 * VTT uses raycasting for object picking in the editor. If your model is very complex it is recommended to simplify the mesh for the raycasting process. You can name a mesh object node exactly **simplified_raycast**, and if such node is encountered it will not be drawn, but will be used for raycasting purposes.
 * It is recommended that you don't export translated, rotated or scaled nodes. Please apply the transformations to the mesh instead, and make the node's origin at 0,0,0. While node transformations are rendered correctly they are not applied when calculating the bounding box for raycasting purposes and when raycasting for performance reasons. Camera and light nodes are exceptions and are allowed transformations.
 * All point and directional lights will be exported with the model, and this is in fact how you create lights in your scenes. However due to rendering differences (notably the lack of reflections) the lights may appear dimmer in your modelling editor than they are in VTT.
 * It is recommended that you include all required textures with the material (albedo, metallic, roughness, normal and ambient), and that their dimensions match.
+* Whichever animation was defined first will be the default animation for the model.
 
 ---
 
@@ -191,7 +195,26 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * \[n:TEXT\] will replace the sender's name in chat with the contents of the block. Mousing over the name will reveal the real sender's name.
 * \[o:GUID\] replicates the effects of the /as command but allows a direct GUID input instead of the object selection.
 * \[m:MODE\] specifies the message render mode. This is highly internal and will cause crashes if used improperly, but you are welcome to see the expected message structure in this repo's VSCC integration namespace.
-	
+* You can escape square brackets in chat by putting a backslash \\ before the bracket.
+
+---
+## Other Notable Features
+* You can draw in 3D and 2D with the draw tool, located in the toolbar to the left. It is quite primitive due to the 3d requirement but gets the job done.
+* For many color edit dialogues the A field at the bottom can control the transparency of the relevant item. For example auras and objects can be made more transparent with this feature.
+* VTT includes a very powerful turn tracker, styled to be rpg-like at the top of the screen, with teams, sorting, particles, and more. It even dings your players when it is their turn!
+* The turn tracker can be scrolled with the scrollwheel if the mouse is over it. You can return to the default scroll value by pressing the refresh button that appears to the left.
+* There are a few camera control tools in the map tab, including the camera snap tool which moves everybody's camera to yours, so they can see from your perspective.
+* Uploaded image assets can be right-clicked and have their properties edited in the asset browser for finer display control. You can even mark them as emissive to always glow in the dark without any light.
+* Most things have a setting to fine-tune them in the settings tab. Make sure to browse it to tailor VTT to your desires!
+* Darkvision is intended for 3D maps, as it siply places a client-only light on the specified object. It won't work for 2D maps, unless they are secretly 3D.
+* The fast light system can be used to place hundreds or thousands of lights in your map with little to no impact on performance. These lights don't have shadows, but they can create a wonderful ambiance!
+* There are thousands of status effect icons to place on your objects! The status effect window even has a search bar.
+* Objects can have their name color be changed through the properties panel. Use the A value to control the blending between the baseline color (specified by the style) and the selected color.
+* Objects can have custom nameplates, which are the UI elements the object's names are displayed upon. These custom nameplates also support animations!
+* If you hold ALT and then left-click you will open a ping menu. Pings are visible to all players, and they are especially visible if they are offscreen. Pings also make a noise! If you also hold control while holding alt and left-clicking you will open a 'secret' reaction menu. Reactions work like pings, but they dissappear faster, don't make a sound and don't show up if they are offscreen.
+* Particles support both animated images and 3D models.
+* If you control-click the transition button in the animations section of an object it will transition the animation for all clients immediately.
+* Objects can be marked as info objects. When marked as suck they will also display their description when moused-over.
 
 ---
 ## Known issues, suggestions and missing features tracker
@@ -204,7 +227,7 @@ These are the features currently missing that are planned to be implemented:
 - [x] Allow for multiple administrators and observers
 - [ ] Improvements on shadow maps, maybe cascade shadow maps implementation
 - [ ] Path curves and path following for particles
-- [ ] Animations for 3D models
+- [x] Animations for 3D models
 - [ ] Automatic decimation for shadow meshes
 - [x] In app asset deletion
 - [x] Better asset management interface

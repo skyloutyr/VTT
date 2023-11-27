@@ -15,6 +15,7 @@
 
     public partial class GuiRenderer
     {
+        private int _cSelAnimation;
         private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state)
         {
             List<(Guid, Guid)> SelectedToPacket2(List<MapObject> os) => os.Select(x => (x.MapID, x.ID)).ToList();
@@ -657,6 +658,88 @@
                                 }
 
                                 ImGui.TreePop();
+                            }
+                        }
+
+                        if (canEdit)
+                        {
+                            bool haveAnimations = mo.LastRenderModel != null && mo.LastRenderModel.IsAnimated;
+                            if (!haveAnimations)
+                            {
+                                ImGui.BeginDisabled();
+                            }
+
+                            if (ImGui.TreeNode(lang.Translate("ui.animations" + "###Animations")))
+                            {
+                                if (haveAnimations)
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                                    string aName = ImGuiHelper.TextOrEmpty(mo.AnimationContainer.CurrentAnimation?.Name ?? lang.Translate("ui.animation.none"));
+                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.TextUnformatted(aName);
+                                    aName = "↓↓↓";
+                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.TextUnformatted(aName);
+                                    string next = mo.AnimationContainer.GetNextAnimationPrediction(mo.LastRenderModel);
+                                    next = string.IsNullOrEmpty(next) ? lang.Translate("ui.animation.none") : next;
+                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.TextUnformatted(next);
+                                    ImGui.PopStyleColor();
+
+                                    bool bLooping = mo.AnimationContainer.Looping;
+                                    if (ImGui.Checkbox(lang.Translate("ui.animation.looping"), ref bLooping))
+                                    {
+                                        mo.AnimationContainer.Looping = bLooping;
+                                        new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetLooping, Data = bLooping, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                    }
+
+                                    bool bPaused = mo.AnimationContainer.Paused;
+                                    if (ImGui.Checkbox(lang.Translate("ui.animation.paused"), ref bPaused))
+                                    {
+                                        mo.AnimationContainer.Paused = bPaused;
+                                        if (bPaused)
+                                        {
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.Pause, Data = mo.AnimationContainer.TimeRaw, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                        }
+                                        else
+                                        {
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.Resume, Data = mo.AnimationContainer.TimeRaw, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                        }
+                                    }
+
+                                    string[] anims = new string[mo.LastRenderModel.Animations.Count];
+                                    for (int i = 0; i < anims.Length; ++i)
+                                    {
+                                        anims[i] = mo.LastRenderModel.Animations[i].Name;
+                                    }
+
+                                    this._cSelAnimation = Math.Min(this._cSelAnimation, anims.Length);
+                                    if (ImGui.Combo("##TransitionToCombo", ref this._cSelAnimation, anims, anims.Length))
+                                    {
+                                        // NOOP
+                                    }
+
+                                    if (ImGui.Button(lang.Translate("ui.animtions.transition")))
+                                    {
+                                        if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl))
+                                        {
+                                            mo.AnimationContainer.SwitchNow(mo.LastRenderModel, anims[this._cSelAnimation]);
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SwitchToAnimationNow, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                        }
+                                        else
+                                        {
+                                            mo.AnimationContainer.AnimationSwitchTo = anims[this._cSelAnimation];
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetNextAnimation, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                        }
+                                    }
+                                }
+
+                                ImGui.TreePop();
+                            }
+
+                            if (!haveAnimations)
+                            {
+                                ImGui.EndDisabled();
                             }
                         }
 

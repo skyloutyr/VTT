@@ -29,7 +29,21 @@
     <None Remove="Embed\deferred_final.vert" />
     <None Remove="Embed\drawing.frag" />
     <None Remove="Embed\drawing.vert" />
+    <None Remove="Embed\emoji-crying.png" />
     <None Remove="Embed\emoji-data.txt" />
+    <None Remove="Embed\emoji-feared.png" />
+    <None Remove="Embed\emoji-happytear.png" />
+    <None Remove="Embed\emoji-hearteyes.png" />
+    <None Remove="Embed\emoji-laughing.png" />
+    <None Remove="Embed\emoji-smiling.png" />
+    <None Remove="Embed\emoji-starryeyes.png" />
+    <None Remove="Embed\emoji-suggestive.png" />
+    <None Remove="Embed\emoji-sunglasses.png" />
+    <None Remove="Embed\emoji-thinking.png" />
+    <None Remove="Embed\emoji-veryangry.png" />
+    <None Remove="Embed\emoji-vomiting.png" />
+    <None Remove="Embed\emojiping.frag" />
+    <None Remove="Embed\emojiping.vert" />
     <None Remove="Embed\fast_light.frag" />
     <None Remove="Embed\fast_light.vert" />
     <None Remove="Embed\game-radar-ping-3.wav" />
@@ -153,9 +167,26 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Embed\emoji-crying.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Embed\drawing.frag" />
     <EmbeddedResource Include="Embed\drawing.vert" />
+    <EmbeddedResource Include="Embed\emoji-feared.png" />
+    <EmbeddedResource Include="Embed\emoji-happytear.png" />
+    <EmbeddedResource Include="Embed\emoji-hearteyes.png" />
+    <EmbeddedResource Include="Embed\emoji-laughing.png" />
+    <EmbeddedResource Include="Embed\emoji-smiling.png" />
+    <EmbeddedResource Include="Embed\emoji-starryeyes.png" />
+    <EmbeddedResource Include="Embed\emoji-suggestive.png" />
+    <EmbeddedResource Include="Embed\emoji-sunglasses.png" />
+    <EmbeddedResource Include="Embed\emoji-thinking.png" />
+    <EmbeddedResource Include="Embed\emoji-veryangry.png" />
+    <EmbeddedResource Include="Embed\emoji-vomiting.png" />
     <EmbeddedResource Include="Embed\game-radar-ping-3.wav" />
+    <EmbeddedResource Include="Embed\emojiping.frag" />
+    <EmbeddedResource Include="Embed\emojiping.vert" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

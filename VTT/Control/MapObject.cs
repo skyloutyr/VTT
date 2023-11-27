@@ -1,10 +1,13 @@
 ﻿namespace VTT.Control
 {
+    using glTFLoader.Schema;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
+    using VTT.Asset.Glb;
     using VTT.Util;
 
     public class MapObject : ISerializable
@@ -123,6 +126,8 @@
         public float ClientDragMoveServerInducedRotationChangeProgress { get; set; } = -1;
 
         public int ClientRulerRendererAccumData { get; set; } = 0;
+        public AnimationContainer AnimationContainer { get; } = new AnimationContainer();
+        public GlbScene LastRenderModel { get; set; }
 
         public bool IsRemoved { get; set; }
         #endregion
@@ -175,6 +180,10 @@
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
             ret.Set("IsInfoObject", this.IsInfoObject);
             ret.Set("Props", this.CustomProperties);
+            ret.Set("Animation", this.AnimationContainer.CurrentAnimation?.Name ?? string.Empty);
+            ret.Set("AnimationTime", this.AnimationContainer.TimeRaw);
+            ret.Set("AnimationPaused", this.AnimationContainer.Paused);
+            ret.Set("AnimationLooping", this.AnimationContainer.Looping);
             return ret;
         }
 
@@ -243,6 +252,10 @@
             this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
             this.IsInfoObject = e.Get<bool>("IsInfoObject");
             this.CustomProperties = e.Get<DataElement>("Props");
+            this.AnimationContainer.AnimationSwitchTo = e.Get("Animation", string.Empty);
+            this.AnimationContainer.TimeSwitchTo = e.Get<float>("AnimationTime", 0);
+            this.AnimationContainer.Paused = e.Get("AnimationPaused", false);
+            this.AnimationContainer.Looping = e.Get("AnimationLooping", true);
         }
 
         public MapObject Clone()
@@ -301,6 +314,11 @@
 
         public void Update(double delta) // Client-only
         {
+            if (this.ClientRenderedThisFrame)
+            {
+                this.AnimationContainer.Update(this.LastRenderModel);
+            }
+
             if (this.ClientDragMoveServerInducedPositionChangeProgress > 0)
             {
                 this.ClientDragMoveServerInducedPositionChangeProgress -= (float)delta;
@@ -380,6 +398,126 @@
             DisplayBar ret = new DisplayBar();
             ret.Deserialize(de);
             return ret;
+        }
+    }
+
+    public class AnimationContainer
+    {
+        public string LastAnimationName { get; set; }
+        public bool Looping { get; set; } = true;
+        private float _time;
+        public float TimeRaw
+        {
+            get => this._time;
+            set => this._time = value;
+        }
+
+        public GlbAnimation CurrentAnimation { get; set; }
+        public bool Paused { get; set; }
+
+        public string AnimationSwitchTo { get; set; }
+        public float TimeSwitchTo { get; set; }
+
+
+        const float TimeScale = 1f / 60.0f;
+        public float GetTime(double delta) => this.Paused ? this._time : this._time - TimeScale + ((float)delta * TimeScale);
+        
+        public string GetNextAnimationPrediction(GlbScene model)
+        {
+            return !string.IsNullOrEmpty(this.AnimationSwitchTo) && model != null
+                ? this.AnimationSwitchTo
+                : this.CurrentAnimation != null && this.Looping
+                ? this.CurrentAnimation.Name
+                : model != null ? this.LastAnimationName ?? null : null;
+        }
+
+        public void SwitchNow(GlbScene model, string to)
+        {
+            GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(to));
+            if (anim != null)
+            {
+                this.LastAnimationName = this.CurrentAnimation?.Name ?? null;
+                this.AnimationSwitchTo = null;
+                this._time = this.TimeSwitchTo;
+                this.CurrentAnimation = anim;
+            }
+        }
+
+        public void Update(GlbScene model)
+        {
+            if (model == null)
+            {
+                this._time = 0;
+                this.CurrentAnimation = null;
+                return;
+            }
+
+            if (this.CurrentAnimation != null && this.CurrentAnimation.Container != model)
+            {
+                this._time = 0;
+                this.CurrentAnimation = null;
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(this.AnimationSwitchTo) && model != null && this.CurrentAnimation == null)
+            {
+                GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.AnimationSwitchTo));
+                if (anim != null)
+                {
+                    if (this.CurrentAnimation != null)
+                    {
+                        this.LastAnimationName = this.CurrentAnimation.Name;
+                    }
+
+                    this._time = this.TimeSwitchTo;
+                    this.CurrentAnimation = anim;
+                    this.AnimationSwitchTo = null;
+                    this.TimeSwitchTo = 0;
+                    return;
+                }
+            }
+
+            if (this.CurrentAnimation != null)
+            {
+                if (!this.Paused)
+                {
+                    this._time += 1 / 60f;
+                }
+
+                if (this._time > this.CurrentAnimation.Duration)
+                {
+                    this._time = 0;
+                    if (!this.Looping)
+                    {
+                        if (!string.IsNullOrEmpty(this.LastAnimationName))
+                        {
+                            GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.LastAnimationName));
+                            this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
+                            this.LastAnimationName = null;
+                        }
+                        else
+                        {
+                            if (this.AnimationSwitchTo != null)
+                            {
+                                GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.AnimationSwitchTo));
+                                this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
+                                this.LastAnimationName = this.AnimationSwitchTo;
+                                this.AnimationSwitchTo = null;
+                            }
+
+                            this.CurrentAnimation = null;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (model.IsAnimated)
+                {
+                    this._time = 0;
+                    this.CurrentAnimation = model.Animations.Count > 0 ? model.Animations[0] : null;
+                }
+            }
         }
     }
 }

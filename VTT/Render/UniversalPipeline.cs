@@ -368,6 +368,7 @@
             this.DeferredPrePass = this.CompileShader("deferred", haveSunShadows, havePointShadows);
             this.DeferredPrePass.Bind();
             this.DeferredPrePass.BindUniformBlock("FrameData", 1);
+            this.DeferredPrePass.BindUniformBlock("BoneData", 2);
             this.DeferredPrePass["m_texture_diffuse"].Set(0);
             this.DeferredPrePass["m_texture_normal"].Set(1);
             this.DeferredPrePass["m_texture_emissive"].Set(2);
@@ -388,6 +389,7 @@
             this.Forward = this.CompileShader("object", haveSunShadows, havePointShadows);
             this.Forward.Bind();
             this.Forward.BindUniformBlock("FrameData", 1);
+            this.Forward.BindUniformBlock("BoneData", 2);
             this.Forward["m_texture_diffuse"].Set(0);
             this.Forward["m_texture_normal"].Set(1);
             this.Forward["m_texture_emissive"].Set(2);

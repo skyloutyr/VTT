@@ -200,7 +200,7 @@
 
         private readonly List<MapObject> _objsCache = new List<MapObject>();
         private readonly Matrix4[] _lightMatrices = new Matrix4[6];
-        public void DrawLights(Map m, bool doDraw, Camera cam = null)
+        public void DrawLights(Map m, bool doDraw, double delta, Camera cam = null)
         {
             if (cam != null) // Frustrum cull, sort and push lights
             {
@@ -276,7 +276,7 @@
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {
                                     Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
-                                    a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0);
+                                    a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
                                 }
                             }
                         }

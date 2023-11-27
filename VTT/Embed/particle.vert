@@ -5,6 +5,8 @@ layout (location = 2) in vec3 v_normal;
 layout (location = 3) in vec3 v_tangent;
 layout (location = 4) in vec3 v_bitangent;
 layout (location = 5) in vec4 v_color;
+layout (location = 6) in vec4 v_weights;
+layout (location = 7) in vec2 v_bones;
 
 uniform mat4 view;
 uniform mat4 projection;

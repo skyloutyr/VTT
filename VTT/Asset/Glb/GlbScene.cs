@@ -11,6 +11,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Runtime.InteropServices;
     using VTT.GL;
     using VTT.Network;
     using VTT.Render.LightShadow;
@@ -27,11 +28,14 @@
         public GlbObject PortraitCamera { get; set; }
         public List<GlbObject> Lights { get; } = new List<GlbObject>();
         public List<GlbObject> Meshes { get; } = new List<GlbObject>();
+        public List<GlbArmature> Armatures { get; } = new List<GlbArmature>();
+        public List<GlbAnimation> Animations { get; } = new List<GlbAnimation>();
 
         public GlbObject SimplifiedRaycastMesh { get; }
 
         public AABox CombinedBounds { get; set; }
         public bool HasTransparency { get; set; }
+        public bool IsAnimated { get; set; }
 
         public volatile bool glReady;
 
@@ -56,6 +60,8 @@
             this.LoadMaterials(g, bin);
             List<GlbLight> lights = new List<GlbLight>();
             this.LoadLights(g, lights);
+            this.LoadBones(g, bin);
+            this.LoadAnimations(g, bin);
 
             for (int i = 0; i < objs.Count; ++i)
             {
@@ -103,14 +109,18 @@
                         // vec3 tangent
                         // vec3 bitangent
                         // vec4 color
+                        // vec4 weights
+                        // vec2 bones
                         List<Vector3> positions = new List<Vector3>();
                         List<Vector2> uvs = new List<Vector2>();
                         List<Vector3> normals = new List<Vector3>();
                         List<Vector4> tangents = new List<Vector4>();
                         List<Vector4> bitangents = new List<Vector4>();
                         List<Vector4> colors = new List<Vector4>();
+                        List<Vector4> weightsList = new List<Vector4>();
+                        List<Vector2> bones = new List<Vector2>();
 
-                        int vertexSize = 3 + 2 + 3 + 3 + 3 + 4;
+                        int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
 
                         foreach (KeyValuePair<string, int> kv in mp.Attributes)
                         {
@@ -256,7 +266,119 @@
                                 }
                             }
 
+                            if (name.Equals("JOINTS_0")) // Bone indices
+                            {
+                                this.IsAnimated = glbm.IsAnimated = true;
+                                Accessor.ComponentTypeEnum cType = accessor.ComponentType;
+                                int elementSize = cType switch
+                                {
+                                    Accessor.ComponentTypeEnum.UNSIGNED_SHORT => 2,
+                                    Accessor.ComponentTypeEnum.UNSIGNED_BYTE => 1,
+                                    _ => throw new Exception("Illegal component type specified for joints, expected uint16 or uint8")
+                                };
+
+                                int stride = elementSize * 4; // Must be vec4 by spec
+                                for (int index = 0; index < contextArray.Length; index += stride)
+                                {
+                                    ushort us1 = 0, us2 = 0, us3 = 0, us4 = 0;
+                                    switch (cType)
+                                    {
+                                        case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                                        {
+                                            us1 = contextArray[index + 0];
+                                            us2 = contextArray[index + 1];
+                                            us3 = contextArray[index + 2];
+                                            us4 = contextArray[index + 3];
+                                            break;
+                                        }
+
+                                        case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                                        {
+                                            us1 = BitConverter.ToUInt16(contextArray, index + 0);
+                                            us2 = BitConverter.ToUInt16(contextArray, index + 2);
+                                            us3 = BitConverter.ToUInt16(contextArray, index + 4);
+                                            us4 = BitConverter.ToUInt16(contextArray, index + 6);
+                                            break;
+                                        }
+                                    }
+
+                                    float f1 = VTTMath.UInt32BitsToSingle((((uint)us1) << 16) | (us2));
+                                    float f2 = VTTMath.UInt32BitsToSingle((((uint)us3) << 16) | (us4));
+                                    bones.Add(new Vector2(f1, f2));
+                                }
+                            }
+
+                            if (name.Equals("WEIGHTS_0")) // Bone weights
+                            {
+                                this.IsAnimated = glbm.IsAnimated = true;
+                                Accessor.ComponentTypeEnum cType = accessor.ComponentType;
+                                int elementSize = cType switch
+                                {
+                                    Accessor.ComponentTypeEnum.FLOAT => 4,
+                                    Accessor.ComponentTypeEnum.UNSIGNED_SHORT => 2,
+                                    Accessor.ComponentTypeEnum.UNSIGNED_BYTE => 1,
+                                    _ => throw new Exception("Illegal component type specified for weights, expected single, uint16 or uint8")
+                                };
+
+                                int stride = elementSize * 4; // Must be vec4 by spec
+                                for (int index = 0; index < contextArray.Length; index += stride)
+                                {
+                                    float f1 = 0, f2 = 0, f3 = 0, f4 = 0;
+                                    switch (cType)
+                                    {
+                                        case Accessor.ComponentTypeEnum.UNSIGNED_BYTE:
+                                        {
+                                            byte b1 = contextArray[index + 0];
+                                            byte b2 = contextArray[index + 1];
+                                            byte b3 = contextArray[index + 2];
+                                            byte b4 = contextArray[index + 3];
+                                            f1 = b1 / 255.0f;
+                                            f2 = b2 / 255.0f;
+                                            f3 = b3 / 255.0f;
+                                            f4 = b4 / 255.0f;
+                                            break;
+                                        }
+
+                                        case Accessor.ComponentTypeEnum.UNSIGNED_SHORT:
+                                        {
+                                            ushort us1 = BitConverter.ToUInt16(contextArray, index + 0);
+                                            ushort us2 = BitConverter.ToUInt16(contextArray, index + 2);
+                                            ushort us3 = BitConverter.ToUInt16(contextArray, index + 4);
+                                            ushort us4 = BitConverter.ToUInt16(contextArray, index + 6);
+                                            f1 = us1 / 65535f;
+                                            f2 = us2 / 65535f;
+                                            f3 = us3 / 65535f;
+                                            f4 = us4 / 65535f;
+                                            break;
+                                        }
+
+                                        case Accessor.ComponentTypeEnum.FLOAT:
+                                        {
+                                            f1 = BitConverter.ToSingle(contextArray, index + 0);
+                                            f2 = BitConverter.ToSingle(contextArray, index + 4);
+                                            f3 = BitConverter.ToSingle(contextArray, index + 8);
+                                            f4 = BitConverter.ToSingle(contextArray, index + 12);
+                                            break;
+                                        }
+                                    }
+
+                                    weightsList.Add(new Vector4(f1, f2, f3, f4));
+                                }
+                            }
+
                             glbm.AmountToRender = accessor.Count;
+                        }
+
+                        if (glbm.IsAnimated)
+                        {
+                            if (o._node.Skin.HasValue)
+                            {
+                                glbm.AnimationArmature = this.Armatures[o._node.Skin.Value];
+                            }
+                            else
+                            {
+                                glbm.IsAnimated = false;
+                            }
                         }
 
                         uint[] indices;
@@ -437,6 +559,8 @@
                             Vector3 tan = tangents[j].Xyz;
                             Vector3 bitan = bitangents[j].Xyz;
                             Vector4 color = colors[j];
+                            Vector4 weights = weightsList.Count == 0 ? Vector4.Zero : weightsList[j];
+                            Vector2 boneIndices = bones.Count == 0 ? Vector2.Zero : bones[j];
                             vBuffer[vBufIndex++] = pos.X;
                             vBuffer[vBufIndex++] = pos.Y;
                             vBuffer[vBufIndex++] = pos.Z;
@@ -455,6 +579,12 @@
                             vBuffer[vBufIndex++] = color.Y;
                             vBuffer[vBufIndex++] = color.Z;
                             vBuffer[vBufIndex++] = color.W;
+                            vBuffer[vBufIndex++] = weights.X;
+                            vBuffer[vBufIndex++] = weights.Y;
+                            vBuffer[vBufIndex++] = weights.Z;
+                            vBuffer[vBufIndex++] = weights.W;
+                            vBuffer[vBufIndex++] = boneIndices.X;
+                            vBuffer[vBufIndex++] = boneIndices.Y;
                         }
 
                         List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();
@@ -584,6 +714,228 @@
 
                         lights.Add(glbl);
                     }
+                }
+            }
+        }
+
+        private void LoadBones(Gltf g, byte[] bin)
+        {
+            if (g.Skins != null && g.Skins.Length > 0)
+            {
+                foreach (Skin arm in g.Skins)
+                {
+                    GlbArmature armature = new GlbArmature();
+
+                    // Load all bones
+                    for (int i = 0; i < arm.Joints.Length; i++)
+                    {
+                        int joint = arm.Joints[i];
+                        GlbBone bone = new GlbBone();
+                        bone.ModelIndex = joint;
+                        armature.UnsortedBones.Add(bone);
+                        armature.BonesByModelIndex[bone.ModelIndex] = bone;
+                        // No need to pass node transform to the bone, as the node's transform is always identity
+                    }
+
+                    // Establish parent-child relationships
+                    for (int i = 0; i < arm.Joints.Length; i++)
+                    {
+                        int joint = arm.Joints[i];
+                        Node n = g.Nodes[joint];
+                        GlbBone bone = armature.UnsortedBones[i];
+                        Matrix4 world = Matrix4.CreateTranslation(n.Translation[0], n.Translation[1], n.Translation[2]) * Matrix4.CreateFromQuaternion(new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])) * Matrix4.CreateScale(n.Scale[0], n.Scale[1], n.Scale[2]);
+                        bone.InverseWorldTransform = Matrix4.Invert(world);
+                        List<GlbBone> cBones = new List<GlbBone>();
+                        if (n.Children != null && n.Children.Length > 0)
+                        {
+                            for (int j = 0; j < n.Children.Length; ++j)
+                            {
+                                int cIndex = n.Children[j];
+                                GlbBone childBone = armature.UnsortedBones.Find(x => x.ModelIndex == cIndex);
+                                if (childBone != null)
+                                {
+                                    cBones.Add(childBone);
+                                    childBone.Parent = bone;
+                                }
+                            }
+                        }
+
+                        bone.Children = cBones.ToArray();
+                    }
+
+                    void RecursivelyPopulateSortedParentList(IEnumerable<GlbBone> bones)
+                    {
+                        foreach (GlbBone b in bones)
+                        {
+                            armature.SortedBones.Add(b);
+                        }
+
+                        foreach (GlbBone b in bones)
+                        {
+                            RecursivelyPopulateSortedParentList(b.Children);
+                        }
+                    }
+
+                    // Populate root nodes and create a sorted parent->children list
+                    foreach (GlbBone bone in armature.UnsortedBones)
+                    {
+                        if (bone.Parent == null)
+                        {
+                            armature.Root.Add(bone);
+                        }
+                    }
+
+                    RecursivelyPopulateSortedParentList(armature.Root);
+
+                    if (arm.InverseBindMatrices.HasValue)
+                    {
+                        Accessor a = g.Accessors[arm.InverseBindMatrices.Value];
+                        BufferView matrixView = g.BufferViews[a.BufferView.Value];
+                        byte[] matrixByteBuffer = new byte[matrixView.ByteLength];
+                        Array.Copy(bin, matrixView.ByteOffset, matrixByteBuffer, 0, matrixView.ByteLength);
+                        int sz = sizeof(float) * 16; // 4x4 matrix = 16 floats
+                        for (int i = 0; i < arm.Joints.Length; ++i)
+                        {
+                            int offset = i * sz;
+                            float f1 = BitConverter.ToSingle(matrixByteBuffer, offset + 0);
+                            float f2 = BitConverter.ToSingle(matrixByteBuffer, offset + 4);
+                            float f3 = BitConverter.ToSingle(matrixByteBuffer, offset + 8);
+                            float f4 = BitConverter.ToSingle(matrixByteBuffer, offset + 12);
+                            float f5 = BitConverter.ToSingle(matrixByteBuffer, offset + 16);
+                            float f6 = BitConverter.ToSingle(matrixByteBuffer, offset + 20);
+                            float f7 = BitConverter.ToSingle(matrixByteBuffer, offset + 24);
+                            float f8 = BitConverter.ToSingle(matrixByteBuffer, offset + 28);
+                            float f9 = BitConverter.ToSingle(matrixByteBuffer, offset + 32);
+                            float f10 = BitConverter.ToSingle(matrixByteBuffer, offset + 36);
+                            float f11 = BitConverter.ToSingle(matrixByteBuffer, offset + 40);
+                            float f12 = BitConverter.ToSingle(matrixByteBuffer, offset + 44);
+                            float f13 = BitConverter.ToSingle(matrixByteBuffer, offset + 48);
+                            float f14 = BitConverter.ToSingle(matrixByteBuffer, offset + 52);
+                            float f15 = BitConverter.ToSingle(matrixByteBuffer, offset + 56);
+                            float f16 = BitConverter.ToSingle(matrixByteBuffer, offset + 60);
+                            Matrix4 inverseBind = new Matrix4(
+                                f1, f2, f3, f4,
+                                f5, f6, f7, f8,
+                                f9, f10, f11, f12,
+                                f13, f14, f15, f16
+                            );
+
+                            armature.UnsortedBones[i].InverseBindMatrix = inverseBind;
+                        }
+                    }
+                    else
+                    {
+                        // Uh-oh
+                        foreach (GlbBone bone in armature.UnsortedBones)
+                        {
+                            bone.InverseBindMatrix = Matrix4.Identity; // Invalid, but can't do much more, no inverse bind were provided anyway
+                        }
+                    }
+
+                    this.Armatures.Add(armature);
+                }
+            }
+        }
+
+        private void LoadAnimations(Gltf g, byte[] bin)
+        {
+            if (g.Animations != null && g.Animations.Length > 0)
+            {
+                foreach (Animation a in g.Animations)
+                {
+                    GlbAnimation animation = new GlbAnimation();
+                    animation.Name = a.Name;
+                    float maxDuration = 0;
+                    List<GlbAnimation.Sampler> samplers = new List<GlbAnimation.Sampler>();
+
+                    // Load all samplers
+                    foreach (AnimationSampler asa in a.Samplers)
+                    {
+                        GlbAnimation.Sampler sampler = new GlbAnimation.Sampler();
+                        sampler.Interpolation = asa.Interpolation switch
+                        {
+                            AnimationSampler.InterpolationEnum.LINEAR => GlbAnimation.Interpolation.Linear,
+                            AnimationSampler.InterpolationEnum.STEP => GlbAnimation.Interpolation.Step,
+                            AnimationSampler.InterpolationEnum.CUBICSPLINE => GlbAnimation.Interpolation.CubicSpline
+                        };
+
+                        Accessor keyframeAccessor = g.Accessors[asa.Input];
+                        BufferView kfbv = g.BufferViews[keyframeAccessor.BufferView.Value];
+                        float[] keyframes = new float[keyframeAccessor.Count];
+                        byte[] data = new byte[kfbv.ByteLength];
+                        Array.Copy(bin, kfbv.ByteOffset, data, 0, kfbv.ByteLength);
+                        float mVal = 0;
+                        for (int i = 0; i < keyframes.Length; ++i)
+                        {
+                            keyframes[i] = BitConverter.ToSingle(data, i * sizeof(float));
+                            mVal = MathF.Max(keyframes[i], mVal);
+                        }
+
+                        sampler.Timestamps = keyframes;
+                        Accessor valueAccessor = g.Accessors[asa.Output];
+                        BufferView vabv = g.BufferViews[valueAccessor.BufferView.Value];
+                        data = new byte[vabv.ByteLength];
+                        Array.Copy(bin, vabv.ByteOffset, data, 0, vabv.ByteLength);
+                        Vector4[] values = new Vector4[keyframes.Length]; // Value count must match keyframe count
+                        bool isCublicSpline = asa.Interpolation == AnimationSampler.InterpolationEnum.CUBICSPLINE;
+                        // Interpolation types are always floats
+                        for (int i = 0; i < values.Length; ++i)
+                        {
+                            int elementSize = valueAccessor.Type switch
+                            {
+                                Accessor.TypeEnum.VEC2 => 2,
+                                Accessor.TypeEnum.VEC3 => 3,
+                                Accessor.TypeEnum.VEC4 => 4,
+                                _ => throw new Exception("Invalid accessor type specified - expected vec2/3/4, got " + valueAccessor.Type)
+                            };
+
+                            int cubicSpline3ComponentAccountance = isCublicSpline ? 3 : 1;
+                            int bOffset = i * sizeof(float) * elementSize * cubicSpline3ComponentAccountance;
+                            Vector4 result = default;
+                            result.X = BitConverter.ToSingle(data, bOffset + 0);
+                            result.Y = BitConverter.ToSingle(data, bOffset + sizeof(float));
+                            if (elementSize > 2)
+                            {
+                                result.Z = BitConverter.ToSingle(data, bOffset + sizeof(float) * 2);
+                                if (elementSize == 4)
+                                {
+                                    result.W = BitConverter.ToSingle(data, bOffset + sizeof(float) * 3);
+                                }
+                            }
+
+                            values[i] = result;
+                        }
+
+                        sampler.Values = values;
+                        animation.Samplers.Add(sampler);
+                        maxDuration = MathF.Max(maxDuration, mVal);
+                    }
+
+                    // Load channels
+                    foreach (AnimationChannel ac in a.Channels)
+                    {
+                        if (!ac.Target.Node.HasValue || ac.Target.Path == AnimationChannelTarget.PathEnum.weights)
+                        {
+                            continue; // Do not support extensions
+                        }
+
+                        GlbAnimation.Channel channel = new GlbAnimation.Channel();
+                        channel.Sampler = animation.Samplers[ac.Sampler];
+                        channel.BoneIndex = ac.Target.Node.Value;
+                        channel.Path = ac.Target.Path switch
+                        {
+                            AnimationChannelTarget.PathEnum.rotation => GlbAnimation.Path.Rotation,
+                            AnimationChannelTarget.PathEnum.scale => GlbAnimation.Path.Scale,
+                            AnimationChannelTarget.PathEnum.translation => GlbAnimation.Path.Translation,
+                            _ => throw new Exception("Path not supported!")
+                        };
+
+                        animation.Channels.Add(channel);
+                    }
+
+                    this.Animations.Add(animation);
+                    animation.Container = this;
+                    animation.Duration = maxDuration;
                 }
             }
         }
@@ -780,7 +1132,7 @@
         }
 
         private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
-        public void Render(ShaderProgram shader, Matrix4 baseMatrix, Matrix4 projection, Matrix4 view, double textureAnimationIndex, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, Matrix4 baseMatrix, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
         {
             if (!this.glReady)
             {
@@ -790,7 +1142,7 @@
             this._modelStack.Push(baseMatrix);
             foreach (GlbObject o in this.RootObjects)
             {
-                o.Render(shader, this._modelStack, projection, view, textureAnimationIndex, renderer);
+                o.Render(shader, this._modelStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
             }
 
             this._modelStack.Pop();
@@ -841,7 +1193,7 @@
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             plr.Clear();
             plr.ProcessScene(Matrix4.Identity, this);
-            plr.DrawLights(null, false, null);
+            plr.DrawLights(null, false, 0, null);
             plr.UniformLights(shader);
 
             GL.ActiveTexture(TextureUnit.Texture14);
@@ -863,7 +1215,7 @@
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            this.Render(shader, Matrix4.Identity, camera.Projection, camera.View, 0);
+            this.Render(shader, Matrix4.Identity, camera.Projection, camera.View, 0, null, 0);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             tex.Bind();

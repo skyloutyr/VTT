@@ -82,7 +82,7 @@
             List<Vector4> bitangents = new List<Vector4>();
             List<Vector4> colors = new List<Vector4>();
 
-            int vertexSize = 3 + 2 + 3 + 3 + 3 + 4;
+            int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
             positions.Add(new Vector3(-0.5f, -0.5f, 0f));
             positions.Add(new Vector3(0.5f, -0.5f, 0f));
             positions.Add(new Vector3(0.5f, 0.5f, 0f));
@@ -136,6 +136,12 @@
                 vBuffer[vBufIndex++] = color.Y;
                 vBuffer[vBufIndex++] = color.Z;
                 vBuffer[vBufIndex++] = color.W;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
             }
 
             List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();

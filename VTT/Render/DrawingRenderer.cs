@@ -176,7 +176,7 @@
                     }
                     else
                     {
-                        if (!this.IsDrawing && !ImGui.GetIO().WantCaptureMouse)
+                        if (!this.IsDrawing && !ImGui.GetIO().WantCaptureMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Draw)
                         {
                             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                             if (cw.HasValue)

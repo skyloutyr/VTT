@@ -32,8 +32,11 @@
         public ulong UpdatesExisted { get; set; }
         public ulong FramesExisted { get; set; }
 
-        public int Width => this.GameHandle.Size.X;
-        public int Height => this.GameHandle.Size.Y;
+        public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.Size.X;
+        public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.Size.Y;
+        public int GlfwWidth => this._lastWindowWidth > 0 ? this._lastWindowWidth : this.GameHandle.Size.X;
+        public int GlfwHeight => this._lastWindowHeight > 0 ? this._lastWindowHeight : this.GameHandle.Size.Y;
+
         public float MouseX => this.GameHandle.MousePosition.X;
         public float MouseY => this.GameHandle.MousePosition.Y;
 
@@ -314,6 +317,8 @@
         private bool _lastFocusState;
         private void Instance_RenderFrame(OpenTK.Windowing.Common.FrameEventArgs obj)
         {
+            this.CheckResize();
+
             ++this.FramesExisted;
 
             if (this._lastFocusState != this.GameHandle.IsFocused)
@@ -380,21 +385,44 @@
             }
         }
 
-        private int _lastWidth;
-        private int _lastHeight;
-        private void Instance_Resize(OpenTK.Windowing.Common.ResizeEventArgs obj)
+
+        private int _lastWindowWidth;
+        private int _lastWindowHeight;
+        private int _lastFramebufferWidth;
+        private int _lastFramebufferHeight;
+        private unsafe void CheckResize()
         {
-            if (obj.Width > 0 && obj.Height > 0 && obj.Width != this._lastWidth && obj.Height != this._lastHeight)
+            GLFW.GetWindowSize(this.GameHandle.WindowPtr, out int ww, out int wh);
+            GLFW.GetFramebufferSize(this.GameHandle.WindowPtr, out int fw, out int fh);
+
+            if (ww != this._lastWindowWidth || wh != this._lastWindowHeight)
             {
-                this._lastHeight = obj.Height;
-                this._lastWidth = obj.Width;
-                this.Renderer.Resize(obj.Width, obj.Height);
-                this.GuiWrapper.Resize(obj.Width, obj.Height);
-                Client.Instance.Settings.Resolution = new Size(obj.Width, obj.Height);
-                Client.Instance.Settings.Save();
+                this._lastWindowWidth = ww;
+                this._lastWindowHeight = wh;
+                if (ww != 0 && wh != 0) // Don't save zero-size
+                {
+                    Client.Instance.Settings.Resolution = new Size(ww, wh); // Actually window size
+                    Client.Instance.Settings.Save();
+                }
             }
 
-            this.Renderer.SetWindowState(obj.Width > 0 && obj.Height > 0);
+            if (fw != this._lastFramebufferWidth || fh != this._lastFramebufferHeight)
+            {
+                this._lastFramebufferWidth = fw;
+                this._lastFramebufferHeight = fh;
+                if (fw != 0 && fh != 0)
+                {
+                    this.Renderer.Resize(fw, fh);
+                    this.GuiWrapper.Resize(fw, fh);
+                }
+
+                this.Renderer.SetWindowState(fw > 0 && fh > 0);
+            }
+
+        }
+
+        private void Instance_Resize(OpenTK.Windowing.Common.ResizeEventArgs obj)
+        {
         }
     }
 }

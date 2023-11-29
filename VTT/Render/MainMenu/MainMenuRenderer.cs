@@ -443,7 +443,7 @@
         }
 
         private static Size? oldScreenSize;
-        private static int? oldPosY;
+        private static Point? oldPos;
 
         public static unsafe void DrawSettings(SimpleLanguage lang)
         {
@@ -460,6 +460,8 @@
                     if (ImGui.Combo("##Screen Mode", ref wModeIndex, wMode, 3))
                     {
                         VideoMode* vModePtr = GLFW.GetVideoMode((Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
+                        Window* win = Client.Instance.Frontend.GameHandle.WindowPtr;
+                        bool wasDecorated = Client.Instance.Frontend.GameHandle.WindowBorder != WindowBorder.Hidden;
                         int w = vModePtr->Width;
                         int h = vModePtr->Height;
 
@@ -468,33 +470,29 @@
                             case 0:
                             {
                                 Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Normal;
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
-                                Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Resizable;
                                 int ow = oldScreenSize?.Width ?? 1366;
                                 int oh = oldScreenSize?.Height ?? 768;
-                                Client.Instance.Frontend.GameHandle.Size = new OpenTK.Mathematics.Vector2i(ow, oh);
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Minimized;
-                                if (oldPosY.HasValue)
+                                int ox = oldPos?.X ?? 32;
+                                int oy = oldPos?.Y ?? 32;
+                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
+                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
+                                GLFW.HideWindow(win);
+                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
+                                GLFW.ShowWindow(win);
+                                if (!wasDecorated)
                                 {
-                                    Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(Client.Instance.Frontend.GameHandle.Location.X, oldPosY.Value);
-                                }
-                                else
-                                {
-                                    Client.Instance.Frontend.GameHandle.CenterWindow();
+                                    Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Resizable;
                                 }
 
-                                Client.Instance.Settings.Resolution = new Size(ow, oh);
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
                                 break;
                             }
 
                             case 1:
                             {
                                 Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Fullscreen;
-                                oldScreenSize = new Size(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
-                                oldPosY = Client.Instance.Frontend.GameHandle.Location.Y;
-                                Client.Instance.Frontend.GameHandle.Size = new OpenTK.Mathematics.Vector2i(w, h);
-                                Client.Instance.Settings.Resolution = new Size(w, h);
+                                oldScreenSize = new Size(vModePtr->Width, vModePtr->Height);
+                                GLFW.GetWindowPos(win, out int wx, out int wy);
+                                oldPos = new Point(wx, wy);
                                 Client.Instance.Frontend.GameHandle.WindowState = WindowState.Fullscreen;
                                 Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
                                 break;
@@ -503,12 +501,9 @@
                             case 2:
                             {
                                 Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Borderless;
-                                Client.Instance.Frontend.GameHandle.Size = new OpenTK.Mathematics.Vector2i(w, h);
-                                Client.Instance.Settings.Resolution = new Size(w, h);
                                 Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Minimized;
                                 Client.Instance.Frontend.GameHandle.CenterWindow();
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Maximized;
+                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(0, 0);
                                 break;
                             }
                         }

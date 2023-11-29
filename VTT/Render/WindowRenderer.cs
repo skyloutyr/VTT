@@ -121,7 +121,7 @@
                 }
 
                 this.Container.GuiWrapper.BeforeFrame();
-                ImGui.NewFrame();
+                this.Container.GuiWrapper.NewFrame(time);
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.Size.X, Client.Instance.Frontend.GameHandle.Size.Y);

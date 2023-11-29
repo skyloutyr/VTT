@@ -178,7 +178,6 @@ void main()
 
         public void Render(double time)
         {
-            ImGui.GetIO().DeltaTime = (float)time;
             ImGui.Render();
             RenderDrawData();
         }
@@ -368,6 +367,21 @@ void main()
                     }
                 }
             }
+        }
+
+        public void NewFrame(double delta)
+        {
+            ClientWindow cw = Client.Instance.Frontend;
+            int ww = cw.GlfwWidth;
+            int wh = cw.GlfwHeight;
+            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(cw.Width, cw.Height);
+            if (ww != 0 && wh != 0)
+            {
+                ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2((float)cw.Width / ww, (float)cw.Height / wh);
+            }
+
+            ImGui.GetIO().DeltaTime = (float)delta;
+            ImGui.NewFrame();
         }
 
         public void Resize(int w, int h) => ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(w, h);

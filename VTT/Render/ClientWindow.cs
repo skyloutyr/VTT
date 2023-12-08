@@ -1,6 +1,7 @@
 ﻿namespace VTT.Render
 {
     using OpenTK.Graphics.OpenGL;
+    using OpenTK.Windowing.Common;
     using OpenTK.Windowing.Common.Input;
     using OpenTK.Windowing.Desktop;
     using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -167,8 +168,79 @@
             });
         }
 
+        private ClientSettings.FullscreenMode? _lastFsMode;
+        private Size? oldScreenSize;
+        private Point? oldPos;
+
+        public void SwitchFullscreen(ClientSettings.FullscreenMode? fsMode)
+        {
+            bool toggled = !fsMode.HasValue;
+            ClientSettings.FullscreenMode switchTo = fsMode.HasValue ? fsMode.Value :
+                this._lastFsMode.HasValue ? this._lastFsMode.Value :
+                    this.GameHandle.WindowState != WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : ClientSettings.FullscreenMode.Normal;
+
+            this._lastFsMode = toggled ? this.GameHandle.WindowState == WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : Client.Instance.Settings.ScreenMode : null;
+
+            unsafe
+            {
+                VideoMode* vModePtr = GLFW.GetVideoMode((OpenTK.Windowing.GraphicsLibraryFramework.Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
+                Window* win = Client.Instance.Frontend.GameHandle.WindowPtr;
+                bool wasDecorated = Client.Instance.Frontend.GameHandle.WindowBorder != WindowBorder.Hidden;
+                int w = vModePtr->Width;
+                int h = vModePtr->Height;
+
+                switch (switchTo)
+                {
+                    case ClientSettings.FullscreenMode.Normal:
+                    {
+                        Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Normal;
+                        int ow = this.oldScreenSize?.Width ?? 1366;
+                        int oh = this.oldScreenSize?.Height ?? 768;
+                        int ox = this.oldPos?.X ?? 32;
+                        int oy = this.oldPos?.Y ?? 32;
+                        Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
+                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
+                        GLFW.HideWindow(win);
+                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
+                        GLFW.ShowWindow(win);
+                        if (!wasDecorated)
+                        {
+                            Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Resizable;
+                        }
+
+                        break;
+                    }
+
+                    case ClientSettings.FullscreenMode.Fullscreen:
+                    {
+                        Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Fullscreen;
+                        oldScreenSize = new Size(vModePtr->Width, vModePtr->Height);
+                        GLFW.GetWindowPos(win, out int wx, out int wy);
+                        oldPos = new Point(wx, wy);
+                        Client.Instance.Frontend.GameHandle.WindowState = WindowState.Fullscreen;
+                        Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
+                        break;
+                    }
+
+                    case ClientSettings.FullscreenMode.Borderless:
+                    {
+                        Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Borderless;
+                        Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
+                        Client.Instance.Frontend.GameHandle.CenterWindow();
+                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(0, 0);
+                        break;
+                    }
+                }
+            }
+        }
+
         private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj)
         {
+            if (!obj.IsRepeat && obj.Key == Keys.F11 && this.GameHandle.IsFocused)
+            {
+                this.SwitchFullscreen(null);
+            }
+
             this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, false);
             this.Renderer?.MapRenderer?.HandleKeys(obj);
         }

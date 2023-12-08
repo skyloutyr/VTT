@@ -442,9 +442,6 @@
             ImGui.PopStyleVar();
         }
 
-        private static Size? oldScreenSize;
-        private static Point? oldPos;
-
         public static unsafe void DrawSettings(SimpleLanguage lang)
         {
             if (ImGui.BeginChild("Main Menu Setting", new Vector2(400, 300), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
@@ -469,41 +466,19 @@
                         {
                             case 0:
                             {
-                                Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Normal;
-                                int ow = oldScreenSize?.Width ?? 1366;
-                                int oh = oldScreenSize?.Height ?? 768;
-                                int ox = oldPos?.X ?? 32;
-                                int oy = oldPos?.Y ?? 32;
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
-                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
-                                GLFW.HideWindow(win);
-                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
-                                GLFW.ShowWindow(win);
-                                if (!wasDecorated)
-                                {
-                                    Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Resizable;
-                                }
-
+                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Normal);
                                 break;
                             }
 
                             case 1:
                             {
-                                Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Fullscreen;
-                                oldScreenSize = new Size(vModePtr->Width, vModePtr->Height);
-                                GLFW.GetWindowPos(win, out int wx, out int wy);
-                                oldPos = new Point(wx, wy);
-                                Client.Instance.Frontend.GameHandle.WindowState = WindowState.Fullscreen;
-                                Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
+                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Fullscreen);
                                 break;
                             }
 
                             case 2:
                             {
-                                Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Borderless;
-                                Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
-                                Client.Instance.Frontend.GameHandle.CenterWindow();
-                                Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(0, 0);
+                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Borderless);
                                 break;
                             }
                         }

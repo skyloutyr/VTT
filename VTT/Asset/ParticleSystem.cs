@@ -522,8 +522,6 @@
                                 break;
                             }
                         }
-
-                        Console.WriteLine($"Particle is sprite sheet, index is {p->spriteIndex}");
                     }
 
                     Vector3 baseOffset;

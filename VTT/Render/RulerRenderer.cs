@@ -549,10 +549,23 @@
                         sStart.Z = MathF.Min(sStart.Z, ri.End.Z);
                         float z = MathF.Max(ri.Start.Z, ri.End.Z) + 1.0f;
                         float hZ = MathF.Max(1, MathF.Abs(z - sStart.Z));
+
+                        /*
                         model = Matrix4.CreateScale(r * 2, r * 2, hZ * 2) * Matrix4.CreateTranslation(sStart);
                         shader["model"].Set(model);
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this.ModelSquare.Render();
+                        */
+
+                        Vector3 ftl = new Vector3(ri.Start.X - r, ri.Start.Y - r, z);
+                        Vector3 bbr = new Vector3(ri.Start.X + r, ri.Start.Y + r, sStart.Z);
+                        this.CreateSquare(ftl, bbr);
+                        this.UploadBuffers();
+                        shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
+                        this._vao.Bind();
+                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                        this._vertexData.Clear();
+                        this._indexData.Clear();
                         break;
                     }
 
@@ -685,6 +698,98 @@
                 this._indexData.Add(2u + i);
                 this._indexData.Add(2u + ((i + 1u) % 36));
             }
+        }
+
+        public void CreateSquare(Vector3 ftl, Vector3 bbr)
+        {
+            Vector3 v0 = new Vector3(ftl.X, ftl.Y, bbr.Z);
+            Vector3 v1 = new Vector3(bbr.X, ftl.Y, bbr.Z);
+            Vector3 v2 = new Vector3(bbr.X, bbr.Y, bbr.Z);
+            Vector3 v3 = new Vector3(ftl.X, bbr.Y, bbr.Z);
+
+            Vector3 v4 = new Vector3(ftl.X, ftl.Y, ftl.Z);
+            Vector3 v5 = new Vector3(bbr.X, ftl.Y, ftl.Z);
+            Vector3 v6 = new Vector3(bbr.X, bbr.Y, ftl.Z);
+            Vector3 v7 = new Vector3(ftl.X, bbr.Y, ftl.Z);
+
+            // Add left and right sides
+            uint i0 = (uint)this._vertexData.Count / 3;
+            this.AddVertices(v0, v3, v7, v4);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 1);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 3);
+            i0 += 4;
+            this.AddVertices(v1, v2, v6, v5);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 1);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 3);
+
+            // Add front and back sides
+            i0 += 4;
+            this.AddVertices(v0, v1, v5, v4);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 1);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 3);
+            i0 += 4;
+            this.AddVertices(v2, v3, v7, v6);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 1);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 0);
+            this._indexData.Add(i0 + 2);
+            this._indexData.Add(i0 + 3);
+
+            // Create top and bottom outlines
+            void AddVerticalLine(Vector3 from, Vector3 to, float thickness = 0.2f)
+            {
+                Vector3 tl = new Vector3(from.X - thickness, from.Y - thickness, from.Z);
+                Vector3 tr = new Vector3(from.X + thickness, from.Y - thickness, from.Z);
+                Vector3 bl = new Vector3(to.X - thickness, to.Y + thickness, from.Z);
+                Vector3 br = new Vector3(to.X + thickness, to.Y + thickness, from.Z);
+                uint lastIndex = (uint)(this._vertexData.Count / 3);
+                this.AddVertices(tl, tr, br, bl);
+                this._indexData.Add(lastIndex + 0);
+                this._indexData.Add(lastIndex + 1);
+                this._indexData.Add(lastIndex + 2);
+                this._indexData.Add(lastIndex + 0);
+                this._indexData.Add(lastIndex + 2);
+                this._indexData.Add(lastIndex + 3);
+            }
+
+            void AddHorizontalLine(Vector3 from, Vector3 to, float thickness = 0.2f)
+            {
+                Vector3 tl = new Vector3(from.X - thickness, from.Y - thickness, from.Z);
+                Vector3 tr = new Vector3(from.X - thickness, from.Y + thickness, from.Z);
+                Vector3 bl = new Vector3(to.X + thickness, to.Y - thickness, from.Z);
+                Vector3 br = new Vector3(to.X + thickness, to.Y + thickness, from.Z);
+                uint lastIndex = (uint)(this._vertexData.Count / 3);
+                this.AddVertices(tl, tr, br, bl);
+                this._indexData.Add(lastIndex + 0);
+                this._indexData.Add(lastIndex + 1);
+                this._indexData.Add(lastIndex + 2);
+                this._indexData.Add(lastIndex + 0);
+                this._indexData.Add(lastIndex + 2);
+                this._indexData.Add(lastIndex + 3);
+            }
+
+            AddVerticalLine(v0, v3);
+            AddVerticalLine(v4, v7);
+            AddVerticalLine(v1, v2);
+            AddVerticalLine(v5, v6);
+
+            AddHorizontalLine(v0, v1);
+            AddHorizontalLine(v4, v5);
+            AddHorizontalLine(v2, v3);
+            AddHorizontalLine(v6, v7);
         }
 
         public void CreateCircle(Vector3 start, float radius)
@@ -837,14 +942,48 @@
             this._indexData.Add(fvIdx + 7);
         }
 
-        public void AddVertices(params Vector3[] vecs)
+        public void AddVertices(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3)
         {
-            foreach (Vector3 v in vecs)
-            {
-                this._vertexData.Add(v.X);
-                this._vertexData.Add(v.Y);
-                this._vertexData.Add(v.Z);
-            }
+            this._vertexData.Add(v0.X);
+            this._vertexData.Add(v0.Y);
+            this._vertexData.Add(v0.Z);
+            this._vertexData.Add(v1.X);
+            this._vertexData.Add(v1.Y);
+            this._vertexData.Add(v1.Z);
+            this._vertexData.Add(v2.X);
+            this._vertexData.Add(v2.Y);
+            this._vertexData.Add(v2.Z);
+            this._vertexData.Add(v3.X);
+            this._vertexData.Add(v3.Y);
+            this._vertexData.Add(v3.Z);
+        }
+
+        public void AddVertices(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 v5, Vector3 v6, Vector3 v7)
+        {
+            this._vertexData.Add(v0.X);
+            this._vertexData.Add(v0.Y);
+            this._vertexData.Add(v0.Z);
+            this._vertexData.Add(v1.X);
+            this._vertexData.Add(v1.Y);
+            this._vertexData.Add(v1.Z);
+            this._vertexData.Add(v2.X);
+            this._vertexData.Add(v2.Y);
+            this._vertexData.Add(v2.Z);
+            this._vertexData.Add(v3.X);
+            this._vertexData.Add(v3.Y);
+            this._vertexData.Add(v3.Z);
+            this._vertexData.Add(v4.X);
+            this._vertexData.Add(v4.Y);
+            this._vertexData.Add(v4.Z);
+            this._vertexData.Add(v5.X);
+            this._vertexData.Add(v5.Y);
+            this._vertexData.Add(v5.Z);
+            this._vertexData.Add(v6.X);
+            this._vertexData.Add(v6.Y);
+            this._vertexData.Add(v6.Z);
+            this._vertexData.Add(v7.X);
+            this._vertexData.Add(v7.Y);
+            this._vertexData.Add(v7.Z);
         }
 
         public bool CanErase(RulerInfo ri)

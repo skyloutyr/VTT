@@ -622,12 +622,12 @@
                         }
 
                         ImGui.PushStyleColor(ImGuiCol.Text, nClr);
-                        ImGui.TextUnformatted(this._inspectedObject.Name);
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
                         ImGui.PopStyleColor();
 
                         ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         ImGui.PushTextWrapPos();
-                        ImGui.TextUnformatted(this._inspectedObject.Description);
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
                         ImGui.PopTextWrapPos();
                         ImGui.EndChild();
 

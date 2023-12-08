@@ -174,6 +174,11 @@
                     case DataType.Camera2DHeight:
                     {
                         m.Camera2DHeight = (float)this.Data;
+                        if (!isServer)
+                        {
+                            client.Frontend.Renderer.MapRenderer.Change2DMapHeight(m.Camera2DHeight);
+                        }
+
                         break;
                     }
 

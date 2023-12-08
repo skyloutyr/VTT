@@ -52,6 +52,12 @@
             this.DrawingRenderer.Init();
         }
 
+        private float Get2DMapHeightOrDefault()
+        {
+            Map m = Client.Instance.CurrentMap;
+            return m?.Camera2DHeight * 2 ?? 10;
+        }
+
         public void Resize(int w, int h)
         {
             if (!this.IsOrtho)
@@ -61,7 +67,7 @@
             else
             {
                 float zoom = this.camera2dzoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -10, 10);
+                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
             }
 
             this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
@@ -96,7 +102,7 @@
             if (b)
             {
                 this.camera2dzoom = zoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -10, 10);
+                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
                 this.ClientCamera.Direction = new Vector3(0, 0.001f, -1).Normalized();
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
@@ -105,6 +111,20 @@
             {
                 this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f), (float)w / h, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+            }
+        }
+
+        public void Change2DMapHeight(float to)
+        {
+            Map m = Client.Instance.CurrentMap;
+            if (m == null)
+            {
+                return;
+            }
+
+            if (this.IsOrtho && m.Is2D)
+            {
+                this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             }
         }
 

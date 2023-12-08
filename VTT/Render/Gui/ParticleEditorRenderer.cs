@@ -294,6 +294,81 @@
                         }
 
                         ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem);
+
+                        ImGui.Spacing();
+                        bool isSS = pr.CurrentlyEditedSystem.IsSpriteSheet;
+                        if (ImGui.Checkbox(lang.Translate("ui.particle.is_sprite_sheet") + "###IsSpriteSheet", ref isSS))
+                        {
+                            pr.CurrentlyEditedSystem.IsSpriteSheet = isSS;
+                            if (isSS)
+                            {
+                                pr.CurrentlyEditedSystem.SpriteData.Init();
+                            }
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.particle.is_sprite_sheet.tt"));
+                        }
+
+                        if (isSS)
+                        {
+                            if (ImGui.TreeNode(lang.Translate("ui.particle.sprite_sheet_data") + "###SpriteSheetData"))
+                            {
+                                int iSSNC = pr.CurrentlyEditedSystem.SpriteData.NumColumns;
+                                int iSSNR = pr.CurrentlyEditedSystem.SpriteData.NumRows;
+                                if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_columns") + "###SheetColumns", ref iSSNC))
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteData.NumColumns = iSSNC;
+                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
+                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                }
+
+                                if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_rows") + "###SheetRows", ref iSSNR))
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteData.NumRows = iSSNR;
+                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
+                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                }
+
+                                int iSSNS = pr.CurrentlyEditedSystem.SpriteData.NumSprites;
+                                ImGui.Text(lang.Translate("ui.particle.sprite_size_num_sprites"));
+                                if (ImGui.SliderInt("###NumSprites", ref iSSNS, 0, iSSNR * iSSNC))
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = iSSNS;
+                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                }
+
+                                int cM = (int)pr.CurrentlyEditedSystem.SpriteData.Selection;
+                                string[] modeNames = new string[] { lang.Translate("ui.particle.sprite_selection_mode.progressive"), lang.Translate("ui.particle.sprite_selection_mode.regressive"), lang.Translate("ui.particle.sprite_selection_mode.random") };
+                                ImGui.Text(lang.Translate("ui.particle.sprite_selection_mode"));
+                                if (ImGui.Combo("##SpriteSelectionMode", ref cM, modeNames, 3))
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteData.Selection = (ParticleSystem.SpriteSheetData.SelectionMode)cM;
+                                }
+
+                                if (pr.CurrentlyEditedSystem.SpriteData.Selection == ParticleSystem.SpriteSheetData.SelectionMode.Random)
+                                {
+                                    ImGui.Text(lang.Translate("ui.particle.sprite_selection_weights"));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.particle.sprite_selection_weights.tt"));
+                                    }
+
+                                    for (int i = 0; i < pr.CurrentlyEditedSystem.SpriteData.NumSprites; ++i)
+                                    {
+                                        int vF = pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i];
+                                        if (ImGui.DragInt(lang.Translate("ui.particle.sprite_selection_weight_indexed", i) + "###SpriteSelectionWeight_" + i, ref vF))
+                                        {
+                                            pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i] = vF;
+                                            pr.CurrentlyEditedSystem.SpriteData.SelectionWeightsList[i] = new WeightedItem<int>(i, vF);
+                                        }
+                                    }
+                                }
+
+                                ImGui.TreePop();
+                            }
+                        }
                     }
 
                     ImGui.Spacing();

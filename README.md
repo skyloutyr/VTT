@@ -214,7 +214,8 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * If you hold ALT and then left-click you will open a ping menu. Pings are visible to all players, and they are especially visible if they are offscreen. Pings also make a noise! If you also hold control while holding alt and left-clicking you will open a 'secret' reaction menu. Reactions work like pings, but they dissappear faster, don't make a sound and don't show up if they are offscreen.
 * Particles support both animated images and 3D models.
 * If you control-click the transition button in the animations section of an object it will transition the animation for all clients immediately.
-* Objects can be marked as info objects. When marked as suck they will also display their description when moused-over.
+* Objects can be marked as info objects. When marked as such they will also display their description when moused-over.
+* Particles may have variety by using sprite sheets, with fine control over the selection of a given sprite.
 
 ---
 ## Known issues, suggestions and missing features tracker

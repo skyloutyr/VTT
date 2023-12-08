@@ -34,5 +34,6 @@
         }
 
         public string Translate(string sIn) => this.Language.TryGetValue(sIn, out string sVal) ? sVal : sIn;
+        public string Translate(string sIn, params object[] format) => this.Language.TryGetValue(sIn, out string sVal) ? string.Format(sVal, format) : sIn;
     }
 }

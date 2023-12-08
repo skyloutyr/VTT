@@ -24,6 +24,8 @@ uniform vec2 fow_scale;
 uniform float fow_mod;
 uniform bool billboard;
 uniform bool do_fow;
+uniform bool is_sprite_sheet;
+uniform vec2 sprite_sheet_data;
 
 out vec4 f_color;
 out vec2 f_texture;
@@ -67,23 +69,38 @@ float getFowMultiplier(vec3 f_world_position)
     return r + g + b + a;
 }
 
+vec2 decodeSpriteSheetCoordinates(float f)
+{
+	int ssIndex = floatBitsToInt(f);
+	int iX = ssIndex % int(sprite_sheet_data.x);
+	int iY = ssIndex / int(sprite_sheet_data.x);
+	float stepX = 1.0 / sprite_sheet_data.x;
+	float stepY = 1.0 / sprite_sheet_data.y;
+	vec2 v = vec2(
+		stepX * float(iX) + stepX * v_texture.x, 
+		stepY * float(iY) + stepY * v_texture.y
+	);
+
+	return v;
+}
+
 void main()
 {
 	int idx = gl_InstanceID * 2;
-	vec3 v0 = texelFetch(dataBuffer, idx + 0).xyz;
-	vec3 v1 = texelFetch(dataBuffer, idx + 1).xyz;
+	vec4 v0 = texelFetch(dataBuffer, idx + 0);
+	vec4 v1 = texelFetch(dataBuffer, idx + 1);
 	float inst_x = v0.x;
 	float inst_y = v0.y;
 	float inst_z = v0.z;
-	float inst_w = v1.x;
-	float inst_clr = v1.y;
-	float inst_frame = v1.z;
+	float inst_w = v0.w;
+	float inst_clr = v1.x;
+	float inst_frame = v1.y;
 	inst_color = decodeMColor(inst_clr);
 	vec4 worldPos = model * (billboard ? vec4(inst_x, inst_y, inst_z, 1.0) : vec4((v_position * inst_w) + vec3(inst_x, inst_y, inst_z), 1.0));
 	vec4 viewPos = view * worldPos;
 	inst_pos = (worldPos + vec4(billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0), 0.0)).xyz;
 	f_color = v_color;
-	f_texture = v_texture;
+	f_texture = is_sprite_sheet ? decodeSpriteSheetCoordinates(v1.z) : v_texture;
 	f_frame = int(floatBitsToUint(inst_frame));
 	float fow_mul = do_fow ? 1.0 : mix(getFowMultiplier(vec3(inst_x, inst_y, inst_z)), 1.0, 1.0 - fow_mod);
 	gl_Position = (inst_w < 0.001 || fow_mul <= 0.001) ? vec4(0.0, 0.0, 0.0, -1.0) : projection * (viewPos + vec4((billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0)), 0.0));

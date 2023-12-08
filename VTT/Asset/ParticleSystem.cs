@@ -36,6 +36,8 @@
 
         public Gradient<Vector4> ColorOverLifetime { get; set; } = new Gradient<Vector4>() { [0] = Vector4.One, [1] = new Vector4(1, 1, 1, 0) };
         public Gradient<float> ScaleOverLifetime { get; set; } = new Gradient<float>() { [0] = 1f, [1] = 1f };
+        public bool IsSpriteSheet { get; set; } = false;
+        public SpriteSheetData SpriteData { get; set; } = new SpriteSheetData();
 
         /// <summary>
         /// Note - NOT OWN ID! This is the ID of the asset the particles use for rendering.
@@ -120,6 +122,8 @@
             ret.Set("DoBillboard", this.DoBillboard);
             ret.Set("ClusterEmission", this.ClusterEmission);
             ret.Set("DoFow", this.DoFow);
+            ret.Set("IsSpriteSheet", this.IsSpriteSheet);
+            ret.Set("SpriteSheetData", this.SpriteData.Serialize());
             ret.Write(bw);
         }
 
@@ -157,6 +161,11 @@
             this.DoBillboard = de.Get<bool>("DoBillboard", true);
             this.ClusterEmission = de.Get<bool>("ClusterEmission", false);
             this.DoFow = de.Get<bool>("DoFow", false);
+            this.IsSpriteSheet = de.Get("IsSpriteSheet", false);
+            if (de.Has("SpriteSheetData", Util.DataType.Map))
+            {
+                this.SpriteData.Deserialize(de.Get<DataElement>("SpriteSheetData"));
+            }
         }
 
         public void ReadV1(BinaryReader br)
@@ -213,7 +222,9 @@
             AssetID = this.AssetID,
             DoBillboard = this.DoBillboard,
             DoFow = this.DoFow,
-            ClusterEmission = this.ClusterEmission
+            ClusterEmission = this.ClusterEmission,
+            IsSpriteSheet = this.IsSpriteSheet,
+            SpriteData = this.SpriteData.Clone()
         };
 
         public class RangeInt
@@ -258,6 +269,96 @@
             public Vector3 Value(float indexX, float indexY, float indexZ) => this.Min + ((this.Max - this.Min) * new Vector3(indexX, indexY, indexZ));
         }
 
+        public class SpriteSheetData : ISerializable
+        {
+            private int _numRows = 1;
+            private int _numColumns = 1;
+            private int _numSprites = 1;
+
+            public int NumRows { get => this._numRows; set => this._numRows = Math.Max(1, value); }
+            public int NumColumns { get => this._numColumns; set => this._numColumns = Math.Max(1, value); }
+            public int NumSprites { get => this._numSprites; set => this._numSprites = Math.Max(1, value); }
+            public SelectionMode Selection { get; set; }
+
+            public int[] SelectionWeights { get; set; } = new int[1] { 1 };
+
+            public List<WeightedItem<int>> SelectionWeightsList { get; } = new List<WeightedItem<int>>() { new WeightedItem<int>(0, 1) };
+
+            public void ReallocateSelectionWeights()
+            {
+                int[] newChances = new int[this.NumSprites];
+                Array.Fill(newChances, 1);
+                if (this.SelectionWeights.Length > 0 && this.NumSprites > 0)
+                {
+                    Array.Copy(this.SelectionWeights, newChances, Math.Min(newChances.Length, this.SelectionWeights.Length));
+                }
+
+                this.SelectionWeights = newChances;
+                this.SelectionWeightsList.Clear();
+                for (int i = 0; i < newChances.Length; ++i)
+                {
+                    this.SelectionWeightsList.Add(new WeightedItem<int>(i, this.SelectionWeights[i]));
+                }
+            }
+
+            public void Init()
+            {
+                this.NumColumns = 1;
+                this.NumRows = 1;
+                this.NumSprites = 1;
+                this.Selection = SelectionMode.Progressive;
+                this.ReallocateSelectionWeights();
+            }
+
+            public DataElement Serialize()
+            {
+                DataElement ret = new DataElement();
+                ret.Set("nC", this.NumColumns);
+                ret.Set("nR", this.NumRows);
+                ret.Set("nS", this.NumSprites);
+                ret.SetEnum("sM", this.Selection);
+                ret.SetArray("sC", this.SelectionWeights, (n, c, v) => c.Set(n, v));
+                return ret;
+            }
+
+            public void Deserialize(DataElement e)
+            {
+                this.NumColumns = e.Get<int>("nC");
+                this.NumRows = e.Get<int>("nR");
+                this.NumSprites = e.Get<int>("nS");
+                this.Selection = e.GetEnum<SelectionMode>("sM");
+                this.SelectionWeights = e.GetArray("sC", (n, c) => c.Get<int>(n, 0), Array.Empty<int>());
+                this.SelectionWeightsList.Clear();
+                for (int i = 0; i < this.SelectionWeights.Length; ++i)
+                {
+                    this.SelectionWeightsList.Add(new WeightedItem<int>(i, this.SelectionWeights[i]));
+                }
+            }
+
+            public SpriteSheetData Clone()
+            {
+                SpriteSheetData ret = new SpriteSheetData()
+                {
+                    NumColumns = this.NumColumns,
+                    NumRows = this.NumRows,
+                    NumSprites = this.NumSprites,
+                    Selection = this.Selection,
+                    SelectionWeights = (int[])this.SelectionWeights.Clone(),
+                };
+
+                ret.SelectionWeightsList.Clear();
+                ret.SelectionWeightsList.AddRange(this.SelectionWeightsList);
+                return ret;
+            }
+
+            public enum SelectionMode
+            {
+                Progressive,
+                Regressive,
+                Random
+            }
+        }
+
         public enum EmissionMode
         {
             Point,
@@ -288,6 +389,7 @@
         private int _emissionCd;
         private uint _frameAmount;
         private readonly Random _rand;
+        private int _lastSpriteIndex = 0;
 
 
         public ParticleSystemInstance(ParticleSystem template, ParticleContainer container)
@@ -315,8 +417,8 @@
             this.Dispose();
             this._allParticles = (Particle*)Marshal.AllocHGlobal(numPossibleParticles * sizeof(Particle));
             this._numParticles = numPossibleParticles;
-            this._sizeInBytes = numPossibleParticles * 6 * sizeof(float);
-            this._buffer = (GLParticleData*)Marshal.AllocHGlobal(numPossibleParticles * sizeof(GLParticleData));
+            this._sizeInBytes = numPossibleParticles * sizeof(GLParticleData);
+            this._buffer = (GLParticleData*)Marshal.AllocHGlobal(_sizeInBytes);
             for (int i = 0; i < numPossibleParticles; ++i)
             {
                 this._allParticles[i] = new Particle() { active = 0, age = 0, color = Vector4.Zero, lifespan = 0, velocity = Vector3.Zero, worldPosition = Vector3.Zero };
@@ -337,6 +439,8 @@
 
             particleShader["billboard"].Set(this.Template.DoBillboard);
             particleShader["do_fow"].Set(this.Template.DoFow);
+            particleShader["is_sprite_sheet"].Set(this.Template.IsSpriteSheet);
+            particleShader["sprite_sheet_data"].Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
             GL.ActiveTexture(TextureUnit.Texture14);
             GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
@@ -345,6 +449,7 @@
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
+
         public void Update(Vector3 cameraPosition)
         {
             int nActive = 0;
@@ -361,6 +466,7 @@
                 b->scale = p->active == 1 ? p->scale : 0.0f;
                 b->color = VTTMath.UInt32BitsToSingle(Extensions.Rgba(p->color));
                 b->animationFrame = VTTMath.UInt32BitsToSingle(p->lifespan == 0 ? 0 : (uint)(this._frameAmount * ((float)p->age / p->lifespan)));
+                b->spritemapIndex = VTTMath.Int32BitsToSingle(p->spriteIndex);
                 if (p->active == 1)
                 {
                     ++nActive;
@@ -381,6 +487,45 @@
                     p->lifespan = this.Template.Lifetime.Value(this._rand.NextSingle());
                     p->scaleMod = this.Template.ScaleVariation.Value(this._rand.NextSingle());
                     p->scale = this.Template.ScaleOverLifetime.Interpolate(0, GradientInterpolators.Lerp);
+                    p->spriteIndex = 0;
+                    if (this.Template.IsSpriteSheet)
+                    {
+                        switch (this.Template.SpriteData.Selection)
+                        {
+                            case ParticleSystem.SpriteSheetData.SelectionMode.Progressive:
+                            {
+                                this._lastSpriteIndex += 1;
+                                if (this._lastSpriteIndex >= this.Template.SpriteData.NumSprites)
+                                {
+                                    this._lastSpriteIndex = 0;
+                                }
+
+                                p->spriteIndex = this._lastSpriteIndex;
+                                break;
+                            }
+
+                            case ParticleSystem.SpriteSheetData.SelectionMode.Regressive:
+                            {
+                                this._lastSpriteIndex -= 1;
+                                if (this._lastSpriteIndex < 0)
+                                {
+                                    this._lastSpriteIndex = this.Template.SpriteData.NumSprites - 1;
+                                }
+
+                                p->spriteIndex = this._lastSpriteIndex;
+                                break;
+                            }
+
+                            case ParticleSystem.SpriteSheetData.SelectionMode.Random:
+                            {
+                                p->spriteIndex = WeightedRandom.GetWeightedItem(this.Template.SpriteData.SelectionWeightsList, this._rand).Item;
+                                break;
+                            }
+                        }
+
+                        Console.WriteLine($"Particle is sprite sheet, index is {p->spriteIndex}");
+                    }
+
                     Vector3 baseOffset;
                     if (this.IsFake)
                     {
@@ -569,7 +714,7 @@
 
                 GL.GenTextures(1, out this._glBufferTexture);
                 GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
-                GL.TexBuffer(TextureBufferTarget.TextureBuffer, (SizedInternalFormat)Version30.Rgb32f, this._glTextureBuffer);
+                GL.TexBuffer(TextureBufferTarget.TextureBuffer, (SizedInternalFormat)Version30.Rgba32f, this._glTextureBuffer);
 
                 this._glInit = true;
             }
@@ -626,26 +771,29 @@
             }
 
             this._glInit = false;
+            this._lastParticleIndex = 0;
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct GLParticleData
     {
         [FieldOffset(0)]
         public Vector3 worldPosition;
-
         [FieldOffset(12)]
         public float scale;
 
         [FieldOffset(16)]
         public float color;
-
         [FieldOffset(20)]
         public float animationFrame;
+        [FieldOffset(24)]
+        public float spritemapIndex;
+        [FieldOffset(28)]
+        public float unused;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 60)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct Particle
     {
         [FieldOffset(0)]
@@ -671,6 +819,9 @@
 
         [FieldOffset(56)]
         public int active;
+
+        [FieldOffset(60)]
+        public int spriteIndex;
 
         public void Update(ParticleSystemInstance instance)
         {

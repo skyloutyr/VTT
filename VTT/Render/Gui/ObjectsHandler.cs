@@ -669,7 +669,7 @@
                                 ImGui.BeginDisabled();
                             }
 
-                            if (ImGui.TreeNode(lang.Translate("ui.animations" + "###Animations")))
+                            if (ImGui.TreeNode(lang.Translate("ui.animations") + "###Animations"))
                             {
                                 if (haveAnimations)
                                 {

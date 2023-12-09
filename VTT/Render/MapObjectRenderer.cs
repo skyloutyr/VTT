@@ -1260,7 +1260,7 @@
 
     public class BonesUBO
     {
-        private GPUBuffer _ubo;
+        private readonly GPUBuffer _ubo;
         private unsafe Matrix4* _matrixArray;
 
         public BonesUBO()

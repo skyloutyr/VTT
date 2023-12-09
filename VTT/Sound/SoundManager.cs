@@ -5,7 +5,6 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using VTT.Asset;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -116,7 +115,7 @@
 
         private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer)>();
         private readonly ConcurrentQueue<Guid> _waitingOnAssetRequests = new ConcurrentQueue<Guid>();
-        
+
         public void PlaySound(ALSoundContainer sc, SoundCategory cat)
         {
             if (Client.Instance.Settings.DisableSounds)
@@ -131,10 +130,7 @@
         }
 
         private bool _assetsClear;
-        public void ClearAssets()
-        {
-            this._assetsClear = true;
-        }
+        public void ClearAssets() => this._assetsClear = true;
 
         public void PlayAsset(Guid assetID)
         {
@@ -321,7 +317,7 @@
             }
         }
 
-        private Dictionary<(Guid, int), byte[]> _soundBuffersResponses = new Dictionary<(Guid, int), byte[]>();
+        private readonly Dictionary<(Guid, int), byte[]> _soundBuffersResponses = new Dictionary<(Guid, int), byte[]>();
         private readonly object _soundBuffersResponsesLock = new object();
 
         public bool RequestBufferedSound(Guid assetID, int cIndex, out ushort[] data)
@@ -362,10 +358,7 @@
             return ret;
         }
 
-        public void BufferedSourceReadyCallback(int src)
-        {
-            this.SetSourceVolume(SoundCategory.Asset, src);
-        }
+        public void BufferedSourceReadyCallback(int src) => this.SetSourceVolume(SoundCategory.Asset, src);
 
         public void ReceiveSoundBuffer(Guid soundID, int cIndex, byte[] buffer)
         {

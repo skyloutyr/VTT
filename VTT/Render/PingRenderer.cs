@@ -7,7 +7,6 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Numerics;
-    using System.Runtime.InteropServices;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
@@ -95,8 +94,8 @@
             this.QuadVAO.Bind();
             this.QuadVBO = new GPUBuffer(BufferTarget.ArrayBuffer, BufferUsageHint.StaticDraw);
             this.QuadVBO.Bind();
-            this.QuadVBO.SetData(new float[] 
-            { 
+            this.QuadVBO.SetData(new float[]
+            {
                 -1, -1, 0, 1,
                 1, -1, 1, 1,
                 1, 1, 1, 0,
@@ -276,8 +275,8 @@
                 bool is2D = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                 float zOffset = lifetimeProgression * 1.25f;
                 float sizeInfluence = MathF.Sin(lifetimeProgression * MathF.PI) * (1 - MathF.Pow(lifetimeProgression, 4));
-                float a = MathF.Min(1, 1 - MathF.Pow(lifetimeProgression - 0.4f, 3) * 4.6f);
-                shader["position"].Set(new OpenTK.Mathematics.Vector4(p.Position + new OpenTK.Mathematics.Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + 32 * sizeInfluence));
+                float a = MathF.Min(1, 1 - (MathF.Pow(lifetimeProgression - 0.4f, 3) * 4.6f));
+                shader["position"].Set(new OpenTK.Mathematics.Vector4(p.Position + new OpenTK.Mathematics.Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + (32 * sizeInfluence)));
                 shader["u_color"].Set(new OpenTK.Mathematics.Vector4(1, 1, 1, a));
                 this.EmojiTextures[p.Type - Ping.PingType.Smiling].Bind();
                 GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, IntPtr.Zero);
@@ -296,7 +295,7 @@
 
         private readonly Vector2[] _poly = new Vector2[2048];
         private readonly Vector2[] _poly2 = new Vector2[2048];
-        private readonly Vector2[] _emojiPositions = new Vector2[] 
+        private readonly Vector2[] _emojiPositions = new Vector2[]
         {
             new Vector2(45, 43),
             new Vector2(-43, 45),
@@ -371,17 +370,6 @@
                     for (int i = 512; i < 2048; ++i)
                     {
                         this._poly2[i] = this._poly[i] + uic;
-                    }
-
-                    Vector2 GetPolygonCenter(int offset)
-                    {
-                        Vector2 cumulativeVec = default;
-                        for (int i = 0; i < 64; ++i)
-                        {
-                            cumulativeVec += this._poly[offset + i];
-                        }
-
-                        return cumulativeVec / 64;
                     }
 
                     for (int i = 0; i < 12; ++i)

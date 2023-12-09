@@ -1,6 +1,5 @@
 ﻿namespace VTT.Render
 {
-    using ImGuiNET;
     using OpenTK.Graphics.OpenGL;
     using System;
     using VTT.Control;

@@ -149,10 +149,7 @@
             }
         }
 
-        public void Dispose()
-        {
-            this.RawAudio.Free();
-        }
+        public void Dispose() => this.RawAudio.Free();
 
         public class Metadata : ISerializable
         {

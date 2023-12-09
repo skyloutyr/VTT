@@ -10,12 +10,12 @@
     {
         public Guid AssetID { get; set; }
 
-        private int _front;
-        private int _back;
-        private int _freq;
-        private int _maxChunks;
+        private readonly int _front;
+        private readonly int _back;
+        private readonly int _freq;
+        private readonly int _maxChunks;
 
-        private int _src;
+        private readonly int _src;
 
         private bool _initialized;
 
@@ -23,12 +23,12 @@
         private bool _haveBack;
         private int _lastChunkFetched;
         private int _operationalBuffer = -1;
-        private int _nChannels;
+        private readonly int _nChannels;
 
         public int Source => this._src;
         public bool Initialized => this._initialized;
 
-        private Dictionary<int, IntPtr> _ptrs = new Dictionary<int, IntPtr>(); // Needed due to openal's async issues with some implementations that don't copy the data on the spot
+        private readonly Dictionary<int, IntPtr> _ptrs = new Dictionary<int, IntPtr>(); // Needed due to openal's async issues with some implementations that don't copy the data on the spot
 
         public BufferedSound(int frequency, int numChannels, int numChunks, Guid assetID)
         {

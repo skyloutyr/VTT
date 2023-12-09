@@ -10,12 +10,9 @@
         public AssetManager Container { get; init; }
         public Dictionary<Guid, Accessor> DataMap { get; } = new Dictionary<Guid, Accessor>();
 
-        private object _locker = new object();
+        private readonly object _locker = new object();
 
-        public AssetSoundHeatmap(AssetManager assetManager)
-        {
-            this.Container = assetManager;
-        }
+        public AssetSoundHeatmap(AssetManager assetManager) => this.Container = assetManager;
 
         public AssetStatus Get(Guid assetID, int index, out Spot spot)
         {
@@ -65,9 +62,9 @@
         public class Accessor
         {
             private Stream _fsStream;
-            private string _fsPath;
-            private object _locker = new object();
-            private int _chunkLength;
+            private readonly string _fsPath;
+            private readonly object _locker = new object();
+            private readonly int _chunkLength;
 
             public Spot[] Spots { get; init; }
 
@@ -76,6 +73,7 @@
             public Accessor(string fsPath, int spots, int freq, int nCh)
             {
                 this._fsStream = File.OpenRead(fsPath);
+                this._fsPath = fsPath;
                 this.Spots = new Spot[spots];
                 this._chunkLength = freq * nCh * 5 * sizeof(ushort); // 5s of stereo16 wave sound
             }
@@ -167,14 +165,7 @@
 
                 try
                 {
-                    if (this._fsStream.CanRead)
-                    {
-                        return this._fsStream;
-                    }
-                    else
-                    {
-                        throw new IOException();
-                    }
+                    return this._fsStream.CanRead ? this._fsStream : throw new IOException();
                 }
                 catch
                 {

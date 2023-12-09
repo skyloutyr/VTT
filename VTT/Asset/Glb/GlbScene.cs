@@ -11,7 +11,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Runtime.InteropServices;
     using VTT.GL;
     using VTT.Network;
     using VTT.Render.LightShadow;
@@ -856,7 +855,8 @@
                         {
                             AnimationSampler.InterpolationEnum.LINEAR => GlbAnimation.Interpolation.Linear,
                             AnimationSampler.InterpolationEnum.STEP => GlbAnimation.Interpolation.Step,
-                            AnimationSampler.InterpolationEnum.CUBICSPLINE => GlbAnimation.Interpolation.CubicSpline
+                            AnimationSampler.InterpolationEnum.CUBICSPLINE => GlbAnimation.Interpolation.CubicSpline,
+                            _ => throw new Exception("Illegal interpolation method specified")
                         };
 
                         Accessor keyframeAccessor = g.Accessors[asa.Input];
@@ -896,10 +896,10 @@
                             result.Y = BitConverter.ToSingle(data, bOffset + sizeof(float));
                             if (elementSize > 2)
                             {
-                                result.Z = BitConverter.ToSingle(data, bOffset + sizeof(float) * 2);
+                                result.Z = BitConverter.ToSingle(data, bOffset + (sizeof(float) * 2));
                                 if (elementSize == 4)
                                 {
-                                    result.W = BitConverter.ToSingle(data, bOffset + sizeof(float) * 3);
+                                    result.W = BitConverter.ToSingle(data, bOffset + (sizeof(float) * 3));
                                 }
                             }
 

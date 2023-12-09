@@ -384,7 +384,7 @@
 
                 bool useDXTCompression = OpenGLUtil.UsingDXTCompression;
                 bool useHWCompression = Client.Instance.Settings.AsyncDXTCompression;
-                bool haveMips = this.Meta.FilterMin == FilterParam.LinearMipmapLinear || this.Meta.FilterMin == FilterParam.LinearMipmapNearest;
+                bool haveMips = this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest;
 
                 if (useDXTCompression && this.Meta.Compress && useHWCompression)
                 {

@@ -175,9 +175,7 @@
         public void SwitchFullscreen(ClientSettings.FullscreenMode? fsMode)
         {
             bool toggled = !fsMode.HasValue;
-            ClientSettings.FullscreenMode switchTo = fsMode.HasValue ? fsMode.Value :
-                this._lastFsMode.HasValue ? this._lastFsMode.Value :
-                    this.GameHandle.WindowState != WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : ClientSettings.FullscreenMode.Normal;
+            ClientSettings.FullscreenMode switchTo = fsMode ?? this._lastFsMode ?? (this.GameHandle.WindowState != WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : ClientSettings.FullscreenMode.Normal);
 
             this._lastFsMode = toggled ? this.GameHandle.WindowState == WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : Client.Instance.Settings.ScreenMode : null;
 

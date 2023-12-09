@@ -35,7 +35,6 @@
 
         public WavefrontObject ModelSphere { get; set; }
         private WavefrontObject ModelArrow { get; set; }
-        private WavefrontObject ModelSquare { get; set; }
         private WavefrontObject ModelCube { get; set; }
         private VertexArray _vao;
         private GPUBuffer _vbo;
@@ -410,7 +409,6 @@
         {
             this.ModelSphere = OpenGLUtil.LoadModel("arrow_start", VertexFormat.Pos);
             this.ModelArrow = OpenGLUtil.LoadModel("arrow_ptr", VertexFormat.Pos);
-            this.ModelSquare = OpenGLUtil.LoadModel("square", VertexFormat.Pos);
             this.ModelCube = OpenGLUtil.LoadModel("cube", VertexFormat.Pos);
             this._vao = new VertexArray();
             this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);

@@ -42,11 +42,11 @@
 
 namespace VTT.Util;
 
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Runtime.InteropServices;
-using SixLabors.ImageSharp.Processing;
 
 [Flags]
 public enum CompressionMode
@@ -57,7 +57,7 @@ public enum CompressionMode
 
 public static unsafe class StbDxt
 {
-    static byte[][] OMatch5 = {
+    private static readonly byte[][] OMatch5 = {
         new byte[]{ 0,  0 },  new byte[]{ 0,  0 },  new byte[]{ 0,  1 },  new byte[]{ 0,  1 },  new byte[]{ 1,  0 },  new byte[]{ 1,  0 },  new byte[]{ 1,  0 },  new byte[]{ 1,  1 },
         new byte[]{ 1,  1 },  new byte[]{ 1,  1 },  new byte[]{ 1,  2 },  new byte[]{ 0,  4 },  new byte[]{ 2,  1 },  new byte[]{ 2,  1 },  new byte[]{ 2,  1 },  new byte[]{ 2,  2 },
         new byte[]{ 2,  2 },  new byte[]{ 2,  2 },  new byte[]{ 2,  3 },  new byte[]{ 1,  5 },  new byte[]{ 3,  2 },  new byte[]{ 3,  2 },  new byte[]{ 4,  0 },  new byte[]{ 3,  3 },
@@ -92,7 +92,7 @@ public static unsafe class StbDxt
         new byte[]{ 30, 30 }, new byte[]{ 30, 31 }, new byte[]{ 30, 31 }, new byte[]{ 31, 30 }, new byte[]{ 31, 30 }, new byte[]{ 31, 30 }, new byte[]{ 31, 31 }, new byte[]{ 31, 31 },
     };
 
-    static byte[][] OMatch6 = {
+    private static readonly byte[][] OMatch6 = {
         new byte[]{ 0,  0 },  new byte[]{ 0,  1 },  new byte[]{ 1,  0 },  new byte[]{ 1,  1 },  new byte[]{ 1,  1 },  new byte[]{ 1,  2 },  new byte[]{ 2,  1 },  new byte[]{ 2,  2 },
         new byte[]{ 2,  2 },  new byte[]{ 2,  3 },  new byte[]{ 3,  2 },  new byte[]{ 3,  3 },  new byte[]{ 3,  3 },  new byte[]{ 3,  4 },  new byte[]{ 4,  3 },  new byte[]{ 4,  4 },
         new byte[]{ 4,  4 },  new byte[]{ 4,  5 },  new byte[]{ 5,  4 },  new byte[]{ 5,  5 },  new byte[]{ 5,  5 },  new byte[]{ 5,  6 },  new byte[]{ 6,  5 },  new byte[]{ 6,  6 },
@@ -129,7 +129,7 @@ public static unsafe class StbDxt
 
     static int Mul8Bit(int a, int b)
     {
-        int t = a * b + 128;
+        int t = (a * b) + 128;
         return (t + (t >> 8)) >> 8;
     }
 
@@ -149,17 +149,16 @@ public static unsafe class StbDxt
     static ushort As16Bit(int r, int g, int b) => (ushort)((Mul8Bit(r, 31) << 11) + (Mul8Bit(g, 63) << 5) + Mul8Bit(b, 31));
 
     // linear interpolation at 1/3 point between a and b, using desired rounding type
-    static int Lerp13(int a, int b)
-    {
+    static int Lerp13(int a, int b) =>
 #if STB_DXT_USE_ROUNDING_BIAS
         // with rounding bias
-        return a + Mul8Bit(b - a, 0x55);
+        a + Mul8Bit(b - a, 0x55);
 #else
         // without rounding bias
         // replace "/ 3" by "* 0xaaab) >> 17" if your compiler sucks or you really need every ounce of speed.
         return (2 * a + b) / 3;
 #endif
-    }
+
 
     // lerp RGB color
     static void Lerp13RGB(byte* bOut, byte* p1, byte* p2)
@@ -183,9 +182,9 @@ public static unsafe class StbDxt
     static uint MatchColorsBlock(byte* block, byte* color)
     {
         uint mask = 0;
-        int dirr = color[0 * 4 + 0] - color[1 * 4 + 0];
-        int dirg = color[0 * 4 + 1] - color[1 * 4 + 1];
-        int dirb = color[0 * 4 + 2] - color[1 * 4 + 2];
+        int dirr = color[(0 * 4) + 0] - color[(1 * 4) + 0];
+        int dirg = color[(0 * 4) + 1] - color[(1 * 4) + 1];
+        int dirb = color[(0 * 4) + 2] - color[(1 * 4) + 2];
         int* dots = stackalloc int[16];
         int* stops = stackalloc int[4];
         int i;
@@ -193,12 +192,12 @@ public static unsafe class StbDxt
 
         for (i = 0; i < 16; i++)
         {
-            dots[i] = block[i * 4 + 0] * dirr + block[i * 4 + 1] * dirg + block[i * 4 + 2] * dirb;
+            dots[i] = (block[(i * 4) + 0] * dirr) + (block[(i * 4) + 1] * dirg) + (block[(i * 4) + 2] * dirb);
         }
 
         for (i = 0; i < 4; i++)
         {
-            stops[i] = color[i * 4 + 0] * dirr + color[i * 4 + 1] * dirg + color[i * 4 + 2] * dirb;
+            stops[i] = (color[(i * 4) + 0] * dirr) + (color[(i * 4) + 1] * dirg) + (color[(i * 4) + 2] * dirb);
         }
 
         // think of the colors as arranged on a line; project point onto that line, then choose
@@ -282,9 +281,9 @@ public static unsafe class StbDxt
 
         for (i = 0; i < 16; i++)
         {
-            int r = block[i * 4 + 0] - mu[0];
-            int g = block[i * 4 + 1] - mu[1];
-            int b = block[i * 4 + 2] - mu[2];
+            int r = block[(i * 4) + 0] - mu[0];
+            int g = block[(i * 4) + 1] - mu[1];
+            int b = block[(i * 4) + 2] - mu[2];
 
             cov[0] += r * r;
             cov[1] += r * g;
@@ -300,15 +299,15 @@ public static unsafe class StbDxt
             covf[i] = cov[i] / 255.0f;
         }
 
-        vfr = (float)(max[0] - min[0]);
-        vfg = (float)(max[1] - min[1]);
-        vfb = (float)(max[2] - min[2]);
+        vfr = max[0] - min[0];
+        vfg = max[1] - min[1];
+        vfb = max[2] - min[2];
 
         for (iter = 0; iter < nIterPower; iter++)
         {
-            float r = vfr * covf[0] + vfg * covf[1] + vfb * covf[2];
-            float g = vfr * covf[1] + vfg * covf[3] + vfb * covf[4];
-            float b = vfr * covf[2] + vfg * covf[4] + vfb * covf[5];
+            float r = (vfr * covf[0]) + (vfg * covf[1]) + (vfb * covf[2]);
+            float g = (vfr * covf[1]) + (vfg * covf[3]) + (vfb * covf[4]);
+            float b = (vfr * covf[2]) + (vfg * covf[4]) + (vfb * covf[5]);
 
             vfr = r;
             vfg = g;
@@ -341,22 +340,22 @@ public static unsafe class StbDxt
         }
 
         minp = maxp = block;
-        mind = maxd = block[0] * v_r + block[1] * v_g + block[2] * v_b;
+        mind = maxd = (block[0] * v_r) + (block[1] * v_g) + (block[2] * v_b);
         // Pick colors at extreme points
         for (i = 1; i < 16; i++)
         {
-            int dot = block[i * 4 + 0] * v_r + block[i * 4 + 1] * v_g + block[i * 4 + 2] * v_b;
+            int dot = (block[(i * 4) + 0] * v_r) + (block[(i * 4) + 1] * v_g) + (block[(i * 4) + 2] * v_b);
 
             if (dot < mind)
             {
                 mind = dot;
-                minp = block + i * 4;
+                minp = block + (i * 4);
             }
 
             if (dot > maxd)
             {
                 maxd = dot;
-                maxp = block + i * 4;
+                maxp = block + (i * 4);
             }
         }
 
@@ -364,12 +363,12 @@ public static unsafe class StbDxt
         *pmin16 = As16Bit(minp[0], minp[1], minp[2]);
     }
 
-    static float[] midpoints5 = {
+    private static readonly float[] midpoints5 = {
        0.015686f, 0.047059f, 0.078431f, 0.111765f, 0.145098f, 0.176471f, 0.207843f, 0.241176f, 0.274510f, 0.305882f, 0.337255f, 0.370588f, 0.403922f, 0.435294f, 0.466667f, 0.5f,
        0.533333f, 0.564706f, 0.596078f, 0.629412f, 0.662745f, 0.694118f, 0.725490f, 0.758824f, 0.792157f, 0.823529f, 0.854902f, 0.888235f, 0.921569f, 0.952941f, 0.984314f, 1.0f
     };
 
-    static float[] midpoints6 = {
+    private static readonly float[] midpoints6 = {
        0.007843f, 0.023529f, 0.039216f, 0.054902f, 0.070588f, 0.086275f, 0.101961f, 0.117647f, 0.133333f, 0.149020f, 0.164706f, 0.180392f, 0.196078f, 0.211765f, 0.227451f, 0.245098f,
        0.262745f, 0.278431f, 0.294118f, 0.309804f, 0.325490f, 0.341176f, 0.356863f, 0.372549f, 0.388235f, 0.403922f, 0.419608f, 0.435294f, 0.450980f, 0.466667f, 0.482353f, 0.500000f,
        0.517647f, 0.533333f, 0.549020f, 0.564706f, 0.580392f, 0.596078f, 0.611765f, 0.627451f, 0.643137f, 0.658824f, 0.674510f, 0.690196f, 0.705882f, 0.721569f, 0.737255f, 0.754902f,
@@ -421,9 +420,9 @@ public static unsafe class StbDxt
             int r = 8, g = 8, b = 8;
             for (i = 0; i < 16; ++i)
             {
-                r += block[i * 4 + 0];
-                g += block[i * 4 + 1];
-                b += block[i * 4 + 2];
+                r += block[(i * 4) + 0];
+                g += block[(i * 4) + 1];
+                b += block[(i * 4) + 2];
             }
 
             r >>= 4; g >>= 4; b >>= 4;
@@ -439,9 +438,9 @@ public static unsafe class StbDxt
             {
                 int step = (int)(cm & 3);
                 int w1 = w1Tab[step];
-                int r = block[i * 4 + 0];
-                int g = block[i * 4 + 1];
-                int b = block[i * 4 + 2];
+                int r = block[(i * 4) + 0];
+                int g = block[(i * 4) + 1];
+                int b = block[(i * 4) + 2];
 
                 akku += prods[step];
                 At1_r += w1 * r;
@@ -452,24 +451,24 @@ public static unsafe class StbDxt
                 At2_b += b;
             }
 
-            At2_r = 3 * At2_r - At1_r;
-            At2_g = 3 * At2_g - At1_g;
-            At2_b = 3 * At2_b - At1_b;
+            At2_r = (3 * At2_r) - At1_r;
+            At2_g = (3 * At2_g) - At1_g;
+            At2_b = (3 * At2_b) - At1_b;
 
             // extract solutions and decide solvability
             xx = akku >> 16;
             yy = (akku >> 8) & 0xff;
             xy = (akku >> 0) & 0xff;
 
-            f = 3.0f / 255.0f / (xx * yy - xy * xy);
+            f = 3.0f / 255.0f / ((xx * yy) - (xy * xy));
 
-            max16 = unchecked((ushort)(Quantize5((At1_r * yy - At2_r * xy) * f) << 11));
-            max16 |= unchecked((ushort)(Quantize6((At1_g * yy - At2_g * xy) * f) << 5));
-            max16 |= unchecked((ushort)(Quantize5((At1_b * yy - At2_b * xy) * f) << 0));
+            max16 = unchecked((ushort)(Quantize5(((At1_r * yy) - (At2_r * xy)) * f) << 11));
+            max16 |= unchecked((ushort)(Quantize6(((At1_g * yy) - (At2_g * xy)) * f) << 5));
+            max16 |= unchecked((ushort)(Quantize5(((At1_b * yy) - (At2_b * xy)) * f) << 0));
 
-            min16 = unchecked((ushort)(Quantize5((At2_r * xx - At1_r * xy) * f) << 11));
-            min16 |= unchecked((ushort)(Quantize6((At2_g * xx - At1_g * xy) * f) << 5));
-            min16 |= unchecked((ushort)(Quantize5((At2_b * xx - At1_b * xy) * f) << 0));
+            min16 = unchecked((ushort)(Quantize5(((At2_r * xx) - (At1_r * xy)) * f) << 11));
+            min16 |= unchecked((ushort)(Quantize6(((At2_g * xx) - (At1_g * xy)) * f) << 5));
+            min16 |= unchecked((ushort)(Quantize5(((At2_b * xx) - (At1_b * xy)) * f) << 0));
         }
 
         *pmin16 = min16;
@@ -546,9 +545,7 @@ public static unsafe class StbDxt
         // write the color block
         if (max16 < min16)
         {
-            ushort t = min16;
-            min16 = max16;
-            max16 = t;
+            (max16, min16) = (min16, max16);
             mask ^= 0x55555555;
         }
 
@@ -587,14 +584,14 @@ public static unsafe class StbDxt
         dist = mx - mn;
         dist4 = dist * 4;
         dist2 = dist * 2;
-        bias = (dist < 8) ? (dist - 1) : (dist / 2 + 2);
+        bias = (dist < 8) ? (dist - 1) : ((dist / 2) + 2);
         bias -= mn * 7;
         bits = 0;
         mask = 0;
 
         for (i = 0; i < 16; i++)
         {
-            int a = src[i * stride] * 7 + bias;
+            int a = (src[i * stride] * 7) + bias;
             int ind, t;
 
             // select index. this is a "linear scale" lerp factor between 0 (val=min) and 7 (val=max).
@@ -630,7 +627,7 @@ public static unsafe class StbDxt
             Buffer.MemoryCopy(src, data, 4 * 16, 4 * 16);
             for (i = 0; i < 16; ++i)
             {
-                data[i * 4 + 3] = 255;
+                data[(i * 4) + 3] = 255;
             }
 
             src = data;
@@ -692,9 +689,9 @@ public static unsafe class StbDxt
                 int blockX = x << 2;
                 int blockY = y << 2;
                 Rgba32* mem = imv.GetBlock(blockX, blockY);
-                StbDxt.CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
+                CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
                 Marshal.FreeHGlobal((IntPtr)mem);
-                Buffer.MemoryCopy(blockData, (void*)(ret + x * 16 + y * nBlocksX * 16), 16, 16);
+                Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
             }
         }
 
@@ -721,7 +718,7 @@ public static unsafe class StbDxt
             }
         });
 
-        return new ImageMemoryView(mem, adjWidth, adjHeight);
+        return new ImageMemoryView(mem, adjWidth);
     }
 
     public unsafe class CompressedMipmapData
@@ -747,36 +744,30 @@ public static unsafe class StbDxt
 
     private unsafe class ImageMemoryView
     {
-        private Rgba32* mem;
-        private int w;
-        private int h;
+        private readonly Rgba32* mem;
+        private readonly int w;
 
-        public ImageMemoryView(Rgba32* mem, int w, int h)
+        public ImageMemoryView(Rgba32* mem, int w)
         {
             this.mem = mem;
             this.w = w;
-            this.h = h;
         }
 
         public Rgba32* GetBlock(int x, int y)
         {
             int s = 4 * 4 * sizeof(Rgba32);
             Rgba32* ret = (Rgba32*)Marshal.AllocHGlobal(s);
-            Rgba32 e = new Rgba32(0, 0, 0, 0);
             for (int j = 0; j < 4; ++j)
             {
                 int dy = y + j;
                 Rgba32* m = this.mem + (dy * w) + x;
-                Buffer.MemoryCopy(m, (void*)(ret + (4 * j)), 16, 16);
+                Buffer.MemoryCopy(m, ret + (4 * j), 16, 16);
             }
 
             return ret;
         }
 
-        public void Free()
-        {
-            Marshal.FreeHGlobal((IntPtr)this.mem);
-        }
+        public void Free() => Marshal.FreeHGlobal((IntPtr)this.mem);
     }
 }
 

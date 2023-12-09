@@ -675,14 +675,14 @@
                                 {
                                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
                                     string aName = ImGuiHelper.TextOrEmpty(mo.AnimationContainer.CurrentAnimation?.Name ?? lang.Translate("ui.animation.none"));
-                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
                                     ImGui.TextUnformatted(aName);
                                     aName = "↓↓↓";
-                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
                                     ImGui.TextUnformatted(aName);
                                     string next = mo.AnimationContainer.GetNextAnimationPrediction(mo.LastRenderModel);
                                     next = string.IsNullOrEmpty(next) ? lang.Translate("ui.animation.none") : next;
-                                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X / 2 - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
                                     ImGui.TextUnformatted(next);
                                     ImGui.PopStyleColor();
 

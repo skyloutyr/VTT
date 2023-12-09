@@ -111,12 +111,7 @@
                             {
                                 float tdl = MathF.Abs(tl - time);
                                 float tdr = ts - time;
-                                if (tdl < tdr) // Closer to left
-                                {
-                                    return l;
-                                }
-
-                                return r;
+                                return tdl < tdr ? l : r;
                             }
 
                             default:
@@ -154,7 +149,7 @@
             this.CachedLocalScale = Vector3.One;
             this.CachedLocalRotation = Quaternion.Identity;
         }
-        
+
     }
 
     public class GlbArmature
@@ -166,7 +161,7 @@
 
         public void CalculateAllTransforms(GlbAnimation animation, float time)
         {
-            void UpdateBone(GlbBone bone)
+            static void UpdateBone(GlbBone bone)
             {
                 GlbBone parent = bone.Parent;
                 if (parent != null)

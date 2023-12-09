@@ -1,12 +1,10 @@
 ﻿namespace VTT.Control
 {
-    using glTFLoader.Schema;
     using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Reflection;
     using VTT.Asset.Glb;
     using VTT.Util;
 
@@ -421,7 +419,7 @@
 
         const float TimeScale = 1f / 60.0f;
         public float GetTime(double delta) => this.Paused ? this._time : this._time - TimeScale + ((float)delta * TimeScale);
-        
+
         public string GetNextAnimationPrediction(GlbScene model)
         {
             return !string.IsNullOrEmpty(this.AnimationSwitchTo) && model != null

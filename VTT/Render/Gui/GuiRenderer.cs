@@ -587,7 +587,7 @@
                 if (this._inspectedObject != null)
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(this._inspectedObject.AssetID, out AssetPreview ap);
-                    if (status == AssetStatus.Return)
+                    if (status == AssetStatus.Return && ap != null)
                     {
                         System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
                         System.Numerics.Vector2 screenPos = ImGui.GetCursorScreenPos();
@@ -613,7 +613,11 @@
                            Extensions.FromVec4(winBorder.GLVector()).Abgr()
                         );
 
-                        drawList.AddImage(ap.GLTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                        Texture glTex = ap.GetGLTexture();
+                        if (glTex != null)
+                        {
+                            drawList.AddImage(ap.GetGLTexture(), screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                        }
 
                         System.Numerics.Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
                         ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));

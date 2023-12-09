@@ -1,12 +1,15 @@
 ﻿namespace VTT.Sound
 {
+    using NLayer;
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.IO;
     using System.Runtime.InteropServices;
     using System.Text;
     using VTT.Network;
 
-    public class WaveAudio
+    public class WaveAudio : ISoundProvider
     {
         public int NumChannels { get; set; }
         public int SampleRate { get; set; }
@@ -19,6 +22,137 @@
 
         public unsafe IntPtr DataPtr => (IntPtr)this._hdata;
         public int DataLength { get; private set; }
+
+        public byte[] GetManagedDataCopy()
+        {
+            byte[] data = new byte[this.DataLength * sizeof(ushort)];
+            unsafe
+            {
+                fixed (byte* ptr = data)
+                {
+                    Buffer.MemoryCopy(this._hdata, ptr, data.LongLength, data.LongLength);
+                }
+            }
+
+            return data;
+        }
+
+        public void GetRawDataFull(out IntPtr dataPtr, out int dataLength)
+        {
+            dataPtr = this.DataPtr;
+            dataLength = this.DataLength;
+        }
+
+        public WaveAudio()
+        {
+        }
+
+        public WaveAudio(byte[] raw, int sr)
+        {
+            using MemoryStream ms = new MemoryStream(raw);
+            this.NumChannels = 2;
+            this.SampleRate = sr;
+            unsafe
+            {
+                this._hdata = (ushort*)Marshal.AllocHGlobal(raw.Length);
+                this.DataLength = raw.Length / 2;
+                fixed (byte* ptr = raw)
+                {
+                    Buffer.MemoryCopy(ptr, this._hdata, raw.LongLength, raw.LongLength);
+                }
+
+                this.IsReady = true;
+            }
+        }
+
+        public WaveAudio(MpegFile mpeg)
+        {
+            this.NumChannels = mpeg.Channels;
+            this.SampleRate = mpeg.SampleRate;
+            //this.ByteRate = ?; 
+            //this.BlockAlign = ?;
+            //this.BitsPerSample = ?;
+            float[] sBuffer = new float[4096];
+            int currentElementSize = 1024;
+            int currentElementAmount = 0;
+            ushort max = 0;
+            unsafe
+            {
+                this._hdata = (ushort*)Marshal.AllocHGlobal(currentElementSize * sizeof(ushort));
+                int samplesRead;
+                while ((samplesRead = mpeg.ReadSamples(sBuffer, 0, 4096)) > 0)
+                {
+                    if (currentElementAmount + samplesRead > currentElementSize)
+                    {
+                        int nextElementAmount = currentElementSize * 2;
+                        while (nextElementAmount <= samplesRead + currentElementAmount)
+                        {
+                            nextElementAmount *= 2;
+                        }
+
+                        ushort* ptr = (ushort*)Marshal.AllocHGlobal(nextElementAmount * sizeof(ushort));
+                        Buffer.MemoryCopy(this._hdata, ptr, nextElementAmount * sizeof(ushort), currentElementAmount * sizeof(ushort));
+                        Marshal.FreeHGlobal((IntPtr)this._hdata);
+                        this._hdata = ptr;
+                        currentElementSize = nextElementAmount;
+                    }
+
+                    for (int i = 0; i < samplesRead; ++i)
+                    {
+                        float f = sBuffer[i];
+                        short s = (short)(f * short.MaxValue);
+                        ushort us = *(ushort*)&s;
+                        max = Math.Max(max, us);
+                        this._hdata[currentElementAmount++] = us;
+                    }
+                }
+            }
+
+            this.DataLength = currentElementAmount;
+            this.IsReady = true;
+        }
+
+        public Image<Rgba32> GenWaveForm(int w, int h)
+        {
+            Image<Rgba32> ret = new Image<Rgba32>(w, h);
+            Rgba32 clrBak = new Rgba32(0xff121212);
+            Rgba32 clrWave = new Rgba32(0xff007ced);
+            float fw = this.DataLength / (float)w;
+            for (int pixel = 0; pixel < w; ++pixel)
+            {
+                int start = (int)(pixel * fw);
+                int end = (int)((pixel + 1) * fw);
+                float vals = 0;
+                int nSamples = end - start;
+                int samplingStep = 1;
+                if (nSamples > ushort.MaxValue) // Compromise on sample rate for large audio files
+                {
+                    samplingStep = nSamples / short.MaxValue;
+                    nSamples /= samplingStep;
+                }
+
+                for (int i = start; i < end; i += samplingStep)
+                {
+                    unsafe
+                    {
+                        ushort us = this._hdata[i];
+                        float fv = MathF.Abs(((float)us / short.MaxValue) - 1f);
+                        vals += fv;
+                    }
+                }
+
+                vals = (1f - (vals / nSamples)) * 2f;
+                Console.WriteLine(vals);
+                for (int y = 0; y < h; ++y)
+                {
+                    float hfv = (y / (float)h * 2f) - 1f;
+                    Rgba32 c = MathF.Abs(hfv) <= vals ? clrWave : clrBak;
+                    ret[pixel, y] = c;
+                }
+            }
+
+            return ret;
+        }
 
         public void Load(Stream s)
         {

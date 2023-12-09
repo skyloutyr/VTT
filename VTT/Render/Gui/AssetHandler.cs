@@ -1,6 +1,7 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
+    using NLayer;
     using OpenTK.Mathematics;
     using OpenTK.Windowing.Common;
     using SixLabors.ImageSharp;
@@ -17,6 +18,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Sound;
     using VTT.Util;
 
     public partial class GuiRenderer
@@ -187,6 +189,68 @@
                         else
                         {
                             Client.Instance.Logger.Log(LogLevel.Warn, "Couldn't upload webm due to missing ffmpeg");
+                        }
+                    }
+
+                    if (ext.EndsWith("wav") || ext.EndsWith("mp3")) // Sound
+                    {
+                        try
+                        {
+                            long len = new FileInfo(s).Length;
+                            if (len > 134217728) // 128 MBs
+                            {
+                                Client.Instance.Logger.Log(LogLevel.Warn, "Audio file too large - maximum allowed is 128 mbs!");
+                            }
+                            else
+                            {
+                                WaveAudio wa = null;
+                                Image<Rgba32> img = null;
+                                SoundData.Metadata meta = new SoundData.Metadata();
+                                if (ext.EndsWith("wav")) // Wave Sound
+                                {
+                                    wa = new WaveAudio();
+                                    wa.Load(File.OpenRead(s));
+                                    img = wa.GenWaveForm(1024, 1024);
+                                }
+
+                                if (ext.EndsWith("mp3"))
+                                {
+                                    MpegFile mpeg = new MpegFile(File.OpenRead(s));
+                                    wa = new WaveAudio(mpeg);
+                                    img = wa.GenWaveForm(1024, 1024);
+                                    mpeg.Dispose();
+                                }
+
+                                meta.SoundType = SoundData.Metadata.StorageType.Raw;
+                                meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
+                                meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
+                                meta.SampleRate = wa.SampleRate;
+                                SoundData sound = new SoundData();
+                                sound.Meta = meta;
+
+                                Asset a = new Asset()
+                                {
+                                    ID = Guid.NewGuid(),
+                                    Sound = sound,
+                                    Type = AssetType.Sound
+                                };
+
+                                using MemoryStream ms = new MemoryStream();
+                                img.SaveAsPng(ms);
+
+                                AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Sound, SoundInfo = meta };
+                                AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = wa.GetManagedDataCopy(), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                pau.Send(Client.Instance.NetClient);
+
+                                wa.Free();
+                                img.Dispose();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Error, "Could not parse sound - " + ex.Message);
+                            Client.Instance.Logger.Exception(LogLevel.Error, ex);
                         }
                     }
                 }

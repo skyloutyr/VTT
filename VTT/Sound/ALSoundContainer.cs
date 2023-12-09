@@ -1,6 +1,7 @@
 ﻿namespace VTT.Sound
 {
     using OpenTK.Audio.OpenAL;
+    using System;
     using VTT.Network;
 
     public class ALSoundContainer
@@ -8,7 +9,7 @@
         private readonly int _alId;
         public bool IsValid { get; private set; }
         public bool IsDataLoaded { get; private set; }
-        public WaveAudio WaveData { get; }
+        public ISoundProvider WaveData { get; }
 
         public ALSoundContainer(WaveAudio waveData)
         {
@@ -29,11 +30,12 @@
             return -1;
         }
 
-        public void LoadData(WaveAudio data)
+        public void LoadData(ISoundProvider data)
         {
             if (data.IsReady && !this.IsDataLoaded)
             {
-                AL.BufferData(this._alId, data.NumChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, data.DataPtr, data.DataLength, data.SampleRate);
+                data.GetRawDataFull(out IntPtr dataPtr, out int dataLength);
+                AL.BufferData(this._alId, data.NumChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, dataPtr, dataLength, data.SampleRate);
                 ALError ale = AL.GetError();
                 if (ale != ALError.NoError)
                 {

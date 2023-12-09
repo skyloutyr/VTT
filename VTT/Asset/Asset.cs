@@ -4,6 +4,7 @@
     using System.IO;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
+    using VTT.Sound;
     using VTT.Util;
 
     /*
@@ -137,13 +138,52 @@
 
     public class SoundData : IAssetData
     {
+        public Metadata Meta { get; set; }
+        public WaveAudio RawAudio { get; set; }
+
         public void Accept(byte[] binary)
         {
+            if (this.Meta.IsFullData)
+            {
+                this.RawAudio = new WaveAudio(binary, this.Meta.SampleRate);
+            }
         }
 
         public void Dispose()
         {
-            // NOOP, no audio cleanup?
+            this.RawAudio.Free();
+        }
+
+        public class Metadata : ISerializable
+        {
+            public StorageType SoundType { get; set; }
+            public bool IsFullData { get; set; }
+            public int SampleRate { get; set; }
+            public int TotalChunks { get; set; }
+
+            public void Deserialize(DataElement e)
+            {
+                this.SoundType = e.GetEnum<StorageType>("Storage");
+                this.IsFullData = e.Get<bool>("FullData");
+                this.TotalChunks = e.Get<int>("NumChunks");
+                this.SampleRate = e.Get<int>("Frequency");
+            }
+
+            public DataElement Serialize()
+            {
+                DataElement ret = new DataElement();
+                ret.SetEnum("Storage", this.SoundType);
+                ret.Set("FullData", this.IsFullData);
+                ret.Set("NumChunks", this.TotalChunks);
+                ret.Set("Frequency", this.SampleRate);
+                return ret;
+            }
+
+            public enum StorageType
+            {
+                Raw,
+                Vorbis
+            }
         }
     }
 }

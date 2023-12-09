@@ -28,6 +28,7 @@
 
         public ClientAssetLibrary ClientAssetLibrary { get; } = new ClientAssetLibrary();
         public AssetBinaryCache ServerAssetCache { get; }
+        public AssetSoundHeatmap ServerSoundHeatmap { get; }
 
         public bool IsServer { get; set; }
 
@@ -37,6 +38,7 @@
         {
             this.ClientAssetLibrary.Container = this;
             this.ServerAssetCache = new AssetBinaryCache(this);
+            this.ServerSoundHeatmap = new AssetSoundHeatmap(this);
         }
 
         public string GetFSPath(AssetDirectory dir)
@@ -697,6 +699,7 @@
                     case AssetType.Sound:
                     {
                         a.Sound = new SoundData();
+                        a.Sound.Meta = meta.SoundInfo;
                         a.Sound.Accept(rawBinary);
                         break;
                     }
@@ -778,6 +781,7 @@
             }
 
             this.Container.WebPictures.Clear();
+            Client.Instance.Frontend.Sound?.ClearAssets();
         }
 
         public void ClearAssets()

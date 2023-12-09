@@ -18,6 +18,7 @@
 
         public TextureData.Metadata TextureInfo { get; set; }
         public ModelData.Metadata ModelInfo { get; set; }
+        public SoundData.Metadata SoundInfo { get; set; }
 
         [JsonIgnore]
         public bool Invalid { get; set; }
@@ -51,6 +52,12 @@
                 this.ModelInfo = new ModelData.Metadata();
                 this.ModelInfo.Deserialize(e.Get<DataElement>("ModelInfo"));
             }
+
+            if (e.Has("SoundInfo", DataType.Map))
+            {
+                this.SoundInfo = new SoundData.Metadata();
+                this.SoundInfo.Deserialize(e.Get<DataElement>("SoundInfo"));
+            }
         }
 
         public DataElement Serialize()
@@ -67,6 +74,11 @@
             if (this.ModelInfo != null)
             {
                 ret.Set("ModelInfo", this.ModelInfo.Serialize());
+            }
+
+            if (this.SoundInfo != null)
+            {
+                ret.Set("SoundInfo", this.SoundInfo.Serialize());
             }
 
             return ret;

@@ -589,6 +589,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float SoundMapFXVolume { get; set; } = 1.0f;
 
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float SoundAssetVolume { get; set; } = 1.0f;
+
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableSoundChatMessage { get; set; } = true;

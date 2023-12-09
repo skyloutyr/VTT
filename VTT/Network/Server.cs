@@ -352,6 +352,8 @@
                     }
                 }
 
+                this.AssetManager?.ServerSoundHeatmap?.Pulse();
+
                 Thread.Sleep(1000);
             }
         }

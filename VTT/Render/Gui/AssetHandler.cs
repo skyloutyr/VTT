@@ -225,6 +225,7 @@
                                 meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
                                 meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
                                 meta.SampleRate = wa.SampleRate;
+                                meta.NumChannels = wa.NumChannels;
                                 SoundData sound = new SoundData();
                                 sound.Meta = meta;
 
@@ -725,6 +726,7 @@
                                 AssetType.Model => this.AssetModelIcon,
                                 AssetType.Shader => this.AssetShaderIcon,
                                 AssetType.ParticleSystem => this.AssetParticleIcon,
+                                AssetType.Sound => aRef.Meta?.SoundInfo?.IsFullData ?? false ? this.AssetSoundIcon : this.AssetMusicIcon,
                                 _ => this.ErrorIcon
                             },
 
@@ -751,6 +753,19 @@
                                     state.editAssetPopup = true;
                                     this._editedRef = aRef;
                                     this._newFolderNameString = aRef.Name;
+                                }
+
+                                if (aRef.Meta != null && aRef.Meta.Type == AssetType.Sound)
+                                {
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.play_sound") + "###Play"))
+                                    {
+                                        Client.Instance.Frontend.Sound.PlayAsset(aRef.AssetID);
+                                    }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.play_sound_all") + "###PlayForAll"))
+                                    {
+                                        new PacketPlaySoundAsset() { SoundID = aRef.AssetID }.Send();
+                                    }
                                 }
 
                                 if (aRef.Meta != null && aRef.Meta.Type == AssetType.Texture)

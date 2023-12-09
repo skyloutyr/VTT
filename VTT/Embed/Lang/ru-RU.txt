@@ -609,3 +609,5 @@ ui.particle.sprite_selection_mode.random=Случайный
 ui.particle.sprite_selection_weights=Шансы выбора
 ui.particle.sprite_selection_weights.tt=Управляет индивидуальным шансом для каждого спрайта при их выборе.
 ui.particle.sprite_selection_weight_indexed=Спр {0}
+ui.assets.play_sound=Запустить Звук (Себе)
+ui.assets.play_sound_all=Запустить Звук (Всем)

@@ -191,9 +191,10 @@
                         AL.SourceStop(src.Item2);
                     }
 
+                    bool isBuffered = this._bufferedSounds.TryGetValue(src.Item2, out BufferedSound bs);
                     if (state == ALSourceState.Stopped || this._assetsClear)
                     {
-                        if (this._bufferedSounds.TryGetValue(src.Item2, out BufferedSound bs))
+                        if (isBuffered)
                         {
                             if (bs.Initialized) // May have a sound that isn't initialized yet and is reporting stopped
                             {
@@ -214,6 +215,11 @@
                         {
                             this.SetSourceVolume(src.Item1, src.Item2);
                         }
+
+                        if (isBuffered)
+                        {
+                            bs.Update();
+                        }
                     }
                 }
 
@@ -227,6 +233,7 @@
                     }
 
                     this._assetContainers.Clear();
+                    this._assetsClear = false;
                 }
 
                 this._volumeChangedNotification = false;
@@ -300,7 +307,7 @@
                         }
                         else
                         {
-                            BufferedSound bs = new BufferedSound(a.Sound.Meta.SampleRate, a.Sound.Meta.TotalChunks, aID);
+                            BufferedSound bs = new BufferedSound(a.Sound.Meta.SampleRate, a.Sound.Meta.NumChannels, a.Sound.Meta.TotalChunks, aID);
                             this._bufferedSounds[bs.Source] = bs;
                             this.ActiveSources.Add((SoundCategory.Asset, bs.Source));
                         }

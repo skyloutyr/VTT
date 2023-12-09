@@ -47,10 +47,10 @@
         {
         }
 
-        public WaveAudio(byte[] raw, int sr)
+        public WaveAudio(byte[] raw, int sr, int nCh)
         {
             using MemoryStream ms = new MemoryStream(raw);
-            this.NumChannels = 2;
+            this.NumChannels = nCh;
             this.SampleRate = sr;
             unsafe
             {
@@ -142,7 +142,6 @@
                 }
 
                 vals = (1f - (vals / nSamples)) * 2f;
-                Console.WriteLine(vals);
                 for (int y = 0; y < h; ++y)
                 {
                     float hfv = (y / (float)h * 2f) - 1f;

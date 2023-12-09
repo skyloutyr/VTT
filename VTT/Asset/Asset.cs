@@ -145,7 +145,7 @@
         {
             if (this.Meta.IsFullData)
             {
-                this.RawAudio = new WaveAudio(binary, this.Meta.SampleRate);
+                this.RawAudio = new WaveAudio(binary, this.Meta.SampleRate, this.Meta.NumChannels);
             }
         }
 
@@ -159,6 +159,7 @@
             public StorageType SoundType { get; set; }
             public bool IsFullData { get; set; }
             public int SampleRate { get; set; }
+            public int NumChannels { get; set; }
             public int TotalChunks { get; set; }
 
             public void Deserialize(DataElement e)
@@ -167,6 +168,7 @@
                 this.IsFullData = e.Get<bool>("FullData");
                 this.TotalChunks = e.Get<int>("NumChunks");
                 this.SampleRate = e.Get<int>("Frequency");
+                this.NumChannels = e.Get<int>("Channels");
             }
 
             public DataElement Serialize()
@@ -176,6 +178,7 @@
                 ret.Set("FullData", this.IsFullData);
                 ret.Set("NumChunks", this.TotalChunks);
                 ret.Set("Frequency", this.SampleRate);
+                ret.Set("Channels", this.NumChannels);
                 return ret;
             }
 

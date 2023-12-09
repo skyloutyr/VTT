@@ -30,7 +30,7 @@
                         if (aRef.Type == AssetType.Sound && aRef.Meta != null && !aRef.Meta.SoundInfo.IsFullData)
                         {
                             string fl = aRef.ServerPointer.FileLocation;
-                            a = new Accessor(fl, aRef.Meta.SoundInfo.TotalChunks, aRef.Meta.SoundInfo.SampleRate);
+                            a = new Accessor(fl, aRef.Meta.SoundInfo.TotalChunks, aRef.Meta.SoundInfo.SampleRate, aRef.Meta.SoundInfo.NumChannels);
                             this.DataMap[assetID] = a;
                         }
                         else
@@ -73,11 +73,11 @@
 
             public const long ExpirationTime = 60000; // 1 min spot lifetime
 
-            public Accessor(string fsPath, int spots, int freq)
+            public Accessor(string fsPath, int spots, int freq, int nCh)
             {
                 this._fsStream = File.OpenRead(fsPath);
                 this.Spots = new Spot[spots];
-                this._chunkLength = freq * 2 * 5 * sizeof(ushort); // 5s of stereo16 wave sound
+                this._chunkLength = freq * nCh * 5 * sizeof(ushort); // 5s of stereo16 wave sound
             }
 
             public void Pulse()

@@ -44,6 +44,8 @@
         public Texture AssetImageIcon { get; set; }
         public Texture AssetShaderIcon { get; set; }
         public Texture AssetParticleIcon { get; set; }
+        public Texture AssetSoundIcon { get; set; }
+        public Texture AssetMusicIcon { get; set; }
 
         public Texture Select { get; set; }
         public Texture Translate { get; set; }
@@ -217,6 +219,8 @@
             this.AssetImageIcon = OpenGLUtil.LoadUIImage("icons8-picture-40");
             this.AssetShaderIcon = OpenGLUtil.LoadUIImage("icons8-color-swatch-40");
             this.AssetParticleIcon = OpenGLUtil.LoadUIImage("icons8-particle-40");
+            this.AssetSoundIcon = OpenGLUtil.LoadUIImage("icons8-sound-40");
+            this.AssetMusicIcon = OpenGLUtil.LoadUIImage("icons8-musical-notes-40");
 
             this.Select = OpenGLUtil.LoadUIImage("icons8-cursor-40");
             this.Translate = OpenGLUtil.LoadUIImage("icons8-drag-40");

@@ -609,3 +609,5 @@ ui.particle.sprite_selection_mode.random=Random
 ui.particle.sprite_selection_weights=Selection Weights
 ui.particle.sprite_selection_weights.tt=Controls individual chances for a given sprite to be selected.
 ui.particle.sprite_selection_weight_indexed=Spr {0}
+ui.assets.play_sound=Play Sound (Self)
+ui.assets.play_sound_all=Play Sound (All)

@@ -23,13 +23,14 @@
         private bool _haveBack;
         private int _lastChunkFetched;
         private int _operationalBuffer = -1;
+        private int _nChannels;
 
         public int Source => this._src;
         public bool Initialized => this._initialized;
 
         private Dictionary<int, IntPtr> _ptrs = new Dictionary<int, IntPtr>(); // Needed due to openal's async issues with some implementations that don't copy the data on the spot
 
-        public BufferedSound(int frequency, int numChunks, Guid assetID)
+        public BufferedSound(int frequency, int numChannels, int numChunks, Guid assetID)
         {
             this._front = AL.GenBuffer();
             this._back = AL.GenBuffer();
@@ -37,6 +38,7 @@
             this._src = AL.GenSource();
 
             this._freq = frequency;
+            this._nChannels = numChannels;
             this._maxChunks = numChunks;
             this.AssetID = assetID;
         }
@@ -60,7 +62,7 @@
                     }
                 }
 
-                AL.BufferData(buffer, ALFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
+                AL.BufferData(buffer, this._nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
                 return true;
             }
 

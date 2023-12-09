@@ -86,6 +86,7 @@
     <None Remove="Embed\icons8-money-bag-40.png" />
     <None Remove="Embed\icons8-move-all-arrow-40.png" />
     <None Remove="Embed\icons8-move-separate-40.png" />
+    <None Remove="Embed\icons8-musical-notes-40.png" />
     <None Remove="Embed\icons8-no-image-40.png" />
     <None Remove="Embed\icons8-outgoing-data-40.png" />
     <None Remove="Embed\icons8-paint-40.png" />
@@ -106,6 +107,7 @@
     <None Remove="Embed\icons8-return-40.png" />
     <None Remove="Embed\icons8-security-lock-80.png" />
     <None Remove="Embed\icons8-so-so-40.png" />
+    <None Remove="Embed\icons8-sound-40.png" />
     <None Remove="Embed\icons8-sphere-58.png" />
     <None Remove="Embed\icons8-stopwatch-40.png" />
     <None Remove="Embed\icons8-surface-40.png" />
@@ -187,6 +189,8 @@
     <EmbeddedResource Include="Embed\game-radar-ping-3.wav" />
     <EmbeddedResource Include="Embed\emojiping.frag" />
     <EmbeddedResource Include="Embed\emojiping.vert" />
+    <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
+    <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

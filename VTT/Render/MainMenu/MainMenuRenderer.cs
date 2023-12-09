@@ -344,6 +344,7 @@
                         ImGui.Text("    money-bag");
                         ImGui.Text("    move-all-arrow");
                         ImGui.Text("    move-separate");
+                        ImGui.Text("    musical-notes");
                         ImGui.Text("    no-image");
                         ImGui.Text("    outgoing-data");
                         ImGui.Text("    paint");
@@ -364,6 +365,7 @@
                         ImGui.Text("    return");
                         ImGui.Text("    security-lock");
                         ImGui.Text("    so-so");
+                        ImGui.Text("    sound");
                         ImGui.Text("    sphere");
                         ImGui.Text("    stopwatch");
                         ImGui.Text("    surface");

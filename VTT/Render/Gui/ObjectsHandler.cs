@@ -774,7 +774,7 @@
                             }
                         }
 
-                        ImGui.BeginChild("##Statuses", new System.Numerics.Vector2(v.X - 16, 256), true, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
+                        ImGui.BeginChild("##Statuses", new System.Numerics.Vector2(v.X - 16, 256), ImGuiChildFlags.Border, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         int cX = 0;
                         int cY = 0;
                         float aW = ImGui.GetWindowWidth();
@@ -887,7 +887,7 @@
                             ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)c);
                         }
 
-                        ImGui.BeginChild("objNav_" + mo.ID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
+                        ImGui.BeginChild("objNav_" + mo.ID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
                         ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
                         if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new System.Numerics.Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
                         {

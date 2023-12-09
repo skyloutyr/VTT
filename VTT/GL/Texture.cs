@@ -94,7 +94,7 @@
             }
 
             this.Size = new Size(img.Width, img.Height);
-            if (img.GetConfiguration().PreferContiguousImageBuffers && img.DangerousTryGetSinglePixelMemory(out Memory<T> mem))
+            if (img.Configuration.PreferContiguousImageBuffers && img.DangerousTryGetSinglePixelMemory(out Memory<T> mem))
             {
                 MemoryHandle mh = mem.Pin();
                 GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));

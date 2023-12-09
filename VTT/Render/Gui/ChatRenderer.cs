@@ -147,7 +147,7 @@
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Lerp(imDefault, darkGray, Client.Instance.Settings.ChatBackgroundBrightness));
-                ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
+                ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
 
                 int clRendered = 0;
                 int lowestIndex = -1;

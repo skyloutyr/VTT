@@ -487,7 +487,7 @@
             for (int i = 0; i < this.Frames.Length; ++i)
             {
                 Frame f = this.Frames[i];
-                IImageInfo ii = Image.Identify(f.ImageBinary);
+                ImageInfo ii = Image.Identify(f.ImageBinary);
                 lH = Math.Max(ii.Height, lH);
                 if (cX + ii.Width > maxS)
                 {

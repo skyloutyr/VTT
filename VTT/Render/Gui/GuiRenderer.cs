@@ -285,6 +285,7 @@
 
         private readonly List<string> _chat = new List<string>();
         private int _cChatIndex;
+        private bool _showImGuiDemoWindow = false;
         public GuiState FrameState { get; } = new GuiState();
         public DoubleBufferedStopwatch Timer { get; } = new DoubleBufferedStopwatch();
 
@@ -319,6 +320,11 @@
 
             this.FrameState.Reset();
             #endregion
+
+            if (this._showImGuiDemoWindow)
+            {
+                ImGui.ShowDemoWindow(ref this._showImGuiDemoWindow);
+            }
 
             this.RenderSidebar(lang, window_flags, mor);
             this.RenderDebugInfo(time, window_flags);
@@ -633,7 +639,7 @@
                         ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
                         ImGui.PopStyleColor();
 
-                        ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
+                        ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         ImGui.PushTextWrapPos();
                         ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
                         ImGui.PopTextWrapPos();

@@ -62,7 +62,7 @@
                     ImGui.PopStyleVar();
                     ImGui.SetCursorPos(new System.Numerics.Vector2(winSize.X - 328, 28));
                     bool focused = ImGui.IsWindowFocused();
-                    ImGui.BeginChild("##ParamsEditor", new System.Numerics.Vector2(320, winSize.Y - 36), true, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar);
+                    ImGui.BeginChild("##ParamsEditor", new System.Numerics.Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar);
                     if (doRender)
                     {
                         if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !_lmbDown && ImGui.IsWindowFocused())

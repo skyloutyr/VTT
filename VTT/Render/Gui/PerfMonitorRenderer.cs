@@ -154,6 +154,8 @@
                 {
                     throw new Exception("Manual exception triggered");
                 }
+
+                ImGui.Checkbox("Debug Show Demo Window", ref this._showImGuiDemoWindow);
             }
 
             ImGui.End();

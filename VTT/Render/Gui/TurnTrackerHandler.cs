@@ -573,7 +573,7 @@
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 
-                            ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), true, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings);
+                            ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings);
                             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                             {
                                 IntPtr sIdx = new IntPtr(&i);

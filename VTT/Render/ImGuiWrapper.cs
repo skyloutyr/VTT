@@ -167,6 +167,16 @@ void main()
             this._keyMappings[Keys.KeyPad7] = ImGuiKey.Keypad7;
             this._keyMappings[Keys.KeyPad8] = ImGuiKey.Keypad8;
             this._keyMappings[Keys.KeyPad9] = ImGuiKey.Keypad9;
+            this._keyMappings[Keys.D0] = ImGuiKey._0;
+            this._keyMappings[Keys.D1] = ImGuiKey._1;
+            this._keyMappings[Keys.D2] = ImGuiKey._2;
+            this._keyMappings[Keys.D3] = ImGuiKey._3;
+            this._keyMappings[Keys.D4] = ImGuiKey._4;
+            this._keyMappings[Keys.D5] = ImGuiKey._5;
+            this._keyMappings[Keys.D6] = ImGuiKey._6;
+            this._keyMappings[Keys.D7] = ImGuiKey._7;
+            this._keyMappings[Keys.D8] = ImGuiKey._8;
+            this._keyMappings[Keys.D9] = ImGuiKey._9;
             this._keyMappings[Keys.KeyPadDivide] = ImGuiKey.KeypadDivide;
             this._keyMappings[Keys.KeyPadMultiply] = ImGuiKey.KeypadMultiply;
             this._keyMappings[Keys.KeyPadSubtract] = ImGuiKey.KeypadSubtract;
@@ -174,6 +184,9 @@ void main()
             this._keyMappings[Keys.KeyPadEnter] = ImGuiKey.KeypadEnter;
             this._keyMappings[Keys.KeyPadEqual] = ImGuiKey.KeypadEqual;
             this._keyMappings[Keys.KeyPadDecimal] = ImGuiKey.KeypadDecimal;
+            this._keyMappings[Keys.Unknown] = ImGuiKey.None;
+            this._keyMappings[Keys.LeftControl] = ImGuiKey.LeftCtrl;
+            this._keyMappings[Keys.RightControl] = ImGuiKey.RightCtrl;
         }
 
         public void Render(double time)

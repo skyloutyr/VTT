@@ -565,7 +565,7 @@
 
                     System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
 
-                    ImGui.BeginChildFrame(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X, 24), ImGuiWindowFlags.MenuBar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
                     if (ImGui.BeginMenuBar())
                     {
                         if (ImGui.BeginMenu(lang.Translate("ui.menu.new")))
@@ -611,7 +611,7 @@
                         ImGui.EndMenuBar();
                     }
 
-                    ImGui.EndChildFrame();
+                    ImGui.EndChild();
 
                     var winPadding = ImGui.GetStyle().WindowPadding;
                     var framePadding = ImGui.GetStyle().FramePadding;
@@ -619,7 +619,7 @@
                     ImGui.Columns(2);
                     ImGui.SetColumnWidth(0, 240);
                     float cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChildFrame(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20), ImGuiWindowFlags.HorizontalScrollbar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.HorizontalScrollbar);
                     void RecursivelyDrawDirectories(AssetDirectory dir)
                     {
                         bool isCurrent = dir.Equals(this.CurrentFolder);
@@ -675,18 +675,18 @@
 
                     RecursivelyDrawDirectories(Client.Instance.AssetManager.Root);
 
-                    ImGui.EndChildFrame();
+                    ImGui.EndChild();
 
                     ImGui.NextColumn();
                     cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChildFrame(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
+                    ImGui.BeginChild(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
                     this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
                     foreach (AssetRef aRef in this.CurrentFolder.Refs.OrderBy(x => x.Name))
                     {
                         float cursorXBeforeElement = ImGui.GetCursorPosX();
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, System.Numerics.Vector2.Zero);
                         ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, System.Numerics.Vector2.Zero);
-                        ImGui.BeginChildFrame(ImGui.GetID("Asset_" + aRef.AssetID), new System.Numerics.Vector2(96, 112));
+                        ImGui.BeginChild(ImGui.GetID("Asset_" + aRef.AssetID), new System.Numerics.Vector2(96, 112));
                         AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
 
                         bool hover = ImGui.IsWindowHovered();
@@ -839,7 +839,7 @@
                         }
                         #endregion
 
-                        ImGui.EndChildFrame();
+                        ImGui.EndChild();
                         if (hover)
                         {
                             ImGui.BeginTooltip();
@@ -862,7 +862,7 @@
 
                     }
 
-                    ImGui.EndChildFrame();
+                    ImGui.EndChild();
                 }
 
                 ImGui.End();

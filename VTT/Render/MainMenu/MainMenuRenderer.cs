@@ -814,6 +814,15 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    ImGui.Text(lang.Translate("menu.settings.sound.assets"));
+                    float svA = Client.Instance.Settings.SoundAssetVolume;
+                    if (ImGui.SliderFloat("##AssetsVolume", ref svA, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundAssetVolume = svA;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
                     if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound.individual") + "###Individual sound notifications"))
                     {
                         ImGui.TextDisabled(lang.Translate("menu.settings.category.sound.individual.ui"));

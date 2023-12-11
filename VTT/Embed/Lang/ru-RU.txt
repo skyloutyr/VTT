@@ -611,3 +611,6 @@ ui.particle.sprite_selection_weights.tt=Управляет индивидуал�
 ui.particle.sprite_selection_weight_indexed=Спр {0}
 ui.assets.play_sound=Запустить Звук (Себе)
 ui.assets.play_sound_all=Запустить Звук (Всем)
+menu.settings.sound.assets=Громкость Ресурсов
+ui.assets.stop_sound=Остановить Звук (Себе)
+ui.assets.stop_sound_all=Остановить Звук (Всем)

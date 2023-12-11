@@ -611,3 +611,6 @@ ui.particle.sprite_selection_weights.tt=Controls individual chances for a given 
 ui.particle.sprite_selection_weight_indexed=Spr {0}
 ui.assets.play_sound=Play Sound (Self)
 ui.assets.play_sound_all=Play Sound (All)
+menu.settings.sound.assets=Asset Volume
+ui.assets.stop_sound=Stop Sound (Self)
+ui.assets.stop_sound_all=Stop Sound (All)

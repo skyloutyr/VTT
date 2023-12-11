@@ -766,6 +766,16 @@
                                     {
                                         new PacketPlaySoundAsset() { SoundID = aRef.AssetID }.Send();
                                     }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.stop_sound") + "###Stop"))
+                                    {
+                                        Client.Instance.Frontend.Sound.StopAsset(aRef.AssetID);
+                                    }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.stop_sound_all") + "###StopForAll"))
+                                    {
+                                        new PacketPlaySoundAsset() { SoundID = aRef.AssetID, Stop = true }.Send();
+                                    }
                                 }
 
                                 if (aRef.Meta != null && aRef.Meta.Type == AssetType.Texture)

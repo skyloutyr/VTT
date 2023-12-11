@@ -9,6 +9,7 @@
         public override uint PacketID => 69;
 
         public Guid SoundID { get; set; }
+        public bool Stop { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -30,11 +31,27 @@
             }
             else
             {
-                client.Frontend.Sound.PlayAsset(this.SoundID);
+                if (this.Stop)
+                {
+                    client.Frontend.Sound.StopAsset(this.SoundID);
+                }
+                else
+                {
+                    client.Frontend.Sound.PlayAsset(this.SoundID);
+                }
             }
         }
 
-        public override void Decode(BinaryReader br) => this.SoundID = br.ReadGuid();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.SoundID);
+        public override void Decode(BinaryReader br)
+        {
+            this.SoundID = br.ReadGuid();
+            this.Stop = br.ReadBoolean();
+        }
+
+        public override void Encode(BinaryWriter bw)
+        {
+            bw.Write(this.SoundID);
+            bw.Write(this.Stop);
+        }
     }
 }

@@ -5,6 +5,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using VTT.Asset;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -115,6 +116,7 @@
 
         private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer)>();
         private readonly ConcurrentQueue<Guid> _waitingOnAssetRequests = new ConcurrentQueue<Guid>();
+        private readonly ConcurrentQueue<Guid> _assetsToStop = new ConcurrentQueue<Guid>();
 
         public void PlaySound(ALSoundContainer sc, SoundCategory cat)
         {
@@ -137,6 +139,8 @@
             Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(assetID, AssetType.Sound, out _); // Request here
             this._waitingOnAssetRequests.Enqueue(assetID);
         }
+
+        public void StopAsset(Guid assetID) => this._assetsToStop.Enqueue(assetID);
 
         private bool _volumeChangedNotification;
         public void NotifyOfVolumeChanges() => this._volumeChangedNotification = true;
@@ -178,6 +182,23 @@
             if (this.IsAvailable)
             {
                 ALC.MakeContextCurrent(this._ctx);
+
+                while (!this._assetsToStop.IsEmpty)
+                {
+                    if (!this._assetsToStop.TryDequeue(out Guid aSID))
+                    {
+                        break;
+                    }
+
+                    foreach (KeyValuePair<int, BufferedSound> kv in this._bufferedSounds)
+                    {
+                        if (kv.Value.AssetID.Equals(aSID))
+                        {
+                            AL.SourceStop(kv.Key);
+                        }
+                    }
+                }
+
                 for (int i = this.ActiveSources.Count - 1; i >= 0; i--)
                 {
                     (SoundCategory, int) src = this.ActiveSources[i];

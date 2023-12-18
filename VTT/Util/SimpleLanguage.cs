@@ -27,7 +27,7 @@
                 if (kIdx != -1)
                 {
                     string key = line[..kIdx];
-                    string value = line[(kIdx + 1)..].Replace("\\n", "\n");
+                    string value = line[(kIdx + 1)..].Replace("\\n", "\n").Replace("\r", "");
                     this.Language[key] = value;
                 }
             }

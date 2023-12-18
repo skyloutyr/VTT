@@ -10,6 +10,8 @@
         public string FileLocation { get; set; } // Assets are files on the hard drive
         public Guid PreviewPointer { get; set; }
 
+        public static byte[] EmptyHeaderV1 { get; } = new byte[5]{ 86, 84, 65, 66, 1 }; // VTAB 1
+
         public static void ChangeAssetNameForOldEncoding(string path, AssetMetadata newMeta)
         {
             byte[] assetBinary = GetRawAssetBinary(File.ReadAllBytes(path));

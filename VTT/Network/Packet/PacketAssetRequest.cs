@@ -21,8 +21,11 @@
                 {
                     try
                     {
-                        byte[] binary = am.ServerAssetCache.GetBinary(this.AssetID);
                         AssetRef aRef = am.Refs[this.AssetID];
+                        byte[] binary = aRef.Type == AssetType.Sound && !aRef.Meta.SoundInfo.IsFullData
+                            ? AssetBinaryPointer.EmptyHeaderV1
+                            : am.ServerAssetCache.GetBinary(this.AssetID);
+
                         PacketAssetResponse par = new PacketAssetResponse() { AssetID = this.AssetID, AssetType = aRef.Type, Binary = binary, Metadata = aRef.Meta, IsServer = true, ResponseType = AssetResponseType.Ok, Session = sessionID };
                         par.Send(sc);
                         server.Logger.Log(Util.LogLevel.Debug, "Sent client asset");

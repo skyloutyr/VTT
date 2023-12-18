@@ -283,4 +283,8 @@ The following command line arguments are available (do not include the square br
 -servercache [number][postfix]: Sets the maximum server cache buffer before it is trimmed. Number is any positive number. Postfix indicates the rank, and can be b(bytes), kb(kilobytes), mb(megabytes) or gb(gigabytes)
 
 -console [true/false]: forces the console window being shown (true) or hidden (false). If not present the -debug parameter may force the console window to stay open. Win32 only.
+
+-serverstorage [path]: specifies the file system location for the server. This is the folder where all assets/client info/previews/maps/chat/etc are stored.
+
+-clientstorage [path]: specifies the file system location for the client. This is where the client logs/settings/etc are stored.
 ```

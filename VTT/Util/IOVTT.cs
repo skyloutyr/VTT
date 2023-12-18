@@ -8,22 +8,62 @@
 
     public static class IOVTT
     {
-        static IOVTT()
+        public static string AppDir { get; set; }
+        public static string ServerDir { get; set; }
+        public static string ClientDir { get; set; }
+        public static string CommonDir { get; set; }
+
+        public static void LoadLocations()
         {
             AppDir = AppDomain.CurrentDomain.BaseDirectory;
             CommonDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VTT");
             ServerDir = Path.Combine(CommonDir, "Server");
             ClientDir = Path.Combine(CommonDir, "Client");
 
+            if (ArgsManager.TryGetValue("serverstorage", out string serverloc))
+            {
+                try
+                {
+                    if (Directory.Exists(serverloc))
+                    {
+                        ServerDir = serverloc;
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(serverloc);
+                        ServerDir = serverloc;
+                    }
+                }
+                catch
+                {
+                    // NOOP
+                }
+            }
+
+            if (ArgsManager.TryGetValue("clientstorage", out string clientloc))
+            {
+                try
+                {
+                    if (Directory.Exists(clientloc))
+                    {
+                        ClientDir = clientloc;
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(clientloc);
+                        ClientDir = clientloc;
+                    }
+                }
+                catch
+                {
+                    // NOOP
+                }
+            }
+
             Directory.CreateDirectory(CommonDir);
             Directory.CreateDirectory(ServerDir);
             Directory.CreateDirectory(ClientDir);
         }
-
-        public static string AppDir { get; set; }
-        public static string ServerDir { get; set; }
-        public static string ClientDir { get; set; }
-        public static string CommonDir { get; set; }
 
         public static string OpenLogFile(bool server)
         {

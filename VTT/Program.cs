@@ -26,6 +26,7 @@
                 Console.Clear();
                 Version = new Version(1, 2, 10);
                 ArgsManager.Parse(args);
+                IOVTT.LoadLocations();
                 if (ArgsManager.TryGetValue("server", out int port))
                 {
                     Server s = new Server(IPAddress.Any, port);

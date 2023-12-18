@@ -244,6 +244,18 @@
 
                     break;
                 }
+
+                case "-serverstorage":
+                {
+                    args["serverstorage"] = value;
+                    break;
+                }
+
+                case "-clientstorage":
+                {
+                    args["clientstorage"] = value;
+                    break;
+                }
             }
         }
     }

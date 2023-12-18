@@ -48,7 +48,7 @@
                             idlp.AddLine(cursorScreen + new Vector2(gfxStep * i, 0), cursorScreen + new Vector2(gfxStep * i, size.Y), ImGui.GetColorU32(ImGuiCol.Border));
                         }
 
-                        for (int i = 0; i < ptrInAmt / 2 + 1; ++i)
+                        for (int i = 0; i < (ptrInAmt / 2) + 1; ++i)
                         {
                             float dy = i * size.Y / (ptrInAmt / 2);
                             idlp.AddLine(cursorScreen + new Vector2(0, dy), cursorScreen + new Vector2(size.X - gfxStep, dy), ImGui.GetColorU32(ImGuiCol.Border));
@@ -59,7 +59,7 @@
                         for (int i = 0; i < ptrInAmt; ++i)
                         {
                             float posX = (gfxStep * i);
-                            float posY = size.Y - (float)(dataIn[i] / (double)tMax) * size.Y;
+                            float posY = size.Y - ((float)(dataIn[i] / (double)tMax) * size.Y);
                             idlp.PathLineTo(cursorScreen + new Vector2(posX, posY));
                             if (ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(posX, 0), cursorScreen + new Vector2(gfxStep * (i + 1), size.Y)))
                             {
@@ -75,7 +75,7 @@
                         for (int i = 0; i < ptrInAmt; ++i)
                         {
                             float posX = (gfxStep * i);
-                            float posY = size.Y - (float)(dataOut[i] / (double)tMax) * size.Y;
+                            float posY = size.Y - ((float)(dataOut[i] / (double)tMax) * size.Y);
                             idlp.PathLineTo(cursorScreen + new Vector2(posX, posY));
                         }
 

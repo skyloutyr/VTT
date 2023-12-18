@@ -35,7 +35,7 @@
             uint cArgb = Color.LightGreen.Argb();
             uint cArgb2 = Color.LightBlue.Argb();
 
-            string removeCLRF(string s) => s.Replace("\n", "").Replace("\r", "");
+            static string removeCLRF(string s) => s.Replace("\n", "").Replace("\r", "");
 
             string rText = hasRolls ? $"{removeCLRF(r1.Text)}({r1.Tooltip}) {lang.Translate("generic.or")} {removeCLRF(r2.Text)}({r2.Tooltip})," : string.Empty;
             rText = RollSyntaxRegex.Replace(rText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");

@@ -15,10 +15,7 @@
         private nint _collectedValues;
         private int _valuesLength;
 
-        public NetworkMonitor(int backbufferLength = 20)
-        {
-            this.AllocateValues(backbufferLength);
-        }
+        public NetworkMonitor(int backbufferLength = 20) => this.AllocateValues(backbufferLength);
 
         public void AllocateValues(int amt)
         {

@@ -7,6 +7,7 @@
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Util;
 
     public class ChatRendererImage : ChatRendererBase
     {
@@ -123,5 +124,7 @@
                 ImGui.Image(Client.Instance.Frontend.Renderer.GuiRenderer.LoadingSpinner, new Vector2(w, h), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1), new Vector4(1, 1, 1, 1), new Vector4(0, 0, 0, 0));
             }
         }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang) => this.Container.Blocks[2].Text;
     }
 }

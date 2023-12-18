@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using System;
     using System.Numerics;
     using VTT.Control;
     using VTT.GL;
@@ -21,6 +22,25 @@
         }
         public override void ClearCache()
         {
+        }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            ChatBlock rnameAndMod = this.Container.Blocks[0];
+            ChatBlock rcharname = this.Container.Blocks[1];
+            ChatBlock r1 = this.Container.Blocks[2];
+            ChatBlock r2 = this.Container.Blocks[3];
+
+            bool hasRolls = !string.IsNullOrEmpty(r1.Text.Trim());
+            uint cArgb = Color.LightGreen.Argb();
+            uint cArgb2 = Color.LightBlue.Argb();
+
+            string removeCLRF(string s) => s.Replace("\n", "").Replace("\r", "");
+
+            string rText = hasRolls ? $"{removeCLRF(r1.Text)}({r1.Tooltip}) {lang.Translate("generic.or")} {removeCLRF(r2.Text)}({r2.Tooltip})," : string.Empty;
+            rText = RollSyntaxRegex.Replace(rText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");
+            string rollText = $"{TextOrAlternative(rcharname.Text, lang.Translate("generic.character"))} {lang.Translate("generic.rolls")} {rText} ({TextOrAlternative(rnameAndMod.Text, lang.Translate("generic.unknown"))})";
+            return rollText;
         }
 
         public override void Render()

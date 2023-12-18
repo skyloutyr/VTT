@@ -1,5 +1,6 @@
 ﻿namespace VTT.Render.Chat
 {
+    using System;
     using VTT.Control;
     using VTT.Util;
 
@@ -28,5 +29,7 @@
         }
 
         public override void Render() => this._lineRenderer.Render();
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang) => this._lineRenderer.ProvideTextForClipboard(dateTime, senderName, lang);
     }
 }

@@ -84,6 +84,34 @@
         }
 
         public override void ClearCache() => this._lines.Clear();
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            string ret = string.Empty;
+
+            for (int i = 0; i < this._lines.Count; i++)
+            {
+                RollContainer[] line = this._lines[i];
+                for (int i1 = 0; i1 < line.Length; i1++)
+                {
+                    RollContainer block = line[i1];
+                    ret += $"{block.text}({RollSyntaxRegex.Replace(block.tooltip, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[")})";
+                    if (i != this._lines.Count - 1 || (i1 != line.Length - 2 && i1 != line.Length - 1))
+                    {
+                        ret += " + ";
+                    }
+                    else
+                    {
+                        if (i1 != line.Length - 1)
+                        {
+                            ret += " = ";
+                        }
+                    }
+
+                }
+            }
+
+            return ret;
+        }
 
         public override void Render()
         {

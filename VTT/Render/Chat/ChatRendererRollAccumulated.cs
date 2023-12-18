@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using System;
     using VTT.Control;
     using VTT.Util;
 
@@ -19,6 +20,13 @@
 
         public override void ClearCache() // No cache
         {
+        }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            return this.Container.Blocks.Count == 0
+                ? string.Empty
+                : $"{this.Container.Blocks[0].Text}({RollSyntaxRegex.Replace(this.Container.Blocks[0].Tooltip, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[")})";
         }
 
         public override void Render()

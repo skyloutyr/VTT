@@ -82,7 +82,7 @@
 
         public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : Extensions.FromAbgr(0), Text = text, Tooltip = tt, Type = type };
 
-        public bool ImRender(float h)
+        public bool ImRender(float h, int idx, SimpleLanguage lang)
         {
             if (!this._cached)
             {
@@ -93,15 +93,15 @@
             {
                 float scrollMin = ImGui.GetScrollY();
                 float scrollMax = scrollMin + h;
-                if (ImGui.GetCursorPosY() + this._cachedHeight + 20 < scrollMin)
+                if (ImGui.GetCursorPosY() + this._cachedHeight + 22 < scrollMin)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 20);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 22);
                     return true;
                 }
 
                 if (scrollMax > float.Epsilon && ImGui.GetCursorPosY() > scrollMax)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 20);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 22);
                     return true;
                 }
 
@@ -176,6 +176,24 @@
                 }
 
                 this.Renderer?.Render();
+                if (ImGui.IsMouseHoveringRect(sV, new Vector2(ImGui.GetCursorScreenPos().X + 350, ImGui.GetCursorScreenPos().Y)))
+                {
+                    if (ImGui.BeginPopupContextItem("chat_line_popup_" + idx))
+                    {
+                        if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
+                        {
+                            ImGui.SetClipboardText($"{this.SendTime} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
+                        }
+
+                        ImGui.EndPopup();
+                    }
+
+                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                    {
+                        ImGui.OpenPopup("chat_line_popup_" + idx);
+                    }
+                }
+
                 return true;
             }
 

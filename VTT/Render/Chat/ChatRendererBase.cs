@@ -1,6 +1,9 @@
 ﻿namespace VTT.Render.Chat
 {
+    using System;
+    using System.Text.RegularExpressions;
     using VTT.Control;
+    using VTT.Util;
 
     public abstract class ChatRendererBase
     {
@@ -11,5 +14,9 @@
         public abstract void Render();
         public abstract void Cache(out float width, out float height);
         public abstract void ClearCache();
+        public abstract string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang);
+
+        public static string TextOrAlternative(string text, string alt) => string.IsNullOrEmpty(text) ? alt : text;
+        public static Regex RollSyntaxRegex = new Regex("roll\\(([0-9]+), ([0-9]+)\\)\\[=", RegexOptions.Compiled);
     }
 }

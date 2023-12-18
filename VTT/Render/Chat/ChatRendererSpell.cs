@@ -32,6 +32,16 @@
         {
         }
 
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            ChatBlock name = this.Container.Blocks[0];
+            ChatBlock cname = this.Container.Blocks[2];
+            ChatBlock desc = this.Container.Blocks[12];
+
+            string cText = TextOrAlternative(cname.Text, lang.Translate("generic.character"));
+            return $"{cText} {lang.Translate("generic.casts")} {TextOrAlternative(name.Text, lang.Translate("generic.spell"))}: {desc.Text}";
+        }
+
         public override void Render()
         {
             Vector2 localPos = ImGui.GetCursorPos();

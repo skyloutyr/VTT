@@ -1,6 +1,7 @@
 ﻿namespace VTT.Render.Chat
 {
     using ImGuiNET;
+    using System;
     using System.Numerics;
     using VTT.Control;
     using VTT.Util;
@@ -24,6 +25,40 @@
         public override void ClearCache()
         {
 
+        }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            string text = "";
+            for (int i = 0; i < this.Container.Blocks.Count; i += 2)
+            {
+                if (i >= this.Container.Blocks.Count - 1)
+                {
+                    break;
+                }
+
+                ChatBlock key = this.Container.Blocks[i];
+                ChatBlock value = this.Container.Blocks[i + 1];
+                if (key.Text.ToLower().Equals("name"))
+                {
+                    Vector2 cursorOld = ImGui.GetCursorPos();
+                    text += value.Text + "\n";
+                }
+            }
+
+            for (int i = 0; i < this.Container.Blocks.Count; i += 2)
+            {
+                ChatBlock key = this.Container.Blocks[i];
+                ChatBlock value = this.Container.Blocks[i + 1];
+                if (key.Text.ToLower().Equals("name"))
+                {
+                    continue;
+                }
+
+                text += key.Text + ": " + value.Text + "\n";
+            }
+
+            return text;
         }
 
         public override void Render()

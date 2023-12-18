@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using System;
     using System.Numerics;
     using VTT.Control;
     using VTT.GL;
@@ -23,6 +24,55 @@
         }
         public override void ClearCache()
         {
+        }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            ChatBlock rname = this.Container.Blocks[0];
+            ChatBlock mod = this.Container.Blocks[1];
+            ChatBlock rcharname = this.Container.Blocks[2];
+            ChatBlock desc = this.Container.Blocks[3];
+
+            ChatBlock r1 = this.Container.Blocks[4];
+            ChatBlock r2 = this.Container.Blocks[5];
+            ChatBlock dmg1 = this.Container.Blocks[6];
+            ChatBlock dmg2 = this.Container.Blocks[7];
+            ChatBlock crit1 = this.Container.Blocks[8];
+            ChatBlock crit2 = this.Container.Blocks[9];
+            ChatBlock dmgtype = this.Container.Blocks[10];
+
+            bool hasRolls = !string.IsNullOrEmpty(r1.Text.Trim());
+            bool hasDmg = !string.IsNullOrEmpty(dmg1.Text.Trim()); 
+            uint cArgb = Color.LightGreen.Argb();
+            uint cArgb2 = Color.LightBlue.Argb();
+            bool crit = r1.Color.Argb() == cArgb || r1.Color.Argb() == cArgb2 || r2.Color.Argb() == cArgb || r2.Color.Argb() == cArgb2;
+
+            string rText = hasRolls ? $"{r1.Text}({r1.Tooltip}) {lang.Translate("generic.or")} {r2.Text}({r2.Tooltip})" : string.Empty;
+            if (hasDmg && !string.IsNullOrEmpty(rText))
+            {
+                rText += lang.Translate("generic.to_hit") + ",";
+            }
+
+            rText = RollSyntaxRegex.Replace(rText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");
+            string dText = hasDmg ? $"{dmg1.Text}({dmg1.Tooltip})" : string.Empty;
+            if (crit)
+            {
+                dText += $" + {crit1.Text}({crit1.Tooltip})";
+            }
+
+            if (!string.IsNullOrEmpty(dmgtype.Text?.Trim()))
+            {
+                dText += $" {dmgtype.Text}";
+            }
+            else
+            {
+                dText += $" {lang.Translate("generic.damage")}";
+            }
+
+            dText = RollSyntaxRegex.Replace(dText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");
+            string rollText = $"{TextOrAlternative(rcharname.Text, lang.Translate("generic.character"))} {lang.Translate("generic.rolls")} {TextOrAlternative(rname.Text, lang.Translate("generic.attack"))}, {rText} {dText}";
+
+            return $"{rollText}\n {desc.Text}";
         }
 
         public override void Render()

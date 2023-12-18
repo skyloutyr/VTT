@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using System;
     using System.Numerics;
     using VTT.Control;
     using VTT.Util;
@@ -20,6 +21,13 @@
 
         public override void ClearCache()
         {
+        }
+
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            return this.Container.Blocks.Count == 1
+                ? this.Container.Blocks[0].Text
+                : this.Container.Blocks[1].Text + " " + this.Container.Blocks[0].Text;
         }
 
         public override unsafe void Render()

@@ -163,7 +163,7 @@
                                 cl.InvalidateCache();
                             }
 
-                            if (cl.ImRender(cwSize.Y - 128 - cwB.Y - 8))
+                            if (cl.ImRender(cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
                             {
                                 ImGui.Separator();
                                 ++clRendered;

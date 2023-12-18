@@ -114,6 +114,27 @@
         }
 
         public override void ClearCache() => this._cachedLines = null;
+        public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
+        {
+            string ret = string.Empty;
+
+            foreach (ImCachedLine icl in this._cachedLines)
+            {
+                for (int i = 0; i < icl.Words.Length; i++)
+                {
+                    ImCachedWord icw = icl.Words[i];
+                    ret += icw.Text;
+                    if (icw.IsExpression)
+                    {
+                        ret += $"({RollSyntaxRegex.Replace(icw.Owner.Tooltip, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[")})";
+                    }
+
+                    ret += " ";
+                }
+            }
+
+            return ret;
+        }
 
         public override void Render()
         {

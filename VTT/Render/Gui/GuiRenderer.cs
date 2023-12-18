@@ -643,6 +643,16 @@
                         ImGui.PushTextWrapPos();
                         ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
                         ImGui.PopTextWrapPos();
+                        if (ImGui.BeginPopupContextItem())
+                        {
+                            if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
+                            {
+                                ImGui.SetClipboardText(this._inspectedObject.Description);
+                            }
+
+                            ImGui.EndPopup();
+                        }
+
                         ImGui.EndChild();
 
                         if (ImGui.Button(close + "###Close", new System.Numerics.Vector2(284, 36)))

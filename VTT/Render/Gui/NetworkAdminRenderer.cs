@@ -17,48 +17,106 @@
             {
                 if (ImGui.Begin(lang.Translate("ui.network") + "###Network"))
                 {
-                    ulong cbpsI = Client.Instance.NetworkIn.LastValue;
-                    ulong cbpsO = Client.Instance.NetworkOut.LastValue;
-                    ulong sbpsI = Server.Instance?.NetworkIn.LastValue ?? 0ul;
-                    ulong sbpsO = Server.Instance?.NetworkOut.LastValue ?? 0ul;
-
-                    if (ImGui.BeginTable("TableNetwork", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
+                    unsafe void Plot(nint ptrIn, int ptrInAmt, nint ptrOut, nint ptrOutAmount, Vector2 size, ref int idx)
                     {
-                        ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(1);
-                        ImGui.Image(this.NetworkIn, Vec24x24);
-                        ImGui.SameLine();
-                        ImGui.Text(lang.Translate("ui.network.received"));
-                        ImGui.TableSetColumnIndex(2);
-                        ImGui.Image(this.NetworkOut, Vec24x24);
-                        ImGui.SameLine();
-                        ImGui.Text(lang.Translate("ui.network.sent"));
+                        ImGui.BeginChild("localplot_" + idx++, new Vector2(size.X + 192, size.Y + 24));
+                        ulong* dataIn = (ulong*)ptrIn;
+                        ulong* dataOut = (ulong*)ptrOut;
+                        ulong maxIn = 0;
+                        ulong maxOut = 0;
+                        ulong avgMax = 512 * 128;
+                        ulong sumIn = 0, sumOut = 0;
+                        for (int i = 0; i < ptrInAmt; ++i)
+                        {
+                            maxIn = Math.Max(dataIn[i], maxIn);
+                            maxOut = Math.Max(dataOut[i], maxOut);
+                            sumIn += dataIn[i];
+                            sumOut += dataOut[i];
+                        }
 
-                        ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(0);
-                        ImGui.Text(lang.Translate("ui.network.client"));
-                        ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(this.FormatDataUsage(cbpsI));
-                        ImGui.TableSetColumnIndex(2);
-                        ImGui.Text(this.FormatDataUsage(cbpsO));
+                        sumIn = (ulong)((double)sumIn / ptrInAmt);
+                        sumOut = (ulong)((double)sumOut / ptrInAmt);
+                        ulong tMax = Math.Max(maxIn, maxOut);
+                        tMax = Math.Max(tMax, avgMax);
+                        ImDrawListPtr idlp = ImGui.GetWindowDrawList();
+                        Vector2 cursorScreen = ImGui.GetCursorScreenPos();
 
-                        ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(0);
+                        idlp.AddRectFilled(cursorScreen, cursorScreen + size, ImGui.GetColorU32(ImGuiCol.TitleBg));
+                        float gfxStep = size.X / ptrInAmt;
+                        for (int i = 0; i < ptrInAmt - 1; ++i)
+                        {
+                            idlp.AddLine(cursorScreen + new Vector2(gfxStep * i, 0), cursorScreen + new Vector2(gfxStep * i, size.Y), ImGui.GetColorU32(ImGuiCol.Border));
+                        }
+
+                        for (int i = 0; i < ptrInAmt / 2 + 1; ++i)
+                        {
+                            float dy = i * size.Y / (ptrInAmt / 2);
+                            idlp.AddLine(cursorScreen + new Vector2(0, dy), cursorScreen + new Vector2(size.X - gfxStep, dy), ImGui.GetColorU32(ImGuiCol.Border));
+                        }
+
+                        int idxMOver = -1;
+                        idlp.PathClear();
+                        for (int i = 0; i < ptrInAmt; ++i)
+                        {
+                            float posX = (gfxStep * i);
+                            float posY = size.Y - (float)(dataIn[i] / (double)tMax) * size.Y;
+                            idlp.PathLineTo(cursorScreen + new Vector2(posX, posY));
+                            if (ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(posX, 0), cursorScreen + new Vector2(gfxStep * (i + 1), size.Y)))
+                            {
+                                idxMOver = i;
+                            }
+                        }
+
+                        uint clrIn = ImGui.GetColorU32(ImGuiCol.PlotLines);
+                        uint clrOut = Color.Orange.Abgr();
+                        idlp.PathStroke(clrIn, ImDrawFlags.None, 1f);
+
+                        idlp.PathClear();
+                        for (int i = 0; i < ptrInAmt; ++i)
+                        {
+                            float posX = (gfxStep * i);
+                            float posY = size.Y - (float)(dataOut[i] / (double)tMax) * size.Y;
+                            idlp.PathLineTo(cursorScreen + new Vector2(posX, posY));
+                        }
+
+                        idlp.PathStroke(clrOut, ImDrawFlags.None, 1f);
+
+                        string textMax = this.FormatDataUsage(tMax);
+                        Vector2 t0 = ImGui.CalcTextSize("0bps");
+
+                        idlp.AddText(cursorScreen + new Vector2(size.X, size.Y - t0.Y), ImGui.GetColorU32(ImGuiCol.Text), "0bps");
+                        idlp.AddText(cursorScreen + new Vector2(size.X, 0), ImGui.GetColorU32(ImGuiCol.Text), textMax);
+
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + size.Y);
+                        ImGui.TextUnformatted(lang.Translate("ui.network.inout_statistics", this.FormatDataUsage(sumIn), this.FormatDataUsage(sumOut)));
+
+                        ImGui.EndChild();
+
+                        if (idxMOver != -1)
+                        {
+                            ulong nInAtI = dataIn[idxMOver];
+                            ulong nOutAtI = dataOut[idxMOver];
+                            ImGui.BeginTooltip();
+
+                            ImGui.TextUnformatted(lang.Translate("ui.network.n_ago", ptrInAmt - idxMOver));
+                            ImGui.TextUnformatted($"{lang.Translate("ui.network.received")} {this.FormatDataUsage(nInAtI)}");
+                            ImGui.TextUnformatted($"{lang.Translate("ui.network.sent")} {this.FormatDataUsage(nOutAtI)}");
+
+                            ImGui.EndTooltip();
+                        }
+                    }
+
+                    int plotIdx = 0;
+                    ImGui.Text(lang.Translate("ui.network.client"));
+                    Client.Instance.NetworkIn.GetUnderlyingDataArray(out nint dptri, out int dleni);
+                    Client.Instance.NetworkOut.GetUnderlyingDataArray(out nint dptro, out int dleno);
+                    Plot(dptri, dleni, dptro, dleno, new Vector2(300, 100), ref plotIdx);
+                    if (Server.Instance != null)
+                    {
                         ImGui.Text(lang.Translate("ui.network.server"));
-                        ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(this.FormatDataUsage(sbpsI));
-                        ImGui.TableSetColumnIndex(2);
-                        ImGui.Text(this.FormatDataUsage(sbpsO));
-
-                        ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(0);
-                        ImGui.Text(lang.Translate("ui.network.total"));
-                        ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(this.FormatDataUsage(cbpsI + sbpsI));
-                        ImGui.TableSetColumnIndex(2);
-                        ImGui.Text(this.FormatDataUsage(cbpsO + sbpsO));
-
-                        ImGui.EndTable();
+                        Server.Instance.NetworkIn.GetUnderlyingDataArray(out dptri, out dleni);
+                        Server.Instance.NetworkOut.GetUnderlyingDataArray(out dptro, out dleno);
+                        Plot(dptri, dleni, dptro, dleno, new Vector2(300, 100), ref plotIdx);
                     }
 
                     ImGui.Text(lang.Translate("ui.network.id_client_mappings"));

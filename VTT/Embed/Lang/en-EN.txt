@@ -624,3 +624,5 @@ generic.unknown=unknown
 generic.casts=casts
 generic.spell=spell
 ui.chat.copy=Copy Text
+ui.network.n_ago={0} seconds ago
+ui.network.inout_statistics=In avg {0}, out avg {1}

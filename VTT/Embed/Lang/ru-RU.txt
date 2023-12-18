@@ -624,3 +624,5 @@ generic.unknown=неизвестно
 generic.casts=использует
 generic.spell=заклинание
 ui.chat.copy=Скопировать Текст
+ui.network.n_ago={0} секунд назад
+ui.network.inout_statistics=Принято {0}, отправлено {1} (в среднем)

@@ -1,6 +1,7 @@
 ﻿namespace VTT.Sound
 {
     using NLayer;
+    using NVorbis;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
@@ -65,14 +66,25 @@
             }
         }
 
+        public WaveAudio(VorbisReader vorbis)
+        {
+            this.NumChannels = vorbis.Channels;
+            this.SampleRate = vorbis.SampleRate;
+            this.DataLength = LoadDataFromStream((buffer, offset, size) => vorbis.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
+            this.IsReady = true;
+        }
+
         public WaveAudio(MpegFile mpeg)
         {
             this.NumChannels = mpeg.Channels;
             this.SampleRate = mpeg.SampleRate;
-            //this.ByteRate = ?; 
-            //this.BlockAlign = ?;
-            //this.BitsPerSample = ?;
-            float[] sBuffer = new float[4096];
+            this.DataLength = LoadDataFromStream((buffer, offset, size) => mpeg.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
+            this.IsReady = true;
+        }
+
+        private int LoadDataFromStream(Func<float[], int, int, int> reader, int bufferSize)
+        {
+            float[] sBuffer = new float[bufferSize];
             int currentElementSize = 1024;
             int currentElementAmount = 0;
             ushort max = 0;
@@ -80,7 +92,7 @@
             {
                 this._hdata = (ushort*)Marshal.AllocHGlobal(currentElementSize * sizeof(ushort));
                 int samplesRead;
-                while ((samplesRead = mpeg.ReadSamples(sBuffer, 0, 4096)) > 0)
+                while ((samplesRead = reader(sBuffer, 0, bufferSize)) > 0)
                 {
                     if (currentElementAmount + samplesRead > currentElementSize)
                     {
@@ -109,8 +121,7 @@
                 }
             }
 
-            this.DataLength = currentElementAmount;
-            this.IsReady = true;
+            return currentElementAmount;
         }
 
         public Image<Rgba32> GenWaveForm(int w, int h)

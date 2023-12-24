@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using NLayer;
+    using NVorbis;
     using OpenTK.Mathematics;
     using OpenTK.Windowing.Common;
     using SixLabors.ImageSharp;
@@ -192,7 +193,7 @@
                         }
                     }
 
-                    if (ext.EndsWith("wav") || ext.EndsWith("mp3")) // Sound
+                    if (ext.EndsWith("wav") || ext.EndsWith("mp3") || ext.EndsWith("ogg")) // Sound
                     {
                         try
                         {
@@ -219,6 +220,14 @@
                                     wa = new WaveAudio(mpeg);
                                     img = wa.GenWaveForm(1024, 1024);
                                     mpeg.Dispose();
+                                }
+
+                                if (ext.EndsWith("ogg"))
+                                {
+                                    VorbisReader vorbis = new VorbisReader(File.OpenRead(s));
+                                    wa = new WaveAudio(vorbis);
+                                    img = wa.GenWaveForm(1024, 1024);
+                                    vorbis.Dispose();
                                 }
 
                                 meta.SoundType = SoundData.Metadata.StorageType.Raw;

@@ -100,7 +100,8 @@
                     for (int i = 0; i < samplesRead; ++i)
                     {
                         float f = sBuffer[i];
-                        short s = (short)(f * short.MaxValue);
+                        int hr_i = (int)(float.IsNegative(f) ? f * 0x8000 : f * 0x7fff);
+                        short s = (short)Math.Clamp(hr_i, short.MinValue, short.MaxValue);
                         ushort us = *(ushort*)&s;
                         max = Math.Max(max, us);
                         this._hdata[currentElementAmount++] = us;

@@ -6,5 +6,6 @@
         public static unsafe float Int32BitsToSingle(int val) => *(float*)&val;
         public static unsafe uint SingleBitsToUInt32(float val) => *(uint*)&val;
         public static unsafe int SingleBitsToInt32(float val) => *(int*)&val;
+        public static unsafe ushort ReinterpretCastInt16ToUInt16(short s) => *(ushort*)&s;
     }
 }

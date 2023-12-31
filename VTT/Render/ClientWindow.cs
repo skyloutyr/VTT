@@ -46,7 +46,22 @@
         public ClientWindow()
         {
             Configuration.Default.PreferContiguousImageBuffers = true;
-            WindowIcon windowIcon = this.LoadIcon();
+            string postfix = "";
+            DateTime dt = DateTime.Now;
+            if (Client.Instance.Settings.HolidaySeasons)
+            {
+                if ((dt.Month == 12 && dt.Day >= 25) || (dt.Month == 1 && dt.Day <= 7))
+                {
+                    postfix = "-ny";
+                }
+
+                if ((dt.Month == 10 && dt.Day == 31))
+                {
+                    postfix = "-hw";
+                }
+            }
+
+            WindowIcon windowIcon = this.LoadIcon(postfix);
             OpenTK.Windowing.Common.ContextFlags winFlags = OpenTK.Windowing.Common.ContextFlags.ForwardCompatible;
             if (ArgsManager.TryGetValue("gldebug", out string val))
             {
@@ -111,12 +126,12 @@
             this.GameHandle.FocusedChanged += this.Instance_Focus;
         }
 
-        private unsafe WindowIcon LoadIcon()
+        private unsafe WindowIcon LoadIcon(string postfix)
         {
-            using Image<Rgba32> normal = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta.png");
-            using Image<Rgba32> small = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_small.png");
-            using Image<Rgba32> smaller = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_smaller.png");
-            using Image<Rgba32> smallest = IOVTT.ResourceToImage<Rgba32>("VTT.Embed.icon-beta_smallest.png");
+            using Image<Rgba32> normal = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta{postfix}.png");
+            using Image<Rgba32> small = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta_small{postfix}.png");
+            using Image<Rgba32> smaller = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta_smaller{postfix}.png");
+            using Image<Rgba32> smallest = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta_smallest{postfix}.png");
             Span<byte> normalBytes = new Span<byte>(new byte[sizeof(Rgba32) * 256 * 256]);
             Span<byte> smallBytes = new Span<byte>(new byte[sizeof(Rgba32) * 48 * 48]);
             Span<byte> smallerBytes = new Span<byte>(new byte[sizeof(Rgba32) * 32 * 32]);

@@ -44,6 +44,25 @@
             dataLength = this.DataLength;
         }
 
+        public bool TryGetMpegEncodedData(out byte[] data, out long[] packetOffsets)
+        {
+            if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
+            {
+                unsafe
+                {
+                    data = Client.Instance.Frontend.FFmpegWrapper.EncodeMpegAudio((ushort*)this.DataPtr, this.DataLength, this.NumChannels, 112640, this.SampleRate, out packetOffsets);
+                    if (data != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            data = null;
+            packetOffsets = null;
+            return false;
+        }
+
         public WaveAudio()
         {
         }

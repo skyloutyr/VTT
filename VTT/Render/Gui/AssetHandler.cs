@@ -10,6 +10,7 @@
     using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using VTT.Asset;
@@ -198,9 +199,9 @@
                         try
                         {
                             long len = new FileInfo(s).Length;
-                            if (len > 134217728) // 128 MBs
+                            if (len >= int.MaxValue / 2) // 1 GB
                             {
-                                Client.Instance.Logger.Log(LogLevel.Warn, "Audio file too large - maximum allowed is 128 mbs!");
+                                Client.Instance.Logger.Log(LogLevel.Warn, "Audio file too large - maximum allowed is 1Gb!");
                             }
                             else
                             {
@@ -211,14 +212,12 @@
                                 {
                                     wa = new WaveAudio();
                                     wa.Load(File.OpenRead(s));
-                                    img = wa.GenWaveForm(1024, 1024);
                                 }
 
                                 if (ext.EndsWith("mp3"))
                                 {
                                     MpegFile mpeg = new MpegFile(File.OpenRead(s));
                                     wa = new WaveAudio(mpeg);
-                                    img = wa.GenWaveForm(1024, 1024);
                                     mpeg.Dispose();
                                 }
 
@@ -226,13 +225,30 @@
                                 {
                                     VorbisReader vorbis = new VorbisReader(File.OpenRead(s));
                                     wa = new WaveAudio(vorbis);
-                                    img = wa.GenWaveForm(1024, 1024);
                                     vorbis.Dispose();
                                 }
 
-                                meta.SoundType = SoundData.Metadata.StorageType.Raw;
-                                meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
-                                meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
+                                img = wa.GenWaveForm(1024, 1024);
+                                byte[] dataArray = null;
+                                bool doCompress = Client.Instance.Frontend.FFmpegWrapper.IsInitialized &&
+                                    Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.Always ||
+                                    Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.LargeFilesOnly && wa.DataLength > 4194304; // 4Mb
+
+                                if (doCompress && wa.TryGetMpegEncodedData(out dataArray, out long[] packetOffsets) && dataArray != null)
+                                {
+                                    meta.SoundType = SoundData.Metadata.StorageType.Mpeg;
+                                    meta.IsFullData = false;
+                                    meta.TotalChunks = packetOffsets.Length;
+                                    meta.CompressedChunkOffsets = packetOffsets;
+                                }
+                                else
+                                {
+                                    meta.SoundType = SoundData.Metadata.StorageType.Raw;
+                                    meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
+                                    meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
+                                    meta.CompressedChunkOffsets = Array.Empty<long>();
+                                }
+
                                 meta.SampleRate = wa.SampleRate;
                                 meta.NumChannels = wa.NumChannels;
                                 SoundData sound = new SoundData();
@@ -250,7 +266,7 @@
 
                                 AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Sound, SoundInfo = meta };
                                 AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = wa.GetManagedDataCopy(), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = meta.SoundType == SoundData.Metadata.StorageType.Raw ? wa.GetManagedDataCopy() : dataArray, AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
                                 pau.Send(Client.Instance.NetClient);
 
                                 wa.Free();
@@ -718,7 +734,7 @@
                         }
                         else
                         {
-                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96));
+                            idlp.AddImage(a is AssetStatus.Error or AssetStatus.NoAsset ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96));
                             if (hover)
                             {
                                 idlp.AddRect(cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
@@ -735,7 +751,7 @@
                                 AssetType.Model => this.AssetModelIcon,
                                 AssetType.Shader => this.AssetShaderIcon,
                                 AssetType.ParticleSystem => this.AssetParticleIcon,
-                                AssetType.Sound => aRef.Meta?.SoundInfo?.IsFullData ?? false ? this.AssetSoundIcon : this.AssetMusicIcon,
+                                AssetType.Sound => aRef.Meta?.SoundInfo?.IsFullData ?? false ? this.AssetSoundIcon : aRef.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon : this.AssetMusicIcon,
                                 _ => this.ErrorIcon
                             },
 
@@ -868,6 +884,10 @@
 
                             ImGui.TextUnformatted(aRef.Name);
                             ImGui.TextUnformatted(lang.Translate("ui.asset_type." + aRef.Type.ToString().ToLower()));
+                            if (aRef?.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg)
+                            {
+                                ImGui.TextUnformatted(lang.Translate("ui.sound_compressed.tt"));
+                            }
 
                             ImGui.EndTooltip();
                         }

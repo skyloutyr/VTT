@@ -7,6 +7,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Runtime.InteropServices;
+    using VTT.Network;
 
     public class FFmpegWrapper
     {
@@ -83,6 +84,242 @@
             }
 
             return false;
+        }
+
+
+        private unsafe bool encode(Logger l, AVCodecContext* ctx, AVPacket* pkt, AVFrame* frame, Stream ms, List<long> offsets, out int ec)
+        {
+            ec = ffmpeg.avcodec_send_frame(ctx, frame);
+            if (ec < 0)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - error sending frame to the encoder with error code {ec}!");
+                return false;
+            }
+
+            while (ec >= 0)
+            {
+                ec = ffmpeg.avcodec_receive_packet(ctx, pkt);
+                if (ec == ffmpeg.AVERROR_EOF || ec == ffmpeg.AVERROR(ffmpeg.EAGAIN))
+                {
+                    return true;
+                }
+                else
+                {
+                    if (ec < 0)
+                    {
+                        l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - error encoding audio frame with error code {ec}!");
+                        return false;
+                    }
+                }
+
+                offsets.Add(ms.Position);
+                ms.Write(new ReadOnlySpan<byte>(pkt->data, pkt->size));
+                ffmpeg.av_packet_unref(pkt);
+            }
+
+            return true;
+        }
+
+        public unsafe byte[] EncodeMpegAudio(ushort* pcm, int amt, int nChannels, int bitrate, int sampleRate, out long[] dataPacketOffsets)
+        {
+            short* pcmPtr = (short*)pcm;
+            dataPacketOffsets = null;
+            Logger l = Client.Instance.Logger;
+            AVCodec* codec = ffmpeg.avcodec_find_encoder(AVCodecID.AV_CODEC_ID_MP3);
+            if (codec == null)
+            {
+                l.Log(LogLevel.Error, "FFMpeg could not encode mp3 - codec creation failed!");
+                return null;
+            }
+
+            AVCodecContext* ctx = ffmpeg.avcodec_alloc_context3(codec);
+            if (ctx == null)
+            {
+                l.Log(LogLevel.Error, "FFMpeg could not encode mp3 - context creation failed!");
+                return null;
+            }
+
+            ctx->bit_rate = bitrate;
+            ctx->sample_rate = sampleRate;
+            ctx->sample_fmt = AVSampleFormat.AV_SAMPLE_FMT_S16P;
+            ctx->rc_min_rate = bitrate;
+            ctx->rc_max_rate = bitrate;
+            int layoutIndex = 0;
+            while (true)
+            {
+                AVChannelLayout ch = codec->ch_layouts[layoutIndex];
+
+                if (ch.nb_channels == nChannels)
+                {
+                    ctx->ch_layout = ch;
+                    break;
+                }
+
+                if (ch.nb_channels == 0)
+                {
+                    break;
+                }
+
+                layoutIndex += 1;
+            }
+
+            if (codec->supported_samplerates == null)
+            {
+                ctx->sample_rate = sampleRate;
+            }
+            else
+            {
+                int best = 0;
+                int* p = codec->supported_samplerates;
+                while (*p != 0)
+                {
+                    if (best == 0 || Math.Abs(sampleRate - *p) < Math.Abs(sampleRate - best))
+                    {
+                        best = *p;
+                    }
+
+                    ++p;
+                }
+
+                ctx->sample_rate = best;
+            }
+
+            int result = ffmpeg.avcodec_open2(ctx, codec, null);
+            if (result < 0)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - codec open failed with error code {result}!");
+                ffmpeg.avcodec_free_context(&ctx);
+                return null;
+            }
+
+            AVPacket* pkt = ffmpeg.av_packet_alloc();
+            if (pkt == null)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - packet allocation failed!");
+                ffmpeg.avcodec_free_context(&ctx);
+                return null;
+            }
+
+            AVFrame* frame = ffmpeg.av_frame_alloc();
+            if (frame == null)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - frame allocation failed!");
+                ffmpeg.av_packet_free(&pkt);
+                ffmpeg.avcodec_free_context(&ctx);
+                return null;
+            }
+
+            frame->nb_samples = ctx->frame_size;
+            frame->format = (int)AVSampleFormat.AV_SAMPLE_FMT_S16P;
+            result = ffmpeg.av_channel_layout_copy(&frame->ch_layout, &ctx->ch_layout);
+            if (result < 0)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - channel layout copy failed with error code {result}!");
+                ffmpeg.av_frame_free(&frame);
+                ffmpeg.av_packet_free(&pkt);
+                ffmpeg.avcodec_free_context(&ctx);
+                return null;
+            }
+
+            result = ffmpeg.av_frame_get_buffer(frame, 0);
+            if (result < 0)
+            {
+                l.Log(LogLevel.Error, $"FFMpeg could not encode mp3 - audio data buffers allocation failed with error code {result}!");
+                ffmpeg.av_frame_free(&frame);
+                ffmpeg.av_packet_free(&pkt);
+                ffmpeg.avcodec_free_context(&ctx);
+                return null;
+            }
+
+            using MemoryStream ms = new MemoryStream();
+            List<long> packetOffsets = new List<long>();
+            int offset = 0;
+            while (true)
+            {
+                result = ffmpeg.av_frame_make_writable(frame);
+                if (result < 0)
+                {
+                    break;
+                }
+
+                if (nChannels == 1)
+                {
+                    short* samples = (short*)frame->extended_data[0];
+                    for (int j = 0; j < ctx->frame_size; ++j)
+                    {
+                        short value = offset >= amt ? (short)0 : pcmPtr[offset++];
+                        samples[j] = value;
+                    }
+                }
+                else
+                {
+                    short* ch0 = (short*)frame->extended_data[0];
+                    short* ch1 = (short*)frame->extended_data[1];
+                    for (int j = 0; j < ctx->frame_size; ++j)
+                    {
+                        short valuec0 = offset >= amt ? (short)0 : pcmPtr[offset++];
+                        short valuec1 = offset >= amt ? (short)0 : pcmPtr[offset++];
+                        ch0[j] = valuec0;
+                        ch1[j] = valuec1;
+                    }
+                }
+
+                if (!encode(l, ctx, pkt, frame, ms, packetOffsets, out int ec1))
+                {
+                    l.Log(LogLevel.Error, $"MP3 encoding error - failed writing packet with error code {ec1}!");
+                    break;
+                }
+
+                if (offset >= amt)
+                {
+                    break;
+                }
+            }
+
+            encode(l, ctx, pkt, null, ms, packetOffsets, out _);
+            Marshal.FreeHGlobal((IntPtr)pcmPtr);
+            ffmpeg.av_frame_free(&frame);
+            ffmpeg.av_packet_free(&pkt);
+            ffmpeg.avcodec_free_context(&ctx);
+            if (packetOffsets.Count < 2)
+            {
+                dataPacketOffsets = new long[1] { 0 };
+            }
+            else
+            {
+                int targetNumPackets = 256;
+                int frameSize = (int)(packetOffsets[1] - packetOffsets[0]);
+                int assumedTotalSize = frameSize * targetNumPackets;
+                while (assumedTotalSize > 176128) // 172kb
+                {
+                    targetNumPackets -= 16;
+                    assumedTotalSize = frameSize * targetNumPackets;
+                }
+
+                List<long> combinedPacketOffsets = new List<long>();
+                int i = 0;
+                int nRead = 0;
+                while (true)
+                {
+                    if (i + 1 >= packetOffsets.Count)
+                    {
+                        break; // No need to do anything, last packet offset is good
+                    }
+                    
+                    if (nRead % targetNumPackets == 0)
+                    {
+                        combinedPacketOffsets.Add(packetOffsets[i]);
+                    }
+
+                    ++nRead;
+                    ++i;
+                }
+
+                dataPacketOffsets = combinedPacketOffsets.ToArray();
+            }
+
+            byte[] ret = ms.ToArray();
+            return ret;
         }
 
         public IEnumerable<Image<Rgba32>> DecodeAllFrames(string url)

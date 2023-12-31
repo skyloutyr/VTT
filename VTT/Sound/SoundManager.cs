@@ -5,10 +5,10 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using VTT.Asset;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Util;
 
     public class SoundManager
     {
@@ -30,7 +30,7 @@
         {
             if (Client.Instance.Settings.DisableSounds)
             {
-                Client.Instance.Logger.Log(Util.LogLevel.Warn, $"Sound system disabled.");
+                Client.Instance.Logger.Log(LogLevel.Warn, $"Sound system disabled.");
                 return;
             }
 
@@ -52,7 +52,7 @@
                 ALError ale = AL.GetError();
                 if (ale != ALError.NoError)
                 {
-                    Client.Instance.Logger.Log(Util.LogLevel.Error, $"OpenAL creation error - {AL.GetErrorString(ale)}");
+                    Client.Instance.Logger.Log(LogLevel.Error, $"OpenAL creation error - {AL.GetErrorString(ale)}");
                     IsAvailable = false;
                     try
                     {
@@ -69,14 +69,14 @@
 
                 int major = ALC.GetInteger(this._device, AlcGetInteger.MajorVersion);
                 int minor = ALC.GetInteger(this._device, AlcGetInteger.MinorVersion);
-                Client.Instance.Logger.Log(Util.LogLevel.Info, $"OpenAL {major}.{minor} initialized.");
+                Client.Instance.Logger.Log(LogLevel.Info, $"OpenAL {major}.{minor} initialized.");
                 this.IsAvailable = true;
                 this.LoadSounds();
             }
             catch (DllNotFoundException e)
             {
-                Client.Instance.Logger.Log(Util.LogLevel.Error, "OpenAL subsystem not available!");
-                Client.Instance.Logger.Exception(Util.LogLevel.Error, e);
+                Client.Instance.Logger.Log(LogLevel.Error, "OpenAL subsystem not available!");
+                Client.Instance.Logger.Exception(LogLevel.Error, e);
                 IsAvailable = false;
                 return;
             }
@@ -103,12 +103,12 @@
                 }
                 catch
                 {
-                    Client.Instance.Logger.Log(Util.LogLevel.Error, $"Error loading embedded sound effect {name}!");
+                    Client.Instance.Logger.Log(LogLevel.Error, $"Error loading embedded sound effect {name}!");
                 }
             }
             else
             {
-                Client.Instance.Logger.Log(Util.LogLevel.Error, $"Tried to load a non-existing embedded sound effect {name}!");
+                Client.Instance.Logger.Log(LogLevel.Error, $"Tried to load a non-existing embedded sound effect {name}!");
             }
 
             return null;
@@ -250,6 +250,17 @@
                     }
 
                     this._assetContainers.Clear();
+                    lock (this._soundBuffersResponsesLock)
+                    {
+                        this._soundBuffersResponses.Clear();
+                        foreach (KeyValuePair<Guid, StreamingMpeg> item in this._mpegDecoderStorage)
+                        {
+                            item.Value.Free();
+                        }
+
+                        this._mpegDecoderStorage.Clear();
+                    }
+
                     this._assetsClear = false;
                 }
 
@@ -292,7 +303,7 @@
 
                     if (status is AssetStatus.Error or AssetStatus.NoAsset)
                     {
-                        Client.Instance.Logger.Log(Util.LogLevel.Error, "Sound system did not receive requested sound " + aID);
+                        Client.Instance.Logger.Log(LogLevel.Error, "Sound system did not receive requested sound " + aID);
                         continue;
                     }
 
@@ -306,7 +317,7 @@
                     {
                         if (a.Type != AssetType.Sound)
                         {
-                            Client.Instance.Logger.Log(Util.LogLevel.Error, "Sound system received a non-sound for id " + aID);
+                            Client.Instance.Logger.Log(LogLevel.Error, "Sound system received a non-sound for id " + aID);
                             continue;
                         }
 
@@ -338,14 +349,15 @@
             }
         }
 
-        private readonly Dictionary<(Guid, int), byte[]> _soundBuffersResponses = new Dictionary<(Guid, int), byte[]>();
+        private readonly Dictionary<(Guid, Guid, int), byte[]> _soundBuffersResponses = new Dictionary<(Guid, Guid, int), byte[]>();
+        private readonly Dictionary<Guid, StreamingMpeg> _mpegDecoderStorage = new Dictionary<Guid, StreamingMpeg>();
         private readonly object _soundBuffersResponsesLock = new object();
 
-        public bool RequestBufferedSound(Guid assetID, int cIndex, out ushort[] data)
+        public bool RequestBufferedSound(Guid soundID, Guid assetID, int cIndex, out ushort[] data)
         {
             lock (this._soundBuffersResponsesLock)
             {
-                (Guid, int) key = (assetID, cIndex);
+                (Guid, Guid, int) key = (soundID, assetID, cIndex);
                 bool haveRequest = this._soundBuffersResponses.TryGetValue(key, out byte[] val);
                 if (haveRequest && val == null)
                 {
@@ -361,7 +373,7 @@
                 }
 
                 this._soundBuffersResponses.Add(key, null);
-                Client.Instance.Frontend.EnqueueOrExecuteTask(() => new PacketSoundBuffer() { AssetID = assetID, ChunkIndex = cIndex }.Send());
+                Client.Instance.Frontend.EnqueueOrExecuteTask(() => new PacketSoundBuffer() { SoundID = soundID, AssetID = assetID, ChunkIndex = cIndex }.Send());
                 data = null;
                 return false;
             }
@@ -381,11 +393,47 @@
 
         public void BufferedSourceReadyCallback(int src) => this.SetSourceVolume(SoundCategory.Asset, src);
 
-        public void ReceiveSoundBuffer(Guid soundID, int cIndex, byte[] buffer)
+        public void ReceiveSoundBuffer(Guid soundID, Guid assetID, int cIndex, byte[] buffer)
         {
+            Client.Instance.Logger.Log(LogLevel.Debug, $"Got sound data for sound {soundID}, chunk index of {cIndex}.");
             lock (this._soundBuffersResponsesLock)
             {
-                this._soundBuffersResponses[(soundID, cIndex)] = buffer;
+                if (Client.Instance.AssetManager.Refs.TryGetValue(assetID, out AssetRef aRef))
+                {
+                    if (aRef?.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg)
+                    {
+                        if (!this._mpegDecoderStorage.TryGetValue(soundID, out StreamingMpeg resources))
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Debug, $"Sound is mpeg and didn't have a streaming context associated, creating (chunk index is {cIndex}).");
+                            resources = new StreamingMpeg();
+                            this._mpegDecoderStorage[soundID] = resources;
+                        }
+
+                        resources.AddData(buffer);
+                        bool lastBuffer = cIndex + 1 >= aRef.Meta.SoundInfo.TotalChunks;
+                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = resources.ReadSamples(!lastBuffer, out bool readToEnd);
+                        if (readToEnd && !lastBuffer)
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Warn, $"Sound data read to end for sound {soundID}, asset {assetID} at chunk {cIndex}, but more chunks were still expected!");
+                        }
+
+                        if (lastBuffer)
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Debug, $"Mpeg data was read to end (steaming context says {readToEnd}).");
+                            resources.Free();
+                            this._mpegDecoderStorage.Remove(assetID);
+                        }
+                    }
+                    else
+                    {
+                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = buffer;
+                    }
+                }
+                else
+                {
+                    this._soundBuffersResponses[(soundID, assetID, cIndex)] = buffer;
+                    Client.Instance.Logger.Log(LogLevel.Warn, $"Got sound data for non-existing asset {assetID}!");
+                }
             }
         }
     }

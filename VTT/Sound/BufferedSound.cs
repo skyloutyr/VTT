@@ -8,6 +8,7 @@
 
     public class BufferedSound
     {
+        public Guid ID { get; set; }
         public Guid AssetID { get; set; }
 
         private readonly int _front;
@@ -41,12 +42,13 @@
             this._nChannels = numChannels;
             this._maxChunks = numChunks;
             this.AssetID = assetID;
+            this.ID = Guid.NewGuid();
         }
 
         public bool QueueBuffer(int buffer, int chunkIndex)
         {
             SoundManager mgr = Client.Instance.Frontend.Sound;
-            if (mgr.RequestBufferedSound(this.AssetID, chunkIndex, out ushort[] data) && data != null)
+            if (mgr.RequestBufferedSound(this.ID, this.AssetID, chunkIndex, out ushort[] data) && data != null)
             {
                 if (this._ptrs.TryGetValue(buffer, out IntPtr val))
                 {

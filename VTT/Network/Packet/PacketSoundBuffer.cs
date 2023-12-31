@@ -10,6 +10,7 @@
         public override uint PacketID => 68;
         public override bool Compressed => true;
 
+        public Guid SoundID { get; set; }
         public Guid AssetID { get; set; }
         public int ChunkIndex { get; set; }
         public byte[] ServerChunkData { get; set; }
@@ -32,7 +33,7 @@
             {
                 if (this.ServerReturnStatus == AssetStatus.Return && this.ServerChunkData != null)
                 {
-                    client.Frontend.Sound.ReceiveSoundBuffer(this.AssetID, this.ChunkIndex, this.ServerChunkData);
+                    client.Frontend.Sound.ReceiveSoundBuffer(this.SoundID, this.AssetID, this.ChunkIndex, this.ServerChunkData);
                 }
                 else
                 {
@@ -43,6 +44,7 @@
 
         public override void Decode(BinaryReader br)
         {
+            this.SoundID = br.ReadGuid();
             this.AssetID = br.ReadGuid();
             this.ChunkIndex = br.ReadInt32();
             this.ServerReturnStatus = br.ReadEnumSmall<AssetStatus>();
@@ -55,6 +57,7 @@
 
         public override void Encode(BinaryWriter bw)
         {
+            bw.Write(this.SoundID);
             bw.Write(this.AssetID);
             bw.Write(this.ChunkIndex);
             bw.WriteEnumSmall(this.ServerReturnStatus);

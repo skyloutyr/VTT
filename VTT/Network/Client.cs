@@ -631,6 +631,15 @@
         [JsonConverter(typeof(StringEnumConverter))]
         public DrawingsResourceAllocationMode DrawingsPerformance { get; set; } = DrawingsResourceAllocationMode.Standard;
 
+        [DefaultValue(AudioCompressionPolicy.Always)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public AudioCompressionPolicy SoundCompressionPolicy { get; set; } = ClientSettings.AudioCompressionPolicy.Always;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool HolidaySeasons { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -683,7 +692,9 @@
                 DisableSounds = false,
                 CompressionPreference = TextureCompressionPreference.DXT,
                 AsyncDXTCompression = true,
-                DrawingsPerformance = DrawingsResourceAllocationMode.Standard
+                DrawingsPerformance = DrawingsResourceAllocationMode.Standard,
+                SoundCompressionPolicy = AudioCompressionPolicy.Always,
+                HolidaySeasons = true
             };
 
             ret.Save();
@@ -770,6 +781,13 @@
             Standard,
             Extra,
             Unlimited
+        }
+
+        public enum AudioCompressionPolicy
+        {
+            Always,
+            LargeFilesOnly,
+            Never
         }
     }
 

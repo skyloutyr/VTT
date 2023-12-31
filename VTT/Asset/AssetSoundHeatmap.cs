@@ -27,7 +27,7 @@
                         if (aRef.Type == AssetType.Sound && aRef.Meta != null && !aRef.Meta.SoundInfo.IsFullData)
                         {
                             string fl = aRef.ServerPointer.FileLocation;
-                            a = new Accessor(fl, aRef.Meta.SoundInfo.TotalChunks, aRef.Meta.SoundInfo.SampleRate, aRef.Meta.SoundInfo.NumChannels);
+                            a = new Accessor(fl, aRef.Meta.SoundInfo.TotalChunks, aRef.Meta.SoundInfo.SampleRate, aRef.Meta.SoundInfo.NumChannels, aRef.Meta.SoundInfo.SoundType == SoundData.Metadata.StorageType.Mpeg ? aRef.Meta.SoundInfo.CompressedChunkOffsets : null);
                             this.DataMap[assetID] = a;
                         }
                         else
@@ -65,17 +65,19 @@
             private readonly string _fsPath;
             private readonly object _locker = new object();
             private readonly int _chunkLength;
+            private readonly long[] _compressedOffsets;
 
             public Spot[] Spots { get; init; }
 
             public const long ExpirationTime = 60000; // 1 min spot lifetime
 
-            public Accessor(string fsPath, int spots, int freq, int nCh)
+            public Accessor(string fsPath, int spots, int freq, int nCh, long[] compressedOffsets)
             {
                 this._fsStream = File.OpenRead(fsPath);
                 this._fsPath = fsPath;
                 this.Spots = new Spot[spots];
-                this._chunkLength = freq * nCh * 5 * sizeof(ushort); // 5s of stereo16 wave sound
+                this._chunkLength = compressedOffsets == null ? freq * nCh * 5 * sizeof(ushort) : -1; // 5s of stereo16 wave sound
+                this._compressedOffsets = compressedOffsets;
             }
 
             public void Pulse()
@@ -139,9 +141,43 @@
                             s = new Spot();
                             s.DataIndex = index;
                             Stream stream = this.GetFS();
-                            stream.Position = index * this._chunkLength;
-                            s.Data = new byte[this._chunkLength];
-                            stream.Read(s.Data, 0, s.Data.Length);
+                            if (this._chunkLength == -1)
+                            {
+                                if (index + 1 == this._compressedOffsets.Length)
+                                {
+                                    using MemoryStream ms = new MemoryStream();
+                                    byte[] buffer = new byte[4096];
+                                    stream.Position = this._compressedOffsets[index];
+                                    while (true)
+                                    {
+                                        int read = stream.Read(buffer, 0, buffer.Length);
+                                        if (read <= 0)
+                                        {
+                                            break;
+                                        }
+
+                                        ms.Write(buffer, 0, read);
+                                    }
+
+                                    s.Data = ms.ToArray();
+                                }
+                                else
+                                {
+                                    long now = this._compressedOffsets[index];
+                                    long next = this._compressedOffsets[index + 1];
+                                    long delta = next - now;
+                                    stream.Position = now;
+                                    s.Data = new byte[delta];
+                                    stream.Read(s.Data, 0, s.Data.Length);
+                                }
+                            }
+                            else
+                            {
+                                stream.Position = index * this._chunkLength;
+                                s.Data = new byte[this._chunkLength];
+                                stream.Read(s.Data, 0, s.Data.Length);
+                            }
+
                             this.Spots[index] = s;
                         }
                     }

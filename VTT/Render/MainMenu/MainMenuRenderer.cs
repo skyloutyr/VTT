@@ -345,6 +345,7 @@
                         ImGui.Text("    move-all-arrow");
                         ImGui.Text("    move-separate");
                         ImGui.Text("    musical-notes");
+                        ImGui.Text("    music-library");
                         ImGui.Text("    no-image");
                         ImGui.Text("    outgoing-data");
                         ImGui.Text("    paint");
@@ -557,6 +558,31 @@
                         {
                             new PacketClientData() { InfosToUpdate = new List<ClientInfo>() { Client.Instance.CreateSelfInfo() } }.Send();
                         }
+                    }
+
+                    if (!Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
+                    {
+                        ImGui.BeginDisabled();
+                    }
+
+                    string[] soundCompressions = { lang.Translate("menu.settings.sound_compression.always"), lang.Translate("menu.settings.sound_compression.large"), lang.Translate("menu.settings.sound_compression.never") };
+                    int sSCPolicyIndex = (int)Client.Instance.Settings.SoundCompressionPolicy;
+                    ImGui.Text(lang.Translate("menu.settings.sound_compression"));
+                    if (ImGui.Combo("##Sound Compression Mode", ref sSCPolicyIndex, soundCompressions, 3))
+                    {
+                        ClientSettings.AudioCompressionPolicy nVal = (ClientSettings.AudioCompressionPolicy)sSCPolicyIndex;
+                        Client.Instance.Settings.SoundCompressionPolicy = nVal;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (!Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
+                    {
+                        ImGui.EndDisabled();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.sound_compression.tt"));
                     }
 
                     ImGui.TreePop();
@@ -943,6 +969,13 @@
                         Client.Instance.Settings.InterfaceSkin = dSkin = (ClientSettings.UISkin)sIdx;
                         Client.Instance.Settings.Save();
                         Client.Instance.Frontend.GuiWrapper.ChangeSkin(dSkin);
+                    }
+
+                    bool bHolidays = Client.Instance.Settings.HolidaySeasons;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.holidays"), ref bHolidays))
+                    {
+                        Client.Instance.Settings.HolidaySeasons = bHolidays;
+                        Client.Instance.Settings.Save();
                     }
 
                     ImGui.TreePop();

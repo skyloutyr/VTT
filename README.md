@@ -31,7 +31,7 @@
 * A dynamic fog of war system for both 3D and 2D environments, with all the scalability and fine controls you'd ever need.
 * Easy to setup multiplayer - just click host, enter the desired port and let your players connect.
 * An advanced distance measuring system that allows you to measure lines, circles, spheres, squares, cubes and cones, highlighting which objects fall into the measured shape, with the ability to leave those measurements in the scene with custom tooltips.
-* A fully fledged turn order tracker, reminiscent of those in turn-based games, with portraits and highlights.
+* A fully fledged turn order tracker, reminiscent of those in turn-based games, with portraits and highlights, which even notifies the players when it is their turn.
 * Full controls for fine object positioning, rotating and scaling, similar to those in professional 3d game engines such as unity.
 * A powerful particle system editor which allows for visual creation of complex particle systems which evolve according to complex rules, all setup with simple interface controls.
 * Thousands of icons for status effects, with a built-in search bar.
@@ -42,6 +42,7 @@
 * Skeletal animation support for 3d models.
 * Custom shaders for objects through a powerful node graph editor.
 * Good performance - both the networking and rendering parts of the application offer many optimizations and are built for older hardware, allowing the rendering of very complex scenes with millions upon millions of triangles, dynamic shadows, particles and high-resolution textures, that get delivered to the clients within seconds, all that with a consistently high framerate.
+* Audio assets support (.mp3, .wav and .ogg), with automatic compression if ffmpeg is installed that is streamed over network to clients, creating the ability to quickly and easily do music in your games. Supports ambient sounds for the map.
 
 ---
 
@@ -128,7 +129,7 @@ Custom shaders are by their nature not friendly to performance. They will requir
 
 ---
 
-## Setting up animated sprites
+## Setting up animated sprites and audio compression
 VTT supports webm animated sprites for 2D images (and technically 3D model textures). However before such sprite may be used 3rd party libraries must be installed.
 * Download full [FFmpeg](https://ffmpeg.org/) binaries. The ones that include both the .exe and .dll files are required (specifically, the following files must be present:)
    * avcodec-**.dll
@@ -152,6 +153,9 @@ After you've done this start up VTT. It should now be able to handle .webm files
 * Only the uploader (server host) needs FFmpeg installed for animated textures to work. VTT will convert the video file into an image sequence that other clients will download and use.
 * Please make sure your video file uses a reasonable resolution, length and framerate. VTT for performance reasons will use a single texture for the entire animation, and if there is too much data, all extra frames will be lost. The maximum texture size is limited by the GPU, and is typically 32k x 32k pixels at most on the hardware VTT is built for. If you import a 4k 166fps hour long video there is only so much data that can be packed onto that texture.
 
+The uploader (server host) also needs to perform this process if they wish their game's audio assets to be compressed. As with the animated sprites only the uploader needs ffmpeg installed, the clients do not need to do so.
+* Note that the hardware running the server itself (in case VTT is launched as dedicated server) does not need ffmpeg installed. Conversion of both video and audio data happens on the uploader's client side.
+
 ---
 ## Manual file manipulation
 In case it is necessary all VTT data can be found at SystemDrive/Users/UserName/AppData/Local/VTT and is stored in one of several formats:
@@ -165,6 +169,8 @@ You can edit, move and delete files. An asset file can't be loaded if either .ab
 Never edit these files while the application is running.
 
 Please do not edit the map fog of war .png files manually. They may be stored as .png but they don't contain easily editable data for any image editing software.
+
+If the uploader for audio had ffmpeg installed and audio is compressed (metadata will specify "SoundType" as 1, and include an array of "CompressedChunkOffsets"), the .ab file is a raw .mp3 file, which probably can be opened by any audio player. Please do not edit the file as the metadata's "CompressedChunkOffsets" array must be extremely precise, and editing the file without reflecting those changes in the metadata will cause issues.
 
 ---
 ## VSCC Integration

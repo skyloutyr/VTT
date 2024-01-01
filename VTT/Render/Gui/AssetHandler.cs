@@ -251,6 +251,7 @@
 
                                 meta.SampleRate = wa.SampleRate;
                                 meta.NumChannels = wa.NumChannels;
+                                meta.TotalDuration = wa.Duration;
                                 SoundData sound = new SoundData();
                                 sound.Meta = meta;
 
@@ -1003,10 +1004,17 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.mapAmbianceHovered != null && Client.Instance.IsAdmin)
+                    {
+                        new PacketChangeMapData() { Data = this._draggedRef.AssetID, MapID = state.clientMap.ID, Type = PacketChangeMapData.DataType.AmbientSoundID }.Send();
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.particleContainerHovered != null && Client.Instance.IsAdmin)
                     {
                         state.particleContainerHovered.SystemID = this._draggedRef.AssetID;
                         new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = state.particleContainerHovered.Serialize(), MapID = state.particleContainerHovered.Container.MapID, ObjectID = state.particleContainerHovered.Container.ID, ParticleID = state.particleContainerHovered.ID }.Send();
+                        haveResult = true;
                     }
 
                     if (!haveResult && state.shaderGraphExtraTexturesHovered != null && Client.Instance.IsAdmin)

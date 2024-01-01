@@ -593,6 +593,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float SoundAssetVolume { get; set; } = 1.0f;
 
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float SoundAmbianceVolume { get; set; } = 1.0f;
+
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool EnableSoundChatMessage { get; set; } = true;
@@ -685,6 +689,7 @@
                 SoundMasterVolume = 1.0f,
                 SoundUIVolume = 1.0f,
                 SoundMapFXVolume = 1.0f,
+                SoundAmbianceVolume = 1.0f,
                 EnableSoundChatMessage = true,
                 EnableChatNotification = true,
                 EnableSoundTurnTracker = true,

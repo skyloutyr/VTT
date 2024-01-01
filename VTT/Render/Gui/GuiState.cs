@@ -42,6 +42,7 @@
         public bool changeParticleColorPopup = false;
         public bool editShaderPopup = false;
         public Map clientMap = null;
+        public Map mapAmbianceHovered = null;
 
         public void Reset()
         {
@@ -80,6 +81,7 @@
             clientMap = Client.Instance.CurrentMap;
             editShaderPopup = false;
             editModelPopup = false;
+            mapAmbianceHovered = null;
         }
     }
 }

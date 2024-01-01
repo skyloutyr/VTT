@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using VTT.Asset;
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -360,6 +361,12 @@
                         state.clientMap.SunEnabled = mEnableSun;
                         PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mEnableSun, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.SunEnabled };
                         pcmd.Send();
+                        if (!mEnableSun)
+                        {
+                            state.clientMap.EnableShadows = false;
+                            pcmd = new PacketChangeMapData() { Data = false, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnableShadows };
+                            pcmd.Send();
+                        }
                     }
 
                     if (ImGui.IsItemHovered())
@@ -449,6 +456,81 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.drawing.tt"));
                     }
 
+                    #region Ambiance
+
+                    bool mouseOverAmbiance = DrawMapAssetRecepticle(state.clientMap, state.clientMap.AmbientSoundID, () => this._draggedRef?.Type == AssetType.Sound, this.AssetMusicIcon);
+                    if (mouseOverAmbiance && this._draggedRef != null && this._draggedRef.Type == AssetType.Sound)
+                    {
+                        state.mapAmbianceHovered = state.clientMap;
+                    }
+
+                    if (mouseOverAmbiance)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.ambiance.tt"));
+                    }
+
+                    if (ImGui.Button(lang.Translate("ui.maps.clear_ambiance") + "###Clear Ambiance"))
+                    {
+                        if (Client.Instance.IsAdmin)
+                        {
+                            new PacketChangeMapData() { Data = Guid.Empty, MapID = state.clientMap.ID, Type = PacketChangeMapData.DataType.AmbientSoundID }.Send();
+                        }
+                    }
+
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.ambient_volume"));
+                    float fAV = state.clientMap.AmbientSoundVolume;
+                    if (ImGui.SliderFloat("##Ambiance Volume", ref fAV, 0, 1))
+                    {
+                        fAV = Math.Clamp(fAV, 0, 1);
+                        state.clientMap.AmbientSoundVolume = fAV;
+                        new PacketChangeMapData() { Data = fAV, MapID = state.clientMap.ID, Type = PacketChangeMapData.DataType.AmbientVolume }.Send();
+                    }
+
+                    ImGui.NewLine();
+                    unsafe bool DrawMapAssetRecepticle(Map m, Guid aId, Func<bool> assetEval, GL.Texture iconTex = null)
+                    {
+                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                        var imScreenPos = ImGui.GetCursorScreenPos();
+                        var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                        bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+                        uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+                        drawList.AddRect(imScreenPos, rectEnd, bClr);
+                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                        string mdlTxt = "";
+                        int mdlTxtOffset = 0;
+                        if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
+                        {
+                            AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
+                            mdlTxt += aRef.Name;
+                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                            {
+                                GL.Texture tex = ap.GetGLTexture();
+                                if (tex != null)
+                                {
+                                    drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                                    mdlTxtOffset += 20;
+                                }
+                            }
+                        }
+
+                        if (Guid.Equals(Guid.Empty, aId))
+                        {
+                            mdlTxt = lang.Translate("generic.none");
+                        }
+                        else
+                        {
+                            mdlTxt += " (" + aId.ToString() + ")\0";
+                        }
+
+                        drawList.PushClipRect(imScreenPos, rectEnd);
+                        drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                        drawList.PopClipRect();
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                        return mouseOver;
+                    }
+
+                    #endregion
+
                     #region Darkvision
                     Map cMap = state.clientMap;
                     bool mDarkvision = cMap.EnableDarkvision;
@@ -530,6 +612,7 @@
                         }
                     }
                     #endregion
+
 
                     void RecursivelyRenderMaps(MPMapPointer dir, bool first, System.Numerics.Vector2 wC)
                     {

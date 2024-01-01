@@ -849,6 +849,15 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    ImGui.Text(lang.Translate("menu.settings.sound.ambiance"));
+                    float svAm = Client.Instance.Settings.SoundAmbianceVolume;
+                    if (ImGui.SliderFloat("##AmbianceVolume", ref svAm, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundAmbianceVolume = svAm;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
                     if (ImGui.TreeNode(lang.Translate("menu.settings.category.sound.individual") + "###Individual sound notifications"))
                     {
                         ImGui.TextDisabled(lang.Translate("menu.settings.category.sound.individual.ui"));

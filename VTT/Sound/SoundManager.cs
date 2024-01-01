@@ -6,6 +6,7 @@
     using System.Collections.Generic;
     using System.IO;
     using VTT.Asset;
+    using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -22,9 +23,10 @@
         public ALSoundContainer PingAny { get; set; }
 
         public List<(SoundCategory, int)> ActiveSources { get; } = new List<(SoundCategory, int)>();
-        private readonly Dictionary<int, BufferedSound> _bufferedSounds = new Dictionary<int, BufferedSound>();
 
-        private readonly Dictionary<Guid, ALSoundContainer> _assetContainers = new Dictionary<Guid, ALSoundContainer>();
+        private readonly object _assetLock = new object();
+        public List<AssetSound> AllPlayingAssets { get; } = new List<AssetSound>();
+        public Dictionary<Guid, AssetSound> PlayingAssetsByID { get; } = new Dictionary<Guid, AssetSound>();
 
         public void Init()
         {
@@ -115,7 +117,6 @@
         }
 
         private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer)>();
-        private readonly ConcurrentQueue<Guid> _waitingOnAssetRequests = new ConcurrentQueue<Guid>();
         private readonly ConcurrentQueue<Guid> _assetsToStop = new ConcurrentQueue<Guid>();
 
         public void PlaySound(ALSoundContainer sc, SoundCategory cat)
@@ -137,7 +138,12 @@
         public void PlayAsset(Guid assetID)
         {
             Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(assetID, AssetType.Sound, out _); // Request here
-            this._waitingOnAssetRequests.Enqueue(assetID);
+            lock (this._assetLock)
+            {
+                AssetSound asound = new AssetSound(this, assetID, SoundCategory.Asset, AssetSound.Type.Asset);
+                this.AllPlayingAssets.Add(asound);
+                this.PlayingAssetsByID.Add(asound.ID, asound);
+            }
         }
 
         public void StopAsset(Guid assetID) => this._assetsToStop.Enqueue(assetID);
@@ -145,13 +151,8 @@
         private bool _volumeChangedNotification;
         public void NotifyOfVolumeChanges() => this._volumeChangedNotification = true;
 
-        private void SetSourceVolume(SoundCategory cat, int src)
+        public float GetCategoryVolume(SoundCategory cat)
         {
-            if (Client.Instance.Settings.DisableSounds)
-            {
-                return;
-            }
-
             float volume = Client.Instance.Settings.SoundMasterVolume;
             if (cat == SoundCategory.UI)
             {
@@ -168,10 +169,24 @@
                 volume *= Client.Instance.Settings.SoundAssetVolume;
             }
 
-            AL.Source(src, ALSourcef.Gain, volume);
+            if (cat == SoundCategory.Ambiance)
+            {
+                volume *= Client.Instance.Settings.SoundAmbianceVolume;
+            }
+
+            return volume;
         }
 
-        private readonly List<Guid> _rewaitAssetList = new List<Guid>();
+        public void SetSourceVolume(SoundCategory cat, int src)
+        {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                return;
+            }
+
+            AL.Source(src, ALSourcef.Gain, this.GetCategoryVolume(cat));
+        }
+
         public void Update()
         {
             if (Client.Instance.Settings.DisableSounds)
@@ -181,6 +196,7 @@
 
             if (this.IsAvailable)
             {
+                Map m = Client.Instance.CurrentMap;
                 ALC.MakeContextCurrent(this._ctx);
 
                 while (!this._assetsToStop.IsEmpty)
@@ -190,11 +206,17 @@
                         break;
                     }
 
-                    foreach (KeyValuePair<int, BufferedSound> kv in this._bufferedSounds)
+                    lock (this._assetLock)
                     {
-                        if (kv.Value.AssetID.Equals(aSID))
+                        for (int i = this.AllPlayingAssets.Count - 1; i >= 0; i--)
                         {
-                            AL.SourceStop(kv.Key);
+                            AssetSound asound = this.AllPlayingAssets[i];
+                            if (asound.AssetID.Equals(aSID))
+                            {
+                                asound.Free();
+                                this.AllPlayingAssets.RemoveAt(i);
+                                this.PlayingAssetsByID.Remove(asound.ID);
+                            }
                         }
                     }
                 }
@@ -208,23 +230,10 @@
                         AL.SourceStop(src.Item2);
                     }
 
-                    bool isBuffered = this._bufferedSounds.TryGetValue(src.Item2, out BufferedSound bs);
                     if (state == ALSourceState.Stopped || this._assetsClear)
                     {
-                        if (isBuffered)
-                        {
-                            if (bs.Initialized) // May have a sound that isn't initialized yet and is reporting stopped
-                            {
-                                bs.Free();
-                                this._bufferedSounds.Remove(src.Item2);
-                                this.ActiveSources.RemoveAt(i);
-                            }
-                        }
-                        else
-                        {
-                            AL.DeleteSource(src.Item2);
-                            this.ActiveSources.RemoveAt(i);
-                        }
+                        AL.DeleteSource(src.Item2);
+                        this.ActiveSources.RemoveAt(i);
                     }
                     else
                     {
@@ -232,10 +241,72 @@
                         {
                             this.SetSourceVolume(src.Item1, src.Item2);
                         }
+                    }
+                }
 
-                        if (isBuffered)
+                lock (this._assetLock)
+                {
+                    AssetSound ambientSound = null;
+                    for (int i = this.AllPlayingAssets.Count - 1; i >= 0; i--)
+                    {
+                        AssetSound asound = this.AllPlayingAssets[i];
+                        asound.Update();
+                        if (asound.Stopped)
                         {
-                            bs.Update();
+                            asound.Free();
+                            this.AllPlayingAssets.RemoveAt(i);
+                            this.PlayingAssetsByID.Remove(asound.ID);
+                        }
+                        else
+                        {
+                            if (this._volumeChangedNotification && asound.Started)
+                            {
+                                asound.VolumeChangedNotification();
+                            }
+
+                            if (asound.SoundType == AssetSound.Type.Ambient)
+                            {
+                                if (ambientSound != null)
+                                {
+                                    asound.Free();
+                                    this.AllPlayingAssets.RemoveAt(i);
+                                    this.PlayingAssetsByID.Remove(asound.ID);
+                                }
+                                else
+                                {
+                                    ambientSound = asound;
+                                }
+                            }
+                        }
+                    }
+
+                    Guid asID = m?.AmbientSoundID ?? Guid.Empty;
+                    if (asID.Equals(Guid.Empty)) // Map doesn't have ambient sound or no map present
+                    {
+                        if (ambientSound != null)
+                        {
+                            ambientSound.Free();
+                            this.AllPlayingAssets.Remove(ambientSound);
+                            this.PlayingAssetsByID.Remove(ambientSound.ID);
+                        }
+                    }
+                    else // Map has ambient sound
+                    {
+                        if (ambientSound != null) // We have ambient sound
+                        {
+                            if (!ambientSound.AssetID.Equals(asID)) // Ambient sound ID doesn't match
+                            {
+                                ambientSound.Free();
+                                this.AllPlayingAssets.Remove(ambientSound);
+                                this.PlayingAssetsByID.Remove(ambientSound.ID);
+                            } // No handler for if the sound matches - is removed already if fully played, NOOP if still playing anyways
+                        }
+                        else // We don't have ambient sound
+                        {
+                            // Request a new ambient sound of type ambient
+                            AssetSound asound = new AssetSound(this, asID, SoundCategory.Ambiance, AssetSound.Type.Ambient);
+                            this.AllPlayingAssets.Add(asound);
+                            this.PlayingAssetsByID.Add(asound.ID, asound);
                         }
                     }
                 }
@@ -243,22 +314,21 @@
                 if (this._assetsClear)
                 {
                     this._queuedSounds.Clear();
-                    this._rewaitAssetList.Clear();
-                    foreach (KeyValuePair<Guid, ALSoundContainer> item in this._assetContainers)
+                    lock (this._assetLock)
                     {
-                        item.Value.Free();
-                    }
-
-                    this._assetContainers.Clear();
-                    lock (this._soundBuffersResponsesLock)
-                    {
-                        this._soundBuffersResponses.Clear();
-                        foreach (KeyValuePair<Guid, StreamingMpeg> item in this._mpegDecoderStorage)
+                        foreach (AssetSound asound in this.AllPlayingAssets)
                         {
-                            item.Value.Free();
+                            asound.Free();
                         }
 
-                        this._mpegDecoderStorage.Clear();
+                        this.AllPlayingAssets.Clear();
+                        this.PlayingAssetsByID.Clear();
+                        foreach (KeyValuePair<Guid, ALSoundContainer> kv in this._assetContainers)
+                        {
+                            kv.Value.Free();
+                        }
+
+                        this._assetContainers.Clear();
                     }
 
                     this._assetsClear = false;
@@ -280,103 +350,32 @@
                         AL.SourcePlay(src);
                     }
                 }
-
-                this._rewaitAssetList.Clear();
-                while (!this._waitingOnAssetRequests.IsEmpty)
-                {
-                    if (!this._waitingOnAssetRequests.TryDequeue(out Guid aID))
-                    {
-                        break;
-                    }
-
-                    if (this._assetContainers.TryGetValue(aID, out ALSoundContainer asc))
-                    {
-                        this.PlaySound(asc, SoundCategory.Asset);
-                    }
-
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(aID, AssetType.Sound, out Asset a);
-                    if (status == AssetStatus.Await)
-                    {
-                        this._rewaitAssetList.Add(aID);
-                        continue;
-                    }
-
-                    if (status is AssetStatus.Error or AssetStatus.NoAsset)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Error, "Sound system did not receive requested sound " + aID);
-                        continue;
-                    }
-
-                    if (a == null)
-                    {
-                        this._rewaitAssetList.Add(aID);
-                        continue;
-                    }
-
-                    if (status == AssetStatus.Return)
-                    {
-                        if (a.Type != AssetType.Sound)
-                        {
-                            Client.Instance.Logger.Log(LogLevel.Error, "Sound system received a non-sound for id " + aID);
-                            continue;
-                        }
-
-                        if (a.Sound == null)
-                        {
-                            this._rewaitAssetList.Add(aID);
-                            continue;
-                        }
-
-                        if (a.Sound.Meta.IsFullData)
-                        {
-                            this._assetContainers.Add(aID, new ALSoundContainer(a.Sound.RawAudio));
-                            this._rewaitAssetList.Add(aID); // allow sound to play on next update
-                            continue;
-                        }
-                        else
-                        {
-                            BufferedSound bs = new BufferedSound(a.Sound.Meta.SampleRate, a.Sound.Meta.NumChannels, a.Sound.Meta.TotalChunks, aID);
-                            this._bufferedSounds[bs.Source] = bs;
-                            this.ActiveSources.Add((SoundCategory.Asset, bs.Source));
-                        }
-                    }
-                }
-
-                foreach (Guid id in this._rewaitAssetList)
-                {
-                    this._waitingOnAssetRequests.Enqueue(id);
-                }
             }
         }
 
         private readonly Dictionary<(Guid, Guid, int), byte[]> _soundBuffersResponses = new Dictionary<(Guid, Guid, int), byte[]>();
-        private readonly Dictionary<Guid, StreamingMpeg> _mpegDecoderStorage = new Dictionary<Guid, StreamingMpeg>();
-        private readonly object _soundBuffersResponsesLock = new object();
 
         public bool RequestBufferedSound(Guid soundID, Guid assetID, int cIndex, out ushort[] data)
         {
-            lock (this._soundBuffersResponsesLock)
+            (Guid, Guid, int) key = (soundID, assetID, cIndex);
+            bool haveRequest = this._soundBuffersResponses.TryGetValue(key, out byte[] val);
+            if (haveRequest && val == null)
             {
-                (Guid, Guid, int) key = (soundID, assetID, cIndex);
-                bool haveRequest = this._soundBuffersResponses.TryGetValue(key, out byte[] val);
-                if (haveRequest && val == null)
-                {
-                    data = null;
-                    return false; // Wait
-                }
-
-                if (haveRequest && val != null)
-                {
-                    data = this.ConvertBytesToSound(val);
-                    this._soundBuffersResponses.Remove(key);
-                    return true;
-                }
-
-                this._soundBuffersResponses.Add(key, null);
-                Client.Instance.Frontend.EnqueueOrExecuteTask(() => new PacketSoundBuffer() { SoundID = soundID, AssetID = assetID, ChunkIndex = cIndex }.Send());
                 data = null;
-                return false;
+                return false; // Wait
             }
+
+            if (haveRequest && val != null)
+            {
+                data = this.ConvertBytesToSound(val);
+                this._soundBuffersResponses.Remove(key);
+                return true;
+            }
+
+            this._soundBuffersResponses.Add(key, null);
+            Client.Instance.Frontend.EnqueueOrExecuteTask(() => new PacketSoundBuffer() { SoundID = soundID, AssetID = assetID, ChunkIndex = cIndex }.Send());
+            data = null;
+            return false;
         }
 
         private ushort[] ConvertBytesToSound(byte[] data)
@@ -391,27 +390,33 @@
             return ret;
         }
 
-        public void BufferedSourceReadyCallback(int src) => this.SetSourceVolume(SoundCategory.Asset, src);
+        public void BufferedSourceReadyCallback(SoundCategory cat, int src) => this.SetSourceVolume(cat, src);
 
         public void ReceiveSoundBuffer(Guid soundID, Guid assetID, int cIndex, byte[] buffer)
         {
             Client.Instance.Logger.Log(LogLevel.Debug, $"Got sound data for sound {soundID}, chunk index of {cIndex}.");
-            lock (this._soundBuffersResponsesLock)
+            lock (this._assetLock)
             {
+                if (!this.PlayingAssetsByID.TryGetValue(soundID, out AssetSound asound))
+                {
+                    Client.Instance.Logger.Log(LogLevel.Warn, $"Got sound buffer info for sound {soundID}, asset {assetID} and chunk {cIndex}, but no such sound is queued. This may be due to a sound purge. All data will be discarded.");
+                    return;
+                }
+
                 if (Client.Instance.AssetManager.Refs.TryGetValue(assetID, out AssetRef aRef))
                 {
                     if (aRef?.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg)
                     {
-                        if (!this._mpegDecoderStorage.TryGetValue(soundID, out StreamingMpeg resources))
+                        if (asound.MpegDecoder == null)
                         {
-                            Client.Instance.Logger.Log(LogLevel.Debug, $"Sound is mpeg and didn't have a streaming context associated, creating (chunk index is {cIndex}).");
-                            resources = new StreamingMpeg();
-                            this._mpegDecoderStorage[soundID] = resources;
+                            Client.Instance.Logger.Log(LogLevel.Error, $"Sound data for sound {soundID} appears to be an Mpeg frame, but the sound itself didn't specify itself as an mpeg sound. This should be impossible. Sound and data will be discarded!");
+                            asound.Stopped = true;
+                            return;
                         }
 
-                        resources.AddData(buffer);
                         bool lastBuffer = cIndex + 1 >= aRef.Meta.SoundInfo.TotalChunks;
-                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = resources.ReadSamples(!lastBuffer, out bool readToEnd);
+                        asound.MpegDecoder.AddData(buffer);
+                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = asound.MpegDecoder.ReadSamples(!lastBuffer, out bool readToEnd);
                         if (readToEnd && !lastBuffer)
                         {
                             Client.Instance.Logger.Log(LogLevel.Warn, $"Sound data read to end for sound {soundID}, asset {assetID} at chunk {cIndex}, but more chunks were still expected!");
@@ -420,8 +425,6 @@
                         if (lastBuffer)
                         {
                             Client.Instance.Logger.Log(LogLevel.Debug, $"Mpeg data was read to end (steaming context says {readToEnd}).");
-                            resources.Free();
-                            this._mpegDecoderStorage.Remove(assetID);
                         }
                     }
                     else
@@ -436,6 +439,10 @@
                 }
             }
         }
+
+        private readonly Dictionary<Guid, ALSoundContainer> _assetContainers = new Dictionary<Guid, ALSoundContainer>();
+        public bool TrtGetRawSoundContainer(Guid assetID, out ALSoundContainer soundContainer) => this._assetContainers.TryGetValue(assetID, out soundContainer);
+        public void AddFullSoundData(Guid assetID, Asset a) => this._assetContainers.Add(assetID, new ALSoundContainer(a.Sound.RawAudio));
     }
 
     public enum SoundCategory
@@ -443,6 +450,7 @@
         Unknown,
         UI,
         MapFX,
-        Asset
+        Asset,
+        Ambiance
     }
 }

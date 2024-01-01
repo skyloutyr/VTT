@@ -198,6 +198,23 @@
                         m.EnableDrawing = (bool)this.Data;
                         break;
                     }
+
+                    case DataType.AmbientSoundID:
+                    {
+                        m.AmbientSoundID = (Guid)this.Data;
+                        break;
+                    }
+
+                    case DataType.AmbientVolume:
+                    {
+                        m.AmbientSoundVolume = (float)this.Data;
+                        if (!isServer)
+                        {
+                            client?.Frontend?.Sound?.NotifyOfVolumeChanges();
+                        }
+
+                        break;
+                    }
                 }
 
                 if (isServer)
@@ -251,6 +268,7 @@
                 case DataType.SunIntensity:
                 case DataType.AmbietIntensity:
                 case DataType.Camera2DHeight:
+                case DataType.AmbientVolume:
                 {
                     this.Data = br.ReadSingle();
                     break;
@@ -270,6 +288,12 @@
                 case DataType.CameraDirection:
                 {
                     this.Data = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                    break;
+                }
+
+                case DataType.AmbientSoundID:
+                {
+                    this.Data = br.ReadGuid();
                     break;
                 }
             }
@@ -308,6 +332,7 @@
                 case DataType.SunIntensity:
                 case DataType.AmbietIntensity:
                 case DataType.Camera2DHeight:
+                case DataType.AmbientVolume:
                 {
                     bw.Write((float)this.Data);
                     break;
@@ -331,6 +356,12 @@
                     bw.Write(d.X);
                     bw.Write(d.Y);
                     bw.Write(d.Z);
+                    break;
+                }
+
+                case DataType.AmbientSoundID:
+                {
+                    bw.Write((Guid)this.Data);
                     break;
                 }
             }
@@ -360,7 +391,9 @@
             Is2D,
             Camera2DHeight,
             SunColor,
-            EnableDrawing
+            EnableDrawing,
+            AmbientSoundID,
+            AmbientVolume
         }
     }
 }

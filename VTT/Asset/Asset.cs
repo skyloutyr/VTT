@@ -158,6 +158,7 @@
             public int SampleRate { get; set; }
             public int NumChannels { get; set; }
             public int TotalChunks { get; set; }
+            public double TotalDuration { get; set; }
             public long[] CompressedChunkOffsets { get; set; } = Array.Empty<long>();
 
             public void Deserialize(DataElement e)
@@ -167,6 +168,7 @@
                 this.TotalChunks = e.Get<int>("NumChunks");
                 this.SampleRate = e.Get<int>("Frequency");
                 this.NumChannels = e.Get<int>("Channels");
+                this.TotalDuration = e.Get("Duration", double.NaN);
                 this.CompressedChunkOffsets = e.GetArray("Offsets", (n, c) => c.Get<long>(n), Array.Empty<long>());
             }
 
@@ -178,6 +180,7 @@
                 ret.Set("NumChunks", this.TotalChunks);
                 ret.Set("Frequency", this.SampleRate);
                 ret.Set("Channels", this.NumChannels);
+                ret.Set("Duration", this.TotalDuration);
                 ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.Set(n, v));
                 return ret;
             }

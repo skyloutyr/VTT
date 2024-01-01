@@ -17,6 +17,7 @@
         public int ByteRate { get; set; } // SampleRate * NumChannels * BitsPerSample / 8
         public int BlockAlign { get; set; } // NumChannels * BitsPerSample / 8
         public int BitsPerSample { get; set; }
+        public double Duration { get; set; }
         public bool IsReady { get; set; }
 
         private unsafe ushort* _hdata;
@@ -81,8 +82,10 @@
                     Buffer.MemoryCopy(ptr, this._hdata, raw.LongLength, raw.LongLength);
                 }
 
+                this.Duration = (double)raw.LongLength / (nCh * sr * 2);
                 this.IsReady = true;
             }
+
         }
 
         public WaveAudio(VorbisReader vorbis)
@@ -90,6 +93,7 @@
             this.NumChannels = vorbis.Channels;
             this.SampleRate = vorbis.SampleRate;
             this.DataLength = LoadDataFromStream((buffer, offset, size) => vorbis.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
+            this.Duration = vorbis.TotalTime.TotalSeconds;
             this.IsReady = true;
         }
 
@@ -98,6 +102,7 @@
             this.NumChannels = mpeg.Channels;
             this.SampleRate = mpeg.SampleRate;
             this.DataLength = LoadDataFromStream((buffer, offset, size) => mpeg.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
+            this.Duration = mpeg.Duration.TotalSeconds;
             this.IsReady = true;
         }
 

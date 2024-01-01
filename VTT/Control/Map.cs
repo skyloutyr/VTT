@@ -40,6 +40,8 @@
 
         public bool Is2D { get; set; }
         public float Camera2DHeight { get; set; } = 5.0f;
+        public Guid AmbientSoundID { get; set; } = Guid.Empty;
+        public float AmbientSoundVolume { get; set; } = 1.0f;
 
         public Vector3 DefaultCameraPosition { get; set; } = new Vector3(5, 5, 5);
         public Vector3 DefaultCameraRotation { get; set; } = new Vector3(-1, -1, -1).Normalized();
@@ -52,7 +54,6 @@
         public List<MapObject> Objects { get; } = new List<MapObject>();
         public List<RulerInfo> PermanentMarks { get; } = new List<RulerInfo>();
         public List<DrawingPointContainer> Drawings { get; } = new List<DrawingPointContainer>();
-
         public Dictionary<Guid, MapObject> ObjectsByID { get; } = new Dictionary<Guid, MapObject>();
 
         public Dictionary<Guid, (Guid, float)> DarkvisionData { get; } = new Dictionary<Guid, (Guid, float)>();
@@ -218,6 +219,8 @@
 
             this.Is2D = e.Get("Is2D", false);
             this.Camera2DHeight = e.Get("Camera2DHeight", 5.0f);
+            this.AmbientSoundID = e.GetGuid("AmbientSoundID", Guid.Empty);
+            this.AmbientSoundVolume = e.Get("AmbientVolume", 1.0f);
             if (this.IsServer)
             {
                 this.Objects.AddRange(e.GetArray("Objects", (name, elem) =>
@@ -288,6 +291,8 @@
             ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.Set(n, e.Serialize()));
             ret.Set("Is2D", this.Is2D);
             ret.Set("Camera2DHeight", this.Camera2DHeight);
+            ret.SetGuid("AmbientSoundID", this.AmbientSoundID);
+            ret.Set("AmbientVolume", this.AmbientSoundVolume);
             return ret;
         }
 

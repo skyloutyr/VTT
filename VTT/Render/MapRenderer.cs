@@ -495,7 +495,8 @@
 
                 if (!camMovement.Equals(default))
                 {
-                    this.ClientCamera.Position += camMovement * (float)time * 0.75f;
+                    // Not a bug: note that the timestep here is fixed for smooth motion regardless of framerate!
+                    this.ClientCamera.Position += camMovement * 1/60f * 0.75f; 
                     this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                 }
             }

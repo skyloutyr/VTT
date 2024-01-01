@@ -55,6 +55,8 @@
         public Texture ChangeFOW { get; set; }
         public Texture ToggleTurnOrder { get; set; }
         public Texture Measure { get; set; }
+        public Texture PlayerStop { get; set; }
+        public Texture PlayerNext { get; set; }
 
         public Texture MoveGizmo { get; set; }
         public Texture MoveArrows { get; set; }
@@ -229,6 +231,8 @@
             this.Rotate = OpenGLUtil.LoadUIImage("icons8-process-40");
             this.Scale = OpenGLUtil.LoadUIImage("icons8-resize-40");
             this.ChangeFOW = OpenGLUtil.LoadUIImage("icons8-visualy-impaired-40");
+            this.PlayerStop = OpenGLUtil.LoadUIImage("icons8-stop-40");
+            this.PlayerNext = OpenGLUtil.LoadUIImage("icons8-double-right-40");
 
             this.MoveGizmo = OpenGLUtil.LoadUIImage("icons8-abscissa-40");
             this.MoveArrows = OpenGLUtil.LoadUIImage("icons8-move-separate-40");
@@ -342,6 +346,7 @@
             this.RenderJournals(lang, this.FrameState);
             this.RenderAssets(lang, this.FrameState);
             this.RenderNetworkAdminPanel(lang, this.FrameState);
+            this.RenderMusicPlayer(lang, this.FrameState, time);
             this.ParticleEditorRenderer.Render(this._editedParticleSystemId, this._draggedRef, this.FrameState);
             this.ShaderEditorRenderer.Render(this._editedShaderId, this._draggedRef, this.FrameState);
             this.RenderLogs(lang);

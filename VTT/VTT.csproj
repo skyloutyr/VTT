@@ -77,6 +77,7 @@
     <None Remove="Embed\icons8-dice-40.png" />
     <None Remove="Embed\icons8-dice-60.png" />
     <None Remove="Embed\icons8-double-down-80.png" />
+    <None Remove="Embed\icons8-double-right-40.png" />
     <None Remove="Embed\icons8-drag-40.png" />
     <None Remove="Embed\icons8-edit-40.png" />
     <None Remove="Embed\icons8-erase-40.png" />
@@ -118,6 +119,7 @@
     <None Remove="Embed\icons8-so-so-40.png" />
     <None Remove="Embed\icons8-sound-40.png" />
     <None Remove="Embed\icons8-sphere-58.png" />
+    <None Remove="Embed\icons8-stop-40.png" />
     <None Remove="Embed\icons8-stopwatch-40.png" />
     <None Remove="Embed\icons8-surface-40.png" />
     <None Remove="Embed\icons8-sword-80.png" />
@@ -206,9 +208,11 @@
     <EmbeddedResource Include="Embed\icon-beta_smaller-ny.png" />
     <EmbeddedResource Include="Embed\icon-beta_smallest-hw.png" />
     <EmbeddedResource Include="Embed\icon-beta_smallest-ny.png" />
+    <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
+    <EmbeddedResource Include="Embed\icons8-stop-40.png" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

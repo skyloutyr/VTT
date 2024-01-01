@@ -43,6 +43,7 @@
         public bool editShaderPopup = false;
         public Map clientMap = null;
         public Map mapAmbianceHovered = null;
+        public bool movingAssetOverMusicPlayerAddPoint = false;
 
         public void Reset()
         {
@@ -82,6 +83,7 @@
             editShaderPopup = false;
             editModelPopup = false;
             mapAmbianceHovered = null;
+            movingAssetOverMusicPlayerAddPoint = false;
         }
     }
 }

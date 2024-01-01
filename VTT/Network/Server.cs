@@ -29,6 +29,7 @@
         public ConcurrentDictionary<Guid, ServerClient> ClientsByID { get; } = new ConcurrentDictionary<Guid, ServerClient>();
 
         public AssetManager AssetManager { get; } = new AssetManager() { IsServer = true };
+        public MusicPlayer MusicPlayer { get; } = new MusicPlayer(true);
         private Dictionary<Guid, ServerMapPointer> Maps { get; } = new Dictionary<Guid, ServerMapPointer>();
 
         public object mapsLock = new object();
@@ -178,6 +179,7 @@
             this.LoadAllMaps();
             this.LoadChat();
             this.LoadJournals();
+            this.LoadMusicPlayer();
             this.Logger.Log(LogLevel.Info, "Server creation complete");
             this.running = true;
             new Thread(this.RunWorker) { IsBackground = true, Priority = ThreadPriority.Lowest }.Start();
@@ -225,6 +227,18 @@
                         this.Logger.Exception(LogLevel.Error, e);
                     }
                 }
+            }
+        }
+
+        private void LoadMusicPlayer()
+        {
+            string fLoc = Path.Combine(IOVTT.ServerDir, "music_player.ued");
+            if (File.Exists(fLoc))
+            {
+                using Stream s = File.OpenRead(fLoc);
+                using BinaryReader br = new BinaryReader(s);
+                DataElement de = new DataElement(br);
+                this.MusicPlayer.Deserialize(de);
             }
         }
 
@@ -353,6 +367,12 @@
                 }
 
                 this.AssetManager?.ServerSoundHeatmap?.Pulse();
+
+                if (this.MusicPlayer.NeedsSave)
+                {
+                    this.MusicPlayer.Serialize().Write(Path.Combine(IOVTT.ServerDir, "music_player.ued"));
+                    this.MusicPlayer.NeedsSave = false;
+                }
 
                 Thread.Sleep(1000);
             }

@@ -59,6 +59,11 @@
         public void Send(NetClient client = null)
         {
             client ??= Client.Instance.NetClient;
+            if (client == null)
+            {
+                return;    
+            }
+
             this.Session = client.Id;
             this.IsServer = false;
             using MemoryStream ms = new MemoryStream();

@@ -95,7 +95,7 @@
 
                 #endregion
 
-                string copyright = "SkyLouTyr MIT © 2022";
+                string copyright = "SkyLouTyr MIT © 2024";
                 Vector2 cLen = ImGuiHelper.CalcTextSize(copyright);
                 ImGui.SetCursorPos(new Vector2(width, height) - new Vector2(8, 8) - cLen);
                 ImGui.TextUnformatted(copyright);
@@ -328,6 +328,7 @@
                         ImGui.Text("    day-camera");
                         ImGui.Text("    dice");
                         ImGui.Text("    double-down");
+                        ImGui.Text("    double-right");
                         ImGui.Text("    drag");
                         ImGui.Text("    edit");
                         ImGui.Text("    erase");
@@ -368,6 +369,7 @@
                         ImGui.Text("    so-so");
                         ImGui.Text("    sound");
                         ImGui.Text("    sphere");
+                        ImGui.Text("    stop");
                         ImGui.Text("    stopwatch");
                         ImGui.Text("    surface");
                         ImGui.Text("    sword");
@@ -854,6 +856,15 @@
                     if (ImGui.SliderFloat("##AmbianceVolume", ref svAm, 0, 1))
                     {
                         Client.Instance.Settings.SoundAmbianceVolume = svAm;
+                        Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
+                        Client.Instance.Settings.Save();
+                    }
+
+                    ImGui.Text(lang.Translate("menu.settings.sound.music"));
+                    float svMs = Client.Instance.Settings.SoundMusicVolume;
+                    if (ImGui.SliderFloat("##MusicVolume", ref svMs, 0, 1))
+                    {
+                        Client.Instance.Settings.SoundMusicVolume = svMs;
                         Client.Instance.Frontend.Sound.NotifyOfVolumeChanges();
                         Client.Instance.Settings.Save();
                     }

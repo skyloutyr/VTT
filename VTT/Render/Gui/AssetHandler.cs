@@ -1017,6 +1017,13 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.movingAssetOverMusicPlayerAddPoint && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Sound)
+                    {
+                        (Guid, float) kv = (this._draggedRef.AssetID, 1.0f);
+                        new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.Add, IndexMain = Client.Instance.Frontend.Sound.MusicPlayer.Tracks.Count, Data = kv }.Send();
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.shaderGraphExtraTexturesHovered != null && Client.Instance.IsAdmin)
                     {
                         if (state.shaderGraphExtraTexturesHoveredIndex == -1)

@@ -142,6 +142,9 @@
                     }
                 }
 
+                new PacketMusicPlayerFullData() { SerializedMusicPlayer = server.MusicPlayer.Serialize() }.Send(sc);
+                new PacketMusicPlayerSetIndex() { Index = server.MusicPlayer.CurrentTrackPosition }.Send(sc);
+
                 sc.Info.IsLoggedOn = true;
                 new PacketClientOnlineNotification() { ClientID = sc.ID, Status = true }.Broadcast();
             }

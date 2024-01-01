@@ -19,13 +19,18 @@
         public SoundCategory Category { get; init; }
         public SoundManager Container { get; init; }
         public Type SoundType { get; init; }
+        public float SecondsPlayed { get; set; }
         public float Volume
         {
             get => this._volumeBase;
             set
             {
+                if (this._volumeBase != value)
+                {
+                    this._volumeChanged = true;
+                }
+
                 this._volumeBase = value;
-                this._volumeChanged = true;
             }
         }
 
@@ -54,7 +59,7 @@
                 vCat *= Client.Instance.CurrentMap?.AmbientSoundVolume ?? 1.0f;
             }
 
-            AL.Source(this._srcId, ALSourcef.Gain, vCat * this._volumeBase);
+            AL.Source(this._srcId, ALSourcef.Gain, this.Container.AdjustVolumeForNonLinearity(vCat * this._volumeBase));
         }
 
         public void Update()
@@ -102,6 +107,7 @@
                                     Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} was specified as non-mpeg streaming sound, buffer created and queued.");
                                 }
 
+                                this.VolumeChangedNotification();
                                 this.Started = true;
                             }
                         }
@@ -127,21 +133,46 @@
 
             if (AL.IsSource(this._srcId))
             {
-                if (this._volumeChanged)
+                this.Buffer?.Update(this);
+                ALSourceState alss = AL.GetSourceState(this._srcId);
+
+                if (alss == ALSourceState.Playing)
                 {
-                    this.VolumeChangedNotification();
-                    this._volumeChanged = false;
+                    if (this._volumeChanged && this.Started)
+                    {
+                        this.VolumeChangedNotification();
+                        this._volumeChanged = false;
+                    }
                 }
 
-                this.Buffer?.Update(this);
-                if (AL.GetSourceState(this._srcId) == ALSourceState.Stopped)
+                if (alss == ALSourceState.Stopped)
                 {
                     this.Stopped = true;
                     AL.DeleteSource(this._srcId);
                     this._srcId = -1;
                 }
+
+                AL.GetSource(this._srcId, ALSourcef.SecOffset, out float vS);
+                float delta = vS - this._lastSoundVS;
+                if (delta > 0)
+                {
+                    this.SecondsPlayed += delta;
+                    this._lastSoundDelta = delta;
+                }
+                else
+                {
+                    if (float.IsNegative(delta))
+                    {
+                        this.SecondsPlayed += this._lastSoundDelta;
+                    }
+                }
+
+                this._lastSoundVS = vS;
             }
         }
+
+        private float _lastSoundVS;
+        private float _lastSoundDelta;
 
         public void Free()
         {
@@ -149,7 +180,15 @@
             if (this._srcId != -1)
             {
                 this.Stopped = true;
-                AL.DeleteSource(this._srcId);
+                if (AL.IsSource(this._srcId))
+                {
+                    if (AL.GetSourceState(this._srcId) == ALSourceState.Playing)
+                    {
+                        AL.SourceStop(this._srcId);
+                    }
+
+                    AL.DeleteSource(this._srcId);
+                }
             }
 
             this.Buffer?.Free();
@@ -159,7 +198,7 @@
         public enum Type
         {
             Asset,
-            Playlist,
+            Music,
             Ambient
         }
     }

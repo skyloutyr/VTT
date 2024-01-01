@@ -222,6 +222,7 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * If you control-click the transition button in the animations section of an object it will transition the animation for all clients immediately.
 * Objects can be marked as info objects. When marked as such they will also display their description when moused-over.
 * Particles may have variety by using sprite sheets, with fine control over the selection of a given sprite.
+* A rudimentary music player that has different playing modes, volume slider, ordering and basic controls.
 
 ---
 ## Known issues, suggestions and missing features tracker

@@ -63,7 +63,7 @@
                         float sMax = float.NaN;
                         if (aStatus == AssetStatus.Return && a?.Type == AssetType.Sound && a?.Sound?.Meta != null)
                         {
-                            AssetRef aref = Client.Instance.AssetManager.FindRefForAsset(a);
+                            AssetRef aref = Client.Instance.IsAdmin ? Client.Instance.AssetManager.FindRefForAsset(a) : null;
                             if (aref != null)
                             {
                                 musicName = aref.Name;

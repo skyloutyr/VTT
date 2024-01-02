@@ -27,7 +27,7 @@
                 if (am.Refs.TryGetValue(this.RefID, out AssetRef aref))
                 {
                     string fLoc = aref.ServerPointer.FileLocation;
-                    string jsLoc = Path.ChangeExtension(fLoc, ".json");
+                    string jsLoc = fLoc + ".json";
                     string pLoc = Path.Combine(IOVTT.ServerDir, "Previews", aref.ServerPointer.PreviewPointer.ToString() + ".png");
                     try
                     {

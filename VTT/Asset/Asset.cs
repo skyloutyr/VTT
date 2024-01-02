@@ -160,6 +160,7 @@
             public int TotalChunks { get; set; }
             public double TotalDuration { get; set; }
             public long[] CompressedChunkOffsets { get; set; } = Array.Empty<long>();
+            public string SoundAssetName { get; set; }
 
             public void Deserialize(DataElement e)
             {
@@ -170,6 +171,7 @@
                 this.NumChannels = e.Get<int>("Channels");
                 this.TotalDuration = e.Get("Duration", double.NaN);
                 this.CompressedChunkOffsets = e.GetArray("Offsets", (n, c) => c.Get<long>(n), Array.Empty<long>());
+                this.SoundAssetName = e.Get("Name", " ");
             }
 
             public DataElement Serialize()
@@ -182,6 +184,7 @@
                 ret.Set("Channels", this.NumChannels);
                 ret.Set("Duration", this.TotalDuration);
                 ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.Set(n, v));
+                ret.Set("Name", " ");
                 return ret;
             }
 

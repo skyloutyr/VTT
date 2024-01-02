@@ -252,6 +252,7 @@
                                 meta.SampleRate = wa.SampleRate;
                                 meta.NumChannels = wa.NumChannels;
                                 meta.TotalDuration = wa.Duration;
+                                meta.SoundAssetName = Path.GetFileNameWithoutExtension(s);
                                 SoundData sound = new SoundData();
                                 sound.Meta = meta;
 

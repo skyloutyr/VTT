@@ -1,5 +1,6 @@
 ﻿namespace VTT.Asset
 {
+    using Newtonsoft.Json;
     using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.Formats.Gif;
@@ -170,6 +171,14 @@
                 {
                     AssetBinaryPointer abp = new AssetBinaryPointer() { FileLocation = x.file, PreviewPointer = aId };
                     AssetRef aRef = new AssetRef() { AssetID = aId, AssetPreviewID = aId, IsServer = true, ServerPointer = abp, Meta = meta };
+                    if (aRef.Meta != null && aRef.Meta.Type == AssetType.Sound)
+                    {
+                        if (!string.Equals(aRef.Meta.SoundInfo.SoundAssetName, aRef.Name))
+                        {
+                            aRef.Meta.SoundInfo.SoundAssetName = aRef.Name;
+                            File.WriteAllText(aRef.ServerPointer.FileLocation + ".json", JsonConvert.SerializeObject(aRef.Meta));
+                        }
+                    }
 
                     x.assetDir.Refs.Add(aRef);
                     lock (localRefLock)

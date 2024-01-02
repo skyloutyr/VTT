@@ -22,9 +22,16 @@
                     if (server.AssetManager.Refs.ContainsKey(this.RefID))
                     {
                         AssetRef aRef = server.AssetManager.Refs[RefID];
+                        bool isSoundNfo = false;
                         if (AssetBinaryPointer.ReadAssetMetadata(aRef.ServerPointer.FileLocation, out AssetMetadata am))
                         {
                             am.Name = this.Name;
+                            if (am.Type == AssetType.Sound && am.SoundInfo != null)
+                            {
+                                am.SoundInfo.SoundAssetName = this.Name;
+                                isSoundNfo = true;
+                            }
+
                             if (am.ConstructedFromOldBinaryEncoding)
                             {
                                 AssetBinaryPointer.ChangeAssetNameForOldEncoding(aRef.ServerPointer.FileLocation, am);
@@ -41,7 +48,7 @@
                         }
 
                         aRef.Name = this.Name;
-                        this.Broadcast(c => c.IsAdmin);
+                        this.Broadcast(c => isSoundNfo || c.IsAdmin);
                     }
                     else
                     {
@@ -61,10 +68,21 @@
                 {
                     AssetRef aRef = client.AssetManager.Refs[this.RefID];
                     aRef.Name = this.Name;
+                    if (client.AssetManager.Assets.TryGetValue(this.RefID, out Asset a) && a != null && a.Type == AssetType.Sound && a.Sound?.Meta != null)
+                    {
+                        a.Sound.Meta.SoundAssetName = this.Name;
+                    }
                 }
                 else
                 {
-                    client.Logger.Log(LogLevel.Warn, "Got asset name change packet for non-existing asset!");
+                    if (client.AssetManager.Assets.TryGetValue(this.RefID, out Asset a) && a != null && a.Type == AssetType.Sound && a.Sound?.Meta != null)
+                    {
+                        a.Sound.Meta.SoundAssetName = this.Name;
+                    }
+                    else
+                    {
+                        client.Logger.Log(LogLevel.Warn, "Got asset name change packet for non-existing asset!");
+                    }
                 }
             }
         }

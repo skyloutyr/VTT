@@ -71,7 +71,14 @@
                             }
                             else
                             {
-                                musicName = lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
+                                if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
+                                {
+                                    musicName = a.Sound.Meta.SoundAssetName;
+                                }
+                                else
+                                {
+                                    musicName = lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
+                                }
                             }
                         }
                         else
@@ -223,6 +230,21 @@
                                             assetTypeIcon =
                                                 aref.Meta.SoundInfo.IsFullData ? this.AssetSoundIcon :
                                                 aref.Meta.SoundInfo.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
+                                                this.AssetMusicIcon;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
+                                        {
+                                            soundName = a.Sound.Meta.SoundAssetName;
+                                        }
+
+                                        if (a?.Sound?.Meta != null)
+                                        {
+                                            assetTypeIcon =
+                                                a.Sound.Meta.IsFullData ? this.AssetSoundIcon :
+                                                a.Sound.Meta.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
                                                 this.AssetMusicIcon;
                                         }
                                     }

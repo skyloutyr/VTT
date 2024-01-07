@@ -1100,6 +1100,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.use_ubo.tt"));
                     }
 
+                    bool multithreadDxtC = Client.Instance.Settings.MultithreadedTextureCompression;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.multithread_texture_compression") + "###MultithreadTextureCompression", ref multithreadDxtC))
+                    {
+                        Client.Instance.Settings.MultithreadedTextureCompression = multithreadDxtC;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.multithread_texture_compression.tt"));
+                    }
+
                     if (!bDebug)
                     {
                         ImGui.EndDisabled();

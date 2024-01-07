@@ -657,3 +657,5 @@ ui.music_player.volume=Громкость
 menu.settings.sound.music=Музыка
 menu.settings.async_texture_upload=Асинхронные Текстуры
 menu.settings.async_texture_upload.tt=Активирует асинхронную загрузку текстур на видеокарту.\nУлучшает производительность при прогрузке текстур, но использует больше VRAM.\nМожет вызвать проблемы на старых или маломощных видеокартах.\nАвтоматически выключится, если у видеокарты закончится видеопамять.
+menu.settings.multithread_texture_compression=Параллельное Сжатие Текстур
+menu.settings.multithread_texture_compression.tt=Управляет режимом многопоточности при сжатии текстур.

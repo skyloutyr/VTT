@@ -657,3 +657,5 @@ ui.music_player.volume=Volume
 menu.settings.sound.music=Music
 menu.settings.async_texture_upload=Async Textures
 menu.settings.async_texture_upload.tt=Controls whether the textures are uploaded asynchronomously to the gpu.\nImproves texture load performance at the cost of increased VRAM usage.\nMay cause issues on low-end or old GPUs.\nWill self-disable if the GPU runs out of memory.
+menu.settings.multithread_texture_compression=Parallel Texture Compresssion
+menu.settings.multithread_texture_compression.tt=Controls whether textures are compressed in a multithreaded way.

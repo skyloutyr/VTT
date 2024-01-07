@@ -394,7 +394,7 @@
                     // Load DXT async.
                     ThreadPool.QueueUserWorkItem(x =>
                     {
-                        StbDxt.CompressedMipmapData mipArray = StbDxt.CompressImageWithMipmaps(img, true, haveMips);
+                        StbDxt.CompressedMipmapData mipArray = StbDxt.CompressImageWithMipmaps(img, Client.Instance.Settings.MultithreadedTextureCompression, haveMips);
                         Size imgS = new Size(img.Width, img.Height);
                         img.Dispose();
                         Client.Instance.DoTask(() =>

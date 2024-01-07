@@ -653,6 +653,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool AsyncTextureUploading { get; set; } = true;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool MultithreadedTextureCompression { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -711,6 +715,7 @@
                 SoundCompressionPolicy = AudioCompressionPolicy.Always,
                 HolidaySeasons = true,
                 AsyncTextureUploading = true,
+                MultithreadedTextureCompression = true
             };
 
             ret.Save();

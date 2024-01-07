@@ -26,7 +26,7 @@
                 idlp.PushClipRect(pos, pos + rect);
                 if (textSize.X <= rect.X)
                 {
-                    idlp.AddText(new Vector2(pos.X + rect.X / 2 - textSize.X / 2, pos.Y + rect.Y / 2 - textSize.Y / 2), ImGui.GetColorU32(ImGuiCol.Text), text);
+                    idlp.AddText(new Vector2(pos.X + (rect.X / 2) - (textSize.X / 2), pos.Y + (rect.Y / 2) - (textSize.Y / 2)), ImGui.GetColorU32(ImGuiCol.Text), text);
                 }
                 else
                 {
@@ -34,8 +34,8 @@
                     //float missingPortion = textSize.X - rect.X + 64;
                     oX %= textSize.X + 32;
 
-                    idlp.AddText(new Vector2(pos.X - oX, pos.Y + rect.Y / 2 - textSize.Y / 2), ImGui.GetColorU32(ImGuiCol.Text), text);
-                    idlp.AddText(new Vector2(pos.X + 32 + textSize.X - oX, pos.Y + rect.Y / 2 - textSize.Y / 2), ImGui.GetColorU32(ImGuiCol.Text), text);
+                    idlp.AddText(new Vector2(pos.X - oX, pos.Y + (rect.Y / 2) - (textSize.Y / 2)), ImGui.GetColorU32(ImGuiCol.Text), text);
+                    idlp.AddText(new Vector2(pos.X + 32 + textSize.X - oX, pos.Y + (rect.Y / 2) - (textSize.Y / 2)), ImGui.GetColorU32(ImGuiCol.Text), text);
                 }
 
                 idlp.PopClipRect();
@@ -71,14 +71,9 @@
                             }
                             else
                             {
-                                if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
-                                {
-                                    musicName = a.Sound.Meta.SoundAssetName;
-                                }
-                                else
-                                {
-                                    musicName = lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
-                                }
+                                musicName = !string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim())
+                                    ? a.Sound.Meta.SoundAssetName
+                                    : lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
                             }
                         }
                         else
@@ -282,7 +277,7 @@
 
                                 if (this._isDraggingTrack && hover)
                                 {
-                                    float deltaY = (cPos.Y + 16) - ImGui.GetMousePos().Y;
+                                    float deltaY = cPos.Y + 16 - ImGui.GetMousePos().Y;
                                     uint clrOrange = Color.Orange.Abgr();
                                     if (deltaY > 0)
                                     {

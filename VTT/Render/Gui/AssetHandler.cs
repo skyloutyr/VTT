@@ -10,7 +10,6 @@
     using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using VTT.Asset;
@@ -230,9 +229,9 @@
 
                                 img = wa.GenWaveForm(1024, 1024);
                                 byte[] dataArray = null;
-                                bool doCompress = Client.Instance.Frontend.FFmpegWrapper.IsInitialized &&
-                                    Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.Always ||
-                                    Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.LargeFilesOnly && wa.DataLength > 4194304; // 4Mb
+                                bool doCompress = (Client.Instance.Frontend.FFmpegWrapper.IsInitialized &&
+                                    Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.Always) ||
+                                    (Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.LargeFilesOnly && wa.DataLength > 4194304); // 4Mb
 
                                 if (doCompress && wa.TryGetMpegEncodedData(out dataArray, out long[] packetOffsets) && dataArray != null)
                                 {

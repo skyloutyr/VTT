@@ -2,9 +2,7 @@
 {
     using NLayer;
     using System;
-    using System.Buffers.Binary;
     using System.IO;
-    using VTT.Control;
     using VTT.Network;
     using VTT.Util;
 
@@ -14,8 +12,8 @@
         private MemoryStream _ms;
         private int _lastReadIndex;
         private int _totalData;
-        private float[] _buf;
-        private UnsafeResizeableArray<byte> _rArray;
+        private readonly float[] _buf;
+        private readonly UnsafeResizeableArray<byte> _rArray;
         private int _maxBufferStep;
 
         public StreamingMpeg()

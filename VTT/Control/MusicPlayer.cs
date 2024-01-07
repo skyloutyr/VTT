@@ -9,7 +9,6 @@
     public class MusicPlayer : ISerializable
     {
         public readonly object @lock = new object();
-        private readonly bool _isServer;
 
         public List<(Guid, float)> Tracks { get; } = new List<(Guid, float)>();
         public LoopMode RepeatState { get; set; } = LoopMode.None;
@@ -17,12 +16,7 @@
         public bool NeedsSave { get; set; }
         public float Volume { get; set; } = 1;
 
-        public MusicPlayer(bool server) => this._isServer = server;
-
-        public void ForcePlay(int trackIndex)
-        {
-            this.CurrentTrackPosition = trackIndex;
-        }
+        public void ForcePlay(int trackIndex) => this.CurrentTrackPosition = trackIndex;
 
         public void DoGuardedActionNow(Action<MusicPlayer> act)
         {
@@ -162,14 +156,7 @@
                 this.Tracks.AddRange(e.GetArray("Tracks", (n, c) =>
                 {
                     DataElement m = c.Get<DataElement>(n, null);
-                    if (m != null)
-                    {
-                        return (m.GetGuid("id"), m.Get<float>("v"));
-                    }
-                    else
-                    {
-                        return (Guid.Empty, 0);
-                    }
+                    return m != null ? (m.GetGuid("id"), m.Get<float>("v")) : ((Guid, float))(Guid.Empty, 0);
 
                 }, Array.Empty<(Guid, float)>()));
 

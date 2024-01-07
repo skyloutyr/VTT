@@ -3,7 +3,6 @@
     using OpenTK.Audio.OpenAL;
     using System;
     using VTT.Asset;
-    using VTT.Control;
     using VTT.Network;
 
     public class AssetSound

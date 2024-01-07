@@ -17,7 +17,7 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             MusicPlayer mp = isServer ? server.MusicPlayer : client.Frontend?.Sound?.MusicPlayer;
-            bool hasPermission = isServer ? this.Sender.IsAdmin : true;
+            bool hasPermission = !isServer || this.Sender.IsAdmin;
             bool anyActions = false;
             Logger l = this.GetContextLogger();
             if (mp != null)
@@ -118,11 +118,7 @@
                         if (hasPermission)
                         {
                             mp.NeedsSave = true;
-                            mp.DoGuardedActionNow(x =>
-                            {
-                                x.CurrentTrackPosition = x.AdvanceIndex();
-                            });
-
+                            mp.DoGuardedActionNow(x => x.CurrentTrackPosition = x.AdvanceIndex());
                             anyActions = true;
                         }
                         else

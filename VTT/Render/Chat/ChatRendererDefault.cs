@@ -41,7 +41,6 @@
                 ChatBlock value = this.Container.Blocks[i + 1];
                 if (key.Text.ToLower().Equals("name"))
                 {
-                    Vector2 cursorOld = ImGui.GetCursorPos();
                     text += value.Text + "\n";
                 }
             }

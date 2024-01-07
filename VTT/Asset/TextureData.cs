@@ -42,11 +42,11 @@
             mat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
             mat.RoughnessFactor = 1f;
             mat.AlphaCutoff = 0f;
-            mat.BaseColorTexture = this.GetOrCreateGLTexture(out TextureAnimation dta);
+            mat.BaseColorTexture = this.GetOrCreateGLTexture(false, out TextureAnimation dta);
             mat.BaseColorAnimation = dta;
             if (this.Meta.AlbedoIsEmissive)
             {
-                mat.EmissionTexture = this.GetOrCreateGLTexture(out dta);
+                mat.EmissionTexture = this.GetOrCreateGLTexture(false, out dta);
                 mat.EmissionAnimation = dta;
             }
             else
@@ -341,7 +341,7 @@
 
         public Texture CopyGlTexture(PixelInternalFormat internalFormat = PixelInternalFormat.One)
         {
-            Texture tex = this.GetOrCreateGLTexture(out _);
+            Texture tex = this.GetOrCreateGLTexture(true, out _);
             Texture ret = new Texture(TextureTarget.Texture2D);
             ret.Bind();
             if (internalFormat == PixelInternalFormat.One)
@@ -364,7 +364,7 @@
             return ret;
         }
 
-        public Texture GetOrCreateGLTexture(out TextureAnimation animationData)
+        public Texture GetOrCreateGLTexture(bool forceSync, out TextureAnimation animationData)
         {
             if (this._glTex == null)
             {
@@ -405,29 +405,33 @@
                                 bool sameID = gTex.CheckUniqueID(protectedID); // ID protection system to prevent accidental texture overrides.
                                 if (isTexture && sameID)
                                 {
-                                    GL.BindTexture(TextureTarget.Texture2D, gTex);
-                                    gTex.Size = imgS;
+                                    AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
                                     InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
-                                    int nMips = mipArray.numMips;
-                                    if (nMips > 1)
+                                    if (!Client.Instance.Settings.AsyncTextureUploading || !forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), (PixelInternalFormat)glif, mipArray, (d, r) => mipArray.Free()))
                                     {
-                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
-                                        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nMips - 1);
-                                        int dw = imgS.Width;
-                                        int dh = imgS.Height;
-                                        for (int i = 0; i < nMips; ++i)
+                                        GL.BindTexture(TextureTarget.Texture2D, gTex);
+                                        gTex.Size = imgS;
+                                        int nMips = mipArray.numMips;
+                                        if (nMips > 1)
                                         {
-                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray.dataLength[i], mipArray.data[i]);
-                                            dw >>= 1;
-                                            dh >>= 1;
+                                            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+                                            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nMips - 1);
+                                            int dw = imgS.Width;
+                                            int dh = imgS.Height;
+                                            for (int i = 0; i < nMips; ++i)
+                                            {
+                                                GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray.dataLength[i], mipArray.data[i]);
+                                                dw >>= 1;
+                                                dh >>= 1;
+                                            }
                                         }
-                                    }
-                                    else
-                                    {
-                                        GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray.dataLength[0], mipArray.data[0]);
-                                    }
+                                        else
+                                        {
+                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray.dataLength[0], mipArray.data[0]);
+                                        }
 
-                                    mipArray.Free();
+                                        mipArray.Free();
+                                    }
                                 }
                                 else
                                 {
@@ -460,13 +464,17 @@
                 else
                 {
                     pif = OpenGLUtil.MapCompressedFormat(pif);
-                    this._glTex.SetImage(img, pif);
-                    if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
+                    AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
+                    if (!Client.Instance.Settings.AsyncTextureUploading || !forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? 7 : 0, (d, r) => d.Image.Dispose()))
                     {
-                        this._glTex.GenerateMipMaps();
-                    }
+                        this._glTex.SetImage(img, pif);
+                        if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
+                        {
+                            this._glTex.GenerateMipMaps();
+                        }
 
-                    img.Dispose();
+                        img.Dispose();
+                    }
                 }
             }
 

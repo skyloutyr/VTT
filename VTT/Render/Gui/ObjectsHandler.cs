@@ -1030,7 +1030,7 @@
                             System.Numerics.Vector2 cPn = ImGui.GetCursorPos();
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();
                             System.Numerics.Vector2 oPs = ImGui.GetStyle().WindowPadding;
-                            GL.Texture tex = a.Texture.GetOrCreateGLTexture(out VTT.Asset.Glb.TextureAnimation anim);
+                            GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
                             VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
                             System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
                             backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Xy.SystemVector() + frame.LocationUniform.Zw.SystemVector());

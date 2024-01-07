@@ -430,10 +430,17 @@
                 if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
                 {
                     Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
-                    AssetPreview prev = new AssetPreview() { GLTex = tex };
-                    this.Container.Portraits[aID] = prev;
-                    ap = prev;
-                    return AssetStatus.Return;
+                    if (tex.IsAsyncReady)
+                    {
+                        AssetPreview prev = new AssetPreview() { GLTex = tex };
+                        this.Container.Portraits[aID] = prev;
+                        ap = prev;
+                        return AssetStatus.Return;
+                    }
+                    else
+                    {
+                        return AssetStatus.Await;
+                    }
                 }
 
                 if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.glReady ?? false))

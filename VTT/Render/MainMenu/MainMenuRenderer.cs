@@ -774,6 +774,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.async_dxt_compression.tt"));
                     }
 
+                    bool asyncTUpload = Client.Instance.Settings.AsyncTextureUploading;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.async_texture_upload") + "###Upload Textures Async", ref asyncTUpload))
+                    {
+                        Client.Instance.Settings.AsyncTextureUploading = asyncTUpload;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.async_texture_upload.tt"));
+                    }
+
                     string[] drawingsPerformance = { lang.Translate("menu.settings.drawings.none"), lang.Translate("menu.settings.drawings.minimum"), lang.Translate("menu.settings.drawings.limited"), lang.Translate("menu.settings.drawings.standard"), lang.Translate("menu.settings.drawings.extra"), lang.Translate("menu.settings.drawings.unlimited") };
                     int dPerfIndex = (int)Client.Instance.Settings.DrawingsPerformance;
 

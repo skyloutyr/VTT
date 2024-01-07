@@ -12,6 +12,7 @@
     using System.IO;
     using System.Runtime.InteropServices;
     using System.Threading;
+    using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Render.Gui;
@@ -25,6 +26,7 @@
         public SoundManager Sound { get; set; }
         public FFmpegWrapper FFmpegWrapper { get; set; }
         public GameWindow GameHandle { get; set; }
+        public AsyncTextureUploader TextureUploader { get; private set; }
 
         public ConcurrentQueue<Action> ActionsToDo { get; } = new ConcurrentQueue<Action>();
 
@@ -363,6 +365,7 @@
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
+            this.TextureUploader = new AsyncTextureUploader();
             this.Sound = new SoundManager();
             this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();
@@ -460,6 +463,7 @@
                 }
             }
 
+            this.TextureUploader.ProcessPrimary();
             this.Renderer.Render(obj.Time);
             while (!this._gpuReqs.IsEmpty)
             {

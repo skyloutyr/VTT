@@ -2,7 +2,6 @@
 {
     using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.Advanced;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Buffers;
@@ -16,6 +15,9 @@
 
         public Size Size { get; set; }
         public const int ImageMaximumContiguousMemoryAllowance = 1024 * 1024 * 128; // 128 mb
+        public AsyncLoadState AsyncState { get; set; } = AsyncLoadState.NonAsync;
+        public bool IsAsyncReady => this.AsyncState <= AsyncLoadState.Ready;
+        public TextureTarget Target => this._type;
 
         private static readonly ConcurrentDictionary<uint, Guid> _textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
 
@@ -36,7 +38,11 @@
         }
 
         public Guid GetUniqueID() => _textureProtection[this._glId];
-        public bool CheckUniqueID(Guid id) => id.Equals(_textureProtection[this._glId]);
+        public bool CheckUniqueID(Guid id)
+        {
+            bool b = _textureProtection.TryGetValue(this._glId, out Guid gid);
+            return b && id.Equals(gid);
+        }
 
         public void Bind() => GL.BindTexture(this._type, this._glId);
 
@@ -228,5 +234,13 @@
         Mirror,
         ClampToBorder,
         ClampToEdge
+    }
+
+    public enum AsyncLoadState
+    {
+        NonAsync = 0,
+        Queued = 2,
+        Processing = 3,
+        Ready = 1
     }
 }

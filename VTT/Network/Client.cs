@@ -649,6 +649,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool HolidaySeasons { get; set; } = true;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AsyncTextureUploading { get; set; } = true;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -705,7 +709,8 @@
                 AsyncDXTCompression = true,
                 DrawingsPerformance = DrawingsResourceAllocationMode.Standard,
                 SoundCompressionPolicy = AudioCompressionPolicy.Always,
-                HolidaySeasons = true
+                HolidaySeasons = true,
+                AsyncTextureUploading = true,
             };
 
             ret.Save();

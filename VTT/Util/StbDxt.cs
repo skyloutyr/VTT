@@ -656,10 +656,12 @@ public static unsafe class StbDxt
 
         IntPtr[] ret = new IntPtr[numMipmaps];
         int[] sizes = new int[numMipmaps];
+        Size[] szs = new Size[numMipmaps];
         ret[0] = (IntPtr)CompressImage(img, out int nBytesMip);
         sizes[0] = nBytesMip;
         int mW = img.Width;
         int mH = img.Height;
+        szs[0] = new Size(mW, mH);
         for (int i = 1; i < numMipmaps; ++i)
         {
             mW >>= 1;
@@ -668,10 +670,11 @@ public static unsafe class StbDxt
             mipped.Mutate(x => x.Resize(mW, mH, KnownResamplers.Box));
             ret[i] = (IntPtr)CompressImage(mipped, out nBytesMip);
             sizes[i] = nBytesMip;
+            szs[i] = new Size(mW, mH);
             mipped.Dispose();
         }
 
-        return new CompressedMipmapData(ret, sizes);
+        return new CompressedMipmapData(ret, szs, sizes);
     }
 
     public static byte* CompressImage(Image<Rgba32> img, out int nBytes)
@@ -724,10 +727,11 @@ public static unsafe class StbDxt
     public unsafe class CompressedMipmapData
     {
         public IntPtr[] data;
+        public Size[] sizes;
         public int[] dataLength;
         public int numMips => data.Length;
 
-        public CompressedMipmapData(IntPtr[] data, int[] dataLength)
+        public CompressedMipmapData(IntPtr[] data, Size[] sizes, int[] dataLength)
         {
             this.data = data;
             this.dataLength = dataLength;

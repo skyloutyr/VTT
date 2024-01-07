@@ -655,3 +655,5 @@ ui.music_player.play.tt=Play the currently selected track
 ui.music_player.next.tt=Switch to the next track
 ui.music_player.volume=Volume
 menu.settings.sound.music=Music
+menu.settings.async_texture_upload=Async Textures
+menu.settings.async_texture_upload.tt=Controls whether the textures are uploaded asynchronomously to the gpu.\nImproves texture load performance at the cost of increased VRAM usage.\nMay cause issues on low-end or old GPUs.\nWill self-disable if the GPU runs out of memory.

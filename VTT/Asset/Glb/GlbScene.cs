@@ -1177,6 +1177,8 @@
 
         public Image<Rgba32> CreatePreview(int width, int height, Vector4 clearColor, bool portrait = false)
         {
+            // TODO update preview creation code to account for async texture loading
+
             // Create camera
             glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera.Camera) : this.Camera.Camera;
             GlbObject cameraObject = portrait ? (this.PortraitCamera ?? this.Camera) : this.Camera;

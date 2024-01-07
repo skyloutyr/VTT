@@ -429,9 +429,11 @@
             {
                 if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
                 {
-                    Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
-                    if (tex.IsAsyncReady)
+                    // Safe to do as CopyGlTexture will call GetOrCreateGLTexture anyway. GetOrCreate will not queue multiple times if texture is not ready
+                    Texture t1 = a?.Texture.GetOrCreateGLTexture(false, out _);
+                    if (t1.IsAsyncReady)
                     {
+                        Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
                         AssetPreview prev = new AssetPreview() { GLTex = tex };
                         this.Container.Portraits[aID] = prev;
                         ap = prev;

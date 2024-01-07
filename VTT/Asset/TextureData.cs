@@ -506,15 +506,29 @@
             cfg.PreferContiguousImageBuffers = mayBeContinuous;
             Image<Rgba32> img = new Image<Rgba32>(cfg, imgW, imgH);
             GraphicsOptions go = new GraphicsOptions() { Antialias = false, BlendPercentage = 1, ColorBlendingMode = PixelColorBlendingMode.Normal };
-            Parallel.For(0, this.Frames.Length, i =>
+            if (this.Frames.Length > 1)
             {
-                Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
-                RectangleF r = positions[i];
-                allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
-                img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
-                f.Dispose();
-                //this.Frames[i] = this.Frames[i].ClearBinary();
-            });
+                Parallel.For(0, this.Frames.Length, i =>
+                {
+                    Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
+                    RectangleF r = positions[i];
+                    allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
+                    img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
+                    f.Dispose();
+                    //this.Frames[i] = this.Frames[i].ClearBinary();
+                });
+            }
+            else
+            {
+                if (this.Frames.Length == 1)
+                {
+                    Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[0].ImageBinary);
+                    RectangleF r = positions[0];
+                    allFrames[0] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[0].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
+                    img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
+                    f.Dispose();
+                }
+            }
 
             this._cachedAnim = new TextureAnimation(allFrames);
             return img;

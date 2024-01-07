@@ -900,6 +900,7 @@
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                     bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
+                    bool haveAssetButNoMTTextures = !assetReady && !(a?.Model?.GLMdl?.MaterialsGlReady ?? true);
                     if (i > 0 || mo.ClientDeferredRejectThisFrame)
                     {
                         if (assetReady)
@@ -918,7 +919,7 @@
                         }
 
                         mo.ClientRenderedThisFrame = true;
-                        if (mo.DoNotRender)
+                        if (mo.DoNotRender || haveAssetButNoMTTextures)
                         {
                             continue;
                         }

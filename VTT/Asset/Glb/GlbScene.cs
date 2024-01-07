@@ -42,6 +42,33 @@
         private volatile int _glRequestsTodo;
         private readonly bool _checkGlRequests;
         private readonly ModelData.Metadata _meta;
+        private bool _matsReady;
+
+        public bool GlReady => this.glReady && this.MaterialsGlReady;
+
+        public bool MaterialsGlReady
+        {
+            get
+            {
+                if (this._matsReady)
+                {
+                    return true;
+                }
+                else
+                {
+                    foreach (GlbMaterial mat in this.Materials)
+                    {
+                        if (!mat.GetTexturesAsyncStatus())
+                        {
+                            return false;
+                        }
+                    }
+
+                    this._matsReady = true;
+                    return true;
+                }
+            }
+        }
 
         public GlbScene()
         {
@@ -1134,7 +1161,7 @@
         private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
         public void Render(ShaderProgram shader, Matrix4 baseMatrix, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
         {
-            if (!this.glReady)
+            if (!this.GlReady)
             {
                 return;
             }

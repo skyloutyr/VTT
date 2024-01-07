@@ -16,8 +16,41 @@
         public Size Size { get; set; }
         public const int ImageMaximumContiguousMemoryAllowance = 1024 * 1024 * 128; // 128 mb
         public AsyncLoadState AsyncState { get; set; } = AsyncLoadState.NonAsync;
-        public bool IsAsyncReady => this.AsyncState <= AsyncLoadState.Ready;
+        public bool IsAsyncReady
+        {
+            get
+            {
+                if (this.AsyncState != AsyncLoadState.NonAsync)
+                {
+                    if (this.AsyncState == AsyncLoadState.Ready)
+                    {
+                        if (this.AsyncFenceID.Equals(IntPtr.Zero))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            GL.GetSync(this.AsyncFenceID, SyncParameterName.SyncStatus, 1, out int vLen, out int vals); 
+                            if (vals == (int)Version32.Signaled)
+                            {
+                                GL.DeleteSync(this.AsyncFenceID);
+                                this.AsyncFenceID = IntPtr.Zero;
+                                return true;
+                            }
+
+                            return false;
+                        }
+                    }
+
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
         public TextureTarget Target => this._type;
+        public IntPtr AsyncFenceID { get; set; }
 
         private static readonly ConcurrentDictionary<uint, Guid> _textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
 

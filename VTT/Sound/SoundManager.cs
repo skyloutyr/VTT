@@ -27,7 +27,7 @@
         private readonly object _assetLock = new object();
         public List<AssetSound> AllPlayingAssets { get; } = new List<AssetSound>();
         public Dictionary<Guid, AssetSound> PlayingAssetsByID { get; } = new Dictionary<Guid, AssetSound>();
-        public MusicPlayer MusicPlayer { get; } = new MusicPlayer(false);
+        public MusicPlayer MusicPlayer { get; } = new MusicPlayer();
 
         public void Init()
         {

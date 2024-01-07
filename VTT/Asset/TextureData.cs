@@ -11,6 +11,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Threading;
+    using System.Threading.Tasks;
     using VTT.Asset.Glb;
     using VTT.GL;
     using VTT.Network;
@@ -393,7 +394,7 @@
                     // Load DXT async.
                     ThreadPool.QueueUserWorkItem(x =>
                     {
-                        StbDxt.CompressedMipmapData mipArray = StbDxt.CompressImageWithMipmaps(img, haveMips);
+                        StbDxt.CompressedMipmapData mipArray = StbDxt.CompressImageWithMipmaps(img, true, haveMips);
                         Size imgS = new Size(img.Width, img.Height);
                         img.Dispose();
                         Client.Instance.DoTask(() =>
@@ -407,8 +408,9 @@
                                 {
                                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
                                     InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
-                                    if (!Client.Instance.Settings.AsyncTextureUploading || !forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), (PixelInternalFormat)glif, mipArray, (d, r) => mipArray.Free()))
+                                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), (PixelInternalFormat)glif, mipArray, (d, r) => mipArray.Free()))
                                     {
+                                        gTex.AsyncState = AsyncLoadState.NonAsync;
                                         GL.BindTexture(TextureTarget.Texture2D, gTex);
                                         gTex.Size = imgS;
                                         int nMips = mipArray.numMips;
@@ -445,27 +447,13 @@
                         });
                     });
 
-                    // Meanwhile use a placeholder. Can't race condition due to same thread.
-                    using Image<Rgba32> ph = new Image<Rgba32>(2, 2);
-                    ph[0, 0] = new Rgba32(1, 0, 1, 1f);
-                    ph[1, 1] = new Rgba32(1, 0, 1, 1f);
-                    ph[1, 0] = new Rgba32(0, 0, 0, 1f);
-                    ph[0, 1] = new Rgba32(0, 0, 0, 1f);
-                    pif = OpenGLUtil.MapCompressedFormat(pif);
-                    this._glTex.SetImage(img, pif);
-                    if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
-                    {
-                        this._glTex.GenerateMipMaps();
-                    }
-
-                    ph.Dispose();
-
+                    this._glTex.AsyncState = AsyncLoadState.Queued; // Assume texture is async for now, will be set to non-async later if it isn't
                 }
                 else
                 {
                     pif = OpenGLUtil.MapCompressedFormat(pif);
                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
-                    if (!Client.Instance.Settings.AsyncTextureUploading || !forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? 7 : 0, (d, r) => d.Image.Dispose()))
+                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? 7 : 0, (d, r) => d.Image.Dispose()))
                     {
                         this._glTex.SetImage(img, pif);
                         if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
@@ -518,7 +506,7 @@
             cfg.PreferContiguousImageBuffers = mayBeContinuous;
             Image<Rgba32> img = new Image<Rgba32>(cfg, imgW, imgH);
             GraphicsOptions go = new GraphicsOptions() { Antialias = false, BlendPercentage = 1, ColorBlendingMode = PixelColorBlendingMode.Normal };
-            for (int i = 0; i < this.Frames.Length; ++i)
+            Parallel.For(0, this.Frames.Length, i =>
             {
                 Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
                 RectangleF r = positions[i];
@@ -526,7 +514,7 @@
                 img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
                 f.Dispose();
                 //this.Frames[i] = this.Frames[i].ClearBinary();
-            }
+            });
 
             this._cachedAnim = new TextureAnimation(allFrames);
             return img;

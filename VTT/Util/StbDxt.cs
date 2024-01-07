@@ -47,6 +47,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 [Flags]
 public enum CompressionMode
@@ -636,7 +637,7 @@ public static unsafe class StbDxt
         CompressColorBlock(dest, src, mode);
     }
 
-    public static CompressedMipmapData CompressImageWithMipmaps(Image<Rgba32> img, bool actuallyMip)
+    public static CompressedMipmapData CompressImageWithMipmaps(Image<Rgba32> img, bool multithread, bool actuallyMip)
     {
         int minWH = Math.Min(img.Width, img.Height);
         int numMipmaps = 1;
@@ -657,44 +658,69 @@ public static unsafe class StbDxt
         IntPtr[] ret = new IntPtr[numMipmaps];
         int[] sizes = new int[numMipmaps];
         Size[] szs = new Size[numMipmaps];
-        ret[0] = (IntPtr)CompressImage(img, out int nBytesMip);
-        sizes[0] = nBytesMip;
         int mW = img.Width;
         int mH = img.Height;
-        szs[0] = new Size(mW, mH);
-        for (int i = 1; i < numMipmaps; ++i)
+        for (int i = 0; i < numMipmaps; ++i)
         {
-            mW >>= 1;
-            mH >>= 1;
-            Image<Rgba32> mipped = img.Clone();
-            mipped.Mutate(x => x.Resize(mW, mH, KnownResamplers.Box));
-            ret[i] = (IntPtr)CompressImage(mipped, out nBytesMip);
-            sizes[i] = nBytesMip;
-            szs[i] = new Size(mW, mH);
-            mipped.Dispose();
+            if (i == 0)
+            {
+                ret[i] = (IntPtr)CompressImage(img, multithread, out int nBytesMip);
+                sizes[i] = nBytesMip;
+                szs[i] = new Size(mW, mH);
+            }
+            else
+            {
+                int lmW = mW >> i;
+                int lmH = mH >> i;
+                Image<Rgba32> mipped = img.Clone();
+                mipped.Mutate(x => x.Resize(lmW, lmH, KnownResamplers.Box));
+                ret[i] = (IntPtr)CompressImage(mipped, multithread, out int lnBytesMip);
+                sizes[i] = lnBytesMip;
+                szs[i] = new Size(lmW, lmH);
+                mipped.Dispose();
+            }
         }
 
         return new CompressedMipmapData(ret, szs, sizes);
     }
 
-    public static byte* CompressImage(Image<Rgba32> img, out int nBytes)
+    public static byte* CompressImage(Image<Rgba32> img, bool multithread, out int nBytes)
     {
         ImageMemoryView imv = CommitToMemory(img);
         int nBlocksX = ((img.Width + 3) & ~3) >> 2;
         int nBlocksY = ((img.Height + 3) & ~3) >> 2;
         nBytes = nBlocksX * nBlocksY * 16;
         byte* ret = (byte*)Marshal.AllocHGlobal(nBytes);
-        byte* blockData = stackalloc byte[16];
-        for (int y = 0; y < nBlocksY; ++y)
+        int tot = nBlocksX * nBlocksY;
+        if (multithread)
         {
-            for (int x = 0; x < nBlocksX; ++x)
+            Parallel.For(0, tot, i =>
             {
+                int x = i % nBlocksX;
+                int y = i / nBlocksX;
                 int blockX = x << 2;
                 int blockY = y << 2;
                 Rgba32* mem = imv.GetBlock(blockX, blockY);
+                byte* blockData = stackalloc byte[16];
                 CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
                 Marshal.FreeHGlobal((IntPtr)mem);
                 Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
+            });
+        }
+        else
+        {
+            byte* blockData = stackalloc byte[16];
+            for (int y = 0; y < nBlocksY; ++y)
+            {
+                for (int x = 0; x < nBlocksX; ++x)
+                {
+                    int blockX = x << 2;
+                    int blockY = y << 2;
+                    Rgba32* mem = imv.GetBlock(blockX, blockY);
+                    CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
+                    Marshal.FreeHGlobal((IntPtr)mem);
+                    Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
+                }
             }
         }
 
@@ -716,7 +742,7 @@ public static unsafe class StbDxt
                 Span<Rgba32> s = x.GetRowSpan(y);
                 fixed (Rgba32* m = &MemoryMarshal.GetReference(s))
                 {
-                    Buffer.MemoryCopy(m, (void*)(mem + (y * adjWidth)), bL, bL);
+                    Buffer.MemoryCopy(m, mem + (y * adjWidth), bL, bL);
                 }
             }
         });
@@ -735,6 +761,7 @@ public static unsafe class StbDxt
         {
             this.data = data;
             this.dataLength = dataLength;
+            this.sizes = sizes;
         }
 
         public void Free()

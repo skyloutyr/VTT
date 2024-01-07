@@ -271,7 +271,7 @@
                         if (mo.MapLayer <= 0 && (mo != pl.ObjectPtr || pl.ObjectPtr.LightsSelfCastsShadow))
                         {
                             AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                            if (status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
+                            if (status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                             {
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {

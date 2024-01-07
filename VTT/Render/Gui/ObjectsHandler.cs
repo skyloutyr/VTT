@@ -538,7 +538,7 @@
                                         ImGui.Text(lang.Translate("ui.particle_containers.attachment"));
                                         if (!mo.AssetID.Equals(Guid.Empty))
                                         {
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
+                                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                                             {
                                                 string[] arr = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
                                                 int idx = Array.IndexOf(arr, arr.FirstOrDefault(s => s.Equals(pc.AttachmentPoint), string.Empty));
@@ -1031,10 +1031,13 @@
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();
                             System.Numerics.Vector2 oPs = ImGui.GetStyle().WindowPadding;
                             GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
-                            VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
-                            System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
-                            backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Xy.SystemVector() + frame.LocationUniform.Zw.SystemVector());
-                            ImGui.SetCursorPos(cPn + customPadding);
+                            if (tex.IsAsyncReady)
+                            {
+                                VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
+                                System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
+                                backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Xy.SystemVector() + frame.LocationUniform.Zw.SystemVector());
+                                ImGui.SetCursorPos(cPn + customPadding);
+                            }
                         }
                     }
 

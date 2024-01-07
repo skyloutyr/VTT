@@ -775,7 +775,7 @@
                     }
 
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false))
+                    if (status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                     {
                         Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
                         plr.ProcessScene(modelMatrix, a.Model.GLMdl, mo);
@@ -815,7 +815,7 @@
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                    bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false);
+                    bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
                     if (ready)
                     {
                         if (!mo.ClientAssignedModelBounds)
@@ -899,7 +899,7 @@
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
-                    bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.glReady ?? false);
+                    bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
                     if (i > 0 || mo.ClientDeferredRejectThisFrame)
                     {
                         if (assetReady)

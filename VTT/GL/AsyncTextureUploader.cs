@@ -166,7 +166,7 @@
                         for (int j = 0; j < this._requestWorkedWith.MipmapAmount; ++j)
                         {
                             Size s = this._requestWorkedWith.MipmapSizes[j];
-                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.RgbaInteger, OpenTK.Graphics.OpenGL.PixelType.UnsignedByte, (IntPtr)bOffset);
+                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, OpenTK.Graphics.OpenGL.PixelType.UnsignedByte, (IntPtr)bOffset);
                             bOffset += sizeof(Rgba32) * s.Width * s.Height;
                         }
                     }
@@ -181,6 +181,7 @@
                         }
                     }
 
+                    this._requestWorkedWith.Texture.AsyncFenceID = OGL.FenceSync(OpenTK.Graphics.OpenGL.SyncCondition.SyncGpuCommandsComplete, OpenTK.Graphics.OpenGL.WaitSyncFlags.None);
                     this._requestWorkedWith.Texture.AsyncState = AsyncLoadState.Ready;
                     this._requestWorkedWith.UploadCallback?.Invoke(this._requestWorkedWith, true);
                     this._requestWorkedWith = null;

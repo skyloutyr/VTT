@@ -432,7 +432,7 @@
                 return;
             }
 
-            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Template.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.glReady ?? false))
+            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Template.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.GlReady ?? false))
             {
                 return;
             }
@@ -603,7 +603,7 @@
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }
 
-                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.glReady ?? false))
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.GlReady ?? false))
                                 {
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }

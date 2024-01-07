@@ -443,7 +443,7 @@
                     }
                 }
 
-                if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.glReady ?? false))
+                if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.GlReady ?? false))
                 {
                     using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new OpenTK.Mathematics.Vector4(0, 0, 0, 0), true);
                     Texture tex = new Texture(TextureTarget.Texture2D);

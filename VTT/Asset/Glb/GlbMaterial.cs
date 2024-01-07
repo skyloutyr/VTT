@@ -37,6 +37,15 @@
         private static double lastAnimationFrameIndex;
         private static int lastProgram;
 
+        public bool GetTexturesAsyncStatus()
+        {
+            return 
+                (this.BaseColorTexture?.IsAsyncReady ?? true) &&
+                (this.EmissionTexture?.IsAsyncReady ?? true) && 
+                (this.NormalTexture?.IsAsyncReady ?? true) &&
+                (this.OcclusionMetallicRoughnessTexture?.IsAsyncReady ?? true);
+        }
+
         public void Uniform(ShaderProgram shader, double textureAnimationFrameIndex)
         {
             if (SunShadowRenderer.ShadowPass)

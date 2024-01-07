@@ -29,7 +29,7 @@
         public ConcurrentDictionary<Guid, ServerClient> ClientsByID { get; } = new ConcurrentDictionary<Guid, ServerClient>();
 
         public AssetManager AssetManager { get; } = new AssetManager() { IsServer = true };
-        public MusicPlayer MusicPlayer { get; } = new MusicPlayer(true);
+        public MusicPlayer MusicPlayer { get; } = new MusicPlayer();
         private Dictionary<Guid, ServerMapPointer> Maps { get; } = new Dictionary<Guid, ServerMapPointer>();
 
         public object mapsLock = new object();

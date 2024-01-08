@@ -475,7 +475,7 @@
         public Image<Rgba32> CompoundImage()
         {
             TextureAnimation.Frame[] allFrames = new TextureAnimation.Frame[this.Frames.Length];
-            RectangleF[] positions = new RectangleF[this.Frames.Length];
+            Rectangle[] positions = new Rectangle[this.Frames.Length];
             int imgW = 0, imgH = 0;
             int cX = 0, cY = 0;
             int lH = 0;
@@ -494,8 +494,7 @@
                     lH = ii.Height;
                 }
 
-                RectangleF p = new RectangleF(cX, cY, ii.Width, ii.Height);
-                positions[i] = p;
+                positions[i] = new Rectangle(cX, cY, ii.Width, ii.Height);
                 cX += ii.Width;
             }
 
@@ -506,14 +505,29 @@
             cfg.PreferContiguousImageBuffers = mayBeContinuous;
             Image<Rgba32> img = new Image<Rgba32>(cfg, imgW, imgH);
             GraphicsOptions go = new GraphicsOptions() { Antialias = false, BlendPercentage = 1, ColorBlendingMode = PixelColorBlendingMode.Normal };
+            
+            static void CopyImageData(Image<Rgba32> src, Image<Rgba32> dst, int dstFromX, int dstFromY)
+            {
+                dst.ProcessPixelRows(src, (dstAccessor, srcAccessor) =>
+                {
+                    for (int y = 0; y < src.Height; ++y)
+                    {
+                        Span<Rgba32> dstSpan = dstAccessor.GetRowSpan(dstFromY + y);
+                        Span<Rgba32> srcSpan = srcAccessor.GetRowSpan(y);
+                        dstSpan = dstSpan.Slice(dstFromX, srcSpan.Length);
+                        srcSpan.CopyTo(dstSpan);
+                    }
+                });
+            }
+            
             if (this.Frames.Length > 1)
             {
                 Parallel.For(0, this.Frames.Length, i =>
                 {
                     Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[i].ImageBinary);
-                    RectangleF r = positions[i];
-                    allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
-                    img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
+                    Rectangle r = positions[i];
+                    allFrames[i] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[i].Duration, Location = new RectangleF((float)r.X / img.Width, (float)r.Y / img.Height, (float)r.Width / img.Width, (float)r.Height / img.Height) };
+                    CopyImageData(f, img, r.X, r.Y);
                     f.Dispose();
                     //this.Frames[i] = this.Frames[i].ClearBinary();
                 });
@@ -523,9 +537,9 @@
                 if (this.Frames.Length == 1)
                 {
                     Image<Rgba32> f = Image.Load<Rgba32>(this.Frames[0].ImageBinary);
-                    RectangleF r = positions[0];
+                    Rectangle r = positions[0];
                     allFrames[0] = new TextureAnimation.Frame() { Duration = (uint)this.Frames[0].Duration, Location = new RectangleF(r.X / img.Width, r.Y / img.Height, r.Width / img.Width, r.Height / img.Height) };
-                    img.Mutate(x => x.DrawImage(f, new Point((int)r.X, (int)r.Y), go));
+                    CopyImageData(f, img, r.X, r.Y);
                     f.Dispose();
                 }
             }

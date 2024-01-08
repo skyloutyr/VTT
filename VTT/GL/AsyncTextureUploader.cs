@@ -160,6 +160,7 @@
                 {
                     OGL.BindTexture(this._requestWorkedWith.Texture.Target, this._requestWorkedWith.Texture);
                     OGL.TexParameter(this._requestWorkedWith.Texture.Target, OpenTK.Graphics.OpenGL.TextureParameterName.TextureMaxLevel, this._requestWorkedWith.MipmapAmount - 1);
+                    this._requestWorkedWith.Texture.Size = this._requestWorkedWith.MipmapSizes[0];
                     if (this._requestWorkedWith.DataType == AsyncTextureUploadRequest.ImageDataType.Image)
                     {
                         int bOffset = 0;

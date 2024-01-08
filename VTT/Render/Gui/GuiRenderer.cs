@@ -629,7 +629,21 @@
                         Texture glTex = ap.GetGLTexture();
                         if (glTex != null)
                         {
-                            drawList.AddImage(ap.GetGLTexture(), screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                            if (ap.IsAnimated)
+                            {
+                                float tW = glTex.Size.Width;
+                                float tH = glTex.Size.Height;
+                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)ap.FramesTotalDelay));
+                                float sS = frame.X / tW;
+                                float sE = sS + (frame.Width / tW);
+                                float tS = frame.Y / tH;
+                                float tE = tS + (frame.Height / tH);
+                                drawList.AddImage(glTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), new System.Numerics.Vector2(sS, tS), new System.Numerics.Vector2(sE, tE), this._inspectedObject.TintColor.Abgr());
+                            }
+                            else
+                            {
+                                drawList.AddImage(glTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                            }
                         }
 
                         System.Numerics.Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);

@@ -3,6 +3,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using VTT.Asset.Glb;
     using VTT.GL;
 
     public class AssetPreview // Client-only
@@ -27,6 +28,25 @@
             }
 
             return this.Frames[0];
+        }
+
+        public void CopyFromAnimation(TextureAnimation anim, Size imgTotalSizeInPixels)
+        {
+            if (anim != null && anim.Frames.Length > 1)
+            {
+                this.IsAnimated = true;
+                this.Frames = new FrameData[anim.Frames.Length];
+                for (int i = 0; i < this.Frames.Length; ++i)
+                {
+                    TextureAnimation.Frame f = anim.Frames[i];
+                    int sX = (int)(f.Location.X * imgTotalSizeInPixels.Width);
+                    int sY = (int)(f.Location.Y * imgTotalSizeInPixels.Height);
+                    int w = (int)(f.Location.Width * imgTotalSizeInPixels.Width);
+                    int h = (int)(f.Location.Height * imgTotalSizeInPixels.Height);
+                    this.Frames[i] = new FrameData(sX, sY, h, w, (int)f.Duration, this.FramesTotalDelay);
+                    this.FramesTotalDelay += (int)f.Duration;
+                }
+            }
         }
 
         public Texture GetGLTexture()

@@ -14,6 +14,7 @@
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
+    using VTT.Asset.Glb;
     using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -430,11 +431,12 @@
                 if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
                 {
                     // Safe to do as CopyGlTexture will call GetOrCreateGLTexture anyway. GetOrCreate will not queue multiple times if texture is not ready
-                    Texture t1 = a?.Texture.GetOrCreateGLTexture(false, out _);
+                    Texture t1 = a.Texture.GetOrCreateGLTexture(false, out TextureAnimation anim);
                     if (t1.IsAsyncReady)
                     {
-                        Texture tex = a?.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
+                        Texture tex = a.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
                         AssetPreview prev = new AssetPreview() { GLTex = tex };
+                        prev.CopyFromAnimation(anim, tex.Size);
                         this.Container.Portraits[aID] = prev;
                         ap = prev;
                         return AssetStatus.Return;

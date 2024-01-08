@@ -78,7 +78,6 @@
                     float sE = sS + (frame.Width / tW);
                     float tS = frame.Y / tH;
                     float tE = tS + (frame.Height / tH);
-                    ap.GLTex.Bind();
                     ImGui.Image(ap.GLTex, new Vector2(w, h), new Vector2(sS, tS), new Vector2(sE, tE));
                     if (ImGui.IsItemHovered())
                     {

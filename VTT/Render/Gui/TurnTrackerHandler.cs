@@ -9,6 +9,7 @@
     using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Control;
+    using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -112,7 +113,25 @@
 
                                             float ar = 64f / 96f;
                                             ar *= 0.5f;
-                                            idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(0.25f, 0), new Vec2(0.75f, 1), new Color(portrairColor).Abgr());
+                                            Texture glTex = ap.GetGLTexture();
+                                            if (glTex != null && glTex.IsAsyncReady)
+                                            {
+                                                if (ap.IsAnimated)
+                                                {
+                                                    float atW = glTex.Size.Width;
+                                                    float atH = glTex.Size.Height;
+                                                    AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)ap.FramesTotalDelay));
+                                                    float sS = frame.X / atW;
+                                                    float sE = sS + (frame.Width / atW);
+                                                    float tS = frame.Y / atH;
+                                                    float tE = tS + (frame.Height / atH);
+                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(sS + (frame.Width / atW * 0.25f), tS), new Vec2(sE - (frame.Width / atW * 0.25f), tE), new Color(portrairColor).Abgr());
+                                                }
+                                                else
+                                                {
+                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(0.25f, 0), new Vec2(0.75f, 1), new Color(portrairColor).Abgr());
+                                                }
+                                            }
                                         }
 
                                         idl.AddImage(this.TurnTrackerForeground, cursor + pen, cursor + pen + sz, Vec2.Zero, Vec2.One, new Color(hColor).Abgr());

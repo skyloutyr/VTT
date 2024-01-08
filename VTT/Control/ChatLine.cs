@@ -36,7 +36,7 @@
 
         private bool _cached;
         private float _cachedHeight;
-        private Texture _portraitTex;
+        private AssetPreviewReference _portraitTex;
         private Color senderColor;
         private Color destColor;
 
@@ -110,7 +110,7 @@
                 {
                     if (this._portraitTex == null)
                     {
-                        this._portraitTex = Client.Instance.Frontend.Renderer.GuiRenderer.TurnTrackerBackgroundNoObject;
+                        this._portraitTex = new AssetPreviewReference(null, false);
                         Map m = Client.Instance.CurrentMap;
                         if (m != null)
                         {
@@ -129,16 +129,39 @@
                                 if (mo != null)
                                 {
                                     AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap);
-                                    this._portraitTex = a == AssetStatus.Await ? null : ap.GetGLTexture();
+                                    if (a == AssetStatus.Return)
+                                    {
+                                        this._portraitTex.preview = ap;
+                                        this._portraitTex.ready = true;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    if (this._portraitTex != null && this._portraitTex != Client.Instance.Frontend.Renderer.GuiRenderer.TurnTrackerBackgroundNoObject)
+                    if (this._portraitTex != null && this._portraitTex.ready)
                     {
-                        ImGui.Image(this._portraitTex, new Vector2(16, 16));
-                        ImGui.SameLine();
+                        Texture glTex = this._portraitTex.preview.GetGLTexture();
+                        if (glTex != null && glTex.IsAsyncReady)
+                        {
+                            if (this._portraitTex.preview.IsAnimated)
+                            {
+                                float tW = glTex.Size.Width;
+                                float tH = glTex.Size.Height;
+                                AssetPreview.FrameData frame = this._portraitTex.preview.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)this._portraitTex.preview.FramesTotalDelay));
+                                float sS = frame.X / tW;
+                                float sE = sS + (frame.Width / tW);
+                                float tS = frame.Y / tH;
+                                float tE = tS + (frame.Height / tH);
+                                ImGui.Image(glTex, new Vector2(16, 16), new Vector2(sS, tS), new Vector2(sE, tE));
+                            }
+                            else
+                            {
+                                ImGui.Image(glTex, new Vector2(16, 16));
+                            }
+
+                            ImGui.SameLine();
+                        }
                     }
                 }
 
@@ -299,6 +322,18 @@
             SessionMarker,
             Image,
             RollExpression
+        }
+
+        private class AssetPreviewReference
+        {
+            public AssetPreview preview;
+            public bool ready;
+
+            public AssetPreviewReference(AssetPreview preview, bool ready)
+            {
+                this.preview = preview;
+                this.ready = ready;
+            }
         }
     }
 }

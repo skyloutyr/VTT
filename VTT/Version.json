@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.2.12",
+  "version": "1.2.13",
   "link": "",
   "changelog": {
     "1.0.0": "Initial alpha release",
@@ -30,6 +30,7 @@
     "1.2.9": "Small fixes. Added emoji reactions. Fixed the drawing eraser erasing drawings even with a different tool selected. Added 3D skeletal animation support.",
     "1.2.10": "Some fixes related to window resolution. 2D Square ruler now renders an outline on the top and bottom to work in 2D. Fixed the animation property not being translated. Added the ability to toggle fullscreen with the f11 key. Added sprite sheet support for particle systems. Fixed the map 2D height property not affecting the camera's clipping planes. Added full sound asset support (mp3 and wav, ogg coming soon), with play and stop functionality. Updated dependencies.",
     "1.2.11": "Fixed the carriage return character being included in translations. Added the ability to copy chat lines with a right-click menu. Added the ability to copy object descriptions in the inspect popup with a right-click menu. Fixed the server always sending full audio data for buffered sound requests. Changed the network usage field in the network tab to a graph over last 20 seconds. Added a command line parameters to specify data storage directories for server and client data. Fixed a crash with buffered sounds caused by the client trying to delete non-existing sound assets. Fixed audio clipping issues when importing non-normalized 32bit floating point sounds. Added vorbis (ogg) audio support.",
-    "1.2.12": "Added holiday icons. Added mp3 audio compression (if ffmpeg installed). Added ambient sound feature for maps. Added a music player. Fixed multiple camera issues such as choppy movement, huge position changes on lag and similar. Fixed the client's audio system crash caused by communication with a server when not connected."
+    "1.2.12": "Added holiday icons. Added mp3 audio compression (if ffmpeg installed). Added ambient sound feature for maps. Added a music player. Fixed multiple camera issues such as choppy movement, huge position changes on lag and similar. Fixed the client's audio system crash caused by communication with a server when not connected.",
+    "1.2.13": "Fixed the music player crash issues related to the name of the track. Optimized texture loading. Added async texture loading. Optimized texture compression. Animated textures now display their animation correctly in all UI elements."
   }
 }

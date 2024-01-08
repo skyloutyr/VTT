@@ -246,6 +246,11 @@
             {
                 GL.DeleteTexture(this._glId);
             }
+
+            if (!IntPtr.Zero.Equals(this.AsyncFenceID))
+            {
+                GL.DeleteSync(this.AsyncFenceID);
+            }
         }
 
         public static implicit operator uint(Texture self) => self._glId;

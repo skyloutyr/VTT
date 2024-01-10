@@ -427,47 +427,37 @@
                 soundExistanceStatus = this.PlayingAssetsByID.TryGetValue(soundID, out asound);
             }
 
-            if (!soundExistanceStatus)
+            if (!soundExistanceStatus && asound == null)
             {
                 Client.Instance.Logger.Log(LogLevel.Warn, $"Got sound buffer info for sound {soundID}, asset {assetID} and chunk {cIndex}, but no such sound is queued. This may be due to a sound purge. All data will be discarded.");
                 return;
             }
 
-            if (Client.Instance.AssetManager.Refs.TryGetValue(assetID, out AssetRef aRef))
+            if (asound.DataType == AssetSound.AssetDataType.StreamingMpeg)
             {
-                if (aRef?.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg)
+                if (asound.MpegDecoder == null)
                 {
-                    if (asound.MpegDecoder == null)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Error, $"Sound data for sound {soundID} appears to be an Mpeg frame, but the sound itself didn't specify itself as an mpeg sound. This should be impossible. Sound and data will be discarded!");
-                        asound.Stopped = true;
-                        return;
-                    }
-
-                    bool lastBuffer = cIndex + 1 >= aRef.Meta.SoundInfo.TotalChunks;
-                    asound.MpegDecoder.AddData(buffer);
-                    byte[] bytes = asound.MpegDecoder.ReadSamples(!lastBuffer, out bool readToEnd);
-                    lock (this._assetLock)
-                    {
-                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = this.ConvertBytesToSound(bytes);
-                    }
-
-                    if (readToEnd && !lastBuffer)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Warn, $"Sound data read to end for sound {soundID}, asset {assetID} at chunk {cIndex}, but more chunks were still expected!");
-                    }
-
-                    if (lastBuffer)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Debug, $"Mpeg data was read to end (steaming context says {readToEnd}).");
-                    }
+                    Client.Instance.Logger.Log(LogLevel.Error, $"Sound data for sound {soundID} appears to be an Mpeg frame, but the sound itself didn't specify itself as an mpeg sound. This should be impossible. Sound and data will be discarded!");
+                    asound.Stopped = true;
+                    return;
                 }
-                else
+
+                bool lastBuffer = cIndex + 1 >= asound.NumChunksSpecified;
+                asound.MpegDecoder.AddData(buffer);
+                byte[] bytes = asound.MpegDecoder.ReadSamples(!lastBuffer, out bool readToEnd);
+                lock (this._assetLock)
                 {
-                    lock (this._assetLock)
-                    {
-                        this._soundBuffersResponses[(soundID, assetID, cIndex)] = this.ConvertBytesToSound(buffer);
-                    }
+                    this._soundBuffersResponses[(soundID, assetID, cIndex)] = this.ConvertBytesToSound(bytes);
+                }
+
+                if (readToEnd && !lastBuffer)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Warn, $"Sound data read to end for sound {soundID}, asset {assetID} at chunk {cIndex}, but more chunks were still expected!");
+                }
+
+                if (lastBuffer)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Debug, $"Mpeg data was read to end (steaming context says {readToEnd}).");
                 }
             }
             else
@@ -476,8 +466,6 @@
                 {
                     this._soundBuffersResponses[(soundID, assetID, cIndex)] = this.ConvertBytesToSound(buffer);
                 }
-
-                Client.Instance.Logger.Log(LogLevel.Warn, $"Got sound data for non-existing asset {assetID}!");
             }
         }
 

@@ -18,6 +18,8 @@
         public SoundCategory Category { get; init; }
         public SoundManager Container { get; init; }
         public Type SoundType { get; init; }
+        public AssetDataType DataType { get; private set; } = AssetDataType.Unknown;
+        public int NumChunksSpecified { get; set; }
         public float SecondsPlayed { get; set; }
         public float Volume
         {
@@ -76,6 +78,7 @@
                     this.Container.SetSourceVolume(this.Category, this._srcId);
                     AL.SourcePlay(this._srcId);
                     this.Started = true;
+                    this.DataType = AssetDataType.Full;
                     Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} is RAW, playing.");
                 }
                 else
@@ -85,10 +88,12 @@
                     {
                         if (a?.Type == AssetType.Sound && a?.Sound != null && a?.Sound?.Meta != null)
                         {
+                            this.NumChunksSpecified = a.Sound.Meta.TotalChunks;
                             SoundData sd = a.Sound;
                             if (sd.Meta.IsFullData) // Have raw audio
                             {
                                 this.Container.AddFullSoundData(this.AssetID, a);
+                                this.DataType = AssetDataType.Full;
                                 Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} was specified as full data, requeueing after receiving asset.");
                                 return; // Will play on next tick unless sound manager had issues/cleared the sound list
                             }
@@ -98,11 +103,13 @@
                                 // Mpeg container
                                 if (sd.Meta.SoundType == SoundData.Metadata.StorageType.Mpeg)
                                 {
+                                    this.DataType = AssetDataType.StreamingMpeg;
                                     this.MpegDecoder = new StreamingMpeg();
                                     Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} was specified as mpeg compressed, buffer and decoder created, sound queued.");
                                 }
                                 else
                                 {
+                                    this.DataType = AssetDataType.StreamingPCM;
                                     Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} was specified as non-mpeg streaming sound, buffer created and queued.");
                                 }
 
@@ -199,6 +206,14 @@
             Asset,
             Music,
             Ambient
+        }
+
+        public enum AssetDataType
+        {
+            Unknown,
+            Full,
+            StreamingPCM,
+            StreamingMpeg
         }
     }
 }

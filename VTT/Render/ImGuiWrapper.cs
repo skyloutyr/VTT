@@ -461,7 +461,7 @@ void main()
                     var pcmd = cmdList.CmdBuffer[cmd_i];
                     if (pcmd.UserCallback != IntPtr.Zero)
                     {
-                        Console.WriteLine("UserCallback not implemented");
+                        Client.Instance.Logger.Log(LogLevel.Debug, "UserCallback not implemented");
                     }
                     else
                     {

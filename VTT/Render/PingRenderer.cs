@@ -199,7 +199,6 @@
                         bool mOver = this.MouseOverPolygon(mouseC, 512 + iOffset + ((i & 3) * 64));
                         if (mOver)
                         {
-                            Console.WriteLine("Have a ping of index " + i + " and type " + (Ping.PingType.Smiling + i));
                             Ping p = new Ping() { DeathTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 4000, OwnerColor = Extensions.FromArgb(Client.Instance.Settings.Color), OwnerID = Client.Instance.ID, OwnerName = Client.Instance.Settings.Name, Position = this._pingUIAnchor, Type = Ping.PingType.Smiling + i };
                             new PacketPing() { Ping = p }.Send();
                             break;

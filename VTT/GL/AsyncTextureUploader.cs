@@ -39,7 +39,7 @@
             }
         }
 
-        private readonly EventWaitHandle _waitHandleSecondary = new EventWaitHandle(false, EventResetMode.ManualReset);
+        private readonly EventWaitHandle _waitHandleSecondary = new EventWaitHandle(false, EventResetMode.AutoReset);
         private volatile bool _shutdown;
 
         private void WorkSecondary()

@@ -9,6 +9,7 @@
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -24,7 +25,9 @@
 
     public partial class GuiRenderer
     {
-        public void HandleFileDrop(FileDropEventArgs e)
+        public void HandleFileDrop(FileDropEventArgs e) => this._queuedDropEvents.Enqueue(e);
+
+        public void ProcessFileDrop(FileDropEventArgs e)
         {
             if (this._mouseOverAssets && Client.Instance.IsAdmin)
             {
@@ -286,6 +289,7 @@
 
         private unsafe void RenderAssets(SimpleLanguage lang, GuiState state)
         {
+            this._mouseOverAssets = false;
             if (Client.Instance.IsAdmin)
             {
                 if (ImGui.Begin(lang.Translate("ui.assets") + "###Assets"))
@@ -906,6 +910,21 @@
                 }
 
                 ImGui.End();
+            }
+            this.ProcessFileDropEvents();
+        }
+
+        private readonly ConcurrentQueue<FileDropEventArgs> _queuedDropEvents = new ConcurrentQueue<FileDropEventArgs>();
+        private unsafe void ProcessFileDropEvents()
+        {
+            while (!this._queuedDropEvents.IsEmpty)
+            {
+                if (!this._queuedDropEvents.TryDequeue(out FileDropEventArgs fdea))
+                {
+                    break;
+                }
+
+                this.ProcessFileDrop(fdea);
             }
         }
 

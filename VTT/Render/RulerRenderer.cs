@@ -622,7 +622,7 @@
                 GL.Enable(EnableCap.CullFace);
             }
 
-            if (this.CurrentMode == RulerType.Eraser && tHit.HasValue)
+            if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
             {
                 model = Matrix4.CreateScale(this.CurrentExtraValue * 2) * Matrix4.CreateTranslation(tHit.Value);
                 shader["model"].Set(model);

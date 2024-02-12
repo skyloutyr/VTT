@@ -401,7 +401,7 @@
                 if (this._moveMode != 4)
                 {
                     this.HandleMovementGizmo();
-                    this.HandleRotationGizmo();
+                    this.HandleRotationGizmo(cMap);
                 }
 
                 this.BoxSelectCandidates.Clear();
@@ -562,12 +562,24 @@
             return null;
         }
 
-        private void HandleRotationGizmo()
+        private void HandleRotationGizmo(Map m)
         {
             if (this._blockSelection && this._lbmDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate && this.SelectedObjects.Count > 0)
             {
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                Vector2 pCurrent = new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
+                Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector2 pCurrent;
+                bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Space);
+                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt);
+                if (cw != null && !shift)
+                {
+                    pCurrent = cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy;
+                }
+                else
+                {
+                    pCurrent = new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
+                }
+
                 Vector3 min = this.SelectedObjects[0].Position;
                 Vector3 max = this.SelectedObjects[0].Position;
                 for (int i = 1; i < this.SelectedObjects.Count; i++)
@@ -600,6 +612,19 @@
                         Vector3 o2h = mo.ClientDragMoveResetInitialPosition - this.HalfRenderVector.Value;
                         o2h = (q * new Vector4(o2h, 1.0f)).Xyz;
                         mo.Position = this.HalfRenderVector.Value + o2h;
+                        float msx = MathF.Abs(mo.Scale.X) % (m.GridSize * 2);
+                        float msy = MathF.Abs(mo.Scale.Y) % (m.GridSize * 2);
+                        float msz = MathF.Abs(mo.Scale.Z) % (m.GridSize * 2);
+                        Vector3i bigScale = new Vector3i(
+                            msx - 0.075f <= 0 || (m.GridSize * 2) - msx <= 0.075f ? 1 : 0,
+                            msy - 0.075f <= 0 || (m.GridSize * 2) - msy <= 0.075f ? 1 : 0,
+                            msz - 0.075f <= 0 || (m.GridSize * 2) - msz <= 0.075f ? 1 : 0
+                        );
+
+                        if (alt)
+                        {
+                            mo.Position = MapRenderer.SnapToGrid(mo.Position, m.GridSize, bigScale);
+                        }
                     }
                 }
             }

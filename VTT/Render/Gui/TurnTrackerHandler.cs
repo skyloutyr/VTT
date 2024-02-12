@@ -419,10 +419,14 @@
 
                             TurnTracker.Team t = cMap.TurnTracker.Teams[i];
                             string tName = t.Name;
-                            if (ImGui.InputText("##TeamName" + i, ref tName, ushort.MaxValue, ImGuiInputTextFlags.EnterReturnsTrue))
+                            if (ImGui.InputText("##TeamName" + i, ref tName, ushort.MaxValue))
                             {
-                                PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.UpdateName, Index = i, Name = tName, Color = t.Color };
-                                pti.Send();
+                                if (!string.IsNullOrEmpty(tName))
+                                {
+                                    t.Name = tName;
+                                    PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.UpdateName, Index = i, Name = tName, Color = t.Color };
+                                    pti.Send();
+                                }
                             }
 
                             ImGui.SameLine();
@@ -652,8 +656,9 @@
 
                             float v = e.NumericValue;
                             ImGui.PushItemWidth(100);
-                            if (ImGui.InputFloat("##Value" + e.ObjectID, ref v, 0, 0, "%.3f", ImGuiInputTextFlags.EnterReturnsTrue))
+                            if (ImGui.InputFloat("##Value" + e.ObjectID, ref v, 0, 0, "%.3f"))
                             {
+                                e.NumericValue = v;
                                 new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewValue = v, Type = PacketChangeTurnEntryProperty.ChangeType.Value }.Send();
                             }
 

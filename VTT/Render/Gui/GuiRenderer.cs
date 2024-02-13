@@ -661,9 +661,28 @@
                         ImGui.PopStyleColor();
 
                         ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
-                        ImGui.PushTextWrapPos();
-                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
-                        ImGui.PopTextWrapPos();
+                        if (this._inspectedObject.UseMarkdownForDescription)
+                        {
+                            try
+                            {
+                                ImGuiMarkdown.Markdown(this._inspectedObject.Description, ImGuiMarkdown.MarkdownConfig.Default);
+                            }
+                            catch (Exception e)
+                            {
+                                this._inspectedObject.UseMarkdownForDescription = false;
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Object markdown corrupted or invalid! Unable to draw markdown for object {this._inspectedObject.ID}({this._inspectedObject.Name})!");
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Object was marked as non-markdown but this is a severe error that probably corrupted internal UI state!");
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Please report this issue to your server administrator!");
+                                Client.Instance.Logger.Exception(LogLevel.Error, e);
+                            }
+                        }
+                        else
+                        {
+                            ImGui.PushTextWrapPos();
+                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
+                            ImGui.PopTextWrapPos();
+                        }
+
                         if (ImGui.BeginPopupContextItem())
                         {
                             if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))

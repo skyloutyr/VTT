@@ -659,3 +659,6 @@ menu.settings.async_texture_upload=Асинхронные Текстуры
 menu.settings.async_texture_upload.tt=Активирует асинхронную загрузку текстур на видеокарту.\nУлучшает производительность при прогрузке текстур, но использует больше VRAM.\nМожет вызвать проблемы на старых или маломощных видеокартах.\nАвтоматически выключится, если у видеокарты закончится видеопамять.
 menu.settings.multithread_texture_compression=Параллельное Сжатие Текстур
 menu.settings.multithread_texture_compression.tt=Управляет режимом многопоточности при сжатии текстур.
+ui.properties.markdown=Является Markdown
+ui.properties.markdown.tt=Если включено, описание объекта будет интерпретировано как Markdown при его изучении.\nMarkdown - синтаксис для контроля отображения текста.
+credits.imgui_markdown=imgui_markdown

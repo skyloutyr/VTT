@@ -146,6 +146,12 @@
                             d.Item2.ShaderID = (Guid)d.Item3;
                             break;
                         }
+
+                        case DataType.DescriptionMarkdownFlag:
+                        {
+                            d.Item2.UseMarkdownForDescription = (bool)d.Item3;
+                            break;
+                        }
                     }
 
                     d.Item1.NeedsSave = true;
@@ -186,6 +192,7 @@
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
                     case DataType.DoNotDraw:
+                    case DataType.DescriptionMarkdownFlag:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -252,6 +259,7 @@
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
                     case DataType.DoNotDraw:
+                    case DataType.DescriptionMarkdownFlag:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -361,7 +369,8 @@
             CustomNameplateID,
             Properties,
             ShaderID,
-            Notes
+            Notes,
+            DescriptionMarkdownFlag
         }
     }
 }

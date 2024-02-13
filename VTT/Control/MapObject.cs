@@ -89,6 +89,7 @@
         public Guid CustomNameplateID { get; set; }
         public bool IsInfoObject { get; set; }
         public bool DoNotRender { get; set; }
+        public bool UseMarkdownForDescription { get; set; }
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -182,6 +183,7 @@
             ret.Set("AnimationTime", this.AnimationContainer.TimeRaw);
             ret.Set("AnimationPaused", this.AnimationContainer.Paused);
             ret.Set("AnimationLooping", this.AnimationContainer.Looping);
+            ret.Set("DescMarkdown", this.UseMarkdownForDescription);
             return ret;
         }
 
@@ -254,6 +256,7 @@
             this.AnimationContainer.TimeSwitchTo = e.Get<float>("AnimationTime", 0);
             this.AnimationContainer.Paused = e.Get("AnimationPaused", false);
             this.AnimationContainer.Looping = e.Get("AnimationLooping", true);
+            this.UseMarkdownForDescription = e.Get("DescMarkdown", false);
         }
 
         public MapObject Clone()
@@ -286,6 +289,7 @@
             ret.CustomNameplateID = this.CustomNameplateID;
             ret.IsInfoObject = this.IsInfoObject;
             ret.DoNotRender = this.DoNotRender;
+            ret.UseMarkdownForDescription = this.UseMarkdownForDescription;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

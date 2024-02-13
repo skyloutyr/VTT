@@ -743,6 +743,18 @@
                             }
                         }
 
+                        bool mIsDescMarkdown = mo.UseMarkdownForDescription;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.markdown") + "###IsMarkdown", ref mIsDescMarkdown))
+                        {
+                            os.ForEach(x => x.UseMarkdownForDescription = mIsDescMarkdown);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DescriptionMarkdownFlag, Data = SelectedToPacket3(os, mIsDescMarkdown) }.Send();
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.markdown.tt"));
+                        }
+
                         string d = mo.Description;
                         ImGui.Text(lang.Translate("ui.properties.description"));
                         if (ImGui.IsItemHovered())

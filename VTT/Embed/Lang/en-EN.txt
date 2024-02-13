@@ -659,3 +659,6 @@ menu.settings.async_texture_upload=Async Textures
 menu.settings.async_texture_upload.tt=Controls whether the textures are uploaded asynchronomously to the gpu.\nImproves texture load performance at the cost of increased VRAM usage.\nMay cause issues on low-end or old GPUs.\nWill self-disable if the GPU runs out of memory.
 menu.settings.multithread_texture_compression=Parallel Texture Compresssion
 menu.settings.multithread_texture_compression.tt=Controls whether textures are compressed in a multithreaded way.
+ui.properties.markdown=Is Markdown
+ui.properties.markdown.tt=If enabled the text in the description field will be parsed as markdown when the object is inspected.\nMarkdown is a markup language for text.\nSupports headings, paragraphs, emphasis, lists, links and images.
+credits.imgui_markdown=imgui_markdown

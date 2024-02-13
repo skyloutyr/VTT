@@ -120,7 +120,7 @@
                         }
                         else
                         {
-                            this.OpenUrl("https://github.com/skyloutyr/VTT/releases/latest");
+                            OpenUrl("https://github.com/skyloutyr/VTT/releases/latest");
                         }
                     }
 
@@ -313,6 +313,7 @@
                         ImGui.Text(sp + lang.Translate("credits.opentk"));
                         ImGui.Text(sp + lang.Translate("credits.imagesharp"));
                         ImGui.Text(sp + lang.Translate("credits.net"));
+                        ImLink(lang.Translate("credits.imgui_markdown"), "https://github.com/juliettef/imgui_markdown");
                         ImGui.NewLine();
                         ImLink(lang.Translate("credits.icons8"), "https://icons8.com/");
                         ImGui.Text("    3d");
@@ -1126,7 +1127,7 @@
         }
 
         // https://stackoverflow.com/questions/4580263/how-to-open-in-default-browser-in-c-sharp
-        private void OpenUrl(string url)
+        public static void OpenUrl(string url)
         {
             try
             {

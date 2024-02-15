@@ -282,6 +282,7 @@
             this.MainMenuRenderer.Create();
             this.ParticleEditorRenderer = new ParticleEditorRenderer();
             this.ShaderEditorRenderer = new ShaderGraphEditorRenderer();
+            this.ShaderEditorRenderer.Create();
             this.DebugEnabled = ArgsManager.TryGetValue<bool>("debug", out _);
             this.LoadStatuses();
         }

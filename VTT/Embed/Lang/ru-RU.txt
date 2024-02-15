@@ -668,3 +668,5 @@ shadergraph.warn.automatic_type_conversion=Автоматическая конв
 shadergraph.err.recursion=Рекурсия не поддерживается шейдерами!
 ui.shader.extra_textures.reveal=Показать панель текстур\nУ шейдеров может быть до 64х пользовательских\nтекстур, указаных в этой панели.\nРесурсы типа Изображений можно перетащить в поле в этой панели.
 ui.shader.extra_textures.collapse=Спрятать панель текстур
+ui.shader.preview=Превью
+ui.shader.average=Среднее Значение: {0}

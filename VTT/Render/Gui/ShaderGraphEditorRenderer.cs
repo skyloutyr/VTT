@@ -9,12 +9,14 @@
     using System.IO;
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
+    using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
     using SVec2 = System.Numerics.Vector2;
     using SVec3 = System.Numerics.Vector3;
     using SVec4 = System.Numerics.Vector4;
+    using OGL = OpenTK.Graphics.OpenGL.GL;
 
     public class ShaderGraphEditorRenderer
     {
@@ -39,11 +41,17 @@
         private MoveMode _moveMode;
         private NodeInput _inMoved;
         private NodeOutput _outMoved;
+        private Texture _nodeLookupTexture;
 
         private List<string> _shaderErrors = new List<string>();
         private List<string> _shaderWarnings = new List<string>();
 
         public ShaderGraph EditedGraph { get; set; }
+
+        public unsafe void Create()
+        {
+            this._nodeLookupTexture = OpenGLUtil.LoadBasicTexture(new Image<Rgba32>(32, 32, new Rgba32(0, 0, 0, 255)));
+        }
 
         public unsafe void Render(Guid shaderId, AssetRef draggedRef, GuiState state)
         {
@@ -678,6 +686,44 @@
                 this._nodeMoved = null;
                 this._inMoved = null;
                 this._outMoved = null;
+            }
+
+            if (nodeOver != null || nOutOver != null)
+            {
+                int nodeIndex;
+                ShaderNode node = nodeOver;
+                if (nodeOver != null)
+                {
+                    nodeIndex = nOutOver != null && nodeOver.Outputs.Contains(nOutOver) ? nodeOver.Outputs.IndexOf(nOutOver) : 0;
+                }
+                else
+                {
+                    if (this.EditedGraph.AllOutputsById.TryGetValue(nOutOver.ID, out (ShaderNode, NodeOutput) val))
+                    {
+                        nodeIndex = val.Item1.Outputs.IndexOf(nOutOver);
+                        node = val.Item1;
+                    }
+                    else
+                    {
+                        nodeIndex = 0;
+                        node = null;
+                    }
+                }
+
+                if (node != null && (ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift)))
+                {
+                    int currentTexture = OGL.GetInteger(OpenTK.Graphics.OpenGL.GetPName.TextureBinding2D);
+                    this._nodeLookupTexture.Bind();
+                    Image<Rgba32> img = this.EditedGraph.GetNodeImage(node, nodeIndex, out NodeSimulationMatrix matrix);
+                    this._nodeLookupTexture.SetImage(img, OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba);
+                    OGL.BindTexture(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D, currentTexture);
+                    img.Dispose();
+                    ImGui.BeginTooltip();
+                    ImGui.Text(lang.Translate("ui.shader.preview"));
+                    ImGui.Image(this._nodeLookupTexture, new SVec2(128, 128));
+                    ImGui.Text(lang.Translate("ui.shader.average", matrix.GetAverageValueAsString()));
+                    ImGui.EndTooltip();
+                }
             }
         }
 

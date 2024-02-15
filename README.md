@@ -90,12 +90,12 @@ You can import any 3d model that is a .glb _embedded_ file format. However to di
 
 ## Custom Shaders
 VTT now supports custom material shaders with nodegraph editor!
-[![shadergraph.jpg](https://i.postimg.cc/nL3HgRC6/shadergraph.jpg)](https://postimg.cc/kVt3tyNc)
+[![vtt-shadergraph-preview-v2.png](https://i.postimg.cc/9097YtS8/vtt-shadergraph-preview-v2.png)](https://postimg.cc/9wW0WTcZ)
 
 A custom shader allows you to finely control the output parameters for your material and make them as dynamic as you want.
 If you are familiar with nodegraph editors then this system should be intuitive.
 
-Hold left click and move the cursor to move the graph. Hold left click over a header of a node to move that specific node. Press the X in the node header to delete it and all its connections. Right-click anywhere that isn't a node to add a new one.
+Hold left click and move the cursor to move the graph. Hold left click over a header of a node to move that specific node. Press the X in the node header to delete it and all its connections. Right-click anywhere that isn't a node to add a new one. Hold Alt while moving any node around to make it snap to grid. Hold shift to preview the output of a given node (experimental).
 To connect inputs and outputs hold left click on either and drag the line to the connection you want to make. Inputs can only have one connection to them, but a single output can connect to different inputs.
 If the input is not connected you can manualy edit the values of said input, making it a constant.
 

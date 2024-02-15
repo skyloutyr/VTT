@@ -29,6 +29,9 @@
     <None Remove="Embed\deferred_final.vert" />
     <None Remove="Embed\drawing.frag" />
     <None Remove="Embed\drawing.vert" />
+    <None Remove="Embed\dummyAlbedo.png" />
+    <None Remove="Embed\dummyAOMR.png" />
+    <None Remove="Embed\dummyNormal.png" />
     <None Remove="Embed\emoji-crying.png" />
     <None Remove="Embed\emoji-data.txt" />
     <None Remove="Embed\emoji-feared.png" />
@@ -152,6 +155,14 @@
     <None Remove="Embed\overlay.vert" />
     <None Remove="Embed\particle.frag" />
     <None Remove="Embed\particle.vert" />
+    <None Remove="Embed\pattern0.png" />
+    <None Remove="Embed\pattern1.png" />
+    <None Remove="Embed\pattern2.png" />
+    <None Remove="Embed\pattern3.png" />
+    <None Remove="Embed\pattern4.png" />
+    <None Remove="Embed\pattern5.png" />
+    <None Remove="Embed\pattern6.png" />
+    <None Remove="Embed\pattern7.png" />
     <None Remove="Embed\ping_lower.obj" />
     <None Remove="Embed\pl.frag" />
     <None Remove="Embed\pl.geom" />
@@ -180,6 +191,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Embed\dummyAlbedo.png" />
+    <EmbeddedResource Include="Embed\dummyAOMR.png" />
+    <EmbeddedResource Include="Embed\dummyNormal.png" />
     <EmbeddedResource Include="Embed\emoji-crying.png" />
   </ItemGroup>
 
@@ -213,6 +227,14 @@
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
+    <EmbeddedResource Include="Embed\pattern0.png" />
+    <EmbeddedResource Include="Embed\pattern1.png" />
+    <EmbeddedResource Include="Embed\pattern2.png" />
+    <EmbeddedResource Include="Embed\pattern3.png" />
+    <EmbeddedResource Include="Embed\pattern4.png" />
+    <EmbeddedResource Include="Embed\pattern5.png" />
+    <EmbeddedResource Include="Embed\pattern6.png" />
+    <EmbeddedResource Include="Embed\pattern7.png" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

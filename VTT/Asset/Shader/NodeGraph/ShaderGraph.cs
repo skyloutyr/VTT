@@ -41,6 +41,130 @@
             }
         }
 
+        public Image<Rgba32> GetNodeImage(ShaderNode node, int outputIndex, out NodeSimulationMatrix mat)
+        {
+            List<ShaderNode> recursionList = new List<ShaderNode>();
+            try
+            {
+                mat = node.SimulateProcess(this, outputIndex, recursionList);
+            }
+            catch (StackOverflowException)
+            {
+                mat = new NodeSimulationMatrix(0);
+                return new Image<Rgba32>(1, 1, new Rgba32(255, 0, 0, 255));
+            }
+
+            Image<Rgba32> ret = new Image<Rgba32>(32, 32);
+            switch (mat.SimulationPixels[0])
+            {
+                case bool:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        bool b = (bool)mat.SimulationPixels[i];
+                        ret[x, y] = b ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
+                    }
+
+                    break;
+                }
+
+                case int:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        int it = (int)mat.SimulationPixels[i];
+                        ret[x, y] = it > 0 ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
+                    }
+
+                    break;
+                }
+
+                case uint:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        uint it = (uint)mat.SimulationPixels[i];
+                        ret[x, y] = it > 0 ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
+                    }
+
+                    break;
+                }
+
+                case float:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        float f = (float)mat.SimulationPixels[i];
+                        ret[x, y] = new Rgba32(f, f, f, 1f);
+                    }
+
+                    break;
+                }
+
+                case Vector2:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        Vector2 v = (Vector2)mat.SimulationPixels[i];
+                        ret[x, y] = new Rgba32(v.X, v.Y, 0.0f, 1f);
+                    }
+
+                    break;
+                }
+
+                case Vector3:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        Vector3 v = (Vector3)mat.SimulationPixels[i];
+                        ret[x, y] = new Rgba32(v.X, v.Y, v.Z, 1f);
+                    }
+
+                    break;
+                }
+
+                case Vector4:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        Vector4 v = (Vector4)mat.SimulationPixels[i];
+                        ret[x, y] = new Rgba32(v.X * v.W, v.Y * v.W, v.Z * v.W, 1.0f);
+                    }
+
+                    break;
+                }
+
+                default:
+                {
+                    for (int i = 0; i < 32 * 32; ++i)
+                    {
+                        int x = i % 32;
+                        int y = i / 32;
+                        Rgba32 rgba = x >= 16 && y < 16 || x < 16 && y >= 16 ? new Rgba32(255, 0, 255, 255) : new Rgba32(0, 0, 0, 255);
+                        ret[x, y] = rgba;
+                    }
+
+                    break;
+                }
+            }
+
+            return ret;
+        }
+
         public ShaderProgram GetGLShader(bool isParticleShader)
         {
             if (!this.IsLoaded)
@@ -313,6 +437,11 @@
             }
 
             emitted.Add(nodeFrom);
+            if (!code.EndsWith('\n'))
+            {
+                code = code + '\n';
+            }
+
             codeStr = codeStr + code;
         }
 
@@ -344,6 +473,322 @@
                 NodeValueType.Vec4 => "vec4",
                 _ => "byte"
             };
+        }
+
+        public NodeSimulationMatrix SimulationConvert(NodeValueType valFrom, NodeValueType valTo, NodeSimulationMatrix matrixIn)
+        {
+            for (int i = 0; i < matrixIn.SimulationPixels.Length; ++i)
+            {
+                matrixIn.SimulationPixels[i] = this.SimulationConvertSingle(valFrom, valTo, matrixIn.SimulationPixels[i]);
+            }
+
+            return matrixIn;
+        }
+
+        private object SimulationConvertSingle(NodeValueType valFrom, NodeValueType valTo, object value)
+        {
+            switch (valFrom)
+            {
+                case NodeValueType.Bool:
+                {
+                    bool b = (bool)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Float:
+                        {
+                            return b ? 1f : 0f;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return b ? 1 : 0;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return b ? 1u : 0u;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return b ? Vector2.Zero : Vector2.One;
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return b ? Vector3.Zero : Vector3.One;
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return b ? Vector4.Zero : Vector4.One;
+                        }
+
+                        default:
+                        {
+                            return value;
+                        }
+                    }
+                }
+
+                case NodeValueType.Int:
+                {
+                    int i = (int)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return i > 0;
+                        }
+
+                        case NodeValueType.Float:
+                        {
+                            return (float)i;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return (uint)i;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return new Vector2(i, i);
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return new Vector3(i, i, i);
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return new Vector4(i, i, i, i);
+                        }
+
+                        default:
+                        {
+                            return i;
+                        }
+                    }
+                }
+
+                case NodeValueType.UInt:
+                {
+                    uint ui = (uint)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return ui > 0;
+                        }
+
+                        case NodeValueType.Float:
+                        {
+                            return (float)ui;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return (int)ui;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return new Vector2(ui, ui);
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return new Vector3(ui, ui, ui);
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return new Vector4(ui, ui, ui, ui);
+                        }
+
+                        default:
+                        {
+                            return ui;
+                        }
+                    }
+                }
+
+                case NodeValueType.Float:
+                {
+                    float f = (float)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return f > 0;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return (int)f;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return (uint)f;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return new Vector2(f, f);
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return new Vector3(f, f, f);
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return new Vector4(f, f, f, f);
+                        }
+
+                        default:
+                        {
+                            return f;
+                        }
+                    }
+                }
+
+                case NodeValueType.Vec2:
+                {
+                    Vector2 vec = (Vector2)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return false;
+                        }
+
+                        case NodeValueType.Float:
+                        {
+                            return vec.X;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return (int)vec.X;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return (uint)vec.X;
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return new Vector3(vec.X, vec.Y, 0.0f);
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return new Vector4(vec.X, vec.Y, 0.0f, 0.0f);
+                        }
+
+                        default:
+                        {
+                            return vec;
+                        }
+                    }
+                }
+
+                case NodeValueType.Vec3:
+                {
+                    Vector3 vec = (Vector3)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return false;
+                        }
+
+                        case NodeValueType.Float:
+                        {
+                            return vec.X;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return (int)vec.X;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return (uint)vec.X;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return vec.Xy;
+                        }
+
+                        case NodeValueType.Vec4:
+                        {
+                            return new Vector4(vec.X, vec.Y, vec.Z, 0.0f);
+                        }
+
+                        default:
+                        {
+                            return vec;
+                        }
+                    }
+                }
+
+                case NodeValueType.Vec4:
+                {
+                    Vector4 vec = (Vector4)value;
+                    switch (valTo)
+                    {
+                        case NodeValueType.Bool:
+                        {
+                            return false;
+                        }
+
+                        case NodeValueType.Float:
+                        {
+                            return vec.X;
+                        }
+
+                        case NodeValueType.Int:
+                        {
+                            return (int)vec.X;
+                        }
+
+                        case NodeValueType.UInt:
+                        {
+                            return (uint)vec.X;
+                        }
+
+                        case NodeValueType.Vec2:
+                        {
+                            return vec.Xy;
+                        }
+
+                        case NodeValueType.Vec3:
+                        {
+                            return vec.Xyz;
+                        }
+
+                        default:
+                        {
+                            return vec;
+                        }
+                    }
+                }
+
+                default:
+                {
+                    return value;
+                }
+            }
+
         }
 
         public string Convert(NodeValueType valFrom, NodeValueType valTo, string ptr)

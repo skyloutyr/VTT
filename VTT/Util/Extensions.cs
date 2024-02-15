@@ -34,6 +34,31 @@
             return new TKVec2(min, min);
         }
 
+        public static TKVec2 Abs(this TKVec2 self) => new TKVec2(MathF.Abs(self.X), MathF.Abs(self.Y));
+        public static TKVec3 Abs(this TKVec3 self) => new TKVec3(MathF.Abs(self.X), MathF.Abs(self.Y), MathF.Abs(self.Z));
+        public static TKVec4 Abs(this TKVec4 self) => new TKVec4(MathF.Abs(self.X), MathF.Abs(self.Y), MathF.Abs(self.Z), MathF.Abs(self.W));
+        public static TKVec2 Floor(this TKVec2 self) => new TKVec2(MathF.Floor(self.X), MathF.Floor(self.Y));
+        public static TKVec3 Floor(this TKVec3 self) => new TKVec3(MathF.Floor(self.X), MathF.Floor(self.Y), MathF.Floor(self.Z));
+        public static TKVec4 Floor(this TKVec4 self) => new TKVec4(MathF.Floor(self.X), MathF.Floor(self.Y), MathF.Floor(self.Z), MathF.Floor(self.W));
+        public static TKVec2 Ceil(this TKVec2 self) => new TKVec2(MathF.Ceiling(self.X), MathF.Ceiling(self.Y));
+        public static TKVec3 Ceil(this TKVec3 self) => new TKVec3(MathF.Ceiling(self.X), MathF.Ceiling(self.Y), MathF.Ceiling(self.Z));
+        public static TKVec4 Ceil(this TKVec4 self) => new TKVec4(MathF.Ceiling(self.X), MathF.Ceiling(self.Y), MathF.Ceiling(self.Z), MathF.Ceiling(self.W));
+        public static TKVec2 Round(this TKVec2 self) => new TKVec2(MathF.Round(self.X), MathF.Round(self.Y));
+        public static TKVec3 Round(this TKVec3 self) => new TKVec3(MathF.Round(self.X), MathF.Round(self.Y), MathF.Round(self.Z));
+        public static TKVec4 Round(this TKVec4 self) => new TKVec4(MathF.Round(self.X), MathF.Round(self.Y), MathF.Round(self.Z), MathF.Round(self.W));
+        public static TKVec2 Clamp(this TKVec2 self, TKVec2 min, TKVec2 max) => new TKVec2(Math.Clamp(self.X, min.X, max.X), Math.Clamp(self.Y, min.Y, max.Y));
+        public static TKVec3 Clamp(this TKVec3 self, TKVec3 min, TKVec3 max) => new TKVec3(Math.Clamp(self.X, min.X, max.X), Math.Clamp(self.Y, min.Y, max.Y), Math.Clamp(self.Z, min.Z, max.Z));
+        public static TKVec4 Clamp(this TKVec4 self, TKVec4 min, TKVec4 max) => new TKVec4(Math.Clamp(self.X, min.X, max.X), Math.Clamp(self.Y, min.Y, max.Y), Math.Clamp(self.Z, min.Z, max.Z), Math.Clamp(self.W, min.W, max.W));
+        public static TKVec2 Min(this TKVec2 self, TKVec2 other) => new TKVec2(MathF.Min(self.X, other.X), MathF.Min(self.Y, other.Y));
+        public static TKVec3 Min(this TKVec3 self, TKVec3 other) => new TKVec3(MathF.Min(self.X, other.X), MathF.Min(self.Y, other.Y), MathF.Min(self.Z, other.Z));
+        public static TKVec4 Min(this TKVec4 self, TKVec4 other) => new TKVec4(MathF.Min(self.X, other.X), MathF.Min(self.Y, other.Y), MathF.Min(self.Z, other.Z), MathF.Min(self.W, other.W));
+        public static TKVec2 Max(this TKVec2 self, TKVec2 other) => new TKVec2(MathF.Max(self.X, other.X), MathF.Max(self.Y, other.Y));
+        public static TKVec3 Max(this TKVec3 self, TKVec3 other) => new TKVec3(MathF.Max(self.X, other.X), MathF.Max(self.Y, other.Y), MathF.Max(self.Z, other.Z));
+        public static TKVec4 Max(this TKVec4 self, TKVec4 other) => new TKVec4(MathF.Max(self.X, other.X), MathF.Max(self.Y, other.Y), MathF.Max(self.Z, other.Z), MathF.Max(self.W, other.W));
+        public static TKVec2 Mod(this TKVec2 self, float val) => new TKVec2(self.X % val, self.Y % val);
+        public static TKVec3 Mod(this TKVec3 self, float val) => new TKVec3(self.X % val, self.Y % val, self.Z % val);
+        public static TKVec4 Mod(this TKVec4 self, float val) => new TKVec4(self.X % val, self.Y % val, self.Z % val, self.W % val);
+
         public static TKVec2 ComponentMin(params TKVec2[] anyVecAmt)
         {
             float minX = float.MaxValue;

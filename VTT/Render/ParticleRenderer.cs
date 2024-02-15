@@ -274,6 +274,11 @@
             if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)
             {
                 shader = this.ParticleShader;
+                if (!ShaderProgram.IsLastShaderSame(shader))
+                {
+                    shader.Bind();
+                }
+
                 return false;
             }
             else
@@ -340,6 +345,11 @@
                 else
                 {
                     shader = this.ParticleShader;
+                    if (!ShaderProgram.IsLastShaderSame(shader))
+                    {
+                        shader.Bind();
+                    }
+
                     return false;
                 }
             }

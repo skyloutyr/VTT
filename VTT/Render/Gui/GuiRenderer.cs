@@ -377,7 +377,7 @@
                             Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace((ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start) + Vector3.UnitZ);
                             if (screen.Z >= 0)
                             {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
                                 System.Numerics.Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
                                 System.Numerics.Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
@@ -436,7 +436,7 @@
                             Vector3 halfScreen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half);
                             if (halfScreen.Z >= 0)
                             {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength : (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length * cMap.GridUnit;
                                 string text = len.ToString("0.00");
                                 var tLen = ImGuiHelper.CalcTextSize(text);
                                 ImGui.SetNextWindowPos(halfScreen.Xy.SystemVector() - (tLen / 2));

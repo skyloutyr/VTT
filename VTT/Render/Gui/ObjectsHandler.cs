@@ -993,6 +993,11 @@
                 }
             }
 
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             // Object names and bars overlay
             foreach (MapObject mo in objectsSelected)
             {

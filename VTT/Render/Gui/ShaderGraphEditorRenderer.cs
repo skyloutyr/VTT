@@ -28,6 +28,7 @@
         }
 
         internal bool popupState = false;
+        private bool _extraTexturesOpen = false;
 
         private SVec2 _cameraLocation = SVec2.Zero;
         private bool _lmbDown;
@@ -70,60 +71,105 @@
                         {
                             float wW = ImGui.GetWindowSize().X;
                             float wH = ImGui.GetWindowSize().Y;
+                            
                             ImGui.SetCursorPosX(wW - 320);
-                            ImGui.SetCursorPosY(24);
-                            if (ImGui.BeginChild("ui.shader.extratextures", new(320, wH - 40)))
+                            ImGui.SetCursorPosY(20);
+                            if (this._extraTexturesOpen)
                             {
-                                float oY = 0;
-                                int i = 0;
-                                int dIndex = -1;
-                                foreach (Guid tid in this.EditedGraph.ExtraTexturesAttachments)
+                                if (ImGui.BeginChild("ui.shader.extratextures", new(320, wH - 40), ImGuiChildFlags.Border))
                                 {
-                                    ImGui.TextUnformatted($"{i}: ");
-                                    ImGui.SameLine();
-                                    if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new(16, 16)))
+                                    float oY = 0;
+                                    int i = 0;
+                                    int dIndex = -1;
+                                    foreach (Guid tid in this.EditedGraph.ExtraTexturesAttachments)
                                     {
-                                        dIndex = i;
+                                        ImGui.TextUnformatted($"{i}: ");
+                                        ImGui.SameLine();
+                                        if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new(16, 16)))
+                                        {
+                                            dIndex = i;
+                                        }
+
+                                        if (this.DrawAssetRecepticle(tid, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                        {
+                                            if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
+                                            {
+                                                state.shaderGraphExtraTexturesHovered = this.EditedGraph;
+                                                state.shaderGraphExtraTexturesHoveredIndex = i;
+                                            }
+                                        }
+
+                                        ++i;
+                                        oY += 32;
                                     }
 
-                                    if (this.DrawAssetRecepticle(tid, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                    ImGui.TextUnformatted($"{i}: ");
+                                    if (this.DrawAssetRecepticle(Guid.Empty, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
                                     {
                                         if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
                                         {
                                             state.shaderGraphExtraTexturesHovered = this.EditedGraph;
-                                            state.shaderGraphExtraTexturesHoveredIndex = i;
+                                            state.shaderGraphExtraTexturesHoveredIndex = -1;
                                         }
                                     }
 
-                                    ++i;
-                                    oY += 32;
-                                }
-
-                                ImGui.TextUnformatted($"{i}: ");
-                                if (this.DrawAssetRecepticle(Guid.Empty, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
-                                {
-                                    if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
+                                    if (dIndex != -1)
                                     {
-                                        state.shaderGraphExtraTexturesHovered = this.EditedGraph;
-                                        state.shaderGraphExtraTexturesHoveredIndex = -1;
+                                        this.EditedGraph.ExtraTexturesAttachments.RemoveAt(dIndex);
                                     }
                                 }
 
-                                if (dIndex != -1)
-                                {
-                                    this.EditedGraph.ExtraTexturesAttachments.RemoveAt(dIndex);
-                                }
+                                ImGui.EndChild();
                             }
 
-                            ImGui.EndChild();
+                            SVec2 cursorScreenNow = ImGui.GetCursorScreenPos();
+                            SVec2 windowSizeNow = ImGui.GetWindowSize();
+                            // Grid colors used from https://github.com/Fattorino/ImNodeFlow/blob/master/include/ImNodeFlow.h#L246
+                            uint bgCol = ImGui.GetColorU32(ImGuiCol.WindowBg);
+                            uint gridCol = new Color(new Rgba32(200, 200, 200, 40)).Abgr();
+                            uint gridSubCol = new Color(new Rgba32(200, 200, 200, 10)).Abgr();
+                            drawPtr.AddRectFilled(new SVec2(0, 0), windowSizeNow, bgCol);
+                            float gridSize = 128;
+                            float gridSubdivisions = 4;
+                            for (float x = this._cameraLocation.X % gridSize; x < windowSizeNow.X; x += gridSize)
+                            {
+                                drawPtr.AddLine(new SVec2(x, 0), new SVec2(x, windowSizeNow.Y), gridCol, 2);
+                            }
+
+                            for (float y = this._cameraLocation.Y % gridSize; y < windowSizeNow.Y; y += gridSize)
+                            {
+                                drawPtr.AddLine(new SVec2(0, y), new SVec2(windowSizeNow.X, y), gridCol, 2);
+                            }
+
+                            for (float x = this._cameraLocation.X % (gridSize / gridSubdivisions); x < windowSizeNow.X; x += (gridSize / gridSubdivisions))
+                            {
+                                drawPtr.AddLine(new SVec2(x, 0), new SVec2(x, windowSizeNow.Y), gridSubCol, 1);
+                            }
+
+                            for (float y = this._cameraLocation.Y % (gridSize / gridSubdivisions); y < windowSizeNow.Y; y += (gridSize / gridSubdivisions))
+                            {
+                                drawPtr.AddLine(new SVec2(0, y), new SVec2(windowSizeNow.X, y), gridSubCol, 2);
+                            }
 
                             Color nodeBack = Color.SlateGray.Darker(0.8f);
                             Color nodeHeader = Color.SlateGray.Darker(0.7f);
                             Color nodeHeaderHover = Color.SlateGray.Darker(0.2f);
                             Color nodeBorder = Color.SlateGray.Darker(0.4f);
                             Color nodeBorderHover = Color.RoyalBlue;
+                            Dictionary<Guid, bool> nodeOutputStatuses = new Dictionary<Guid, bool>();
+                            Dictionary<Guid, SVec2> nodeInOutPositions = new Dictionary<Guid, SVec2>();
                             foreach (ShaderNode n in this.EditedGraph.Nodes)
                             {
+                                foreach (NodeInput ni in n.Inputs)
+                                {
+                                    nodeOutputStatuses[ni.ConnectedOutput] = true;
+                                }
+                            }
+
+                            drawPtr.ChannelsSplit(4);
+                            foreach (ShaderNode n in this.EditedGraph.Nodes)
+                            {
+                                bool hasTemplate = ShaderNodeTemplate.TemplatesByID.TryGetValue(n.TemplateID, out ShaderNodeTemplate sht);
                                 SVec2 screenPos = padding + n.Location.SystemVector();
                                 bool mOver = ImGui.IsMouseHoveringRect(screenPos, screenPos + n.Size.SystemVector());
                                 bool mOverHeader = ImGui.IsMouseHoveringRect(screenPos, screenPos + new SVec2(n.Size.X, 20));
@@ -136,9 +182,8 @@
                                     }
                                 }
 
-                                drawPtr.ChannelsSplit(2);
-                                drawPtr.ChannelsSetCurrent(1);
-                                drawPtr.AddText(screenPos + new SVec2(8, 0), Color.White.Abgr(), n.Name);
+                                drawPtr.ChannelsSetCurrent(2);
+                                drawPtr.AddText(screenPos + new SVec2(8, 0), hasTemplate ? Extensions.ContrastBlackOrWhite(sht.Category.DisplayColor).Abgr() : ImGui.GetColorU32(ImGuiCol.Text), n.Name);
                                 if (n.Deletable)
                                 {
                                     Color dCol = Color.Grey;
@@ -159,30 +204,39 @@
                                 SVec2 nSPos = screenPos;
                                 foreach (NodeInput ni in n.Inputs)
                                 {
-                                    bool mOverInput = ImGui.IsMouseHoveringRect(nSPos + new SVec2(-3, yOffset - 3), nSPos + new SVec2(3, yOffset + 3));
+                                    bool mOverInput = ImGui.IsMouseHoveringRect(nSPos + new SVec2(-5, yOffset - 5), nSPos + new SVec2(5, yOffset + 5));
                                     if (mOverInput)
                                     {
                                         nInOver = ni;
                                     }
 
-                                    drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 6, mOverInput ? Color.RoyalBlue.Abgr() : Color.Orange.Abgr());
-                                    drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 4, GetColorForType(ni.SelfType).Abgr());
-                                    drawPtr.AddText(nSPos + new SVec2(12, yOffset - 10), Color.White.Abgr(), ni.Name);
-                                    if (!ni.ConnectedOutput.Equals(Guid.Empty))
+                                    nodeInOutPositions[ni.ID] = nSPos + new SVec2(0, yOffset);
+
+                                    if (!n.TemplateID.Equals(ShaderNodeTemplate.ConstructColor4.ID))
                                     {
-                                        if (this.EditedGraph.AllOutputsById.TryGetValue(ni.ConnectedOutput, out (ShaderNode, NodeOutput) data))
+                                        uint selfColor = mOverInput ? Color.RoyalBlue.Abgr() : GetColorForType(ni.SelfType).Abgr();
+                                        if (!ni.ConnectedOutput.Equals(Guid.Empty))
                                         {
-                                            int outOffset = (data.Item1.Inputs.Count * 20) + (data.Item1.Outputs.IndexOf(data.Item2) * 20);
-                                            SVec2 oSPos = padding + data.Item1.Location.SystemVector() + new SVec2(data.Item1.Size.X, 30 + outOffset);
-                                            bool mOverOutput = ImGui.IsMouseHoveringRect(padding + data.Item1.Location.SystemVector(), padding + data.Item1.Location.SystemVector() + data.Item1.Size.SystemVector()) || ImGui.IsMouseHoveringRect(oSPos + new SVec2(-3, -3), oSPos + new SVec2(3, 3));
-                                            SVec2 iSPos = nSPos + new SVec2(0, yOffset);
-                                            int xOffset = iIndex * -5;
-                                            Color lineColor = mOver || mOverInput || mOverOutput ? Color.RoyalBlue : Color.White;
-                                            this.ShaderLine(drawPtr, oSPos, data.Item2.SelfType, iSPos, xOffset, ni.SelfType, mOver || mOverInput || mOverOutput);
+                                            drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 5, selfColor);
                                         }
+                                        else
+                                        {
+                                            drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 5, selfColor);
+                                        }
+
+                                        drawPtr.AddText(nSPos + new SVec2(12, yOffset - 10), Color.White.Abgr(), ni.Name);
                                     }
                                     else
                                     {
+                                        if (mOverInput)
+                                        {
+                                            nInOver = null;
+                                        }
+                                    }
+
+                                    if (ni.ConnectedOutput.Equals(Guid.Empty))
+                                    {
+                                        drawPtr.ChannelsSetCurrent(3);
                                         SVec2 cPos = ImGui.GetCursorPos();
                                         ImGui.SetCursorPos(nSPos + new SVec2(8, yOffset + 8));
                                         string igbid = "##tInS" + ni.ID.ToString();
@@ -196,7 +250,7 @@
                                                 ni.CurrentValue = clr.GLVector();
                                             }
 
-                                            yOffset += 220;
+                                            yOffset += 240;
                                         }
                                         else
                                         {
@@ -274,6 +328,7 @@
                                         }
 
                                         ImGui.SetCursorPos(cPos);
+                                        drawPtr.ChannelsSetCurrent(2);
                                     }
 
                                     yOffset += 20;
@@ -283,14 +338,23 @@
                                 nSPos = screenPos + new SVec2(n.Size.X, 0);
                                 foreach (NodeOutput no in n.Outputs)
                                 {
-                                    bool mOverThisOut = ImGui.IsMouseHoveringRect(nSPos + new SVec2(-3, yOffset - 3), nSPos + new SVec2(3, yOffset + 3));
+                                    bool mOverThisOut = ImGui.IsMouseHoveringRect(nSPos + new SVec2(-5, yOffset - 5), nSPos + new SVec2(5, yOffset + 5));
+                                    uint selfColor = mOverThisOut ? Color.RoyalBlue.Abgr() : GetColorForType(no.SelfType).Abgr();
                                     if (mOverThisOut)
                                     {
                                         nOutOver = no;
                                     }
 
-                                    drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 6, mOverThisOut ? Color.RoyalBlue.Abgr() : Color.Blue.Abgr());
-                                    drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 4, GetColorForType(no.SelfType).Abgr());
+                                    nodeInOutPositions[no.ID] = nSPos + new SVec2(0, yOffset);
+                                    if (nodeOutputStatuses.ContainsKey(no.ID))
+                                    {
+                                        drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 5, selfColor);
+                                    }
+                                    else
+                                    {
+                                        drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 5, selfColor);
+                                    }
+
                                     SVec2 ts = ImGuiHelper.CalcTextSize(no.Name);
                                     drawPtr.AddText(nSPos + new SVec2(-12 - ts.X, yOffset - 10), Color.White.Abgr(), no.Name);
                                     yOffset += 20;
@@ -298,12 +362,32 @@
 
                                 SVec2 aSize = new SVec2(200, yOffset);
                                 n.Size = new Vector2(aSize.X, aSize.Y);
-                                drawPtr.ChannelsSetCurrent(0);
-                                drawPtr.AddRectFilled(screenPos, screenPos + aSize, nodeBack.Abgr());
-                                drawPtr.AddRectFilled(screenPos, screenPos + new SVec2(aSize.X, 20), mOverHeader ? nodeHeaderHover.Abgr() : nodeHeader.Abgr());
-                                drawPtr.AddRect(screenPos, screenPos + aSize, mOver ? nodeBorderHover.Abgr() : nodeBorder.Abgr());
-                                drawPtr.ChannelsMerge();
+                                drawPtr.ChannelsSetCurrent(1);
+                                drawPtr.AddRectFilled(screenPos, screenPos + aSize, nodeBack.Abgr(), 15f);
+                                drawPtr.AddRect(screenPos, screenPos + aSize, mOver ? nodeBorderHover.Abgr() : nodeBorder.Abgr(), 15f);
+                                drawPtr.AddRectFilled(screenPos, screenPos + new SVec2(aSize.X, 20), mOverHeader ? nodeHeaderHover.Abgr() : hasTemplate ? sht.Category.DisplayColor.Abgr() : nodeHeader.Abgr(), 5f);
                             }
+
+                            drawPtr.ChannelsSetCurrent(0);
+                            foreach ((ShaderNode, NodeInput) inputs in this.EditedGraph.AllInputsById.Values)
+                            {
+                                if (!inputs.Item2.ConnectedOutput.Equals(Guid.Empty))
+                                {
+                                    if (this.EditedGraph.AllOutputsById.TryGetValue(inputs.Item2.ConnectedOutput, out (ShaderNode, NodeOutput) data))
+                                    {
+                                        int outOffset = (data.Item1.Inputs.Count * 20) + (data.Item1.Outputs.IndexOf(data.Item2) * 20);
+                                        SVec2 oSPos = nodeInOutPositions[data.Item2.ID];
+                                        bool mOverOutput = ImGui.IsMouseHoveringRect(padding + data.Item1.Location.SystemVector(), padding + data.Item1.Location.SystemVector() + data.Item1.Size.SystemVector()) || ImGui.IsMouseHoveringRect(oSPos + new SVec2(-3, -3), oSPos + new SVec2(3, 3));
+                                        SVec2 iSPos = nodeInOutPositions[inputs.Item2.ID];
+                                        int xOffset = 0;
+                                        bool mOverAny = nodeOver == inputs.Item1 || nodeOver == data.Item1 || nOutOver == data.Item2 || nInOver == inputs.Item2;
+                                        Color lineColor = mOverAny ? Color.RoyalBlue : Color.White;
+                                        this.ShaderLine(drawPtr, oSPos, data.Item2.SelfType, iSPos, xOffset, inputs.Item2.SelfType, mOverAny || mOverOutput);
+                                    }
+                                }
+                            }
+
+                            drawPtr.ChannelsMerge();
                         }
 
                         if (this._moveMode == MoveMode.NodeConnectionIn && this._inMoved != null)
@@ -394,7 +478,21 @@
 
                                 case MoveMode.ShaderNode:
                                 {
-                                    this._nodeMoved.Location = (this._nodeInitialPosition + mouseDelta).GLVector();
+                                    bool shouldSnap = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt);
+                                    if (shouldSnap)
+                                    {
+                                        SVec2 m = this._nodeInitialPosition + mouseDelta;
+                                        float nX = m.X;
+                                        float nY = m.Y;
+                                        nX = MathF.Floor(nX / 32) * 32;
+                                        nY = MathF.Floor(nY / 32) * 32;
+                                        this._nodeMoved.Location = new Vector2(nX, nY);
+                                    }
+                                    else
+                                    {
+                                        this._nodeMoved.Location = (this._nodeInitialPosition + mouseDelta).GLVector();
+                                    }
+
                                     break;
                                 }
 
@@ -413,14 +511,80 @@
                     drawPtr.AddRectFilled(bl, bl + new SVec2(winSize.X, 20), backClrV4);
                     drawPtr.AddText(bl + new SVec2(32, 0), Color.DarkRed.Abgr(), "⮿");
                     drawPtr.AddText(bl + new SVec2(50, 0), Color.White.Abgr(), $"{this._shaderErrors.Count}");
+                    if (ImGui.IsMouseHoveringRect(bl + new SVec2(32, 0), bl + new SVec2(50, 18)))
+                    {
+                        ImGui.BeginTooltip();
+                        foreach (string err in this._shaderErrors)
+                        {
+                            int atIdx = err.IndexOf('@');
+                            if (atIdx == -1)
+                            {
+                                ImGui.BulletText(lang.Translate(err));
+                            }
+                            else
+                            {
+                                ImGui.BulletText(lang.Translate(err.Substring(0, atIdx), err.Substring(atIdx + 1)));
+                            }
+                        }
+
+                        ImGui.EndTooltip();
+                    }
+
                     drawPtr.AddText(bl + new SVec2(100, 0), Color.Yellow.Abgr(), "⚠");
                     drawPtr.AddText(bl + new SVec2(118, 0), Color.White.Abgr(), $"{this._shaderWarnings.Count}");
+                    if (ImGui.IsMouseHoveringRect(bl + new SVec2(100, 0), bl + new SVec2(118, 18)))
+                    {
+                        ImGui.BeginTooltip();
+                        foreach (string warn in this._shaderWarnings)
+                        {
+                            int atIdx = warn.IndexOf('@');
+                            if (atIdx == -1)
+                            {
+                                ImGui.BulletText(lang.Translate(warn));
+                            }
+                            else
+                            {
+                                ImGui.BulletText(lang.Translate(warn.Substring(0, atIdx), warn.Substring(atIdx + 1)));
+                            }
+                        }
+
+                        ImGui.EndTooltip();
+                    }
+
                     //drawPtr.AddImage(Client.Instance.Frontend.Renderer.GuiRenderer.ErrorIcon, bl, bl + new SVec2(20, 20));
 
                     ImGui.SetCursorPos(initialScreen + new SVec2(winSize.X - 70, winSize.Y - 56));
                     bOk = ImGui.Button(lang.Translate("ui.generic.ok"), new SVec2(60, 24));
                     ImGui.SetCursorPos(initialScreen + new SVec2(winSize.X - 140, winSize.Y - 56));
                     bCancel = ImGui.Button(lang.Translate("ui.generic.cancel"), new SVec2(60, 24));
+                    if (this._extraTexturesOpen)
+                    {
+                        ImGui.SetCursorPosX(ImGui.GetWindowSize().X - 342);
+                        ImGui.SetCursorPosY(22);
+                        if (ImGui.ArrowButton("btn_collapse_extratex", ImGuiDir.Right))
+                        {
+                            this._extraTexturesOpen = false;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.shader.extra_textures.collapse"));
+                        }
+                    }
+                    else
+                    {
+                        ImGui.SetCursorPosX(ImGui.GetWindowSize().X - 26);
+                        ImGui.SetCursorPosY(22);
+                        if (ImGui.ArrowButton("btn_collapse_extratex", ImGuiDir.Left))
+                        {
+                            this._extraTexturesOpen = true;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.shader.extra_textures.reveal"));
+                        }
+                    }
                 }
 
                 ImGui.End();
@@ -572,10 +736,26 @@
                 lineColorFrom = lineColorTo = lineColorAvgFrom = lineColorAvgTo = Color.RoyalBlue.Abgr();
             }
 
-            drawPtr.AddLine(to, to + new SVec2(-10 + xOffset, 0), lineColorTo);
-            drawPtr.AddLine(from, from + new SVec2(10, 0), lineColorFrom);
-            drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, to.Y), new SVec2(to.X - 10 + xOffset, from.Y), lineColorAvgFrom);
-            drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, from.Y), new SVec2(from.X + 10, from.Y), lineColorAvgTo);
+            CubicBezier curve = this.GetCurve(from, to, 0.1f);
+            drawPtr.AddBezierCubic(curve.P0, curve.P1, curve.P2, curve.P3, lineColorFrom, 2f);
+            //drawPtr.AddLine(to, to + new SVec2(-10 + xOffset, 0), lineColorTo);
+            //drawPtr.AddLine(from, from + new SVec2(10, 0), lineColorFrom);
+            //drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, to.Y), new SVec2(to.X - 10 + xOffset, from.Y), lineColorAvgFrom);
+            //drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, from.Y), new SVec2(from.X + 10, from.Y), lineColorAvgTo);
+        }
+
+        // https://github.com/Nelarius/imnodes/blob/master/imnodes.cpp#L116
+        private CubicBezier GetCurve(SVec2 from, SVec2 to, float segmentLength)
+        {
+            float length = SVec2.Distance(from, to);
+            SVec2 offset = new SVec2(0.25f * length, 0.0f);
+            return new CubicBezier(
+                from,
+                from + offset,
+                to - offset,
+                to,
+                Math.Max(1, (int)(length * segmentLength))
+            );
         }
 
         public static Color GetColorForType(NodeValueType nT)
@@ -591,6 +771,24 @@
                 NodeValueType.Vec4 => Color.Goldenrod,
                 _ => Color.White
             };
+        }
+
+        private struct CubicBezier
+        {
+            public SVec2 P0;
+            public SVec2 P1;
+            public SVec2 P2;
+            public SVec2 P3;
+            public int NSegments;
+
+            public CubicBezier(SVec2 p0, SVec2 p1, SVec2 p2, SVec2 p3, int nSegments)
+            {
+                this.P0 = p0;
+                this.P1 = p1;
+                this.P2 = p2;
+                this.P3 = p3;
+                this.NSegments = nSegments;
+            }
         }
     }
 }

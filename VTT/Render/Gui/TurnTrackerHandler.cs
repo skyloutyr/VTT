@@ -28,6 +28,11 @@
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
         {
             this._turnTrackerVisible = false;
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             if (cMap != null && cMap.TurnTracker.Visible)
             {
                 float ww = ImGui.GetMainViewport().WorkSize.X;

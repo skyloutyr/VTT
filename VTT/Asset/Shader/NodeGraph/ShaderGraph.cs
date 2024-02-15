@@ -655,13 +655,14 @@
                 result = true;
             }
 
-            foreach (NodeInput ni in this.AllInputsById.Select(x => x.Value.Item2))
+            foreach ((ShaderNode, NodeInput) inData in this.AllInputsById.Values)
             {
+                NodeInput ni = inData.Item2;
                 if (!ni.ConnectedOutput.Equals(Guid.Empty) && this.AllOutputsById.TryGetValue(ni.ConnectedOutput, out (ShaderNode, NodeOutput) val))
                 {
                     if (val.Item2.SelfType != ni.SelfType)
                     {
-                        warnings.Add("shadergraph.warn.automatic_type_conversion@" + val.Item1.Name);
+                        warnings.Add($"shadergraph.warn.automatic_type_conversion@{val.Item1.Name}->{inData.Item1.Name}(output {val.Item2.Name} of type {val.Item2.SelfType} -> input {ni.Name} of type {ni.SelfType})");
                     }
                 }
             }

@@ -1,9 +1,11 @@
 ﻿namespace VTT.Asset.Shader.NodeGraph
 {
     using OpenTK.Mathematics;
+    using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using VTT.Util;
 
     public class ShaderNodeTemplate
     {
@@ -2494,9 +2496,13 @@ $OUTPUT@3$ = $INPUT@0$.w;
         public static ShaderNodeTemplate ConstructColor4 { get; } = new ShaderNodeTemplate(Guid.Parse("8cbd90a3-ef17-4258-ac68-da70a527de33"), ShaderTemplateCategory.VectorC, "Vec4 - Color", true, new NodeInput[] {
             new NodeInput(){ Name = "Vec4", SelfType = NodeValueType.Vec4, CurrentValue = new Vector4(1, 1, 1, 1) },
         }, new NodeOutput[] {
-            new NodeOutput(){ Name = "Result", SelfType = NodeValueType.Vec4 }
+            new NodeOutput(){ Name = "Result", SelfType = NodeValueType.Vec4 },
+            new NodeOutput(){ Name = "Color", SelfType = NodeValueType.Vec3 },
+            new NodeOutput(){ Name = "Alpha", SelfType = NodeValueType.Float },
         },
 @"$OUTPUT@0$ = $INPUT@0$;
+$OUTPUT@1$ = $INPUT@0$.rgb;
+$OUTPUT@2$ = $INPUT@0$.a;
 ");
 
         #endregion
@@ -2836,28 +2842,30 @@ $OUTPUT@3$ = $INPUT@0$.w;
     {
         public static List<ShaderTemplateCategory> Roots { get; } = new List<ShaderTemplateCategory>();
 
-        public static ShaderTemplateCategory None { get; } = new ShaderTemplateCategory("Uncategorized");
-        public static ShaderTemplateCategory Inputs { get; } = new ShaderTemplateCategory("Inputs");
-        public static ShaderTemplateCategory Math { get; } = new ShaderTemplateCategory("Math");
-        public static ShaderTemplateCategory MathFloat { get; } = new ShaderTemplateCategory("Float", Math);
-        public static ShaderTemplateCategory MathInt { get; } = new ShaderTemplateCategory("Int", Math);
-        public static ShaderTemplateCategory MathVec2 { get; } = new ShaderTemplateCategory("Vec2", Math);
-        public static ShaderTemplateCategory MathVec3 { get; } = new ShaderTemplateCategory("Vec3", Math);
-        public static ShaderTemplateCategory MathVec4 { get; } = new ShaderTemplateCategory("Vec4", Math);
-        public static ShaderTemplateCategory VectorC { get; } = new ShaderTemplateCategory("Vector Data");
-        public static ShaderTemplateCategory Samplers { get; } = new ShaderTemplateCategory("Samplers", Inputs);
-        public static ShaderTemplateCategory Logic { get; } = new ShaderTemplateCategory("Logic");
-        public static ShaderTemplateCategory LogicInt { get; } = new ShaderTemplateCategory("Int", Logic);
-        public static ShaderTemplateCategory LogicFloat { get; } = new ShaderTemplateCategory("Float", Logic);
+        public static ShaderTemplateCategory None { get; } = new ShaderTemplateCategory("Uncategorized", Color.OrangeRed);
+        public static ShaderTemplateCategory Inputs { get; } = new ShaderTemplateCategory("Inputs", Color.MidnightBlue);
+        public static ShaderTemplateCategory Math { get; } = new ShaderTemplateCategory("Math", Color.Firebrick);
+        public static ShaderTemplateCategory MathFloat { get; } = new ShaderTemplateCategory("Float", Color.DarkGreen, Math);
+        public static ShaderTemplateCategory MathInt { get; } = new ShaderTemplateCategory("Int", Color.DarkSeaGreen, Math);
+        public static ShaderTemplateCategory MathVec2 { get; } = new ShaderTemplateCategory("Vec2", Color.DarkKhaki, Math);
+        public static ShaderTemplateCategory MathVec3 { get; } = new ShaderTemplateCategory("Vec3", Color.DarkGoldenrod, Math);
+        public static ShaderTemplateCategory MathVec4 { get; } = new ShaderTemplateCategory("Vec4", Color.SaddleBrown, Math);
+        public static ShaderTemplateCategory VectorC { get; } = new ShaderTemplateCategory("Vector Data", Color.SteelBlue);
+        public static ShaderTemplateCategory Samplers { get; } = new ShaderTemplateCategory("Samplers", Color.DimGray, Inputs);
+        public static ShaderTemplateCategory Logic { get; } = new ShaderTemplateCategory("Logic", Color.DarkSlateBlue);
+        public static ShaderTemplateCategory LogicInt { get; } = new ShaderTemplateCategory("Int", Color.Indigo, Logic);
+        public static ShaderTemplateCategory LogicFloat { get; } = new ShaderTemplateCategory("Float", Color.DarkSlateGrey, Logic);
 
         public ShaderTemplateCategory ParentCategory { get; set; }
         public string Name { get; set; }
+        public Color DisplayColor { get; set; }
         public List<ShaderTemplateCategory> Children { get; } = new List<ShaderTemplateCategory>();
         public List<ShaderNodeTemplate> Templates { get; } = new List<ShaderNodeTemplate>();
 
-        public ShaderTemplateCategory(string name, ShaderTemplateCategory parentCategory = null)
+        public ShaderTemplateCategory(string name, Color clr, ShaderTemplateCategory parentCategory = null)
         {
             this.ParentCategory = parentCategory;
+            this.DisplayColor = clr;
             if (parentCategory != null)
             {
                 parentCategory.Children.Add(this);

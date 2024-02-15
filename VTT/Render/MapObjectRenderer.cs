@@ -420,6 +420,11 @@
         {
             this.CPUTimerGizmos.Restart();
 
+            if (Client.Instance.Frontend.Renderer.GuiRenderer.ShaderEditorRenderer.popupState || Client.Instance.Frontend.Renderer.GuiRenderer.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
             SelectionManager sm = Client.Instance.Frontend.Renderer.SelectionManager;
             if (sm.SelectedObjects.Count > 0)
             {

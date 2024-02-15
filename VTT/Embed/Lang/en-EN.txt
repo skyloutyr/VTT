@@ -664,3 +664,7 @@ ui.properties.markdown.tt=If enabled the text in the description field will be p
 credits.imgui_markdown=imgui_markdown
 ui.asset.new.shader.object=Object
 ui.asset.new.shader.particle=Particle
+shadergraph.warn.automatic_type_conversion=Automatic Type Conversion at {0}.
+shadergraph.err.recursion=Recursion isn't supported in shaders!
+ui.shader.extra_textures.reveal=Reveal Textures Panel\nShaders may have up to 64 custom textures\nwhich are controlled through this panel.\nImage assets may be drag'n'dropped into their recepticles\nand sampled by the Custom Texture input.
+ui.shader.extra_textures.collapse=Collapse Textures Panel

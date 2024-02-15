@@ -20,7 +20,7 @@
 
             if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
             {
-                shader = a.Shader.NodeGraph.GetGLShader();
+                shader = a.Shader.NodeGraph.GetGLShader(false);
                 if (shader != null)
                 {
                     if (!ShaderProgram.IsLastShaderSame(shader))

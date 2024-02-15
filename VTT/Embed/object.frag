@@ -97,6 +97,12 @@ const vec3 surface_reflection_for_dielectrics = vec3(0.04);
 const float PI = 3.14159265359;
 const float eff_epsilon = 0.0001;
 
+// Particle dummy
+const int f_frame = 0;
+const vec4 inst_color = vec4(1.0, 1.0, 1.0, 1.0);
+const int inst_id = 0;
+const float inst_lifespan = 0.0;
+
 vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 {
     return texture(sampler, uvs * frameData.zw + frameData.xy);
@@ -105,6 +111,16 @@ vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 vec4 sampleMap(sampler2D sampler, vec4 frameData)
 {
     return sampleMapCustom(sampler, f_texture, frameData);
+}
+
+vec4 sampleCustomMapAtFrame(sampler2D sampler, vec2 uvs, vec4 frameData, int frame)
+{
+    return sampleMapCustom(sampler, uvs, frameData);
+}
+
+vec4 sampleMapAtFrame(sampler2D sampler, vec4 frameData, int frame)
+{
+    return sampleMap(sampler, frameData);
 }
 
 vec4 sampleExtraTexture(int layer, vec2 uvs)

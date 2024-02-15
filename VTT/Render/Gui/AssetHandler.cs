@@ -619,19 +619,39 @@
                                 pau.Send(Client.Instance.NetClient);
                             }
 
-                            if (ImGui.MenuItem(lang.Translate("ui.asset.new.shader")))
+                            if (ImGui.BeginMenu(lang.Translate("ui.asset.new.shader")))
                             {
-                                ShaderGraph sn = new ShaderGraph();
-                                sn.FillDefaultLayout();
-                                AssetMetadata metadata = new AssetMetadata() { Name = "New Shader", Type = AssetType.Shader, Version = 1 };
-                                using MemoryStream ms = new MemoryStream();
-                                using BinaryWriter bw = new BinaryWriter(ms);
-                                sn.Serialize().Write(bw);
-                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
-                                using MemoryStream imgMs = new MemoryStream();
-                                img.SaveAsPng(imgMs);
-                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                                pau.Send(Client.Instance.NetClient);
+                                if (ImGui.MenuItem(lang.Translate("ui.asset.new.shader.object")))
+                                {
+                                    ShaderGraph sn = new ShaderGraph();
+                                    sn.FillDefaultObjectLayout();
+                                    AssetMetadata metadata = new AssetMetadata() { Name = "New Object Shader", Type = AssetType.Shader, Version = 1 };
+                                    using MemoryStream ms = new MemoryStream();
+                                    using BinaryWriter bw = new BinaryWriter(ms);
+                                    sn.Serialize().Write(bw);
+                                    using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                    using MemoryStream imgMs = new MemoryStream();
+                                    img.SaveAsPng(imgMs);
+                                    PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                    pau.Send(Client.Instance.NetClient);
+                                }
+
+                                if (ImGui.MenuItem(lang.Translate("ui.asset.new.shader.particle")))
+                                {
+                                    ShaderGraph sn = new ShaderGraph();
+                                    sn.FillDefaultParticleLayout();
+                                    AssetMetadata metadata = new AssetMetadata() { Name = "New Particle Shader", Type = AssetType.Shader, Version = 1 };
+                                    using MemoryStream ms = new MemoryStream();
+                                    using BinaryWriter bw = new BinaryWriter(ms);
+                                    sn.Serialize().Write(bw);
+                                    using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                    using MemoryStream imgMs = new MemoryStream();
+                                    img.SaveAsPng(imgMs);
+                                    PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                    pau.Send(Client.Instance.NetClient);
+                                }
+
+                                ImGui.EndMenu();
                             }
 
                             ImGui.EndMenu();
@@ -1020,6 +1040,12 @@
                     if (!haveResult && state.particleModelHovered != null && Client.Instance.IsAdmin)
                     {
                         state.particleModelHovered.AssetID = this._draggedRef.AssetID;
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.particleShaderHovered != null && Client.Instance.IsAdmin)
+                    {
+                        state.particleShaderHovered.CustomShaderID = this._draggedRef.AssetID;
                         haveResult = true;
                     }
 

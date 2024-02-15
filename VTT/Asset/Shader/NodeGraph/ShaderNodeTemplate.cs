@@ -2330,6 +2330,18 @@ $OUTPUT@8$ = gl_FragCoord.xyz;
 $OUTPUT@1$ = (projection * view * vec4(cursor_position, 1.0)).xy;
 ");
 
+        public static ShaderNodeTemplate ParticleInfo { get; } = new ShaderNodeTemplate(Guid.Parse("8da1f120-4bc6-400b-898c-65eb0323a656"), ShaderTemplateCategory.Inputs, "Particle Data", true, Array.Empty<NodeInput>(), new NodeOutput[] {
+            new NodeOutput(){ Name = "Spritemap Frame", SelfType = NodeValueType.Int },
+            new NodeOutput(){ Name = "Particle Index", SelfType = NodeValueType.Int },
+            new NodeOutput(){ Name = "Particle Color", SelfType = NodeValueType.Vec4 },
+            new NodeOutput(){ Name = "Particle Lifespan", SelfType = NodeValueType.Float },
+        },
+@"$OUTPUT@0$ = f_frame;
+$OUTPUT@1$ = inst_id;
+$OUTPUT@2$ = inst_color;
+$OUTPUT@3$ = inst_lifespan;
+");
+
         #endregion
 
         #region Samplers
@@ -2394,6 +2406,21 @@ $OUTPUT@2$ = $TEMP@0$.b;
                 new NodeOutput(){ Name = "Alpha", SelfType = NodeValueType.Float }
             },
 @"vec4 $TEMP@0$ = sampleExtraTexture($INPUT@0$, $INPUT@1$);
+$OUTPUT@0$ = $TEMP@0$.rgb;
+$OUTPUT@1$ = $TEMP@0$.a;
+");
+
+        public static ShaderNodeTemplate SampleAlbedoAtFrame { get; } = new ShaderNodeTemplate(Guid.Parse("f6a8d5bd-4774-4be3-ae55-e7b7f1cafbe1"), ShaderTemplateCategory.Samplers, "Particle Albedo Sampler", true,
+            new NodeInput[] {
+                new NodeInput(){ Name = "Texture Coordinates", SelfType = NodeValueType.Vec2, CurrentValue = Vector2.Zero },
+                new NodeInput(){ Name = "Spritesheet Frame", SelfType = NodeValueType.Int, CurrentValue = 0 },
+            },
+
+            new NodeOutput[] {
+                new NodeOutput(){ Name = "Color", SelfType = NodeValueType.Vec3 },
+                new NodeOutput(){ Name = "Alpha", SelfType = NodeValueType.Float }
+            },
+@"vec4 $TEMP@0$ = sampleCustomMapAtFrame(m_texture_diffuse, $INPUT@0$, m_diffuse_frame, $INPUT@1$);
 $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;
 ");

@@ -23,6 +23,8 @@
         private ParticleSystemInstance _psIns;
         private bool _psInsDispose;
 
+        public Guid CustomShaderID => this._psIns?.Template?.CustomShaderID ?? Guid.Empty;
+
         public void Update()
         {
             if (this.IsActive && !Guid.Empty.Equals(this.SystemID))

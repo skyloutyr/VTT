@@ -30,8 +30,11 @@ uniform vec2 sprite_sheet_data;
 out vec4 f_color;
 out vec2 f_texture;
 out vec4 inst_color;
-out vec3 inst_pos;
+out vec3 f_world_position;
+out vec3 f_position;
 flat out int f_frame;
+flat out int inst_id;
+flat out float inst_lifespan;
 
 vec4 decodeMColor(float cData)
 {
@@ -86,6 +89,7 @@ vec2 decodeSpriteSheetCoordinates(float f)
 
 void main()
 {
+	inst_id = gl_InstanceID;
 	int idx = gl_InstanceID * 2;
 	vec4 v0 = texelFetch(dataBuffer, idx + 0);
 	vec4 v1 = texelFetch(dataBuffer, idx + 1);
@@ -95,13 +99,15 @@ void main()
 	float inst_w = v0.w;
 	float inst_clr = v1.x;
 	float inst_frame = v1.y;
+	inst_lifespan = v1.w;
 	inst_color = decodeMColor(inst_clr);
 	vec4 worldPos = model * (billboard ? vec4(inst_x, inst_y, inst_z, 1.0) : vec4((v_position * inst_w) + vec3(inst_x, inst_y, inst_z), 1.0));
 	vec4 viewPos = view * worldPos;
-	inst_pos = (worldPos + vec4(billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0), 0.0)).xyz;
+	f_world_position = (worldPos + vec4(billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0), 0.0)).xyz;
 	f_color = v_color;
 	f_texture = is_sprite_sheet ? decodeSpriteSheetCoordinates(v1.z) : v_texture;
 	f_frame = int(floatBitsToUint(inst_frame));
+	f_position = v_position;
 	float fow_mul = do_fow ? 1.0 : mix(getFowMultiplier(vec3(inst_x, inst_y, inst_z)), 1.0, 1.0 - fow_mod);
 	gl_Position = (inst_w < 0.001 || fow_mul <= 0.001) ? vec4(0.0, 0.0, 0.0, -1.0) : projection * (viewPos + vec4((billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0)), 0.0));
 }

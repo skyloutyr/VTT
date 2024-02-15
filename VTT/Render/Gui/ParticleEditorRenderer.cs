@@ -293,7 +293,12 @@
                             }
                         }
 
-                        ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem);
+                        ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem, false);
+                        ImAssetRecepticle("ui.properties.custom_shader.tt", draggedRef, pr.CurrentlyEditedSystem.CustomShaderID, state, pr.CurrentlyEditedSystem, true);
+                        if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
+                        {
+                            pr.CurrentlyEditedSystem.CustomShaderID = Guid.Empty;
+                        }
 
                         ImGui.Spacing();
                         bool isSS = pr.CurrentlyEditedSystem.IsSpriteSheet;
@@ -706,15 +711,15 @@
             return false;
         }
 
-        private void ImAssetRecepticle(string text, AssetRef draggedRef, Guid aId, GuiState state, ParticleSystem ps)
+        private void ImAssetRecepticle(string text, AssetRef draggedRef, Guid aId, GuiState state, ParticleSystem ps, bool shader)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             var imScreenPos = ImGui.GetCursorScreenPos();
             var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
             bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-            uint bClr = mouseOver ? draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture) ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+            uint bClr = mouseOver ? draggedRef != null && ((shader && draggedRef.Type == AssetType.Shader) || (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture)) ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
             drawList.AddRect(imScreenPos, rectEnd, bClr);
-            drawList.AddImage(Client.Instance.Frontend.Renderer.GuiRenderer.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+            drawList.AddImage(shader ? Client.Instance.Frontend.Renderer.GuiRenderer.AssetShaderIcon : Client.Instance.Frontend.Renderer.GuiRenderer.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
             string mdlTxt = "";
             int mdlTxtOffset = 0;
             if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -737,9 +742,14 @@
             drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
             drawList.PopClipRect();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
-            if (mouseOver && draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture))
+            if (mouseOver && draggedRef != null && !shader && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture))
             {
                 state.particleModelHovered = ps;
+            }
+
+            if (mouseOver && draggedRef != null && shader && draggedRef.Type == AssetType.Shader)
+            {
+                state.particleShaderHovered = ps;
             }
 
             if (mouseOver)

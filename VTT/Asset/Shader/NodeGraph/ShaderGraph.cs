@@ -41,7 +41,7 @@
             }
         }
 
-        public ShaderProgram GetGLShader()
+        public ShaderProgram GetGLShader(bool isParticleShader)
         {
             if (!this.IsLoaded)
             {
@@ -59,34 +59,38 @@
                 l.Log(LogLevel.Info, "Compiling custom shader");
                 if (this.TryCompileShaderCode(out string code))
                 {
-                    string fullFragCode = IOVTT.ResourceToString("VTT.Embed.object.frag");
-                    string fullVertCode = IOVTT.ResourceToString("VTT.Embed.object.vert");
+                    string fullFragCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.frag" : "VTT.Embed.object.frag");
+                    string fullVertCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.vert" : "VTT.Embed.object.vert");
                     if (fullFragCode.Contains("#pragma ENTRY_NODEGRAPH")) // have nodegraph entry point
                     {
                         fullFragCode = fullFragCode.Replace("#undef NODEGRAPH", "#define NODEGRAPH"); // Mark shader as nodegraph
                         fullFragCode = fullFragCode.Replace("#pragma ENTRY_NODEGRAPH", code); // Inject compiled code
-                        bool dirShadows = Client.Instance.Settings.EnableSunShadows;
-                        bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
-                        bool noBranches = Client.Instance.Settings.DisableShaderBranching;
-                        if (!dirShadows)
+                        if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
                         {
-                            RemoveDefine(ref fullVertCode, "HAS_DIRECTIONAL_SHADOWS");
-                            RemoveDefine(ref fullFragCode, "HAS_DIRECTIONAL_SHADOWS");
+                            bool dirShadows = Client.Instance.Settings.EnableSunShadows;
+                            bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
+                            bool noBranches = Client.Instance.Settings.DisableShaderBranching;
+                            if (!dirShadows)
+                            {
+                                RemoveDefine(ref fullVertCode, "HAS_DIRECTIONAL_SHADOWS");
+                                RemoveDefine(ref fullFragCode, "HAS_DIRECTIONAL_SHADOWS");
+                            }
+
+                            if (!pointShadows)
+                            {
+                                RemoveDefine(ref fullVertCode, "HAS_POINT_SHADOWS");
+                                RemoveDefine(ref fullFragCode, "HAS_POINT_SHADOWS");
+                            }
+
+                            if (noBranches)
+                            {
+                                RemoveDefine(ref fullVertCode, "BRANCHING");
+                                RemoveDefine(ref fullFragCode, "BRANCHING");
+                            }
+
+                            fullFragCode = fullFragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
                         }
 
-                        if (!pointShadows)
-                        {
-                            RemoveDefine(ref fullVertCode, "HAS_POINT_SHADOWS");
-                            RemoveDefine(ref fullFragCode, "HAS_POINT_SHADOWS");
-                        }
-
-                        if (noBranches)
-                        {
-                            RemoveDefine(ref fullVertCode, "BRANCHING");
-                            RemoveDefine(ref fullFragCode, "BRANCHING");
-                        }
-
-                        fullFragCode = fullFragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
                         if (!ShaderProgram.TryCompile(out ShaderProgram sp, fullVertCode, string.Empty, fullFragCode, out string err))
                         {
                             l.Log(LogLevel.Error, "Could not compile custom shader!");
@@ -97,14 +101,26 @@
                         else
                         {
                             sp.Bind();
-                            sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
-                            sp["m_texture_diffuse"].Set(0); // Setup texture locations
-                            sp["m_texture_normal"].Set(1);
-                            sp["m_texture_emissive"].Set(2);
-                            sp["m_texture_aomr"].Set(3);
-                            sp["unifiedTexture"].Set(12);
-                            sp["pl_shadow_maps"].Set(13);
-                            sp["dl_shadow_map"].Set(14);
+                            if (isParticleShader) // Particle shaders don't have uniform block access, and don't have shadow maps
+                            {
+                                sp["m_texture_diffuse"].Set(0);
+                                sp["m_texture_normal"].Set(1);
+                                sp["m_texture_emissive"].Set(2);
+                                sp["m_texture_aomr"].Set(3);
+                                sp["unifiedTexture"].Set(12);
+                            }
+                            else
+                            {
+                                sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
+                                sp["m_texture_diffuse"].Set(0); // Setup texture locations
+                                sp["m_texture_normal"].Set(1);
+                                sp["m_texture_emissive"].Set(2);
+                                sp["m_texture_aomr"].Set(3);
+                                sp["unifiedTexture"].Set(12);
+                                sp["pl_shadow_maps"].Set(13);
+                                sp["dl_shadow_map"].Set(14);
+                            }
+
                             this._glData = sp;
                             this._glValid = true;
                         }
@@ -776,7 +792,39 @@
             }
         }
 
-        public void FillDefaultLayout()
+        public void FillDefaultParticleLayout()
+        {
+            ShaderNode materialData = ShaderNodeTemplate.MaterialData.CreateNode();
+            ShaderNode particleData = ShaderNodeTemplate.ParticleInfo.CreateNode();
+            ShaderNode mulAlbedo = ShaderNodeTemplate.Vec3Multiply.CreateNode();
+            ShaderNode matOut = ShaderNodeTemplate.MaterialPBR.CreateNode();
+
+            mulAlbedo.ConnectInput(0, materialData, 0);
+            mulAlbedo.ConnectInput(1, particleData, 2);
+
+            matOut.ConnectInput(0, mulAlbedo, 0);
+            matOut.ConnectInput(1, materialData, 2);
+            matOut.ConnectInput(2, materialData, 3);
+            matOut.ConnectInput(3, materialData, 1);
+            matOut.ConnectInput(4, materialData, 4);
+            matOut.ConnectInput(5, materialData, 5);
+            matOut.ConnectInput(6, materialData, 6);
+
+            int wLayer1 = 240;
+            int wLayer2 = 480;
+
+            materialData.Location = new Vector2(0, 0);
+            particleData.Location = new Vector2(0, 300);
+            mulAlbedo.Location = new Vector2(wLayer1, 0);
+            matOut.Location = new Vector2(wLayer2 + 40, 0);
+
+            this.Nodes.Add(particleData);
+            this.Nodes.Add(materialData);
+            this.Nodes.Add(mulAlbedo);
+            this.Nodes.Add(matOut);
+        }
+
+        public void FillDefaultObjectLayout()
         {
             ShaderNode materialData = ShaderNodeTemplate.MaterialData.CreateNode();
             ShaderNode uniformAlpha = ShaderNodeTemplate.MaterialAlpha.CreateNode();

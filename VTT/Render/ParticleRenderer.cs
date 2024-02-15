@@ -2,10 +2,12 @@
 {
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Threading;
     using VTT.Asset;
+    using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
@@ -90,17 +92,29 @@
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            this.ParticleShader.Bind();
-            this.ParticleShader["view"].Set(this._cam.View);
-            this.ParticleShader["projection"].Set(this._cam.Projection);
-            this.ParticleShader["model"].Set(Matrix4.Identity);
-            this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-            this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-            this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-            this.ParticleShader["do_fow"].Set(false);
-            this.ParticleShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-            this.ParticleShader["dataBuffer"].Set(14);
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(this.ParticleShader);
+            ShaderProgram shader;
+            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out shader))
+            {
+                shader = this.ParticleShader;
+                shader.Bind();
+                shader["view"].Set(this._cam.View);
+                shader["projection"].Set(this._cam.Projection);
+                shader["model"].Set(Matrix4.Identity);
+                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+                shader["do_fow"].Set(false);
+                shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+                shader["cursor_position"].Set(new Vector3(0, 0, 0));
+                shader["dataBuffer"].Set(14);
+                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                GL.ActiveTexture(TextureUnit.Texture3);
+                Client.Instance.Frontend.Renderer.Black.Bind();
+                GL.ActiveTexture(TextureUnit.Texture2);
+                Client.Instance.Frontend.Renderer.Black.Bind();
+            }
+            
+            GL.ActiveTexture(TextureUnit.Texture0);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
             GL.Disable(EnableCap.Blend);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboID);
@@ -206,17 +220,24 @@
                 GL.Enable(EnableCap.SampleAlphaToCoverage);
             }
 
-            this.ParticleShader.Bind();
+            this._programsPopulated.Clear();
+            ShaderProgram shader = this.ParticleShader;
+            shader.Bind();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            this.ParticleShader["view"].Set(cam.View);
-            this.ParticleShader["projection"].Set(cam.Projection);
-            this.ParticleShader["model"].Set(Matrix4.Identity);
-            this.ParticleShader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-            this.ParticleShader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-            this.ParticleShader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-            this.ParticleShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-            this.ParticleShader["dataBuffer"].Set(14);
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.ParticleShader);
+            shader["view"].Set(cam.View);
+            shader["projection"].Set(cam.Projection);
+            shader["model"].Set(Matrix4.Identity);
+            shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+            shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+            shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+            shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+            shader["dataBuffer"].Set(14);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+            GL.ActiveTexture(TextureUnit.Texture3);
+            Client.Instance.Frontend.Renderer.Black.Bind();
+            GL.ActiveTexture(TextureUnit.Texture2);
+            Client.Instance.Frontend.Renderer.Black.Bind();
             GL.ActiveTexture(TextureUnit.Texture0);
             foreach (MapObject mo in m.IterateObjects(null))
             {
@@ -228,7 +249,8 @@
                         {
                             if (pc.IsActive)
                             {
-                                pc.Render(this.ParticleShader, cam);
+                                this.HandleCustomShader(pc.CustomShaderID, cam, true, false, out shader);
+                                pc.Render(shader, cam);
                             }
                         }
                     }
@@ -244,6 +266,83 @@
             GL.Disable(EnableCap.Blend);
 
             this.CPUTimer.Stop();
+        }
+
+        private List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
+        private bool HandleCustomShader(Guid shaderID, Camera cam, bool enableMemory, bool blank, out ShaderProgram shader)
+        {
+            if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)
+            {
+                shader = this.ParticleShader;
+                return false;
+            }
+            else
+            {
+                AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderID, AssetType.Shader, out Asset a);
+                if (aStat == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+                {
+                    shader = a.Shader.NodeGraph.GetGLShader(true);
+                    if (!ShaderProgram.IsLastShaderSame(shader))
+                    {
+                        shader.Bind();
+                    }
+
+                    if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
+                    {
+                        shader["view"].Set(cam.View);
+                        shader["projection"].Set(cam.Projection);
+                        shader["model"].Set(Matrix4.Identity);
+                        shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                        shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                        shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+                        shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+                        shader["cursor_position"].Set(blank ? Vector3.Zero : Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                        shader["dataBuffer"].Set(14);
+                        if (blank)
+                        {
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                        }
+                        else
+                        {
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+                        }
+
+                        GL.ActiveTexture(TextureUnit.Texture3);
+                        Client.Instance.Frontend.Renderer.Black.Bind();
+                        GL.ActiveTexture(TextureUnit.Texture2);
+                        Client.Instance.Frontend.Renderer.Black.Bind();
+
+                        // Load custom texture
+                        GL.ActiveTexture(TextureUnit.Texture12);
+                        if (a.Shader.NodeGraph.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
+                        {
+                            t.Bind();
+                            for (int i = 0; i < sz.Length; ++i)
+                            {
+                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(double.NaN).LocationUniform);
+                            }
+                        }
+                        else
+                        {
+                            Client.Instance.Frontend.Renderer.White.Bind();
+                        }
+
+                        GL.ActiveTexture(TextureUnit.Texture0);
+                        if (enableMemory)
+                        {
+                            this._programsPopulated.Add(shader);
+                        }
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    shader = this.ParticleShader;
+                    return false;
+                }
+            }
         }
     }
 }

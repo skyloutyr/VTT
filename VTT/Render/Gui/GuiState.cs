@@ -35,6 +35,7 @@
         public MapObject objectCustomNameplateHovered = null;
         public MapObject objectCustomShaderHovered = null;
         public ParticleSystem particleModelHovered = null;
+        public ParticleSystem particleShaderHovered = null;
         public ParticleContainer particleContainerHovered = null;
         public ShaderGraph shaderGraphExtraTexturesHovered = null;
         public int shaderGraphExtraTexturesHoveredIndex = -1;
@@ -75,6 +76,7 @@
             objectCustomShaderHovered = null;
             editParticleSystemPopup = false;
             particleModelHovered = null;
+            particleShaderHovered = null;
             changeParticleColorPopup = false;
             particleContainerHovered = null;
             shaderGraphExtraTexturesHovered = null;

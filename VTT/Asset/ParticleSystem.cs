@@ -43,6 +43,7 @@
         /// Note - NOT OWN ID! This is the ID of the asset the particles use for rendering.
         /// </summary>
         public Guid AssetID { get; set; }
+        public Guid CustomShaderID { get; set; }
 
         public void WriteV1(BinaryWriter bw)
         {
@@ -79,6 +80,7 @@
             }
 
             bw.Write(this.AssetID);
+            bw.Write(this.CustomShaderID);
         }
 
         public void WriteV2(BinaryWriter bw)
@@ -124,6 +126,7 @@
             ret.Set("DoFow", this.DoFow);
             ret.Set("IsSpriteSheet", this.IsSpriteSheet);
             ret.Set("SpriteSheetData", this.SpriteData.Serialize());
+            ret.SetGuid("CustomShaderID", this.CustomShaderID);
             ret.Write(bw);
         }
 
@@ -166,6 +169,8 @@
             {
                 this.SpriteData.Deserialize(de.Get<DataElement>("SpriteSheetData"));
             }
+
+            this.CustomShaderID = de.GetGuid("CustomShaderID", Guid.Empty);
         }
 
         public void ReadV1(BinaryReader br)
@@ -198,6 +203,7 @@
             }
 
             this.AssetID = br.ReadGuid();
+            this.CustomShaderID = br.ReadGuid();
             this.DoBillboard = true;
             this.ClusterEmission = false;
         }
@@ -220,6 +226,7 @@
             ColorOverLifetime = new Gradient<Vector4>(this.ColorOverLifetime),
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
             AssetID = this.AssetID,
+            CustomShaderID = this.CustomShaderID,
             DoBillboard = this.DoBillboard,
             DoFow = this.DoFow,
             ClusterEmission = this.ClusterEmission,
@@ -467,6 +474,7 @@
                 b->color = VTTMath.UInt32BitsToSingle(Extensions.Rgba(p->color));
                 b->animationFrame = VTTMath.UInt32BitsToSingle(p->lifespan == 0 ? 0 : (uint)(this._frameAmount * ((float)p->age / p->lifespan)));
                 b->spritemapIndex = VTTMath.Int32BitsToSingle(p->spriteIndex);
+                b->lifespan = (float)p->age / p->lifespan;
                 if (p->active == 1)
                 {
                     ++nActive;
@@ -788,7 +796,7 @@
         [FieldOffset(24)]
         public float spritemapIndex;
         [FieldOffset(28)]
-        public float unused;
+        public float lifespan;
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]

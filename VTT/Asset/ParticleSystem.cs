@@ -2,6 +2,8 @@
 {
     using OpenTK.Graphics.OpenGL;
     using OpenTK.Mathematics;
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -15,6 +17,9 @@
 
     public class ParticleSystem
     {
+        public static Dictionary<Guid, List<WeightedList<Vector2>>> ImageEmissionLocations { get; } = new Dictionary<Guid, List<WeightedList<Vector2>>>();
+        public static object imageEmissionLock = new object();
+
         public EmissionMode EmissionType { get; set; } = EmissionMode.Point;
         public float EmissionRadius { get; set; } = 1.0f;
         public Vector3 EmissionVolume { get; set; } = Vector3.One;
@@ -44,6 +49,7 @@
         /// </summary>
         public Guid AssetID { get; set; }
         public Guid CustomShaderID { get; set; }
+        public Guid MaskID { get; set; }
 
         public void WriteV1(BinaryWriter bw)
         {
@@ -127,6 +133,7 @@
             ret.Set("IsSpriteSheet", this.IsSpriteSheet);
             ret.Set("SpriteSheetData", this.SpriteData.Serialize());
             ret.SetGuid("CustomShaderID", this.CustomShaderID);
+            ret.SetGuid("MaskID", this.MaskID);
             ret.Write(bw);
         }
 
@@ -171,6 +178,7 @@
             }
 
             this.CustomShaderID = de.GetGuid("CustomShaderID", Guid.Empty);
+            this.MaskID = de.GetGuid("MaskID", Guid.Empty);
         }
 
         public void ReadV1(BinaryReader br)
@@ -227,6 +235,7 @@
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
             AssetID = this.AssetID,
             CustomShaderID = this.CustomShaderID,
+            MaskID = this.MaskID,
             DoBillboard = this.DoBillboard,
             DoFow = this.DoFow,
             ClusterEmission = this.ClusterEmission,
@@ -373,8 +382,13 @@
             SphereSurface,
             Cube,
             CubeSurface,
+            SquareVolume,
+            SquareBoundary,
+            CircleVolume,
+            CircleBoundary,
             Volume,
-            MeshSurface
+            MeshSurface,
+            Mask
         }
     }
 
@@ -603,6 +617,210 @@
                                 break;
                             }
 
+                            case ParticleSystem.EmissionMode.CircleVolume:
+                            case ParticleSystem.EmissionMode.CircleBoundary:
+                            {
+                                bool vol = this.Template.EmissionType == ParticleSystem.EmissionMode.CircleVolume;
+                                float vX = this.Template.EmissionVolume.X;
+                                float vY = this.Template.EmissionVolume.Y;
+                                float vZ = this.Template.EmissionVolume.Z;
+                                if (vol)
+                                {
+                                    vX *= this._rand.NextSingle();
+                                    vY *= this._rand.NextSingle();
+                                    vZ *= this._rand.NextSingle();
+                                }
+
+                                float rngRad = this._rand.NextSingle() * MathF.PI;
+                                if (vX > 0 && vY > 0)
+                                {
+                                    baseOffset += new Vector3(MathF.Cos(rngRad) * vX, MathF.Sin(rngRad) * vY, 0);
+                                }
+                                else
+                                {
+                                    if (vY > 0 && vZ > 0)
+                                    {
+                                        baseOffset += new Vector3(0, MathF.Cos(rngRad) * vY, MathF.Sin(rngRad) * vZ);
+                                    }
+                                    else
+                                    {
+                                        baseOffset += new Vector3(MathF.Cos(rngRad) * vX, 0, MathF.Sin(rngRad) * vZ);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case ParticleSystem.EmissionMode.SquareVolume:
+                            {
+                                float vX = this.Template.EmissionVolume.X;
+                                float vY = this.Template.EmissionVolume.Y;
+                                float vZ = this.Template.EmissionVolume.Z;
+
+                                float o1 = (this._rand.NextSingle() - this._rand.NextSingle());
+                                float o2 = (this._rand.NextSingle() - this._rand.NextSingle());
+                                if (vX > 0 && vY > 0)
+                                {
+                                    baseOffset += new Vector3(o1 * vX, o2 * vY, 0);
+                                }
+                                else
+                                {
+                                    if (vY > 0 && vZ > 0)
+                                    {
+                                        baseOffset += new Vector3(0, o1 * vY, o2 * vZ);
+                                    }
+                                    else
+                                    {
+                                        baseOffset += new Vector3(o1 * vX, 0, o2 * vZ);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case ParticleSystem.EmissionMode.SquareBoundary:
+                            {
+                                float vX = this.Template.EmissionVolume.X;
+                                float vY = this.Template.EmissionVolume.Y;
+                                float vZ = this.Template.EmissionVolume.Z;
+                                if (vX > 0 && vY > 0)
+                                {
+                                    // Emitting on a horizontal square
+                                    bool isLR = (this._rand.Next() & 1) == 0;
+                                    if (isLR)
+                                    {
+                                        float oX = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.X * 0.5f : this.Template.EmissionVolume.X * 0.5f;
+                                        float oY = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.Y;
+                                        baseOffset += new Vector3(oX, oY, 0);
+                                    }
+                                    else
+                                    {
+                                        float oY = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.Y * 0.5f : this.Template.EmissionVolume.Y * 0.5f;
+                                        float oX = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.X;
+                                        baseOffset += new Vector3(oX, oY, 0);
+                                    }
+                                }
+                                else
+                                {
+                                    if (vY > 0 && vZ > 0)
+                                    {
+                                        // Emitting on front face
+                                        bool isLR = (this._rand.Next() & 1) == 0;
+                                        if (isLR)
+                                        {
+                                            float oZ = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.Z * 0.5f : this.Template.EmissionVolume.Z * 0.5f;
+                                            float oY = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.Y;
+                                            baseOffset += new Vector3(0, oY, oZ);
+                                        }
+                                        else
+                                        {
+                                            float oZ = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.Z;
+                                            float oY = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.Y * 0.5f : this.Template.EmissionVolume.Y * 0.5f;
+                                            baseOffset += new Vector3(0, oY, oZ);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Emitting on side face
+                                        bool isLR = (this._rand.Next() & 1) == 0;
+                                        if (isLR)
+                                        {
+                                            float oX = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.X * 0.5f : this.Template.EmissionVolume.X * 0.5f;
+                                            float oZ = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.Z;
+                                            baseOffset += new Vector3(oX, 0, oZ);
+                                        }
+                                        else
+                                        {
+                                            float oZ = (this._rand.Next() & 1) == 0 ? -this.Template.EmissionVolume.Z * 0.5f : this.Template.EmissionVolume.Z * 0.5f;
+                                            float oX = (this._rand.NextSingle() - this._rand.NextSingle()) * this.Template.EmissionVolume.X;
+                                            baseOffset += new Vector3(oX, 0, oZ);
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case ParticleSystem.EmissionMode.Mask:
+                            {
+                                if (this.IsFake)
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (this.Template.MaskID.IsEmpty())
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Texture, out Asset la) != AssetStatus.Return || la == null || !(la.Texture?.glReady ?? false))
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Template.MaskID, AssetType.Texture, out Asset a) != AssetStatus.Return || a == null || !(a.Texture?.glReady ?? false))
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                List<WeightedList<Vector2>> masks;
+                                lock (ParticleSystem.imageEmissionLock)
+                                {
+                                    if (!ParticleSystem.ImageEmissionLocations.TryGetValue(this.Template.MaskID, out masks))
+                                    {
+                                        Image<Rgba32> img = a.Texture.CompoundImage();
+                                        TextureAnimation anima = a.Texture.CachedAnimation;
+                                        if (anima == null)
+                                        {
+                                            anima = new TextureAnimation(new TextureAnimation.Frame[] {
+                                                new TextureAnimation.Frame(){ Index = 0, Duration = 1, Location = new RectangleF(0, 0, 1, 1) }
+                                            });
+                                        }
+
+                                        masks = this.AnalyzeImage(img, anima);
+                                        img.Dispose();
+                                    }
+                                }
+
+                                if (masks.Count == 0)
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                TextureAnimation anim = a?.Texture?.CachedAnimation;
+                                uint maskIndex = anim?.FindFrameForIndex(double.NaN)?.Index ?? 0u;
+                                Vector2 vec = masks[(int)maskIndex].GetRandomItem(this._rand).Item;
+                                float vX = this.Template.EmissionVolume.X;
+                                float vY = this.Template.EmissionVolume.Y;
+                                float vZ = this.Template.EmissionVolume.Z;
+                                Vector3 rPt = Vector3.Zero;
+                                if (vX > 0 && vY > 0)
+                                {
+                                    rPt += new Vector3((vec.X - 0.5f) * vX, (vec.Y - 0.5f) * vY, 0);
+                                }
+                                else
+                                {
+                                    if (vY > 0 && vZ > 0)
+                                    {
+                                        rPt += new Vector3(0, (vec.Y - 0.5f) * vY, (vec.X - 0.5f) * vZ);
+                                    }
+                                    else
+                                    {
+                                        rPt += new Vector3((vec.X - 0.5f) * vX, 0, (vec.Y - 0.5f) * vZ);
+                                    }
+                                }
+
+                                if (this.Container.UseContainerOrientation)
+                                {
+                                    rPt = (this.Container.Container.Rotation * new Vector4(rPt, 1.0f)).Xyz;
+                                    rPt *= this.Container.Container.Scale;
+                                }
+
+                                baseOffset += rPt;
+
+                                break;
+                            }
+
                             case ParticleSystem.EmissionMode.MeshSurface:
                             case ParticleSystem.EmissionMode.Volume:
                             {
@@ -708,6 +926,42 @@
                     }
                 }
             }
+        }
+
+        private List<WeightedList<Vector2>> AnalyzeImage(Image<Rgba32> image, TextureAnimation animation)
+        {
+            List<WeightedList<Vector2>> apts = new List<WeightedList<Vector2>>();
+            for (int i = 0; i < animation.Frames.Length; ++i)
+            {
+                WeightedList<Vector2> pts = new WeightedList<Vector2>();
+                TextureAnimation.Frame frame = animation.Frames[i];
+                int sX = (int)(frame.Location.X * image.Width);
+                int sY = (int)(frame.Location.Y * image.Height);
+                int fw = (int)(frame.Location.Width * image.Width);
+                int fh = (int)(frame.Location.Height * image.Height);
+                int eX = fw + sX;
+                int eY = fh + sY;
+                for (int y = sY; y < eY; ++y)
+                {
+                    for (int x = sX; x < eX; ++x)
+                    {
+                        Rgba32 pixel = image[x, y];
+                        if (pixel.R > 0 && pixel.G > 0 && pixel.B > 0)
+                        {
+                            int w = (int)((pixel.R + pixel.G + pixel.B) / 3f);
+                            if (w > 0)
+                            {
+                                pts.Add(new WeightedItem<Vector2>(new Vector2((x - sX) / (float)fw, 1.0f - ((y - sY) / (float)fh)), w));
+                            }
+                        }
+                    }
+                }
+
+                apts.Add(pts);
+            }
+
+            ParticleSystem.ImageEmissionLocations[this.Template.AssetID] = apts;
+            return apts;
         }
 
         public void UpdateBufferState()

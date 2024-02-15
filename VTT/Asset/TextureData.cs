@@ -471,6 +471,17 @@
         }
 
         public TextureAnimation CachedAnimation => this._cachedAnim;
+        private Image<Rgba32> _cachedImage;
+
+        public Image<Rgba32> CompoundAndCacheImage()
+        {
+            if (this._cachedImage == null)
+            {
+                this._cachedImage = this.CompoundImage();
+            }
+
+            return this._cachedImage;
+        }
 
         public Image<Rgba32> CompoundImage()
         {
@@ -552,6 +563,7 @@
         {
             this._glTex?.Dispose();
             this._cachedAnim = null;
+            this._cachedImage?.Dispose();
         }
 
         public struct Frame

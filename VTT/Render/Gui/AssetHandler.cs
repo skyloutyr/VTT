@@ -1049,6 +1049,12 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.particleMaskHovered != null && Client.Instance.IsAdmin)
+                    {
+                        state.particleMaskHovered.MaskID = this._draggedRef.AssetID;
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.mapAmbianceHovered != null && Client.Instance.IsAdmin)
                     {
                         new PacketChangeMapData() { Data = this._draggedRef.AssetID, MapID = state.clientMap.ID, Type = PacketChangeMapData.DataType.AmbientSoundID }.Send();

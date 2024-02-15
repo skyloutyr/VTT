@@ -802,6 +802,7 @@
 
             this.Container.WebPictures.Clear();
             Client.Instance.Frontend.Sound?.ClearAssets();
+            ParticleSystem.ImageEmissionLocations.Clear();
         }
 
         public void ClearAssets()

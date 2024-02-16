@@ -16,12 +16,13 @@
     public partial class GuiRenderer
     {
         private int _cSelAnimation;
+
+        private List<(Guid, Guid)> SelectedToPacket2(List<MapObject> os) => os.Select(x => (x.MapID, x.ID)).ToList();
+        private List<(Guid, Guid, object)> SelectedToPacket3(List<MapObject> os, object data) => os.Select(x => (x.MapID, x.ID, data)).ToList();
+        private List<(Guid, Guid, T)> SelectedToPacketEx<T>(List<MapObject> os, Func<MapObject, T> data) => os.Select(x => (x.MapID, x.ID, data(x))).ToList();
+
         private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state)
         {
-            List<(Guid, Guid)> SelectedToPacket2(List<MapObject> os) => os.Select(x => (x.MapID, x.ID)).ToList();
-            List<(Guid, Guid, object)> SelectedToPacket3(List<MapObject> os, object data) => os.Select(x => (x.MapID, x.ID, data)).ToList();
-            List<(Guid, Guid, T)> SelectedToPacketEx<T>(List<MapObject> os, Func<MapObject, T> data) => os.Select(x => (x.MapID, x.ID, data(x))).ToList();
-
             if (state.clientMap != null)
             {
                 if (ImGui.Begin(lang.Translate("ui.properties") + "###Properties"))

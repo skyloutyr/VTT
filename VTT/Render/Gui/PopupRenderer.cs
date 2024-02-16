@@ -17,6 +17,7 @@
         private ulong _tickMenuOpened;
         private unsafe void RenderPopups(GuiState state, SimpleLanguage lang, string ok, string cancel, string close)
         {
+            List<MapObject> os = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects;
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.new_folder") + "###Create New Folder"))
             {
                 ImGui.InputText(lang.Translate("ui.popup.new_folder.name") + "###Folder Name", ref this._newFolderNameString, 255);
@@ -205,7 +206,7 @@
                 if (bo)
                 {
                     MapObject mo = this._editedMapObject;
-                    new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.TintColor, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mo.TintColor) } }.Send();
+                    new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.TintColor, Data = SelectedToPacket3(os, mo.TintColor) }.Send();
                 }
 
                 ImGui.EndPopup();
@@ -231,7 +232,7 @@
                 if (bo)
                 {
                     MapObject mo = this._editedMapObject;
-                    new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.NameColor, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, mo.NameColor) } }.Send();
+                    new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.NameColor, Data = SelectedToPacket3(os, mo.NameColor) }.Send();
                 }
 
                 ImGui.EndPopup();

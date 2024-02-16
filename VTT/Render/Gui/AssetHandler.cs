@@ -1018,22 +1018,27 @@
                         }
                     }
 
+                    List<MapObject> os = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects;
                     if (!haveResult && state.objectModelHovered != null && Client.Instance.IsAdmin)
                     {
-                        new PacketChangeObjectAsset() { AssetID = this._draggedRef.AssetID, MapID = state.objectModelHovered.MapID, ObjectID = state.objectModelHovered.ID }.Send();
+                        foreach (MapObject mo in os)
+                        {
+                            new PacketChangeObjectAsset() { AssetID = this._draggedRef.AssetID, MapID = mo.MapID, ObjectID = mo.ID }.Send();
+                        }
+
                         haveResult = true;
                     }
 
                     if (!haveResult && state.objectCustomNameplateHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
                     {
                         state.objectCustomNameplateHovered.CustomNameplateID = this._draggedRef.AssetID;
-                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CustomNameplateID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomNameplateHovered.MapID, state.objectCustomNameplateHovered.ID, this._draggedRef.AssetID) } }.Send();
+                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.CustomNameplateID, Data = SelectedToPacket3(os, this._draggedRef.AssetID) }.Send();
                         haveResult = true;
                     }
 
                     if (!haveResult && state.objectCustomShaderHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
                     {
-                        new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = new List<(Guid, Guid, object)>() { (state.objectCustomShaderHovered.MapID, state.objectCustomShaderHovered.ID, this._draggedRef.AssetID) } }.Send();
+                        new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = SelectedToPacket3(os, this._draggedRef.AssetID) }.Send();
                         haveResult = true;
                     }
 

@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Network.UndoRedo;
     using VTT.Util;
 
     public class PacketAddOrUpdateDrawing : PacketBase
@@ -52,6 +53,7 @@
                     m.Drawings.Add(this.DPC);
                 }
 
+                this.Sender.ActionMemory.NewAction(new DrawingAction() { Container = m, DPC = this.DPC, LastModifyTime = DateTime.Now });
                 m.NeedsSave = true;
                 this.Broadcast(c => c.ClientMapID.Equals(this.MapID));
             }

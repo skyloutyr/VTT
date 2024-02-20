@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Network.UndoRedo;
     using VTT.Util;
 
     public class PacketAddTurnEntry : PacketBase
@@ -12,7 +13,6 @@
         public string TeamName { get; set; }
         public int AdditionIndex { get; set; }
         public override uint PacketID => 2;
-
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -33,14 +33,16 @@
 
             TurnTracker.Team t = m.TurnTracker.Teams.Find(p => p.Name.Equals(this.TeamName)) ?? m.TurnTracker.Teams[0];
             TurnTracker.Entry e = new TurnTracker.Entry() { NumericValue = this.Value, ObjectID = this.ObjectID, Team = t };
+            int ei;
             lock (m.TurnTracker.Lock)
             {
-                m.TurnTracker.Add(e, this.AdditionIndex == -1 ? m.TurnTracker.Entries.Count : this.AdditionIndex);
+                ei = m.TurnTracker.Add(e, this.AdditionIndex == -1 ? m.TurnTracker.Entries.Count : this.AdditionIndex);
             }
 
             if (isServer)
             {
                 m.NeedsSave = true;
+                this.Sender.ActionMemory.NewAction(new AddTurnEntryAction() { EntryIndex = ei, AdditionIndex = this.AdditionIndex, EntryObjectID = this.ObjectID, Map = m, NumericValue = this.Value, TeamName = this.TeamName });
                 this.Broadcast(c => c.ClientMapID.Equals(m.ID));
             }
         }

@@ -14,6 +14,7 @@
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network.Packet;
+    using VTT.Network.UndoRedo;
     using VTT.Util;
 
     public class Server : TcpServer
@@ -769,6 +770,7 @@
     {
         public ClientInfo Info { get; set; }
         public long LastPingResponseTime { get; set; }
+        public ActionMemory ActionMemory { get; set; }
 
         public Guid ID
         {
@@ -819,6 +821,7 @@
         {
             this.Container = (Server)server;
             this.LocalNetManager = new PacketNetworkManager() { IsServer = true };
+            this.ActionMemory = new ActionMemory(this);
         }
 
         public void SetClientInfo(ClientInfo info)

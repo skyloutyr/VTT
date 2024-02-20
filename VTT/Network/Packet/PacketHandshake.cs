@@ -90,6 +90,11 @@
                 }
 
                 server.ClientInfos[ci.ID] = ci;
+                if (sc.IsAdmin)
+                {
+                    sc.ActionMemory.ActionBufferSize = 128;
+                }
+
                 PacketClientInfo pci = new PacketClientInfo() { IsAdmin = sc.IsAdmin, IsObserver = sc.IsObserver, Session = sessionID, IsServer = isServer };
                 pci.Send(sc);
                 new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(sc);

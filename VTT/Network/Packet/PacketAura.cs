@@ -4,13 +4,14 @@
     using System;
     using System.IO;
     using VTT.Control;
+    using VTT.Network.UndoRedo;
     using VTT.Util;
 
     public class PacketAura : PacketBase
     {
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
-        public int Index { get; set; }
+        public int Index { get; set; } = -1;
         public Color AuraColor { get; set; }
         public float AuraRange { get; set; }
         public Action ActionType { get; set; }
@@ -63,7 +64,19 @@
                 {
                     lock (mo.Lock)
                     {
-                        mo.Auras.Add((this.AuraRange, this.AuraColor));
+                        if (this.Index == -1)
+                        {
+                            mo.Auras.Add((this.AuraRange, this.AuraColor));
+                        }
+                        else
+                        {
+                            mo.Auras.Insert(this.Index, (this.AuraRange, this.AuraColor));
+                        }
+                    }
+
+                    if (isServer)
+                    {
+                        this.Sender.ActionMemory.NewAction(new AuraAddOrDeleteAction() { IsAddition = true, AuraColor = this.AuraColor, AuraContainer = mo, AuraIndex = mo.Auras.Count - 1, AuraRange = this.AuraRange });
                     }
 
                     break;
@@ -71,9 +84,15 @@
 
                 case Action.Delete:
                 {
+                    (float, Color) data = mo.Auras[this.Index];
                     lock (mo.Lock)
                     {
                         mo.Auras.RemoveAt(this.Index);
+                    }
+
+                    if (isServer)
+                    {
+                        this.Sender.ActionMemory.NewAction(new AuraAddOrDeleteAction() { IsAddition = false, AuraColor = data.Item2, AuraContainer = mo, AuraIndex = this.Index, AuraRange = data.Item1 });
                     }
 
                     break;
@@ -81,7 +100,13 @@
 
                 case Action.Update:
                 {
+                    (float, Color) data = mo.Auras[this.Index];
                     mo.Auras[this.Index] = (this.AuraRange, this.AuraColor);
+                    if (isServer)
+                    {
+                        this.Sender.ActionMemory.NewAction(new AuraChangeAction() { AuraContainer = mo, AuraIndex = this.Index, InitialAuraColor = data.Item2, InitialAuraRange = data.Item1, LastModifyTime = DateTime.Now, NewAuraColor = this.AuraColor, NewAuraRange = this.AuraRange });
+                    }
+
                     break;
                 }
             }

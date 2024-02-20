@@ -28,7 +28,7 @@
         }
 
         public void Sort() => this.Entries.Sort((l, r) => r.NumericValue.CompareTo(l.NumericValue));
-        public void Add(Entry e, int idx)
+        public int Add(Entry e, int idx)
         {
             if (idx <= this.EntryIndex)
             {
@@ -38,10 +38,12 @@
             if (idx >= this.Entries.Count)
             {
                 this.Entries.Add(e);
+                return this.Entries.Count - 1;
             }
             else
             {
                 this.Entries.Insert(idx, e);
+                return idx;
             }
         }
 

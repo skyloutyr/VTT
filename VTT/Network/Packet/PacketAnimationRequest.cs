@@ -74,6 +74,7 @@
                     }
                 }
 
+                // TODO animation request undo/redo memory!
                 m.NeedsSave = true;
                 this.Broadcast(x => x.ClientMapID.Equals(this.MapID));
             }

@@ -677,3 +677,4 @@ ui.particle.emission.circle_boundary=Окружность (Граница)
 ui.particle.emission.mask=Двухмерная Маска
 ui.properties.custom_mask.tt=Ресурс изображения можно перенести сюда чтобы он был маской.\nЧастицы будут появлятся в ярких частях изображения.\nБолее яркие пиксели будут выделять частицы с большей вероятностью.
 ui.animtions.set_default=Установить по Умолчанию
+ui.animations.play_rate=Скорость Воспроизведения

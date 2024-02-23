@@ -676,3 +676,4 @@ ui.particle.emission.circle_volume=Circle (Surface)
 ui.particle.emission.circle_boundary=Circle (Boundary)
 ui.particle.emission.mask=2D Image Mask
 ui.properties.custom_mask.tt=An image asset can be drag'n'dropped here to serve as an emission mask.\nParticles will emit from bright parts of the image.\nBrighter parts will get more particle coverage.
+ui.animtions.set_default=Set Default

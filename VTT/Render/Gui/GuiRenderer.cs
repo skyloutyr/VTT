@@ -342,7 +342,7 @@
             this.RenderDrawControls(mor, lang, window_flags);
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);
-            this.RenderObjectProperties(lang, this.FrameState);
+            this.RenderObjectProperties(lang, this.FrameState, time);
             this.RenderObjectsList(this.FrameState, lang);
             this.RenderJournals(lang, this.FrameState);
             this.RenderAssets(lang, this.FrameState);

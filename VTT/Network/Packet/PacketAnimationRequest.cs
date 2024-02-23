@@ -17,15 +17,17 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             Logger l = this.GetContextLogger();
+            Map m;
+            MapObject mo;
             if (isServer)
             {
-                if (!server.TryGetMap(this.MapID, out Map m))
+                if (!server.TryGetMap(this.MapID, out m))
                 {
                     l.Log(LogLevel.Warn, "Client asked to change animation data on a non-existing map!");
                     return;
                 }
 
-                if (!m.GetObject(this.ObjectID, out MapObject mo))
+                if (!m.GetObject(this.ObjectID, out mo))
                 {
                     l.Log(LogLevel.Warn, "Client asked to change animation data for a non-existing object!");
                     return;
@@ -36,106 +38,59 @@
                     l.Log(LogLevel.Warn, "Client asked to change animation data for an object without permissions!");
                     return;
                 }
-
-                switch (this.Action)
-                {
-                    case ActionType.SetLooping:
-                    {
-                        mo.AnimationContainer.Looping = (bool)this.Data;
-                        break;
-                    }
-
-                    case ActionType.Pause:
-                    {
-                        mo.AnimationContainer.Paused = true;
-                        mo.AnimationContainer.TimeRaw = mo.AnimationContainer.TimeSwitchTo = (float)this.Data;
-                        break;
-                    }
-
-                    case ActionType.Resume:
-                    {
-                        mo.AnimationContainer.Paused = false;
-                        mo.AnimationContainer.TimeRaw = mo.AnimationContainer.TimeSwitchTo = (float)this.Data;
-                        break;
-                    }
-
-                    case ActionType.SetNextAnimation:
-                    {
-                        mo.AnimationContainer.AnimationSwitchTo = (string)this.Data;
-                        mo.AnimationContainer.TimeSwitchTo = 0;
-                        break;
-                    }
-
-                    case ActionType.SwitchToAnimationNow:
-                    {
-                        mo.AnimationContainer.AnimationSwitchTo = (string)this.Data;
-                        mo.AnimationContainer.TimeSwitchTo = 0;
-                        break;
-                    }
-                }
-
-                // TODO animation request undo/redo memory!
-                m.NeedsSave = true;
-                this.Broadcast(x => x.ClientMapID.Equals(this.MapID));
             }
             else
             {
-                if (!Guid.Equals(client.CurrentMap?.ID, this.MapID))
+                if (!this.MapID.Equals(client.CurrentMap.ID))
                 {
-                    l.Log(LogLevel.Warn, "Server asked for animation change for a non-existing map.");
+                    l.Log(LogLevel.Warn, "Server asked for animation change on a different map, ignoring!");
                     return;
                 }
 
-                if (!client.CurrentMap.GetObject(this.ObjectID, out MapObject mo))
+                m = client.CurrentMap;
+                if (!m.GetObject(this.ObjectID, out mo))
                 {
-                    l.Log(LogLevel.Warn, "Server asked for animation change for a non-existing object!");
+                    l.Log(LogLevel.Warn, "Server asked to change animation data for a non-existing object!");
                     return;
                 }
+            }
 
-                switch (this.Action)
+            switch (this.Action)
+            {
+                case ActionType.TogglePause:
                 {
-                    case ActionType.SetLooping:
-                    {
-                        mo.AnimationContainer.Looping = (bool)this.Data;
-                        break;
-                    }
-
-                    case ActionType.Pause:
-                    {
-                        mo.AnimationContainer.Paused = true;
-                        mo.AnimationContainer.TimeRaw = (float)this.Data;
-                        break;
-                    }
-
-                    case ActionType.Resume:
-                    {
-                        mo.AnimationContainer.Paused = false;
-                        mo.AnimationContainer.TimeRaw = (float)this.Data;
-                        break;
-                    }
-
-                    case ActionType.SetNextAnimation:
-                    {
-                        mo.AnimationContainer.AnimationSwitchTo = (string)this.Data;
-                        mo.AnimationContainer.TimeSwitchTo = 0;
-                        break;
-                    }
-
-                    case ActionType.SwitchToAnimationNow:
-                    {
-                        if (mo.LastRenderModel != null)
-                        {
-                            mo.AnimationContainer.SwitchNow(mo.LastRenderModel, (string)this.Data);
-                        }
-                        else
-                        {
-                            mo.AnimationContainer.AnimationSwitchTo = (string)this.Data;
-                            mo.AnimationContainer.TimeSwitchTo = 0;
-                        }
-
-                        break;
-                    }
+                    mo.AnimationContainer.Paused = (bool)this.Data;
+                    break;
                 }
+
+                case ActionType.SetDefaultAnimation:
+                {
+                    mo.AnimationContainer.LoopingAnimationName = (string)this.Data;
+                    goto case ActionType.SwitchToAnimationNow;
+                }
+
+                case ActionType.SwitchToAnimationNow:
+                {
+                    if (!isServer)
+                    {
+                        mo.AnimationContainer.SwitchNow(mo.LastRenderModel, (string)this.Data);
+                    }
+
+                    break;
+                }
+
+                case ActionType.SetPlayRate:
+                {
+                    mo.AnimationContainer.AnimationPlayRate = (float)this.Data;
+                    break;
+                }
+            }
+
+            // TODO animation request undo/redo memory!
+            if (isServer)
+            {
+                m.NeedsSave = true;
+                this.Broadcast(x => x.ClientMapID.Equals(this.MapID));
             }
         }
 
@@ -146,23 +101,22 @@
             this.Action = br.ReadEnumSmall<ActionType>();
             switch (this.Action)
             {
-                case ActionType.SetLooping:
+                case ActionType.TogglePause:
                 {
                     this.Data = br.ReadBoolean();
                     break;
                 }
 
-                case ActionType.Pause:
-                case ActionType.Resume:
-                {
-                    this.Data = br.ReadSingle();
-                    break;
-                }
-
-                case ActionType.SetNextAnimation:
+                case ActionType.SetDefaultAnimation:
                 case ActionType.SwitchToAnimationNow:
                 {
                     this.Data = br.ReadString();
+                    break;
+                }
+
+                case ActionType.SetPlayRate:
+                {
+                    this.Data = br.ReadSingle();
                     break;
                 }
             }
@@ -175,23 +129,22 @@
             bw.WriteEnumSmall(this.Action);
             switch (this.Action)
             {
-                case ActionType.SetLooping:
+                case ActionType.TogglePause:
                 {
                     bw.Write((bool)this.Data);
                     break;
                 }
 
-                case ActionType.Pause:
-                case ActionType.Resume:
-                {
-                    bw.Write((float)this.Data);
-                    break;
-                }
-
-                case ActionType.SetNextAnimation:
+                case ActionType.SetDefaultAnimation:
                 case ActionType.SwitchToAnimationNow:
                 {
                     bw.Write((string)this.Data);
+                    break;
+                }
+
+                case ActionType.SetPlayRate:
+                {
+                    bw.Write((float)this.Data);
                     break;
                 }
             }
@@ -199,11 +152,10 @@
 
         public enum ActionType
         {
-            SetLooping,
-            Pause,
-            Resume,
-            SetNextAnimation,
-            SwitchToAnimationNow
+            TogglePause,
+            SetDefaultAnimation,
+            SwitchToAnimationNow,
+            SetPlayRate
         }
     }
 }

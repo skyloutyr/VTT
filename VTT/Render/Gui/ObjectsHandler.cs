@@ -21,7 +21,7 @@
         private List<(Guid, Guid, object)> SelectedToPacket3(List<MapObject> os, object data) => os.Select(x => (x.MapID, x.ID, data)).ToList();
         private List<(Guid, Guid, T)> SelectedToPacketEx<T>(List<MapObject> os, Func<MapObject, T> data) => os.Select(x => (x.MapID, x.ID, data(x))).ToList();
 
-        private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state)
+        private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state, double time)
         {
             if (state.clientMap != null)
             {
@@ -674,6 +674,9 @@
                             {
                                 if (haveAnimations)
                                 {
+                                    float aTotal = mo.AnimationContainer.CurrentAnimation?.Duration ?? 1;
+                                    float aNow = mo.AnimationContainer.GetTime(time);
+                                    ImGui.ProgressBar(aNow / aTotal, new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X - 48, 16), string.Empty);
                                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
                                     string aName = ImGuiHelper.TextOrEmpty(mo.AnimationContainer.CurrentAnimation?.Name ?? lang.Translate("ui.animation.none"));
                                     ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
@@ -681,18 +684,11 @@
                                     aName = "↓↓↓";
                                     ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
                                     ImGui.TextUnformatted(aName);
-                                    string next = mo.AnimationContainer.GetNextAnimationPrediction(mo.LastRenderModel);
+                                    string next = mo.AnimationContainer.LoopingAnimationName;
                                     next = string.IsNullOrEmpty(next) ? lang.Translate("ui.animation.none") : next;
-                                    ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
+                                    ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(next).X / 2));
                                     ImGui.TextUnformatted(next);
                                     ImGui.PopStyleColor();
-
-                                    bool bLooping = mo.AnimationContainer.Looping;
-                                    if (ImGui.Checkbox(lang.Translate("ui.animation.looping"), ref bLooping))
-                                    {
-                                        mo.AnimationContainer.Looping = bLooping;
-                                        new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetLooping, Data = bLooping, ObjectID = mo.ID, MapID = mo.MapID }.Send();
-                                    }
 
                                     bool bPaused = mo.AnimationContainer.Paused;
                                     if (ImGui.Checkbox(lang.Translate("ui.animation.paused"), ref bPaused))
@@ -700,11 +696,11 @@
                                         mo.AnimationContainer.Paused = bPaused;
                                         if (bPaused)
                                         {
-                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.Pause, Data = mo.AnimationContainer.TimeRaw, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.TogglePause, Data = true, ObjectID = mo.ID, MapID = mo.MapID }.Send();
                                         }
                                         else
                                         {
-                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.Resume, Data = mo.AnimationContainer.TimeRaw, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.TogglePause, Data = false, ObjectID = mo.ID, MapID = mo.MapID }.Send();
                                         }
                                     }
 
@@ -722,16 +718,25 @@
 
                                     if (ImGui.Button(lang.Translate("ui.animtions.transition")))
                                     {
-                                        if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl))
-                                        {
-                                            mo.AnimationContainer.SwitchNow(mo.LastRenderModel, anims[this._cSelAnimation]);
-                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SwitchToAnimationNow, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
-                                        }
-                                        else
-                                        {
-                                            mo.AnimationContainer.AnimationSwitchTo = anims[this._cSelAnimation];
-                                            new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetNextAnimation, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
-                                        }
+                                        mo.AnimationContainer.SwitchNow(mo.LastRenderModel, anims[this._cSelAnimation]);
+                                        new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SwitchToAnimationNow, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                    }
+
+                                    ImGui.SameLine();
+                                    if (ImGui.Button(lang.Translate("ui.animtions.set_default")))
+                                    {
+                                        mo.AnimationContainer.SwitchNow(mo.LastRenderModel, anims[this._cSelAnimation]);
+                                        mo.AnimationContainer.LoopingAnimationName = anims[this._cSelAnimation];
+                                        new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetDefaultAnimation, Data = anims[this._cSelAnimation], ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                                    }
+
+                                    ImGui.TextUnformatted(lang.Translate("ui.animations.play_rate"));
+                                    float asf = mo.AnimationContainer.AnimationPlayRate;
+                                    if (ImGui.SliderFloat("##PlayRate", ref asf, -2.0f, 2.0f))
+                                    {
+                                        asf = Math.Clamp(asf, -10, 10);
+                                        mo.AnimationContainer.AnimationPlayRate = asf;
+                                        new PacketAnimationRequest() { Action = PacketAnimationRequest.ActionType.SetPlayRate, Data = asf, ObjectID = mo.ID, MapID = mo.MapID }.Send();
                                     }
                                 }
 

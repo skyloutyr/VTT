@@ -179,10 +179,7 @@
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
             ret.Set("IsInfoObject", this.IsInfoObject);
             ret.Set("Props", this.CustomProperties);
-            ret.Set("Animation", this.AnimationContainer.CurrentAnimation?.Name ?? string.Empty);
-            ret.Set("AnimationTime", this.AnimationContainer.TimeRaw);
-            ret.Set("AnimationPaused", this.AnimationContainer.Paused);
-            ret.Set("AnimationLooping", this.AnimationContainer.Looping);
+            ret.Set("AnimationData", this.AnimationContainer.Serialize());
             ret.Set("DescMarkdown", this.UseMarkdownForDescription);
             return ret;
         }
@@ -252,10 +249,7 @@
             this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
             this.IsInfoObject = e.Get<bool>("IsInfoObject");
             this.CustomProperties = e.Get<DataElement>("Props");
-            this.AnimationContainer.AnimationSwitchTo = e.Get("Animation", string.Empty);
-            this.AnimationContainer.TimeSwitchTo = e.Get<float>("AnimationTime", 0);
-            this.AnimationContainer.Paused = e.Get("AnimationPaused", false);
-            this.AnimationContainer.Looping = e.Get("AnimationLooping", true);
+            this.AnimationContainer.Deserialize(e.Get("AnimationData", new DataElement()));
             this.UseMarkdownForDescription = e.Get("DescMarkdown", false);
         }
 
@@ -403,45 +397,27 @@
         }
     }
 
-    public class AnimationContainer
+    public class AnimationContainer : ISerializable
     {
-        public string LastAnimationName { get; set; }
-        public bool Looping { get; set; } = true;
         private float _time;
-        public float TimeRaw
-        {
-            get => this._time;
-            set => this._time = value;
-        }
+
+        public string LoopingAnimationName { get; set; }
+        public bool Paused { get; set; } = false;
+        public float AnimationPlayRate { get; set; } = 1.0f;
 
         public GlbAnimation CurrentAnimation { get; set; }
-        public bool Paused { get; set; }
-
-        public string AnimationSwitchTo { get; set; }
-        public float TimeSwitchTo { get; set; }
 
 
         const float TimeScale = 1f / 60.0f;
-        public float GetTime(double delta) => this.Paused ? this._time : this._time - TimeScale + ((float)delta * TimeScale);
-
-        public string GetNextAnimationPrediction(GlbScene model)
-        {
-            return !string.IsNullOrEmpty(this.AnimationSwitchTo) && model != null
-                ? this.AnimationSwitchTo
-                : this.CurrentAnimation != null && this.Looping
-                ? this.CurrentAnimation.Name
-                : model != null ? this.LastAnimationName ?? null : null;
-        }
+        public float GetTime(double delta) => this.Paused ? this._time : this._time - (TimeScale * this.AnimationPlayRate) + ((float)delta * (TimeScale * this.AnimationPlayRate));
 
         public void SwitchNow(GlbScene model, string to)
         {
             GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(to));
             if (anim != null)
             {
-                this.LastAnimationName = this.CurrentAnimation?.Name ?? null;
-                this.AnimationSwitchTo = null;
-                this._time = this.TimeSwitchTo;
                 this.CurrentAnimation = anim;
+                this._time = this.AnimationPlayRate > 0 ? 0 : anim.Duration;
             }
         }
 
@@ -454,6 +430,11 @@
                 return;
             }
 
+            if (!model.IsAnimated)
+            {
+                return;
+            }
+
             if (this.CurrentAnimation != null && this.CurrentAnimation.Container != model)
             {
                 this._time = 0;
@@ -461,54 +442,24 @@
                 return;
             }
 
-            if (!string.IsNullOrEmpty(this.AnimationSwitchTo) && model != null && this.CurrentAnimation == null)
-            {
-                GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.AnimationSwitchTo));
-                if (anim != null)
-                {
-                    if (this.CurrentAnimation != null)
-                    {
-                        this.LastAnimationName = this.CurrentAnimation.Name;
-                    }
-
-                    this._time = this.TimeSwitchTo;
-                    this.CurrentAnimation = anim;
-                    this.AnimationSwitchTo = null;
-                    this.TimeSwitchTo = 0;
-                    return;
-                }
-            }
-
             if (this.CurrentAnimation != null)
             {
                 if (!this.Paused)
                 {
-                    this._time += 1 / 60f;
+                    this._time += TimeScale * this.AnimationPlayRate;
                 }
 
-                if (this._time > this.CurrentAnimation.Duration)
+                if ((this.AnimationPlayRate > 0 && this._time > this.CurrentAnimation.Duration) || (this._time < 0))
                 {
-                    this._time = 0;
-                    if (!this.Looping)
+                    if (!this.CurrentAnimation.Name.Equals(this.LoopingAnimationName))
                     {
-                        if (!string.IsNullOrEmpty(this.LastAnimationName))
-                        {
-                            GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.LastAnimationName));
-                            this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
-                            this.LastAnimationName = null;
-                        }
-                        else
-                        {
-                            if (this.AnimationSwitchTo != null)
-                            {
-                                GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.AnimationSwitchTo));
-                                this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
-                                this.LastAnimationName = this.AnimationSwitchTo;
-                                this.AnimationSwitchTo = null;
-                            }
-
-                            this.CurrentAnimation = null;
-                        }
+                        GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.LoopingAnimationName));
+                        this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
+                        this._time = this.AnimationPlayRate > 0 ? 0 : this.CurrentAnimation.Duration;
+                    }
+                    else
+                    {
+                        this._time = this.AnimationPlayRate > 0 ? 0 : this.CurrentAnimation.Duration;
                     }
                 }
             }
@@ -516,10 +467,36 @@
             {
                 if (model.IsAnimated)
                 {
-                    this._time = 0;
-                    this.CurrentAnimation = model.Animations.Count > 0 ? model.Animations[0] : null;
+                    if (string.IsNullOrEmpty(this.LoopingAnimationName))
+                    {
+                        this.CurrentAnimation = model.Animations.Count > 0 ? model.Animations[0] : null;
+                        this.LoopingAnimationName = this.CurrentAnimation?.Name ?? string.Empty;
+                        this._time = this.CurrentAnimation == null ? 0 : this.AnimationPlayRate > 0 ? 0 : this.CurrentAnimation.Duration;
+                    }
+                    else
+                    {
+                        GlbAnimation anim = model.Animations.Find(x => x.Name.Equals(this.LoopingAnimationName));
+                        this.CurrentAnimation = anim ?? (model.Animations.Count > 0 ? model.Animations[0] : null);
+                        this._time = this.CurrentAnimation == null ? 0 : this.AnimationPlayRate > 0 ? 0 : this.CurrentAnimation.Duration;
+                    }
                 }
             }
+        }
+
+        public DataElement Serialize()
+        {
+            DataElement ret = new DataElement();
+            ret.Set("Default", this.LoopingAnimationName);
+            ret.Set("Paused", this.Paused);
+            ret.Set("PlayRate", this.AnimationPlayRate);
+            return ret;
+        }
+
+        public void Deserialize(DataElement e)
+        {
+            this.LoopingAnimationName = e.Get("Default", string.Empty);
+            this.Paused = e.Get("Paused", false);
+            this.AnimationPlayRate = e.Get("PlayRate", 1.0f);
         }
     }
 }

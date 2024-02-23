@@ -52,7 +52,7 @@
             {
                 if (selector(mo))
                 {
-                    BBBox box = new BBBox(mo.ClientBoundingBox.Start, mo.ClientBoundingBox.End, mo.Rotation);
+                    BBBox box = new BBBox(mo.ClientRaycastBox.Start, mo.ClientRaycastBox.End, mo.Rotation);
                     box = box.Scale(mo.Scale); // TODO fix BBBox rotation!
 
                     Vector3? vec = box.Intersects(r, mo.Position);

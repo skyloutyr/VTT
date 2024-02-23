@@ -33,6 +33,7 @@
         public GlbObject SimplifiedRaycastMesh { get; }
 
         public AABox CombinedBounds { get; set; }
+        public AABox RaycastBounds { get; set; }
         public bool HasTransparency { get; set; }
         public bool IsAnimated { get; set; }
 
@@ -700,6 +701,8 @@
                 objs[i]._node = null;
                 this.CombinedBounds = this.CombinedBounds.Union(objs[i].Bounds);
             }
+
+            this.RaycastBounds = this.SimplifiedRaycastMesh?.Bounds ?? this.CombinedBounds;
 
             this._checkGlRequests = true;
             if (this._glRequestsTodo <= 0)

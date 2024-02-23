@@ -1019,7 +1019,7 @@
 
                     mo.ClientGuiOverlayDrawnThisFrame = true;
                     bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
-                    float cbby = mo.ClientBoundingBox.End.Y - mo.ClientBoundingBox.Start.Y;
+                    float cbby = mo.ClientRaycastBox.End.Y - mo.ClientRaycastBox.Start.Y;
                     Vector3 screen = is2d ?
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
@@ -1184,7 +1184,7 @@
                     if (mo.CanEdit(Client.Instance.ID))
                     {
                         bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
-                        float cbby = mo.ClientBoundingBox.End.Y - mo.ClientBoundingBox.Start.Y;
+                        float cbby = mo.ClientRaycastBox.End.Y - mo.ClientRaycastBox.Start.Y;
                         Vector3 screen = is2d ?
                             Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                             Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));

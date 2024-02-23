@@ -363,7 +363,7 @@
             foreach (MapObject mo in this._crossedOutObjects)
             {
                 Matrix4 modelMatrix = mo.ClientAssignedModelBounds
-                    ? Matrix4.CreateScale(mo.ClientBoundingBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position)
+                    ? Matrix4.CreateScale(mo.ClientRaycastBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position)
                     : mo.ClientCachedModelMatrix.ClearRotation();
                 this.OverlayShader["model"].Set(modelMatrix);
                 this.Cross.Render();
@@ -381,7 +381,7 @@
             {
                 if (mo.ClientRenderedThisFrame)
                 {
-                    AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+                    AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
                     Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
@@ -397,7 +397,7 @@
             {
                 if (mo.ClientRenderedThisFrame)
                 {
-                    AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+                    AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
                     Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
@@ -728,7 +728,7 @@
             {
                 GL.Disable(EnableCap.CullFace);
                 MapObject mo = this.ObjectMouseOver;
-                AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+                AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                 Vector3 size = cBB.Size;
                 Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
                 Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(this.ObjectMouseOver.Rotation) * Matrix4.CreateTranslation(this.ObjectMouseOver.Position);
@@ -825,7 +825,7 @@
                     {
                         if (!mo.ClientAssignedModelBounds)
                         {
-                            mo.ClientBoundingBox = a.Model.GLMdl.CombinedBounds;
+                            mo.ClientBoundingBox = mo.ClientRaycastBox = a.Model.GLMdl.RaycastBounds;
                             mo.ClientAssignedModelBounds = true;
                         }
 
@@ -912,7 +912,7 @@
                         {
                             if (!mo.ClientAssignedModelBounds)
                             {
-                                mo.ClientBoundingBox = a.Model.GLMdl.CombinedBounds;
+                                mo.ClientBoundingBox = mo.ClientRaycastBox = a.Model.GLMdl.RaycastBounds;
                                 mo.ClientAssignedModelBounds = true;
                             }
 
@@ -981,7 +981,7 @@
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
         {
             GL.Disable(EnableCap.CullFace);
-            AABox cBB = mo.ClientBoundingBox.Scale(mo.Scale);
+            AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
             Vector3 size = cBB.Size;
             Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
             Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);

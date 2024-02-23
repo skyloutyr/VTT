@@ -101,6 +101,9 @@
                 this.RecalculateModelMatrix();
             }
         }
+
+        public AABox ClientRaycastBox { get; set; }
+
         public AABox CameraCullerBox { get; set; }
         public bool ClientAssignedModelBounds { get; set; }
 

@@ -200,7 +200,7 @@
             ret.Lights.Add(sun);
             ret.RootObjects.Add(sun);
 
-            ret.CombinedBounds = glbm.Bounds;
+            ret.CombinedBounds = ret.RaycastBounds = glbm.Bounds;
             ret.glReady = true;
             ret.HasTransparency = this.Meta.EnableBlending;
             return ret;

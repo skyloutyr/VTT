@@ -461,7 +461,7 @@ void main()
                     var pcmd = cmdList.CmdBuffer[cmd_i];
                     if (pcmd.UserCallback != IntPtr.Zero)
                     {
-                        Client.Instance.Logger.Log(LogLevel.Debug, "UserCallback not implemented");
+                        Marshal.GetDelegateForFunctionPointer<ImDrawCallback>(pcmd.UserCallback)(pcmd, drawIdxSize, fbWidth, fbHeight);
                     }
                     else
                     {
@@ -510,6 +510,8 @@ void main()
                 _fontTexture.Dispose();
             }
         }
+
+        public delegate void ImDrawCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight);
     }
 
     public static class ImGuiHelper

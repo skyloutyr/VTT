@@ -173,12 +173,12 @@
             }
         }
 
-        public NodeSimulationMatrix(Image<Rgba32> image, NodeSimulationMatrix offsetsMatrix)
+        public NodeSimulationMatrix(Image<Rgba32> image, NodeSimulationMatrix offsetsMatrix) : this()
         {
             for (int i = 0; i < 32 * 32; ++i)
             {
-                int x = i % 32;
-                int y = i / 32;
+                int x = 0;
+                int y = 0;
                 Vector2 coordinateOffsets = (Vector2)offsetsMatrix.SimulationPixels[i];
                 x += (int)(coordinateOffsets.X * 32);
                 y += (int)(coordinateOffsets.Y * 32);

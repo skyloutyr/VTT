@@ -295,12 +295,17 @@
                             bounds.End.X - bounds.Start.X, bounds.End.Y - bounds.Start.Y
                         );
 
-                        fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FastTestRect(projectedRect, out bool oob);
+                        bool oob = true;
+                        fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FastTestRect(projectedRect, out oob);
                         this._mouseOverInFow = !fowTest;
                         if (oob)
                         {
                             fowTest = true; // handle outside of fow objects as always visible?
                         }
+                    }
+                    else
+                    {
+                        this._mouseOverInFow = false;
                     }
 
                     if (fowTest || Client.Instance.IsAdmin || Client.Instance.IsObserver || (rr.ObjectHit?.CanEdit(Client.Instance.ID) ?? true))

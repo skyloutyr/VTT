@@ -42,6 +42,7 @@
         private NodeInput _inMoved;
         private NodeOutput _outMoved;
         private Texture _nodeLookupTexture;
+        private NodeOutput _ctxOutput;
 
         private List<string> _shaderErrors = new List<string>();
         private List<string> _shaderWarnings = new List<string>();
@@ -423,7 +424,16 @@
                     {
                         if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                         {
+                            if (this._outMoved != null)
+                            {
+                                this._ctxOutput = this._outMoved;
+                            }
+
                             bOpenMenu = true;
+                            this._lmbDown = false;
+                            this._nodeMoved = null;
+                            this._inMoved = null;
+                            this._outMoved = null;
                         }
 
                         if (!this._lmbDown && ImGui.IsMouseDown(ImGuiMouseButton.Left))
@@ -625,6 +635,12 @@
                                     ShaderNode n = t.CreateNode();
                                     n.Location = (popupPos - this._cameraLocation).GLVector();
                                     this.EditedGraph.AddNode(n);
+                                    if (this._ctxOutput != null && n.Inputs.Count > 0)
+                                    {
+                                        n.Inputs[0].ConnectedOutput = this._ctxOutput.ID;
+                                        this._ctxOutput = null;
+                                    }
+
                                     this.EditedGraph.ValidatePreprocess(out this._shaderErrors, out this._shaderWarnings);
                                 }
                             }

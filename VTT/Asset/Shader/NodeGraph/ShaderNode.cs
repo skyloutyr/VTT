@@ -319,7 +319,7 @@
             {
                 int x = i % 32;
                 int y = i / 32;
-                ret.SimulationPixels[i] = new Vector2(x, y);
+                ret.SimulationPixels[i] = new Vector3(x, y, 0);
             }
 
             return ret;

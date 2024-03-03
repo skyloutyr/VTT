@@ -517,6 +517,51 @@ r = $INPUT@6$;
 (matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector3)x[0]).Mod((float)x[1]))
 );
 
+        public static ShaderNodeTemplate Vec3Pow { get; } = new ShaderNodeTemplate(Guid.Parse("5304451b-9d1e-4524-aa87-48eb8256a187"), ShaderTemplateCategory.MathVec3, "Vec3 ^ Vec3", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "Value",
+                    SelfType = NodeValueType.Vec3,
+                    CurrentValue = Vector3.Zero
+                },
+
+                new NodeInput()
+                {
+                    Name = "Operand",
+                    SelfType = NodeValueType.Vec3,
+                    CurrentValue = Vector3.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "Result",
+                    SelfType = NodeValueType.Vec3
+                }
+            },
+@"$OUTPUT@0$ = pow($INPUT@0$, $INPUT@1$);",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => new Vector3(MathF.Pow(((Vector3)x[0]).X, ((Vector3)x[1]).X), MathF.Pow(((Vector3)x[0]).Y, ((Vector3)x[1]).Y), MathF.Pow(((Vector3)x[0]).Z, ((Vector3)x[1]).Z)))
+);
+
+        public static ShaderNodeTemplate Vec3GammaCorrect { get; } = new ShaderNodeTemplate(Guid.Parse("2711137b-689a-45fa-85e0-211fc6964d9d"), ShaderTemplateCategory.MathVec3, "Apply Gamma", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "Color",
+                    SelfType = NodeValueType.Vec3,
+                    CurrentValue = Vector3.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "Color",
+                    SelfType = NodeValueType.Vec3
+                }
+            },
+@"$OUTPUT@0$ = pow($INPUT@0$, vec3(gamma_factor));",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => new Vector3(MathF.Pow(((Vector3)x[0]).X, 2.2f), MathF.Pow(((Vector3)x[0]).Y, 2.2f), MathF.Pow(((Vector3)x[0]).Z, 2.2f)))
+);
+
         #endregion
 
         #region Math - Vec2
@@ -931,6 +976,32 @@ r = $INPUT@6$;
 (matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector2)x[0]).Mod((float)x[1]))
 );
 
+        public static ShaderNodeTemplate Vec2Pow { get; } = new ShaderNodeTemplate(Guid.Parse("8b3972bd-c5d5-42f0-a2b4-a1d3b8205060"), ShaderTemplateCategory.MathVec2, "Vec2 ^ Vec2", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "Value",
+                    SelfType = NodeValueType.Vec2,
+                    CurrentValue = Vector2.Zero
+                },
+
+                new NodeInput()
+                {
+                    Name = "Operand",
+                    SelfType = NodeValueType.Vec2,
+                    CurrentValue = Vector2.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "Result",
+                    SelfType = NodeValueType.Vec2
+                }
+            },
+@"$OUTPUT@0$ = pow($INPUT@0$, $INPUT@1$);",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => new Vector2(MathF.Pow(((Vector2)x[0]).X, ((Vector2)x[1]).X), MathF.Pow(((Vector2)x[0]).Y, ((Vector2)x[1]).Y)))
+);
+
         #endregion
 
         #region Math - Vec4
@@ -1341,6 +1412,32 @@ r = $INPUT@6$;
 
 @"$OUTPUT@0$ = mod($INPUT@0$, $INPUT@1$);",
 (matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).Mod((float)x[1]))
+);
+
+        public static ShaderNodeTemplate Vec4Pow { get; } = new ShaderNodeTemplate(Guid.Parse("0aced8c6-b77e-4e94-abfb-cea8541715ae"), ShaderTemplateCategory.MathVec4, "Vec4 ^ Vec4", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "Value",
+                    SelfType = NodeValueType.Vec4,
+                    CurrentValue = Vector4.Zero
+                },
+
+                new NodeInput()
+                {
+                    Name = "Operand",
+                    SelfType = NodeValueType.Vec4,
+                    CurrentValue = Vector4.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "Result",
+                    SelfType = NodeValueType.Vec4
+                }
+            },
+@"$OUTPUT@0$ = pow($INPUT@0$, $INPUT@1$);",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => new Vector4(MathF.Pow(((Vector4)x[0]).X, ((Vector4)x[1]).X), MathF.Pow(((Vector4)x[0]).Y, ((Vector4)x[1]).Y), MathF.Pow(((Vector4)x[0]).Z, ((Vector4)x[1]).Z), MathF.Pow(((Vector4)x[0]).W, ((Vector4)x[1]).W)))
 );
 
         #endregion

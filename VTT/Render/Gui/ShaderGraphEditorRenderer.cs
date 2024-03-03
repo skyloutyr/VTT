@@ -496,6 +496,40 @@
 
                                 case MoveMode.ShaderNode:
                                 {
+                                    SVec2 wSz = ImGui.GetWindowSize();
+                                    if (cMP.X < 16 || cMP.Y < 32 || cMP.X > wSz.X - 16 || cMP.Y > wSz.Y - 32)
+                                    {
+                                        float cameraMoveSpeed = 6;
+                                        if (ImGui.IsKeyDown(ImGuiKey.Space))
+                                        {
+                                            cameraMoveSpeed = 2;
+                                        }
+
+                                        if (cMP.X > wSz.X - 16)
+                                        {
+                                            this._cameraLocation -= new SVec2(cameraMoveSpeed, 0);
+                                            this._nodeInitialPosition += new SVec2(cameraMoveSpeed, 0);
+                                        }
+
+                                        if (cMP.X < 16)
+                                        {
+                                            this._cameraLocation += new SVec2(cameraMoveSpeed, 0);
+                                            this._nodeInitialPosition -= new SVec2(cameraMoveSpeed, 0);
+                                        }
+
+                                        if (cMP.Y > wSz.Y - 32)
+                                        {
+                                            this._cameraLocation -= new SVec2(0, cameraMoveSpeed);
+                                            this._nodeInitialPosition += new SVec2(0, cameraMoveSpeed);
+                                        }
+
+                                        if (cMP.Y < 32)
+                                        {
+                                            this._cameraLocation += new SVec2(0, cameraMoveSpeed);
+                                            this._nodeInitialPosition -= new SVec2(0, cameraMoveSpeed);
+                                        }
+                                    }
+
                                     bool shouldSnap = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt);
                                     if (shouldSnap)
                                     {

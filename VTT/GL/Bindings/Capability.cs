@@ -1,0 +1,41 @@
+﻿namespace VTT.GL.Bindings
+{
+    public enum Capability
+    {
+        Blend = 0x0BE2,
+        ClipDistance0 = 0x3000,
+        ClipDistance1 = 0x3001,
+        ClipDistance2 = 0x3002,
+        ClipDistance3 = 0x3003,
+        ClipDistance4 = 0x3004,
+        ClipDistance5 = 0x3005,
+        ClipDistance6 = 0x3006,
+        ClipDistance7 = 0x3007,
+        ColorLogicOp = 0x0BF2,
+        CullFace = 0x0B44,
+        DebugOutput = 0x92E0,
+        DebugOutputSynchronous = 0x8242,
+        DepthClamp = 0x864F,
+        DepthTest = 0x0B71,
+        Dither = 0x0BD0,
+        FramebufferSrgb = 0x8DB9,
+        LineSmooth = 0x0B20,
+        Multisample = 0x809D,
+        PolygonOffsetFill = 0x8037,
+        PolygonOffsetLine = 0x2A02,
+        PolygonOffsetPoint = 0x2A01,
+        PolygonSmooth = 0x0B41,
+        PrimitiveRestart = 0x8F9D,
+        PrimitiveRestartFixedIndex = 0x8D69,
+        RasterizerDiscard = 0x8C89,
+        SampleAlphaToCoverage = 0x809E,
+        SampleAlphaToOne = 0x809F,
+        SampleCoverage = 0x80A0,
+        SampleShading = 0x8C36,
+        SampleMask = 0x8E51,
+        ScissorTest = 0x0C11,
+        StencilTest = 0x0B90,
+        TextureCubeMapSeamless = 0x884F,
+        ProgramPointSize = 0x8642
+    }
+}

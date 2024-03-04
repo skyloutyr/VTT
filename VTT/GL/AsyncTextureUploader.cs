@@ -8,15 +8,16 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
-    using OGL = OpenTK.Graphics.OpenGL.GL;
+    using OGL = VTT.GL.Bindings.GL;
 
     public unsafe class AsyncTextureUploader
     {
         public const int MaxPBOSize = 1024 * 1024 * 1024;
 
-        private readonly int _pbo;
+        private readonly uint _pbo;
         private int _pboSize;
 
         public AsyncTextureUploader(int nPixels = 2560000)
@@ -33,9 +34,9 @@
             if (bytesNeeded > this._pboSize)
             {
                 this._pboSize = bytesNeeded;
-                OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, this._pbo);
-                OGL.BufferData(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, this._pboSize, IntPtr.Zero, OpenTK.Graphics.OpenGL.BufferUsageHint.DynamicDraw);
-                OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, 0);
+                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
+                OGL.BufferData(BufferTarget.PixelUnpack, this._pboSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+                OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
             }
         }
 
@@ -134,9 +135,9 @@
                     request.MipmapSizes = imgSizes;
                     request.MipmapDataByteSize = neededBytes;
                     this.CheckBufferSize(neededBytes);
-                    OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, this._pbo);
-                    OGL.BufferData(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, this._pboSize, IntPtr.Zero, OpenTK.Graphics.OpenGL.BufferUsageHint.DynamicDraw);
-                    this._mappedPtr = OGL.MapBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, OpenTK.Graphics.OpenGL.BufferAccess.WriteOnly);
+                    OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
+                    OGL.BufferData(BufferTarget.PixelUnpack, this._pboSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+                    this._mappedPtr = (IntPtr)OGL.MapBuffer(BufferTarget.PixelUnpack, BufferAccess.WriteOnly);
                     if (this._mappedPtr.Equals(IntPtr.Zero))
                     {
                         Client.Instance.Settings.AsyncTextureUploading = false;
@@ -144,7 +145,7 @@
                         throw new OutOfMemoryException("OpenGL (likely) ran out of memory for PBO allocation! Please disable async texture loading in the client config!");
                     }
 
-                    OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, 0);
+                    OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
                     this._requestWorkedWith = request;
                     request.Texture.AsyncState = AsyncLoadState.Processing;
                     this._hasWorkForSecondary = true;
@@ -153,13 +154,13 @@
 
             if (this._hasWorkForPrimary)
             {
-                OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, this._pbo);
-                OGL.UnmapBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer);
+                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
+                OGL.UnmapBuffer(BufferTarget.PixelUnpack);
                 this._texturesEnqueued.Remove(this._requestWorkedWith);
                 if (this._requestWorkedWith.CheckTextureStatus())
                 {
                     OGL.BindTexture(this._requestWorkedWith.Texture.Target, this._requestWorkedWith.Texture);
-                    OGL.TexParameter(this._requestWorkedWith.Texture.Target, OpenTK.Graphics.OpenGL.TextureParameterName.TextureMaxLevel, this._requestWorkedWith.MipmapAmount - 1);
+                    OGL.TexParameter(this._requestWorkedWith.Texture.Target, TextureProperty.MaxLevel, this._requestWorkedWith.MipmapAmount - 1);
                     this._requestWorkedWith.Texture.Size = this._requestWorkedWith.MipmapSizes[0];
                     if (this._requestWorkedWith.DataType == AsyncTextureUploadRequest.ImageDataType.Image)
                     {
@@ -167,7 +168,7 @@
                         for (int j = 0; j < this._requestWorkedWith.MipmapAmount; ++j)
                         {
                             Size s = this._requestWorkedWith.MipmapSizes[j];
-                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Rgba, OpenTK.Graphics.OpenGL.PixelType.UnsignedByte, (IntPtr)bOffset);
+                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, PixelDataFormat.Rgba, PixelDataType.Byte, (IntPtr)bOffset);
                             bOffset += sizeof(Rgba32) * s.Width * s.Height;
                         }
                     }
@@ -177,12 +178,12 @@
                         for (int i = 0; i < this._requestWorkedWith.MipmapAmount; ++i)
                         {
                             Size s = this._requestWorkedWith.MipmapSizes[i];
-                            OGL.CompressedTexImage2D(this._requestWorkedWith.Texture.Target, i, (OpenTK.Graphics.OpenGL.InternalFormat)this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, this._requestWorkedWith.CompressedData.dataLength[i], (IntPtr)bOffset);
+                            OGL.CompressedTexImage2D(this._requestWorkedWith.Texture.Target, i, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, this._requestWorkedWith.CompressedData.dataLength[i], (IntPtr)bOffset);
                             bOffset += this._requestWorkedWith.CompressedData.dataLength[i];
                         }
                     }
 
-                    this._requestWorkedWith.Texture.AsyncFenceID = OGL.FenceSync(OpenTK.Graphics.OpenGL.SyncCondition.SyncGpuCommandsComplete, OpenTK.Graphics.OpenGL.WaitSyncFlags.None);
+                    this._requestWorkedWith.Texture.AsyncFenceID = (IntPtr)OGL.GenFenceSync();
                     this._requestWorkedWith.Texture.AsyncState = AsyncLoadState.Ready;
                     this._requestWorkedWith.UploadCallback?.Invoke(this._requestWorkedWith, true);
                     this._requestWorkedWith = null;
@@ -196,13 +197,13 @@
                     this._hasWorkForPrimary = false;
                 }
 
-                OGL.BindBuffer(OpenTK.Graphics.OpenGL.BufferTarget.PixelUnpackBuffer, 0);
+                OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
             }
 
             this._waitHandleSecondary.Set();
         }
 
-        public bool FireAsyncTextureUpload(Texture tex, Guid tId, OpenTK.Graphics.OpenGL.PixelInternalFormat pif, Image<Rgba32> img, int nMips, Action<AsyncTextureUploadRequest, bool> callback)
+        public bool FireAsyncTextureUpload(Texture tex, Guid tId, SizedInternalFormat pif, Image<Rgba32> img, int nMips, Action<AsyncTextureUploadRequest, bool> callback)
         {
             this.DeterminePossibleMipMaps(img.Size, nMips, out _, out int nBts);
             if (nBts > MaxPBOSize)
@@ -233,7 +234,7 @@
             return true;
         }
 
-        public bool FireAsyncTextureUpload(Texture tex, Guid tId, OpenTK.Graphics.OpenGL.PixelInternalFormat pif, StbDxt.CompressedMipmapData compressedData, Action<AsyncTextureUploadRequest, bool> callback)
+        public bool FireAsyncTextureUpload(Texture tex, Guid tId, SizedInternalFormat pif, StbDxt.CompressedMipmapData compressedData, Action<AsyncTextureUploadRequest, bool> callback)
         {
             if (compressedData.dataLength.Sum() > MaxPBOSize)
             {
@@ -307,7 +308,7 @@
         public Image<Rgba32> Image { get; set; }
         public StbDxt.CompressedMipmapData CompressedData { get; set; }
         public ImageDataType DataType { get; set; }
-        public OpenTK.Graphics.OpenGL.PixelInternalFormat DesiredPixelFormat { get; set; }
+        public SizedInternalFormat DesiredPixelFormat { get; set; }
         public int MipmapAmount { get; set; }
 
         internal Size[] MipmapSizes { get; set; }

@@ -1,11 +1,11 @@
 ﻿namespace VTT.Asset.Shader.NodeGraph
 {
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.Util;
 
     public class ShaderNode : ISerializable

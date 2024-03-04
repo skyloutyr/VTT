@@ -1,6 +1,7 @@
 ﻿namespace VTT.GL
 {
-    using OpenTK.Graphics.OpenGL;
+    using VTT.GL.Bindings;
+    using OGL = VTT.GL.Bindings.GL;
 
     public class GPUStopwatch
     {
@@ -13,24 +14,17 @@
 
         public double ElapsedMillis => this.TimeElapsedNanos / 1000000d;
 
-        public bool IsQueryAvailable
-        {
-            get
-            {
-                GL.GetQueryObject(this._id, GetQueryObjectParam.QueryResultAvailable, out ulong i);
-                return i == (int)All.True;
-            }
-        }
+        public bool IsQueryAvailable => OGL.GetQueryObjectUnsignedLong(this._id, QueryProperty.ResultAvailable) == 1;
 
-        public GPUStopwatch() => GL.GenQueries(1, out this._id);
+        public GPUStopwatch() => this._id = OGL.GenQuery();
         public void Restart()
         {
             if (this._wasEverStarted)
             {
                 if (this.IsQueryAvailable)
                 {
-                    GL.GetQueryObject(this._id, GetQueryObjectParam.QueryTarget, out this._lastTimeNanos);
-                    GL.BeginQuery(QueryTarget.TimeElapsed, this._id);
+                    this._lastTimeNanos = OGL.GetQueryObjectLong(this._id, QueryProperty.Target);
+                    OGL.BeginQuery(QueryTarget.TimeElapsed, this._id);
                     this._started = true;
                 }
             }
@@ -51,6 +45,6 @@
             }
         }
 
-        public void Dispose() => GL.DeleteQuery(this._id);
+        public void Dispose() => OGL.DeleteQuery(this._id);
     }
 }

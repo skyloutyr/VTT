@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
@@ -16,7 +15,9 @@
     using SVec2 = System.Numerics.Vector2;
     using SVec3 = System.Numerics.Vector3;
     using SVec4 = System.Numerics.Vector4;
-    using OGL = OpenTK.Graphics.OpenGL.GL;
+    using OGL = VTT.GL.Bindings.GL;
+    using DotGLFW;
+    using VTT.GL.Bindings;
 
     public class ShaderGraphEditorRenderer
     {
@@ -179,8 +180,8 @@
                             foreach (ShaderNode n in this.EditedGraph.Nodes)
                             {
                                 bool hasTemplate = ShaderNodeTemplate.TemplatesByID.TryGetValue(n.TemplateID, out ShaderNodeTemplate sht);
-                                SVec2 screenPos = padding + n.Location.SystemVector();
-                                bool mOver = ImGui.IsMouseHoveringRect(screenPos, screenPos + n.Size.SystemVector());
+                                SVec2 screenPos = padding + n.Location;
+                                bool mOver = ImGui.IsMouseHoveringRect(screenPos, screenPos + n.Size);
                                 bool mOverHeader = ImGui.IsMouseHoveringRect(screenPos, screenPos + new SVec2(n.Size.X, 20));
                                 if (mOver)
                                 {
@@ -252,7 +253,7 @@
 
                                         if (n.TemplateID.Equals(ShaderNodeTemplate.ConstructColor4.ID)) // Color picker is special
                                         {
-                                            SVec4 clr = ni.CurrentValue is Vector4 v4 ? v4.SystemVector() : SVec4.Zero;
+                                            SVec4 clr = ni.CurrentValue is SVec4 v4 ? v4 : SVec4.Zero;
                                             ImGui.SetNextItemWidth(200 - 16);
                                             if (ImGui.ColorPicker4(igbid, ref clr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoSmallPreview | ImGuiColorEditFlags.NoLabel | ImGuiColorEditFlags.NoBorder | ImGuiColorEditFlags.NoDragDrop | ImGuiColorEditFlags.NoTooltip))
                                             {
@@ -302,7 +303,7 @@
 
                                                 case NodeValueType.Vec2:
                                                 {
-                                                    SVec2 sv2 = ni.CurrentValue is Vector2 v2 ? v2.SystemVector() : SVec2.Zero;
+                                                    SVec2 sv2 = ni.CurrentValue is SVec2 v2 ? v2 : SVec2.Zero;
                                                     if (ImGui.InputFloat2(igbid, ref sv2))
                                                     {
                                                         ni.CurrentValue = sv2.GLVector();
@@ -313,7 +314,7 @@
 
                                                 case NodeValueType.Vec3:
                                                 {
-                                                    SVec3 sv3 = ni.CurrentValue is Vector3 v3 ? v3.SystemVector() : SVec3.Zero;
+                                                    SVec3 sv3 = ni.CurrentValue is SVec3 v3 ? v3 : SVec3.Zero;
                                                     if (ImGui.InputFloat3(igbid, ref sv3))
                                                     {
                                                         ni.CurrentValue = sv3.GLVector();
@@ -324,7 +325,7 @@
 
                                                 case NodeValueType.Vec4:
                                                 {
-                                                    SVec4 sv4 = ni.CurrentValue is Vector4 v4 ? v4.SystemVector() : SVec4.Zero;
+                                                    SVec4 sv4 = ni.CurrentValue is SVec4 v4 ? v4 : SVec4.Zero;
                                                     if (ImGui.InputFloat4(igbid, ref sv4))
                                                     {
                                                         ni.CurrentValue = sv4.GLVector();
@@ -370,7 +371,7 @@
                                 }
 
                                 SVec2 aSize = new SVec2(200, yOffset);
-                                n.Size = new Vector2(aSize.X, aSize.Y);
+                                n.Size = new SVec2(aSize.X, aSize.Y);
                                 drawPtr.ChannelsSetCurrent(1);
                                 drawPtr.AddRectFilled(screenPos, screenPos + aSize, nodeBack.Abgr(), 15f);
                                 drawPtr.AddRect(screenPos, screenPos + aSize, mOver ? nodeBorderHover.Abgr() : nodeBorder.Abgr(), 15f);
@@ -386,7 +387,7 @@
                                     {
                                         int outOffset = (data.Item1.Inputs.Count * 20) + (data.Item1.Outputs.IndexOf(data.Item2) * 20);
                                         SVec2 oSPos = nodeInOutPositions[data.Item2.ID];
-                                        bool mOverOutput = ImGui.IsMouseHoveringRect(padding + data.Item1.Location.SystemVector(), padding + data.Item1.Location.SystemVector() + data.Item1.Size.SystemVector()) || ImGui.IsMouseHoveringRect(oSPos + new SVec2(-3, -3), oSPos + new SVec2(3, 3));
+                                        bool mOverOutput = ImGui.IsMouseHoveringRect(padding + data.Item1.Location, padding + data.Item1.Location + data.Item1.Size) || ImGui.IsMouseHoveringRect(oSPos + new SVec2(-3, -3), oSPos + new SVec2(3, 3));
                                         SVec2 iSPos = nodeInOutPositions[inputs.Item2.ID];
                                         int xOffset = 0;
                                         bool mOverAny = nodeOver == inputs.Item1 || nodeOver == data.Item1 || nOutOver == data.Item2 || nInOver == inputs.Item2;
@@ -461,7 +462,7 @@
                                 {
                                     this._moveMode = MoveMode.ShaderNode;
                                     this._nodeMoved = nodeOver;
-                                    this._nodeInitialPosition = nodeOver.Location.SystemVector();
+                                    this._nodeInitialPosition = nodeOver.Location;
                                 }
                             }
 
@@ -530,7 +531,7 @@
                                         }
                                     }
 
-                                    bool shouldSnap = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt);
+                                    bool shouldSnap = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightAlt);
                                     if (shouldSnap)
                                     {
                                         SVec2 m = this._nodeInitialPosition + mouseDelta;
@@ -538,7 +539,7 @@
                                         float nY = m.Y;
                                         nX = MathF.Floor(nX / 32) * 32;
                                         nY = MathF.Floor(nY / 32) * 32;
-                                        this._nodeMoved.Location = new Vector2(nX, nY);
+                                        this._nodeMoved.Location = new SVec2(nX, nY);
                                     }
                                     else
                                     {
@@ -762,11 +763,11 @@
 
                 if (node != null && (ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift)))
                 {
-                    int currentTexture = OGL.GetInteger(OpenTK.Graphics.OpenGL.GetPName.TextureBinding2D);
+                    uint currentTexture = (uint)OGL.GetInteger(GLPropertyName.TextureBinding2D)[0];
                     this._nodeLookupTexture.Bind();
                     Image<Rgba32> img = this.EditedGraph.GetNodeImage(node, nodeIndex, out NodeSimulationMatrix matrix);
-                    this._nodeLookupTexture.SetImage(img, OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba);
-                    OGL.BindTexture(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D, currentTexture);
+                    this._nodeLookupTexture.SetImage(img, SizedInternalFormat.Rgba8);
+                    OGL.BindTexture(TextureTarget.Texture2D, currentTexture);
                     img.Dispose();
                     ImGui.BeginTooltip();
                     ImGui.Text(lang.Translate("ui.shader.preview"));
@@ -777,7 +778,7 @@
             }
         }
 
-        unsafe bool DrawAssetRecepticle(Guid aId, SimpleLanguage lang, Func<bool> assetEval, GL.Texture iconTex = null)
+        unsafe bool DrawAssetRecepticle(Guid aId, SimpleLanguage lang, Func<bool> assetEval, Texture iconTex = null)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             var imScreenPos = ImGui.GetCursorScreenPos();

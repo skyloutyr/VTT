@@ -1,43 +1,41 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Linq;
     using VTT.Asset.Obj;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using static VTT.Network.ClientSettings;
 
     public static class OpenGLUtil
     {
-        public static PixelInternalFormat SrgbCompressedFormat { get; set; }
-        public static PixelInternalFormat SrgbAlphaCompressedFormat { get; set; }
-        public static PixelInternalFormat RgbCompressedFormat { get; set; }
-        public static PixelInternalFormat RgbaCompressedFormat { get; set; }
+        public static SizedInternalFormat SrgbCompressedFormat { get; set; }
+        public static SizedInternalFormat SrgbAlphaCompressedFormat { get; set; }
+        public static SizedInternalFormat RgbCompressedFormat { get; set; }
+        public static SizedInternalFormat RgbaCompressedFormat { get; set; }
 
         public static bool UsingDXTCompression { get; set; }
 
-        public static PixelInternalFormat MapCompressedFormat(PixelInternalFormat fmtIn)
+        public static SizedInternalFormat MapCompressedFormat(SizedInternalFormat fmtIn)
         {
             return fmtIn switch
             {
-                PixelInternalFormat.CompressedSrgb => SrgbCompressedFormat,
-                PixelInternalFormat.CompressedSrgbAlpha => SrgbAlphaCompressedFormat,
-                PixelInternalFormat.CompressedRgb => RgbCompressedFormat,
-                PixelInternalFormat.CompressedRgba => RgbaCompressedFormat,
+                SizedInternalFormat.CompressedSrgbAlphaBPTC => SrgbAlphaCompressedFormat,
+                SizedInternalFormat.CompressedRgbBPTCFloat => RgbCompressedFormat,
+                SizedInternalFormat.CompressedRgbaBPTC => RgbaCompressedFormat,
                 _ => fmtIn
             };
         }
 
         public static void DetermineCompressedFormats()
         {
-            SrgbCompressedFormat = PixelInternalFormat.CompressedSrgb;
-            SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlpha;
-            RgbCompressedFormat = PixelInternalFormat.CompressedRgb;
-            RgbaCompressedFormat = PixelInternalFormat.CompressedRgba;
+            SrgbCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTC;
+            SrgbAlphaCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTC;
+            RgbCompressedFormat = SizedInternalFormat.CompressedRgbaBPTC;
+            RgbaCompressedFormat = SizedInternalFormat.CompressedRgbaBPTC;
 
             TextureCompressionPreference tcp = Client.Instance.Settings.CompressionPreference;
             if (tcp == TextureCompressionPreference.Disabled)
@@ -46,7 +44,7 @@
                 return;
             }
 
-            int exts = GL.GetInteger(GetPName.NumExtensions);
+            int exts = GL.GetInteger(GLPropertyName.NumExtensions)[0];
             string[] allExtensions = new string[exts];
             for (int i = 0; i < exts; ++i)
             {
@@ -65,20 +63,20 @@
             {
                 if (bptcAvailable)
                 {
-                    SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
-                    SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
-                    RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
-                    RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                    SrgbAlphaCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTCUnorm;
+                    SrgbCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTCUnorm;
+                    RgbCompressedFormat = SizedInternalFormat.CompressedRgbaBPTCUnorm;
+                    RgbaCompressedFormat = SizedInternalFormat.CompressedRgbaBPTCUnorm;
                     UsingDXTCompression = false;
                 }
                 else
                 {
                     if (dxtAvailable)
                     {
-                        SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaS3tcDxt5Ext;
-                        SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
-                        RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
-                        RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                        SrgbAlphaCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaS3TCDxt5Ext;
+                        SrgbCompressedFormat = SizedInternalFormat.CompressedSrgbS3TCDxt1Ext;
+                        RgbCompressedFormat = SizedInternalFormat.CompressedRgbS3TCDxt1Ext;
+                        RgbaCompressedFormat = SizedInternalFormat.CompressedRgbaS3TCDxt5Ext;
                         UsingDXTCompression = true;
                     }
                 }
@@ -87,20 +85,20 @@
             {
                 if (dxtAvailable)
                 {
-                    SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaS3tcDxt5Ext;
-                    SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbS3tcDxt1Ext;
-                    RgbCompressedFormat = PixelInternalFormat.CompressedRgbS3tcDxt1Ext;
-                    RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaS3tcDxt5Ext;
+                    SrgbAlphaCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaS3TCDxt5Ext;
+                    SrgbCompressedFormat = SizedInternalFormat.CompressedSrgbS3TCDxt1Ext;
+                    RgbCompressedFormat = SizedInternalFormat.CompressedRgbS3TCDxt1Ext;
+                    RgbaCompressedFormat = SizedInternalFormat.CompressedRgbaS3TCDxt5Ext;
                     UsingDXTCompression = true;
                 }
                 else
                 {
                     if (bptcAvailable)
                     {
-                        SrgbAlphaCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
-                        SrgbCompressedFormat = PixelInternalFormat.CompressedSrgbAlphaBptcUnorm;
-                        RgbCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
-                        RgbaCompressedFormat = PixelInternalFormat.CompressedRgbaBptcUnorm;
+                        SrgbAlphaCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTCUnorm;
+                        SrgbCompressedFormat = SizedInternalFormat.CompressedSrgbAlphaBPTCUnorm;
+                        RgbCompressedFormat = SizedInternalFormat.CompressedRgbaBPTCUnorm;
+                        RgbaCompressedFormat = SizedInternalFormat.CompressedRgbaBPTCUnorm;
                         UsingDXTCompression = false;
                     }
                 }
@@ -111,57 +109,6 @@
         {
             string[] lines = IOVTT.ResourceToLines("VTT.Embed." + name + ".obj");
             return new WavefrontObject(lines, desiredFormat);
-        }
-
-        private static readonly Lazy<bool> haveSpirVArb = new Lazy<bool>(() => IsExtensionSupported("ARB_gl_spirv"));
-        public static bool IsExtensionSupported(string extName) => GLFW.ExtensionSupported(extName);
-
-        public static bool PreferSpirV { get; set; }
-
-        public static bool ShouldUseSPIRV => haveSpirVArb.Value && PreferSpirV && Client.Instance.Settings.UseSpirVShaders;
-
-        public static ShaderProgram LoadShader(string name, params ShaderType[] types)
-        {
-            bool trySpirV = false;
-            if (haveSpirVArb.Value && PreferSpirV)
-            {
-                trySpirV = IOVTT.DoesResourceExist("VTT.Embed." + name + ".vert.spv") || IOVTT.DoesResourceExist("VTT.Embed." + name + ".frag.spv");
-            }
-
-            return trySpirV ? LoadShaderBinary(name, types) : LoadShaderCode(name, types);
-        }
-
-        private static ShaderProgram LoadShaderBinary(string name, params ShaderType[] types)
-        {
-            byte[] vSh = null;
-            byte[] gSh = null;
-            byte[] fSh = null;
-
-            if (types.Contains(ShaderType.VertexShader))
-            {
-                vSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".vert.spv");
-            }
-
-            if (types.Contains(ShaderType.GeometryShader))
-            {
-                gSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".geom.spv");
-            }
-
-            if (types.Contains(ShaderType.FragmentShader))
-            {
-                fSh = IOVTT.ResourceToBytes("VTT.Embed." + name + ".frag.spv");
-            }
-
-            Client.Instance.Logger.Log(LogLevel.Debug, "Loading SPIR-V shader VTT.Embed." + name);
-            if (!ShaderProgram.TryLoadBinary(out ShaderProgram sp, vSh, gSh, fSh, x => default, out string err))
-            {
-                Logger l = Client.Instance.Logger;
-                l.Log(LogLevel.Fatal, "Could not compile SPIR-V shader!");
-                l.Log(LogLevel.Fatal, err);
-                throw new System.Exception("Could not compile SPIR-V shader " + name + "! Shader error was " + err);
-            }
-
-            return sp;
         }
 
         private static ShaderProgram LoadShaderCode(string name, params ShaderType[] types)
@@ -197,7 +144,7 @@
             return sp;
         }
 
-        public static Texture LoadUIImage(string name, PixelInternalFormat format = PixelInternalFormat.Rgba, WrapParam wrap = WrapParam.ClampToBorder)
+        public static Texture LoadUIImage(string name, SizedInternalFormat format = SizedInternalFormat.Rgba, WrapParam wrap = WrapParam.ClampToBorder)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
@@ -214,7 +161,7 @@
             return tex;
         }
 
-        public static Texture LoadFromOnePixel(Rgba32 pixel, PixelInternalFormat format = PixelInternalFormat.Rgba)
+        public static Texture LoadFromOnePixel(Rgba32 pixel, SizedInternalFormat format = SizedInternalFormat.Rgba)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
@@ -225,7 +172,7 @@
             return tex;
         }
 
-        public static Texture LoadBasicTexture(Image<Rgba32> img, PixelInternalFormat format = PixelInternalFormat.Rgba)
+        public static Texture LoadBasicTexture(Image<Rgba32> img, SizedInternalFormat format = SizedInternalFormat.Rgba)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();

@@ -267,13 +267,15 @@
                     {
                         case VSyncMode.Off:
                         {
-                            Glfw.SwapInterval(this._haveVTearExt ? -1 : 0);
+                            Glfw.SwapInterval(0);
+                            this.MinSwapInterval = 0;
                             break;
                         }
 
                         default:
                         {
                             Glfw.SwapInterval(1);
+                            this.MinSwapInterval = 1;
                             break;
                         }
                     }

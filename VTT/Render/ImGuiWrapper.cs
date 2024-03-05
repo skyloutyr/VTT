@@ -112,7 +112,7 @@ void main()
             if (this._keyMappings.TryGetValue(key, out ImGuiKey val))
             {
                 ImGui.GetIO().AddKeyEvent(val, !release);
-                //ImGui.GetIO().SetKeyEventNativeData(val, (int)key, scan);
+                ImGui.GetIO().SetKeyEventNativeData(val, (int)key, scan);
             }
         }
 
@@ -347,6 +347,7 @@ void main()
             }
         }
 
+        private double _lastDelta;
         public void NewFrame(double delta)
         {
             ClientWindow cw = Client.Instance.Frontend;
@@ -358,7 +359,14 @@ void main()
                 ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2((float)cw.Width / ww, (float)cw.Height / wh);
             }
 
-            ImGui.GetIO().DeltaTime = (float)delta;
+            double now = Glfw.GetTime();
+            if (now < this._lastDelta)
+            {
+                now = this._lastDelta + 0.00001f;
+            }
+
+            ImGui.GetIO().DeltaTime = this._lastDelta > 0.0 ? (float)(now - this._lastDelta) : (float)(1.0f / 60.0f);
+            this._lastDelta = now;
             ImGui.NewFrame();
         }
 

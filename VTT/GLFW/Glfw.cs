@@ -193,5 +193,7 @@
             x = i;
             y = j;
         }
+
+        public static double GetTime() => glfwGetTime();
     }
 }

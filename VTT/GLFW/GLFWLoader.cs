@@ -127,5 +127,8 @@
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void glfwGetWindowPos(IntPtr window, int* width, int* height);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern double glfwGetTime();
     }
 }

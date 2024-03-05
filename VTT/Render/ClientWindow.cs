@@ -203,6 +203,7 @@
                         Glfw.SetWindowMonitor(win, IntPtr.Zero, ox, oy, ow, oh, Glfw.DontCare);
                         Glfw.SetWindowAttrib(win, WindowProperty.Resizable, true);
                         Glfw.SetWindowAttrib(win, WindowProperty.Decorated, true);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Floating, false);
                         Glfw.ShowWindow(win);
                         if (!wasDecorated)
                         {
@@ -218,6 +219,7 @@
                         Glfw.HideWindow(win);
                         Glfw.SetWindowMonitor(win, Glfw.GetPrimaryMonitor(), 0, 0, w, h, Glfw.DontCare);
                         Glfw.SetWindowAttrib(win, WindowProperty.Decorated, false);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Floating, false);
                         Glfw.ShowWindow(win);
                         Glfw.GetWindowPos(win, out int wx, out int wy);
                         oldPos = new Point(wx, wy);
@@ -230,6 +232,7 @@
                         Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Borderless;
                         Glfw.HideWindow(win);
                         Glfw.SetWindowAttrib(win, WindowProperty.Decorated, false);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Floating, true);
                         Client.Instance.Frontend.GameHandle.Decorated.Value = false;
                         Glfw.SetWindowMonitor(win, Glfw.GetPrimaryMonitor(), 0, 0, w, h, Glfw.DontCare);
                         Glfw.ShowWindow(win);

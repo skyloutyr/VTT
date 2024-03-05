@@ -1,7 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
 
     public struct AABox : IEquatable<AABox>
     {
@@ -49,15 +49,13 @@
             MathF.Max(this.End.Z, other.End.Z)
         );
 
-        public readonly AABox Transform(Matrix3 by) => new AABox(this.Start * by, this.End * by);
-
-        public readonly AABox Transform(Matrix4 by)
+        public readonly AABox Transform(Matrix4x4 by)
         {
             Vector4 start = new Vector4(this.Start, 1);
             Vector4 end = new Vector4(this.End, 1);
-            start *= by;
-            end *= by;
-            return new AABox(start.Xyz, end.Xyz);
+            start = Vector4.Transform(start, by);
+            end = Vector4.Transform(end, by);
+            return new AABox(start.Xyz(), end.Xyz());
         }
 
         public readonly bool IntersectsSphere(Vector3 center, float radius)
@@ -78,7 +76,7 @@
         {
             Vector3 distances1 = other.Start - this.End;
             Vector3 distances2 = this.Start - other.End;
-            Vector3 distances = Vector3.ComponentMax(distances1, distances2);
+            Vector3 distances = Vector3.Max(distances1, distances2);
             float maxDistance = MathF.Max(distances.X, MathF.Max(distances.Y, distances.Z));
             return maxDistance < 0;
         }

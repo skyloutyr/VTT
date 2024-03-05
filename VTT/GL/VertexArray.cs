@@ -39,7 +39,7 @@
             for (int i = 0; i < type.Rows; ++i)
             {
                 GL.EnableVertexAttribArray(this._currentLayoutIndex);
-                if (type.Type is VertexAttributeType.Int or VertexAttributeType.UnsignedInt or VertexAttributeType.Byte or VertexAttributeType.Short or VertexAttributeType.UnsignedShort)
+                if (type.Type is VertexAttributeType.Int or VertexAttributeType.UnsignedInt or VertexAttributeType.Short or VertexAttributeType.UnsignedShort)
                 {
                     VertexAttributeIntegerType vait = (VertexAttributeIntegerType)type.Type;
                     GL.VertexAttribIPointer(this._currentLayoutIndex, type.Size, vait, this._stride, this._currentOffset);

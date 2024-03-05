@@ -1,8 +1,8 @@
 ﻿namespace VTT.Network.Packet
 {
-    using OpenTK.Mathematics;
     using System;
     using System.IO;
+    using System.Numerics;
     using VTT.Control;
 
     public class PacketCameraSnap : PacketBase

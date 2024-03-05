@@ -1,8 +1,6 @@
 ﻿namespace VTT.Render.MainMenu
 {
     using ImGuiNET;
-    using OpenTK.Windowing.Common;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -16,7 +14,7 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
-    using MathHelper = OpenTK.Mathematics.MathHelper;
+    using static VTT.Network.ClientSettings;
 
     public class MainMenuRenderer
     {
@@ -105,7 +103,7 @@
                     ImGui.SetCursorPos(new Vector2(16, 32));
                     if (ImGui.Button(lang.Translate("ui.button.update")))
                     {
-                        if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+                        if (!Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                         {
                             string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
                             if (File.Exists(updater))
@@ -461,13 +459,7 @@
 
                     ImGui.Text(lang.Translate("menu.settings.screen_mode"));
                     if (ImGui.Combo("##Screen Mode", ref wModeIndex, wMode, 3))
-                    {
-                        VideoMode* vModePtr = GLFW.GetVideoMode((Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
-                        Window* win = Client.Instance.Frontend.GameHandle.WindowPtr;
-                        bool wasDecorated = Client.Instance.Frontend.GameHandle.WindowBorder != WindowBorder.Hidden;
-                        int w = vModePtr->Width;
-                        int h = vModePtr->Height;
-
+                    { 
                         switch (wModeIndex)
                         {
                             case 0:
@@ -501,7 +493,7 @@
                     if (ImGui.Combo("##VSync", ref vSyncIndex, vSync, 3))
                     {
                         VSyncMode newMode = vSyncIndex == 0 ? VSyncMode.Off : vSyncIndex == 1 ? VSyncMode.On : VSyncMode.Adaptive;
-                        Client.Instance.Frontend.GameHandle.VSync = newMode;
+                        Client.Instance.Frontend.GameHandle.VSync.Value = newMode;
                         Client.Instance.Settings.VSync = newMode;
                         Client.Instance.Settings.Save();
                     }
@@ -554,7 +546,7 @@
                     Vector4 cVec = ((Vector4)color);
                     if (ImGui.ColorPicker4(lang.Translate("menu.settings.color"), ref cVec, ImGuiColorEditFlags.DisplayHSV))
                     {
-                        color = Extensions.FromVec4(cVec.GLVector());
+                        color = Extensions.FromVec4(cVec);
                         Client.Instance.Settings.Color = color.Argb();
                         Client.Instance.Settings.Save();
                         if (Client.Instance.NetClient != null && Client.Instance.NetClient.IsConnected)
@@ -929,7 +921,7 @@
                     ImGui.Text(lang.Translate("menu.settings.sensitivity"));
                     if (ImGui.SliderFloat("##Sensitivity", ref mSensitivity, 0.1f, 10f))
                     {
-                        Client.Instance.Settings.Sensitivity = MathHelper.Clamp(mSensitivity, 0.1f, 10f);
+                        Client.Instance.Settings.Sensitivity = Math.Clamp(mSensitivity, 0.1f, 10f);
                         Client.Instance.Settings.Save();
                     }
 
@@ -942,7 +934,7 @@
                     ImGui.Text(lang.Translate("menu.settings.chat_brightness"));
                     if (ImGui.SliderFloat("##ChatBrightness", ref mChatBrightness, 0f, 1f))
                     {
-                        Client.Instance.Settings.ChatBackgroundBrightness = MathHelper.Clamp(mChatBrightness, 0, 1);
+                        Client.Instance.Settings.ChatBackgroundBrightness = Math.Clamp(mChatBrightness, 0, 1);
                         Client.Instance.Settings.Save();
                     }
 
@@ -1156,7 +1148,7 @@
             }
         }
 
-        public void Update(double delta)
+        public void Update()
         {
         }
     }

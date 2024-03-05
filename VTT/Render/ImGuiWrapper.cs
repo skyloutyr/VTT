@@ -1,18 +1,18 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
+    using System.Numerics;
     using System.Runtime.InteropServices;
     using System.Text;
     using VTT.GL;
+    using VTT.GL.Bindings;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Util;
 
@@ -84,8 +84,8 @@ void main()
             this.RebuildFontAtlas();
             this.InitKeyMap();
 
-            this._vboHandle = new GPUBuffer(BufferTarget.ArrayBuffer, BufferUsageHint.StreamDraw);
-            this._elementsHandle = new GPUBuffer(BufferTarget.ElementArrayBuffer, BufferUsageHint.StreamDraw);
+            this._vboHandle = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
+            this._elementsHandle = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.StreamDraw);
             this._vertexArrayObject = new VertexArray();
             this._vertexArrayObject.Bind();
             this._vboHandle.Bind();
@@ -93,11 +93,11 @@ void main()
             this._vertexArrayObject.SetVertexSize<float>(5);
             this._vertexArrayObject.PushElement(ElementType.Vec2);
             this._vertexArrayObject.PushElement(ElementType.Vec2);
-            this._vertexArrayObject.PushElement(new ElementType(4, 4, VertexAttribPointerType.UnsignedByte, sizeof(byte)), true);
+            this._vertexArrayObject.PushElement(new ElementType(4, 4, VertexAttributeType.Byte, sizeof(byte)), true);
             this.CPUTimer = new Stopwatch();
         }
 
-        public void Update(double time)
+        public void Update()
         {
             // NOOP
         }
@@ -106,29 +106,29 @@ void main()
 
         private readonly Dictionary<Keys, ImGuiKey> _keyMappings = new Dictionary<Keys, ImGuiKey>();
 
-        public void KeyEvent(Keys key, int scan, KeyModifiers mods, bool isRepeat, bool release)
+        public void KeyEvent(Keys key, int scan, ModifierKeys mods, bool isRepeat, bool release)
         {
             this.UpdateModifiers(mods);
             if (this._keyMappings.TryGetValue(key, out ImGuiKey val))
             {
                 ImGui.GetIO().AddKeyEvent(val, !release);
-                ImGui.GetIO().SetKeyEventNativeData(val, (int)key, scan);
+                //ImGui.GetIO().SetKeyEventNativeData(val, (int)key, scan);
             }
         }
 
-        private void UpdateModifiers(KeyModifiers mods)
+        private void UpdateModifiers(ModifierKeys mods)
         {
             ImGuiIOPtr io = ImGui.GetIO();
-            io.AddKeyEvent(ImGuiKey.ModCtrl, mods.HasFlag(KeyModifiers.Control));
-            io.AddKeyEvent(ImGuiKey.ModShift, mods.HasFlag(KeyModifiers.Shift));
-            io.AddKeyEvent(ImGuiKey.ModAlt, mods.HasFlag(KeyModifiers.Alt));
-            io.AddKeyEvent(ImGuiKey.ModSuper, mods.HasFlag(KeyModifiers.Super));
+            io.AddKeyEvent(ImGuiKey.ModCtrl, mods.HasFlag(ModifierKeys.Control));
+            io.AddKeyEvent(ImGuiKey.ModShift, mods.HasFlag(ModifierKeys.Shift));
+            io.AddKeyEvent(ImGuiKey.ModAlt, mods.HasFlag(ModifierKeys.Alt));
+            io.AddKeyEvent(ImGuiKey.ModSuper, mods.HasFlag(ModifierKeys.Super));
         }
 
         public void MouseScroll(Vector2 offset) => ImGui.GetIO().AddMouseWheelEvent(offset.X, offset.Y);
         public void MouseMove(Vector2 pos) => ImGui.GetIO().AddMousePosEvent(pos.X, pos.Y);
 
-        public void MouseKey(MouseButton btn, KeyModifiers mods, bool release)
+        public void MouseKey(MouseButton btn, ModifierKeys mods, bool release)
         {
             int mb = (int)btn;
             if (mb is >= 0 and < ((int)ImGuiMouseButton.COUNT))
@@ -152,41 +152,6 @@ void main()
                     this._keyMappings[k] = igk;
                 }
             }
-
-            this._keyMappings[Keys.Left] = ImGuiKey.LeftArrow;
-            this._keyMappings[Keys.Right] = ImGuiKey.RightArrow;
-            this._keyMappings[Keys.Up] = ImGuiKey.UpArrow;
-            this._keyMappings[Keys.Down] = ImGuiKey.DownArrow;
-            this._keyMappings[Keys.KeyPad0] = ImGuiKey.Keypad0;
-            this._keyMappings[Keys.KeyPad1] = ImGuiKey.Keypad1;
-            this._keyMappings[Keys.KeyPad2] = ImGuiKey.Keypad2;
-            this._keyMappings[Keys.KeyPad3] = ImGuiKey.Keypad3;
-            this._keyMappings[Keys.KeyPad4] = ImGuiKey.Keypad4;
-            this._keyMappings[Keys.KeyPad5] = ImGuiKey.Keypad5;
-            this._keyMappings[Keys.KeyPad6] = ImGuiKey.Keypad6;
-            this._keyMappings[Keys.KeyPad7] = ImGuiKey.Keypad7;
-            this._keyMappings[Keys.KeyPad8] = ImGuiKey.Keypad8;
-            this._keyMappings[Keys.KeyPad9] = ImGuiKey.Keypad9;
-            this._keyMappings[Keys.D0] = ImGuiKey._0;
-            this._keyMappings[Keys.D1] = ImGuiKey._1;
-            this._keyMappings[Keys.D2] = ImGuiKey._2;
-            this._keyMappings[Keys.D3] = ImGuiKey._3;
-            this._keyMappings[Keys.D4] = ImGuiKey._4;
-            this._keyMappings[Keys.D5] = ImGuiKey._5;
-            this._keyMappings[Keys.D6] = ImGuiKey._6;
-            this._keyMappings[Keys.D7] = ImGuiKey._7;
-            this._keyMappings[Keys.D8] = ImGuiKey._8;
-            this._keyMappings[Keys.D9] = ImGuiKey._9;
-            this._keyMappings[Keys.KeyPadDivide] = ImGuiKey.KeypadDivide;
-            this._keyMappings[Keys.KeyPadMultiply] = ImGuiKey.KeypadMultiply;
-            this._keyMappings[Keys.KeyPadSubtract] = ImGuiKey.KeypadSubtract;
-            this._keyMappings[Keys.KeyPadAdd] = ImGuiKey.KeypadAdd;
-            this._keyMappings[Keys.KeyPadEnter] = ImGuiKey.KeypadEnter;
-            this._keyMappings[Keys.KeyPadEqual] = ImGuiKey.KeypadEqual;
-            this._keyMappings[Keys.KeyPadDecimal] = ImGuiKey.KeypadDecimal;
-            this._keyMappings[Keys.Unknown] = ImGuiKey.None;
-            this._keyMappings[Keys.LeftControl] = ImGuiKey.LeftCtrl;
-            this._keyMappings[Keys.RightControl] = ImGuiKey.RightCtrl;
         }
 
         public void Render(double time)
@@ -315,7 +280,7 @@ void main()
                 _fontTexture.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                 ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int w, out int h);
                 _fontTexture.Size = new Size(w, h);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, w, h, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Rgba8, w, h, PixelDataFormat.Rgba, PixelDataType.Byte, pixels);
                 fonts.TexID = _fontTexture;
                 fonts.ClearTexData();
             }
@@ -401,11 +366,11 @@ void main()
 
         void SetupRenderState(ImDrawDataPtr drawData, int fbWidth, int fbHeight)
         {
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Disable(EnableCap.CullFace);
-            GL.Disable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.ScissorTest);
+            GL.Disable(Capability.CullFace);
+            GL.Disable(Capability.DepthTest);
+            GL.Enable(Capability.ScissorTest);
 
             _shader.Bind();
 
@@ -414,7 +379,7 @@ void main()
             var top = drawData.DisplayPos.Y;
             var bottom = drawData.DisplayPos.Y + drawData.DisplaySize.Y;
 
-            _shader["projection_matrix"].Set(Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
+            _shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
         }
 
         unsafe void RenderDrawData()
@@ -481,7 +446,7 @@ void main()
                             GL.BindTexture(TextureTarget.Texture2D, (uint)pcmd.TextureId);
                         }
 
-                        GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, drawIdxSize == 2 ? DrawElementsType.UnsignedShort : DrawElementsType.UnsignedInt, (IntPtr)(pcmd.IdxOffset * drawIdxSize), (int)pcmd.VtxOffset);
+                        GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, drawIdxSize == 2 ? ElementsType.UnsignedShort : ElementsType.UnsignedInt, (IntPtr)(pcmd.IdxOffset * drawIdxSize), (int)pcmd.VtxOffset);
                     }
                 }
             }
@@ -492,10 +457,10 @@ void main()
 
         private void ClearRenderState()
         {
-            GL.Disable(EnableCap.Blend);
-            GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.DepthTest);
-            GL.Disable(EnableCap.ScissorTest);
+            GL.Disable(Capability.Blend);
+            GL.Enable(Capability.CullFace);
+            GL.Enable(Capability.DepthTest);
+            GL.Disable(Capability.ScissorTest);
         }
 
         public void Dispose()

@@ -1,6 +1,6 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
 
     public struct DirectionalLight
     {

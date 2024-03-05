@@ -145,7 +145,7 @@
             {
                 int x = i % 32;
                 int y = i / 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4().GLVector();
+                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
             }
         }
 
@@ -169,7 +169,7 @@
 
                 x %= 32;
                 y %= 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4().GLVector();
+                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
             }
         }
 
@@ -194,7 +194,7 @@
 
                 x %= 32;
                 y %= 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4().GLVector();
+                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
             }
         }
 

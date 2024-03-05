@@ -1,7 +1,7 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -96,7 +96,7 @@
 
                 if (bo)
                 {
-                    db.DrawColor = Extensions.FromVec4(this._editedBarColor.GLVector());
+                    db.DrawColor = Extensions.FromVec4(this._editedBarColor);
                     PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = this._editedBarIndex, MapID = this._editedMapObject.MapID, ContainerID = this._editedMapObject.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
                     pmob.Send();
                 }
@@ -108,7 +108,7 @@
             {
                 if (ImGui.ColorPicker4(lang.Translate("ui.generic.colour") + "###Map Color", ref this._editedMapColor))
                 {
-                    Color c = Extensions.FromVec4(this._editedMapColor.GLVector());
+                    Color c = Extensions.FromVec4(this._editedMapColor);
                     switch (this._editedMapColorIndex)
                     {
                         case 0:
@@ -149,7 +149,7 @@
                 {
                     PacketChangeMapData pcmd = new PacketChangeMapData()
                     {
-                        Data = Extensions.FromVec4(this._editedMapColor.GLVector()),
+                        Data = Extensions.FromVec4(this._editedMapColor),
                         MapID = state.clientMap.ID,
                         Type = this._editedMapColorIndex switch
                         {
@@ -179,7 +179,7 @@
 
                 if (bo)
                 {
-                    PacketTeamInfo pti = new PacketTeamInfo() { Name = this._editedTeamName, Color = Extensions.FromVec4(this._editedTeamColor.GLVector()), Action = PacketTeamInfo.ActionType.UpdateColor };
+                    PacketTeamInfo pti = new PacketTeamInfo() { Name = this._editedTeamName, Color = Extensions.FromVec4(this._editedTeamColor), Action = PacketTeamInfo.ActionType.UpdateColor };
                     pti.Send();
                 }
 
@@ -188,10 +188,10 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_tint_color") + "###Change Tint Color"))
             {
-                System.Numerics.Vector4 tColor = ((System.Numerics.Vector4)this._editedMapObject.TintColor);
+                Vector4 tColor = ((Vector4)this._editedMapObject.TintColor);
                 if (ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref tColor))
                 {
-                    this._editedMapObject.TintColor = Extensions.FromVec4(tColor.GLVector());
+                    this._editedMapObject.TintColor = Extensions.FromVec4(tColor);
                 }
 
                 bool bc = ImGui.Button(cancel);
@@ -214,10 +214,10 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_name_color") + "###Change Name Color"))
             {
-                System.Numerics.Vector4 tColor = ((System.Numerics.Vector4)this._editedMapObject.NameColor);
+                Vector4 tColor = ((Vector4)this._editedMapObject.NameColor);
                 if (ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref tColor))
                 {
-                    this._editedMapObject.NameColor = Extensions.FromVec4(tColor.GLVector());
+                    this._editedMapObject.NameColor = Extensions.FromVec4(tColor);
                 }
 
                 bool bc = ImGui.Button(cancel);
@@ -260,7 +260,7 @@
                     if (bo)
                     {
                         MapObject mo = this._editedMapObject;
-                        new PacketAura() { ActionType = PacketAura.Action.Update, AuraColor = Extensions.FromVec4(this._editedBarColor.GLVector()), AuraRange = aDat.Item1, Index = this._editedBarIndex, ObjectID = mo.ID, MapID = mo.MapID }.Send();
+                        new PacketAura() { ActionType = PacketAura.Action.Update, AuraColor = Extensions.FromVec4(this._editedBarColor), AuraRange = aDat.Item1, Index = this._editedBarIndex, ObjectID = mo.ID, MapID = mo.MapID }.Send();
                     }
                 }
 
@@ -277,7 +277,7 @@
                 {
                     FastLight aDat = this._editedMapObject.FastLights[this._editedBarIndex];
                     ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedBarColor);
-                    aDat.LightColor = this._editedBarColor.GLVector().Xyz;
+                    aDat.LightColor = this._editedBarColor.Xyz();
                     bool bc = ImGui.Button(cancel);
                     ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
                     bool bo = ImGui.Button(ok);
@@ -494,7 +494,7 @@
                 }
 
                 ImGui.TextUnformatted(lang.Translate("ui.popup.link_image.tooltip"));
-                ImGui.InputTextMultiline("##ImageTooltip", ref this._imgTooltip, ushort.MaxValue, new System.Numerics.Vector2(ImGui.GetContentRegionMax().X - 32, 300));
+                ImGui.InputTextMultiline("##ImageTooltip", ref this._imgTooltip, ushort.MaxValue, new Vector2(ImGui.GetContentRegionMax().X - 32, 300));
 
                 bool bc = ImGui.Button(cancel);
                 ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
@@ -507,8 +507,8 @@
 
                 if (bo && !string.IsNullOrEmpty(this._imgUrl))
                 {
-                    this._imgWidth = MathHelper.Clamp(this._imgWidth, 1, 680);
-                    this._imgHeight = MathHelper.Clamp(this._imgHeight, 1, 680);
+                    this._imgWidth = Math.Clamp(this._imgWidth, 1, 680);
+                    this._imgHeight = Math.Clamp(this._imgHeight, 1, 680);
                     string cStr = $"[m:Image][p:{this._imgWidth}][p:{this._imgHeight}][t:{this._imgTooltip}][p:{this._imgUrl}]";
                     new PacketChatMessage() { Message = cStr }.Send();
                     this._chat.Add(cStr);
@@ -563,9 +563,9 @@
                     ImGui.EndDisabled();
                 }
 
-                System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                Vector2 wC = ImGui.GetWindowSize();
                 string jText = this._editedJournal.Text;
-                if (ImGui.InputTextMultiline(lang.Translate("ui.journal.text"), ref jText, ushort.MaxValue, new System.Numerics.Vector2(wC.X - 8, 300)))
+                if (ImGui.InputTextMultiline(lang.Translate("ui.journal.text"), ref jText, ushort.MaxValue, new Vector2(wC.X - 8, 300)))
                 {
                     if (canEdit)
                     {
@@ -645,7 +645,7 @@
                 }
 
                 IEnumerable<(string, float, float)> iterableBtns = string.IsNullOrEmpty(rF) ? this._allStatuses : this._sortedStatuses;
-                System.Numerics.Vector2 cursorStart = ImGui.GetCursorPos();
+                Vector2 cursorStart = ImGui.GetCursorPos();
                 float cX = 0;
                 float cY = 0;
                 float w = ImGui.GetWindowWidth();
@@ -653,9 +653,9 @@
                 float scrollMax = scrollMin + ImGui.GetWindowHeight();
                 foreach ((string, float, float) btn in iterableBtns)
                 {
-                    ImGui.SetCursorPos(cursorStart + new System.Numerics.Vector2(cX, cY));
-                    System.Numerics.Vector2 st = new System.Numerics.Vector2(btn.Item2, btn.Item3);
-                    if (ImGui.ImageButton("##BtnStatus_" + btn.Item1, this.StatusAtlas, Vec32x32, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
+                    ImGui.SetCursorPos(cursorStart + new Vector2(cX, cY));
+                    Vector2 st = new Vector2(btn.Item2, btn.Item3);
+                    if (ImGui.ImageButton("##BtnStatus_" + btn.Item1, this.StatusAtlas, Vec32x32, st, st + new Vector2(this._statusStepX, this._statusStepY)))
                     {
                         new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = this._editedMapObject.ID, EffectName = btn.Item1, S = btn.Item2, T = btn.Item3, Remove = false }.Send();
                     }
@@ -678,10 +678,10 @@
 
             bool open = true;
             ImGui.SetNextWindowBgAlpha(0.35f);
-            ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetWorkCenter() - (new System.Numerics.Vector2(136, 200) / 2), ImGuiCond.Appearing);
+            ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetWorkCenter() - (new Vector2(136, 200) / 2), ImGuiCond.Appearing);
             if (ImGui.BeginPopupModal(lang.Translate("ui.menu") + "###Menu", ref open, ImGuiWindowFlags.NavFlattened | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking))
             {
-                if (ImGui.Button(lang.Translate("ui.menu.disconnect") + "###Disconnect", new System.Numerics.Vector2(128, 32)))
+                if (ImGui.Button(lang.Translate("ui.menu.disconnect") + "###Disconnect", new Vector2(128, 32)))
                 {
                     Client.Instance.Frontend.ActionsToDo.Enqueue(() =>
                     {
@@ -696,11 +696,11 @@
                     ImGui.CloseCurrentPopup();
                 }
 
-                System.Numerics.Vector4 color = Client.Instance.VSCCIntegration.IsConnected ? (System.Numerics.Vector4)Color.DarkGreen : Client.Instance.VSCCIntegration.Running ? (System.Numerics.Vector4)Color.Yellow : *ImGui.GetStyleColorVec4(ImGuiCol.Button);
+                Vector4 color = Client.Instance.VSCCIntegration.IsConnected ? (Vector4)Color.DarkGreen : Client.Instance.VSCCIntegration.Running ? (Vector4)Color.Yellow : *ImGui.GetStyleColorVec4(ImGuiCol.Button);
                 ImGui.PushStyleColor(ImGuiCol.Button, color);
-                if (ImGui.Button(lang.Translate("ui.menu.vscc") + "###Connect VSCC", new System.Numerics.Vector2(128, 32)))
+                if (ImGui.Button(lang.Translate("ui.menu.vscc") + "###Connect VSCC", new Vector2(128, 32)))
                 {
-                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+                    if (Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                     {
                         ProcessStartInfo psi = new ProcessStartInfo
                         {
@@ -725,7 +725,7 @@
 
                 ImGui.PopStyleColor();
 
-                if (ImGui.Button(lang.Translate("ui.menu.back") + "###Back", new System.Numerics.Vector2(128, 32)) || (Client.Instance.Frontend.UpdatesExisted != this._tickMenuOpened && ImGui.IsKeyPressed(ImGuiKey.Escape)))
+                if (ImGui.Button(lang.Translate("ui.menu.back") + "###Back", new Vector2(128, 32)))
                 {
                     ImGui.CloseCurrentPopup();
                 }
@@ -878,6 +878,7 @@
         private TextureData.Metadata _editedTextureMetadataCopy;
         private ModelData.Metadata _editedModelMetadataCopy;
         private Vector3 _initialEditedFastLightColor;
+        private bool _escDown;
 
         private unsafe void HandlePopupRequests(GuiState state)
         {
@@ -942,9 +943,15 @@
                 ImGui.OpenPopup("###Journal");
             }
 
-            if (!ImGui.GetIO().WantCaptureKeyboard && ImGui.IsKeyPressed(ImGuiKey.Escape))
+            if (!ImGui.GetIO().WantCaptureKeyboard && ImGui.IsKeyDown(ImGuiKey.Escape) && !this._escDown)
             {
                 state.menu = true;
+                this._escDown = true;
+            }
+
+            if (!ImGui.GetIO().WantCaptureKeyboard && !ImGui.IsKeyDown(ImGuiKey.Escape) && this._escDown)
+            {
+                this._escDown = false;
             }
 
             if (state.menu)

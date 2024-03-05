@@ -1,11 +1,11 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network;
@@ -18,7 +18,7 @@
         {
             if (ImGui.Begin(lang.Translate("ui.maps") + "###Maps"))
             {
-                System.Numerics.Vector2 origPos = ImGui.GetCursorPos();
+                Vector2 origPos = ImGui.GetCursorPos();
                 if (state.clientMap != null)
                 {
                     ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
@@ -126,7 +126,7 @@
                     ImGui.SameLine();
                     if (ImGui.Button(lang.Translate("ui.maps.move_all") + "###Move All"))
                     {
-                        if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+                        if (!Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                         {
                             PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = state.clientMap.ID, IsServer = false, Session = Client.Instance.SessionID };
                             pcm.Send();
@@ -245,16 +245,16 @@
                     }
 
                     bool mEnableFow = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW;
-                    System.Numerics.Vector2 fowSize = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FOWWorldSize.SystemVector();
+                    Vector2 fowSize = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FOWWorldSize;
                     int fowSizeX = (int)fowSize.X;
                     if (ImGui.Checkbox(lang.Translate("ui.maps.enable_fow") + "###Enable FOW", ref mEnableFow))
                     {
                         if (!Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW)
                         {
-                            fowSize = new System.Numerics.Vector2(256, 256);
+                            fowSize = new Vector2(256, 256);
                         }
 
-                        PacketEnableDisableFow pedf = new PacketEnableDisableFow() { Status = mEnableFow, Size = fowSize.GLVector() };
+                        PacketEnableDisableFow pedf = new PacketEnableDisableFow() { Status = mEnableFow, Size = fowSize };
                         pedf.Send();
                     }
 
@@ -299,10 +299,10 @@
                         ImGui.EndDisabled();
                     }
 
-                    System.Numerics.Vector4 mGridColor = (System.Numerics.Vector4)state.clientMap.GridColor;
-                    System.Numerics.Vector4 mSkyColor = (System.Numerics.Vector4)state.clientMap.BackgroundColor;
-                    System.Numerics.Vector4 mAmbientColor = (System.Numerics.Vector4)state.clientMap.AmbientColor;
-                    System.Numerics.Vector4 mSunColor = (System.Numerics.Vector4)state.clientMap.SunColor;
+                    Vector4 mGridColor = (Vector4)state.clientMap.GridColor;
+                    Vector4 mSkyColor = (Vector4)state.clientMap.BackgroundColor;
+                    Vector4 mAmbientColor = (Vector4)state.clientMap.AmbientColor;
+                    Vector4 mSunColor = (Vector4)state.clientMap.SunColor;
                     ImGui.Text(lang.Translate("ui.maps.grid_color"));
                     ImGui.SameLine();
                     if (ImGui.ColorButton("##GridColor", mGridColor))
@@ -491,11 +491,11 @@
                     {
                         ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                         var imScreenPos = ImGui.GetCursorScreenPos();
-                        var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                        var rectEnd = imScreenPos + new Vector2(320, 24);
                         bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                         uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                         drawList.AddRect(imScreenPos, rectEnd, bClr);
-                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
                         string mdlTxt = "";
                         int mdlTxtOffset = 0;
                         if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -507,7 +507,7 @@
                                 GL.Texture tex = ap.GetGLTexture();
                                 if (tex != null)
                                 {
-                                    drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                                    drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
                                     mdlTxtOffset += 20;
                                 }
                             }
@@ -523,7 +523,7 @@
                         }
 
                         drawList.PushClipRect(imScreenPos, rectEnd);
-                        drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                         drawList.PopClipRect();
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
                         return mouseOver;
@@ -556,11 +556,11 @@
                                 this._objects[i + 1] = mo.Name + " (" + mo.ID.ToString() + ")";
                             }
 
-                            System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                            Vector2 wC = ImGui.GetWindowSize();
                             int j = 0;
                             foreach (KeyValuePair<Guid, (Guid, float)> darkvisionData in cMap.DarkvisionData)
                             {
-                                ImGui.BeginChild("dvEntry" + darkvisionData.Key, new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse);
+                                ImGui.BeginChild("dvEntry" + darkvisionData.Key, new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse);
                                 Client.Instance.TryGetClientNamesArray(darkvisionData.Key, out int pIdx, out string[] cNames, out Guid[] cIds);
                                 int oIdx = 0;
                                 float v = darkvisionData.Value.Item2;
@@ -614,7 +614,7 @@
                     #endregion
 
 
-                    void RecursivelyRenderMaps(MPMapPointer dir, bool first, System.Numerics.Vector2 wC)
+                    void RecursivelyRenderMaps(MPMapPointer dir, bool first, Vector2 wC)
                     {
                         bool b1 = false;
                         if (!first)
@@ -635,11 +635,11 @@
                                 bool selected = state.clientMap.ID.Equals(d.MapID);
                                 if (selected)
                                 {
-                                    ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)Color.RoyalBlue);
+                                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
                                 }
 
                                 bool hadTT = false;
-                                ImGui.BeginChild("mapNav_" + d.MapID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+                                ImGui.BeginChild("mapNav_" + d.MapID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
                                 if (selected)
                                 {
                                     ImGui.PopStyleColor();
@@ -660,7 +660,7 @@
                                 ImGui.SameLine();
                                 if (ImGui.ImageButton("moveAllToBtn_" + d.MapID.ToString(), this.MoveAllToIcon, Vec12x12))
                                 {
-                                    if (!Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+                                    if (!Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                                     {
                                         PacketChangeMap pcm = new PacketChangeMap() { Clients = Client.Instance.ClientInfos.Keys.ToArray(), NewMapID = d.MapID, IsServer = false, Session = Client.Instance.SessionID };
                                         pcm.Send();
@@ -732,7 +732,7 @@
 
                     if (ImGui.CollapsingHeader(lang.Translate("ui.maps.maps") + "###Maps"))
                     {
-                        System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                        Vector2 wC = ImGui.GetWindowSize();
                         lock (Client.Instance.ServerMapPointersLock)
                         {
                             RecursivelyRenderMaps(Client.Instance.ClientMPMapsRoot, true, wC);

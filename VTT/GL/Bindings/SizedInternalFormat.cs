@@ -71,6 +71,17 @@
         CompressedRgbBPTCFloat = 0x8E8E,
         CompressedRgbBPTCUnsignedFloat = 0x8E8F,
 
+        DepthComponent16 = 0x81A5,
+        DepthComponent24 = 0x81A6,
+        DepthComponent32 = 0x81A7,
+        DepthComponent32Float = 0x8CAC,
+        Depth24Stencil8 = 0x88F0,
+        Depth32FloatStencil8 = 0x8CAD,
+        StencilIndex1 = 0x8D46,
+        StencilIndex4 = 0x8D47,
+        StencilIndex8 = 0x8D48,
+        StencilIndex16 = 0x8D49,
+
         // EXTENSIONS - EXT_texture_compression_s3tc
         CompressedRgbS3TCDxt1Ext = 0x83F0,
         CompressedRgbaS3TCDxt1Ext = 0x83F1,

@@ -1,9 +1,9 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
 
     // https://github.com/SebLague/Ear-Clipping-Triangulation
     public static class Triangulate

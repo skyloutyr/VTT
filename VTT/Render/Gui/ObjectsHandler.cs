@@ -1,12 +1,12 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network;
@@ -35,7 +35,7 @@
                         bool isAdmin = Client.Instance.IsAdmin;
                         bool canEdit = isAdmin || mo.CanEdit(Client.Instance.ID);
 
-                        System.Numerics.Vector2 v = ImGui.GetWindowSize();
+                        Vector2 v = ImGui.GetWindowSize();
                         ImGui.SetCursorPosX(v.X - 32);
 
                         if (!canEdit)
@@ -43,7 +43,7 @@
                             ImGui.BeginDisabled();
                         }
 
-                        if (ImGui.ImageButton("btnDeleteObject", this.DeleteIcon, new System.Numerics.Vector2(16, 16)) && canEdit)
+                        if (ImGui.ImageButton("btnDeleteObject", this.DeleteIcon, new Vector2(16, 16)) && canEdit)
                         {
                             PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = SelectedToPacket2(os), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
                             pdmo.Send();
@@ -83,7 +83,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.ColorButton("##NameColor", ((System.Numerics.Vector4)mo.NameColor)))
+                        if (ImGui.ColorButton("##NameColor", ((Vector4)mo.NameColor)))
                         {
                             this._editedMapObject = mo;
                             state.changeNameColorPopup = true;
@@ -102,20 +102,20 @@
                             pmogd.Send();
                         }
 
-                        System.Numerics.Vector3 oPos = mo.Position.SystemVector();
+                        Vector3 oPos = mo.Position;
                         if (ImGui.InputFloat3(lang.Translate("ui.properties.position") + "###Position", ref oPos) && canEdit)
                         {
-                            Vector3 deltaMain = oPos.GLVector() - mo.Position;
+                            Vector3 deltaMain = oPos - mo.Position;
                             os.ForEach(x => x.Position += deltaMain);
                             List<(Guid, Guid, Vector4)> changes = SelectedToPacketEx(os, x => new Vector4(x.Position, 1.0f));
                             PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = PacketChangeObjectModelMatrix.ChangeType.Position };
                             pmo.Send();
                         }
 
-                        System.Numerics.Vector3 oScale = mo.Scale.SystemVector();
+                        Vector3 oScale = mo.Scale;
                         if (ImGui.InputFloat3(lang.Translate("ui.properties.scale") + "###Scale", ref oScale) && canEdit)
                         {
-                            Vector3 deltaMain = oScale.GLVector() - mo.Scale;
+                            Vector3 deltaMain = oScale - mo.Scale;
                             os.ForEach(x => x.Scale += deltaMain);
                             List<(Guid, Guid, Vector4)> changes = SelectedToPacketEx(os, x => new Vector4(x.Scale, 1.0f));
                             PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = PacketChangeObjectModelMatrix.ChangeType.Scale };
@@ -123,11 +123,11 @@
                         }
 
                         // Can't do multi-select rotation changes because quaternion delta is whacky
-                        System.Numerics.Vector4 oRot = new System.Numerics.Vector4(mo.Rotation.X, mo.Rotation.Y, mo.Rotation.Z, mo.Rotation.W);
+                        Vector4 oRot = new Vector4(mo.Rotation.X, mo.Rotation.Y, mo.Rotation.Z, mo.Rotation.W);
                         if (ImGui.InputFloat4(lang.Translate("ui.properties.rotation") + "###Rotation", ref oRot) && canEdit)
                         {
                             mo.Rotation = new Quaternion(oRot.X, oRot.Y, oRot.Z, oRot.W);
-                            List<(Guid, Guid, Vector4)> changes = new List<(Guid, Guid, Vector4)>() { (mo.MapID, mo.ID, oRot.GLVector()) };
+                            List<(Guid, Guid, Vector4)> changes = new List<(Guid, Guid, Vector4)>() { (mo.MapID, mo.ID, oRot) };
                             PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = PacketChangeObjectModelMatrix.ChangeType.Rotation };
                             pmo.Send();
                         }
@@ -255,7 +255,7 @@
 
                         ImGui.Text(lang.Translate("ui.properties.tint_color"));
                         ImGui.SameLine();
-                        System.Numerics.Vector4 tClr = ((System.Numerics.Vector4)mo.TintColor);
+                        Vector4 tClr = ((Vector4)mo.TintColor);
                         if (ImGui.ColorButton("##TintColorChangeBtn_" + mo.ID, tClr))
                         {
                             this._editedMapObject = mo;
@@ -359,11 +359,11 @@
 
                                 ImGui.PopItemWidth();
                                 ImGui.SameLine();
-                                if (ImGui.ColorButton("##DBChangeColor_" + i, (System.Numerics.Vector4)db.DrawColor))
+                                if (ImGui.ColorButton("##DBChangeColor_" + i, (Vector4)db.DrawColor))
                                 {
                                     this._editedBarIndex = i;
                                     this._editedMapObject = mo;
-                                    this._editedBarColor = (System.Numerics.Vector4)db.DrawColor;
+                                    this._editedBarColor = (Vector4)db.DrawColor;
                                     state.changeColorPopup = true;
                                 }
 
@@ -429,11 +429,11 @@
 
                                     ImGui.PopItemWidth();
                                     ImGui.SameLine();
-                                    if (ImGui.ColorButton("##AUChangeColor_" + i, (System.Numerics.Vector4)aClr))
+                                    if (ImGui.ColorButton("##AUChangeColor_" + i, (Vector4)aClr))
                                     {
                                         this._editedBarIndex = i;
                                         this._editedMapObject = mo;
-                                        this._editedBarColor = (System.Numerics.Vector4)aClr;
+                                        this._editedBarColor = (Vector4)aClr;
                                         state.changeAuraColorPopup = true;
                                     }
                                 }
@@ -464,11 +464,11 @@
                                     {
                                         ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                                         var imScreenPos = ImGui.GetCursorScreenPos();
-                                        var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                                        var rectEnd = imScreenPos + new Vector2(320, 24);
                                         bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                                         uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                                         drawList.AddRect(imScreenPos, rectEnd, bClr);
-                                        drawList.AddImage(this.AssetParticleIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                                        drawList.AddImage(this.AssetParticleIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
                                         Guid aId = pc.SystemID;
                                         string mdlTxt = "";
                                         int mdlTxtOffset = 0;
@@ -481,7 +481,7 @@
                                                 GL.Texture tex = ap.GetGLTexture();
                                                 if (tex != null)
                                                 {
-                                                    drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                                                    drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
                                                     mdlTxtOffset += 20;
                                                 }
                                             }
@@ -489,7 +489,7 @@
 
                                         mdlTxt += " (" + aId.ToString() + ")\0";
                                         drawList.PushClipRect(imScreenPos, rectEnd);
-                                        drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                                         drawList.PopClipRect();
                                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
                                         if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem)
@@ -503,10 +503,10 @@
                                         }
 
                                         ImGui.Text(lang.Translate("ui.particle_containers.offset"));
-                                        System.Numerics.Vector3 pOff = pc.ContainerPositionOffset.SystemVector();
+                                        Vector3 pOff = pc.ContainerPositionOffset;
                                         if (ImGui.DragFloat3("##ParticleContainerOffset_" + pc.ID, ref pOff, 0.01f))
                                         {
-                                            pc.ContainerPositionOffset = pOff.GLVector();
+                                            pc.ContainerPositionOffset = pOff;
                                             new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
                                         }
 
@@ -582,8 +582,8 @@
                                     {
                                         FastLight light = mo.FastLights[i];
 
-                                        System.Numerics.Vector3 offset = light.Translation.SystemVector();
-                                        System.Numerics.Vector3 color = light.LightColor.SystemVector();
+                                        Vector3 offset = light.Translation;
+                                        Vector3 color = light.LightColor;
                                         float flSize = light.Radius;
                                         float flInt = light.Intensity;
                                         bool bEnable = light.Enabled;
@@ -592,7 +592,7 @@
                                         ImGui.Text(lang.Translate("ui.fast_light.offset"));
                                         if (ImGui.DragFloat3("##FLOffset_" + i, ref offset))
                                         {
-                                            light.Translation = offset.GLVector();
+                                            light.Translation = offset;
                                             new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
                                         }
 
@@ -622,12 +622,12 @@
                                             new PacketFastLight() { ActionType = PacketFastLight.Action.Update, Index = i, MapID = mo.MapID, ObjectID = mo.ID, Light = light.Clone() }.Send();
                                         }
 
-                                        if (ImGui.ColorButton("##FLChangeColor_" + i, new System.Numerics.Vector4(color, 1.0f)))
+                                        if (ImGui.ColorButton("##FLChangeColor_" + i, new Vector4(color, 1.0f)))
                                         {
                                             this._editedBarIndex = i;
                                             this._editedMapObject = mo;
-                                            this._editedBarColor = new System.Numerics.Vector4(color, 1.0f);
-                                            this._initialEditedFastLightColor = color.GLVector();
+                                            this._editedBarColor = new Vector4(color, 1.0f);
+                                            this._initialEditedFastLightColor = color;
                                             state.changeFastLightColorPopup = true;
                                         }
 
@@ -676,7 +676,7 @@
                                 {
                                     float aTotal = mo.AnimationContainer.CurrentAnimation?.Duration ?? 1;
                                     float aNow = mo.AnimationContainer.GetTime(time);
-                                    ImGui.ProgressBar(aNow / aTotal, new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X - 48, 16), string.Empty);
+                                    ImGui.ProgressBar(aNow / aTotal, new Vector2(ImGui.GetContentRegionAvail().X - 48, 16), string.Empty);
                                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
                                     string aName = ImGuiHelper.TextOrEmpty(mo.AnimationContainer.CurrentAnimation?.Name ?? lang.Translate("ui.animation.none"));
                                     ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (ImGui.CalcTextSize(aName).X / 2));
@@ -768,7 +768,7 @@
                             ImGui.SetTooltip(lang.Translate("ui.properties.description.tt"));
                         }
 
-                        if (ImGui.InputTextMultiline("###Description", ref d, ushort.MaxValue, new System.Numerics.Vector2(v.X - 108, 256)))
+                        if (ImGui.InputTextMultiline("###Description", ref d, ushort.MaxValue, new Vector2(v.X - 108, 256)))
                         {
                             mo.Description = d;
                             PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Description, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, d) }, IsServer = false, Session = Client.Instance.SessionID };
@@ -784,7 +784,7 @@
                             }
 
                             string dn = mo.Notes;
-                            if (ImGui.InputTextMultiline("###Notes", ref dn, ushort.MaxValue, new System.Numerics.Vector2(v.X - 108, 100)))
+                            if (ImGui.InputTextMultiline("###Notes", ref dn, ushort.MaxValue, new Vector2(v.X - 108, 100)))
                             {
                                 mo.Notes = dn;
                                 PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Notes, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, dn) }, IsServer = false, Session = Client.Instance.SessionID };
@@ -792,20 +792,20 @@
                             }
                         }
 
-                        ImGui.BeginChild("##Statuses", new System.Numerics.Vector2(v.X - 16, 256), ImGuiChildFlags.Border, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
+                        ImGui.BeginChild("##Statuses", new Vector2(v.X - 16, 256), ImGuiChildFlags.Border, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         int cX = 0;
                         int cY = 0;
                         float aW = ImGui.GetWindowWidth();
 
-                        System.Numerics.Vector2 cursorNow = ImGui.GetCursorPos();
+                        Vector2 cursorNow = ImGui.GetCursorPos();
 
                         lock (mo.Lock)
                         {
                             foreach (KeyValuePair<string, (float, float)> kv in mo.StatusEffects)
                             {
-                                ImGui.SetCursorPos(cursorNow + new System.Numerics.Vector2(cX, cY));
-                                System.Numerics.Vector2 st = new System.Numerics.Vector2(kv.Value.Item1, kv.Value.Item2);
-                                if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY)))
+                                ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
+                                Vector2 st = new Vector2(kv.Value.Item1, kv.Value.Item2);
+                                if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new Vector2(this._statusStepX, this._statusStepY)))
                                 {
                                     new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = mo.ID, EffectName = kv.Key, Remove = true }.Send();
                                 }
@@ -819,7 +819,7 @@
                             }
                         }
 
-                        ImGui.SetCursorPos(cursorNow + new System.Numerics.Vector2(cX, cY));
+                        ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
                         if (ImGui.ImageButton("##BtnAddStatus", this.AddIcon, Vec24x24))
                         {
                             this._editedMapObject = mo;
@@ -842,11 +842,11 @@
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                 var imScreenPos = ImGui.GetCursorScreenPos();
-                var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                var rectEnd = imScreenPos + new Vector2(320, 24);
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                 uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                 drawList.AddRect(imScreenPos, rectEnd, bClr);
-                drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
                 string mdlTxt = "";
                 int mdlTxtOffset = 0;
                 if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -858,7 +858,7 @@
                         GL.Texture tex = ap.GetGLTexture();
                         if (tex != null)
                         {
-                            drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                            drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
                             mdlTxtOffset += 20;
                         }
                     }
@@ -874,7 +874,7 @@
                 }
 
                 drawList.PushClipRect(imScreenPos, rectEnd);
-                drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                 drawList.PopClipRect();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
                 return mouseOver;
@@ -885,7 +885,7 @@
         {
             if (ImGui.Begin(lang.Translate("ui.objects") + "###Objects"))
             {
-                System.Numerics.Vector2 wC = ImGui.GetWindowSize();
+                Vector2 wC = ImGui.GetWindowSize();
                 if (state.clientMap != null)
                 {
                     foreach (MapObject mo in state.clientMap.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
@@ -902,12 +902,12 @@
                         if (changedColor)
                         {
                             Color c = mouseOver ? Color.RoyalBlue : boxSelect ? Color.SkyBlue : Color.Orange;
-                            ImGui.PushStyleColor(ImGuiCol.Border, (System.Numerics.Vector4)c);
+                            ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)c);
                         }
 
-                        ImGui.BeginChild("objNav_" + mo.ID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
-                        ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                        if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new System.Numerics.Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
+                        ImGui.BeginChild("objNav_" + mo.ID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
+                        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+                        if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
                         {
                             Vector3 p = mo.Position;
                             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -966,23 +966,23 @@
                     {
                         float nH = MathF.Ceiling(nEffects * 24 / nW) * 24;
 
-                        ImGui.SetNextWindowSize(new System.Numerics.Vector2(nW, nH));
-                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (nW / 2), screen.Y));
+                        ImGui.SetNextWindowSize(new Vector2(nW, nH));
+                        ImGui.SetNextWindowPos(new Vector2(screen.X - (nW / 2), screen.Y));
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, System.Numerics.Vector2.Zero);
                         ImGui.Begin("OverlayEffects_" + mo.ID.ToString(), ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings);
                         ImDrawListPtr imDrawList = ImGui.GetWindowDrawList();
-                        System.Numerics.Vector2 imCursor = ImGui.GetCursorScreenPos();
+                        Vector2 imCursor = ImGui.GetCursorScreenPos();
                         float cX = 0;
                         float cY = 0;
                         foreach ((float, float) eff in mo.StatusEffects.Values)
                         {
-                            System.Numerics.Vector2 st = new System.Numerics.Vector2(eff.Item1, eff.Item2);
+                            Vector2 st = new Vector2(eff.Item1, eff.Item2);
                             imDrawList.AddImage(this.StatusAtlas,
-                                imCursor + new System.Numerics.Vector2(cX, cY),
-                                imCursor + new System.Numerics.Vector2(cX, cY) + Vec24x24,
+                                imCursor + new Vector2(cX, cY),
+                                imCursor + new Vector2(cX, cY) + Vec24x24,
                                 st,
-                                st + new System.Numerics.Vector2(this._statusStepX, this._statusStepY));
+                                st + new Vector2(this._statusStepX, this._statusStepY));
 
                             cX += 24;
                             if (cX + 24 > nW)
@@ -1036,9 +1036,9 @@
                         RenderStatusEffects(mo, screen, tX);
                     }
 
-                    System.Numerics.Vector2 customPadding = ImGui.GetStyle().WindowPadding;
-                    ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tX / 2), screen.Y - h));
-                    ImGui.SetNextWindowSize(new System.Numerics.Vector2(tX, h + (hasNp ? customPadding.Y : 0)));
+                    Vector2 customPadding = ImGui.GetStyle().WindowPadding;
+                    ImGui.SetNextWindowPos(new Vector2(screen.X - (tX / 2), screen.Y - h));
+                    ImGui.SetNextWindowSize(new Vector2(tX, h + (hasNp ? customPadding.Y : 0)));
                     if (hasNp)
                     {
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
@@ -1050,15 +1050,15 @@
                     {
                         if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
                         {
-                            System.Numerics.Vector2 cPn = ImGui.GetCursorPos();
+                            Vector2 cPn = ImGui.GetCursorPos();
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();
-                            System.Numerics.Vector2 oPs = ImGui.GetStyle().WindowPadding;
+                            Vector2 oPs = ImGui.GetStyle().WindowPadding;
                             GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
                             if (tex.IsAsyncReady)
                             {
                                 VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
-                                System.Numerics.Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
-                                backList.AddImage(tex, dc, dc + new System.Numerics.Vector2(tX, 32), frame.LocationUniform.Xy.SystemVector(), frame.LocationUniform.Xy.SystemVector() + frame.LocationUniform.Zw.SystemVector());
+                                Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
+                                backList.AddImage(tex, dc, dc + new Vector2(tX, 32), frame.LocationUniform.Xy(), frame.LocationUniform.Xy() + frame.LocationUniform.Zw());
                                 ImGui.SetCursorPos(cPn + customPadding);
                             }
                         }
@@ -1092,17 +1092,17 @@
                             float mW = MathF.Max(112, tX - 16);
                             if (!db.Compact)
                             {
-                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (System.Numerics.Vector4)db.DrawColor);
+                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
                                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2);
                                 float cYPreBar = ImGui.GetCursorPosY();
 
                                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
                                 ImGui.SetCursorPosY(cYPreBar);
-                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 12), string.Empty);
+                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 12), string.Empty);
                                 ImGui.PopStyleVar();
 
                                 float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
-                                ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0, 0, 0, 1));
+                                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 0, 0, 1));
                                 if (Client.Instance.Settings.TextThickDropShadow)
                                 {
                                     for (int j = 0; j < 4; ++j)
@@ -1131,7 +1131,7 @@
                             }
                             else
                             {
-                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (System.Numerics.Vector4)db.DrawColor);
+                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
                                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5);
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 7);
                                 float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
@@ -1139,7 +1139,7 @@
                                 ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
-                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new System.Numerics.Vector2(mW, 4));
+                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 4));
                                 ImGui.PopStyleVar();
                                 ImGui.PopStyleColor();
                             }
@@ -1155,10 +1155,10 @@
 
                     if (mo.IsInfoObject)
                     {
-                        System.Numerics.Vector2 tSizeMin = ImGui.CalcTextSize(mo.Description, 400f);
+                        Vector2 tSizeMin = ImGui.CalcTextSize(mo.Description, 400f);
                         float tWM = MathF.Min(tSizeMin.X + 32, 400);
-                        ImGui.SetNextWindowSize(new System.Numerics.Vector2(tWM, tSizeMin.Y + 32));
-                        ImGui.SetNextWindowPos(new System.Numerics.Vector2(screen.X - (tWM / 2), screen.Y));
+                        ImGui.SetNextWindowSize(new Vector2(tWM, tSizeMin.Y + 32));
+                        ImGui.SetNextWindowPos(new Vector2(screen.X - (tWM / 2), screen.Y));
                         if (ImGui.Begin("InfoPanel_" + mo.ID.ToString(), flags))
                         {
                             ImGui.PushTextWrapPos();
@@ -1244,7 +1244,7 @@
 
             if (ImGui.IsItemActive())
             {
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl))
+                if (Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                 {
                     activeSliders[imId] = (true, false, val);
                     b = false;

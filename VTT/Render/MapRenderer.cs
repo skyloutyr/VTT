@@ -1,11 +1,10 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Mathematics;
-    using OpenTK.Windowing.Common;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using System;
     using System.Linq;
+    using System.Numerics;
     using VTT.Control;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -13,7 +12,7 @@
     public class MapRenderer
     {
         public Camera ClientCamera { get; set; } = new VectorCamera(new Vector3(5, 5, 5), new Vector3(-1, -1, -1).Normalized());
-        public float FOV { get; set; } = MathHelper.DegreesToRadians(60.0f);
+        public float FOV { get; set; } = 60.0f * MathF.PI / 180;
         public bool IsOrtho { get; set; }
 
         public GridRenderer GridRenderer { get; set; }
@@ -26,9 +25,9 @@
         public float ZoomOrtho => this.camera2dzoom;
         public CameraControlMode CameraControlMode { get; set; } = CameraControlMode.Standard;
 
-        public void Update(Map m, double time)
+        public void Update(Map m)
         {
-            this.HandleCamera(time);
+            this.HandleCamera();
             this.DrawingRenderer?.Update(m);
         }
 
@@ -62,12 +61,12 @@
         {
             if (!this.IsOrtho)
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(Client.Instance.Settings.FOV), (float)w / h, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180, (float)w / h, 0.01f, 100f);
             }
             else
             {
                 float zoom = this.camera2dzoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
+                this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
             }
 
             this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
@@ -78,7 +77,7 @@
             this.FOV = to;
             if (!this.IsOrtho)
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(Client.Instance.Settings.FOV), (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
             else
@@ -102,14 +101,14 @@
             if (b)
             {
                 this.camera2dzoom = zoom;
-                this.ClientCamera.Projection = Matrix4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
+                this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
                 this.ClientCamera.Direction = new Vector3(0, 0.001f, -1).Normalized();
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
             else
             {
-                this.ClientCamera.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f), (float)w / h, 0.01f, 100f);
+                this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(60.0f * MathF.PI / 180, (float)w / h, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
         }
@@ -168,7 +167,7 @@
 
         public bool IsAABoxInFrustrum(AABox box, Vector3 offset) => this.IsOrtho || this.ClientCamera.IsAABoxInFrustrum(box, offset);
 
-        public void HandleKeys(KeyboardKeyEventArgs args)
+        public void HandleKeys(KeyEventData args)
         {
             bool drag = Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects;
             Map cmap = Client.Instance.CurrentMap;
@@ -177,11 +176,11 @@
                 return;
             }
 
-            if (!args.Shift && !ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && !drag && cmap != null)
+            if (!args.Mods.HasFlag(ModifierKeys.Shift) && !ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && !drag && cmap != null)
             {
-                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy.Normalized();
+                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy().Normalized();
                 Vector2 gridForward2D = MathF.Abs(cameraForward2D.X) > MathF.Abs(cameraForward2D.Y) ? Vector2.UnitX * MathF.Sign(cameraForward2D.X) : Vector2.UnitY * MathF.Sign(cameraForward2D.Y);
-                Vector2 gridRight2D = gridForward2D.PerpendicularRight;
+                Vector2 gridRight2D = gridForward2D.PerpendicularRight();
                 Vector3 gridMoveVec = default;
                 float rot = 0;
                 gridForward2D *= cmap.GridSize;
@@ -197,7 +196,7 @@
 
                 switch (args.Key)
                 {
-                    case Keys.Up or Keys.KeyPad8:
+                    case Keys.UpArrow or Keys.Keypad8:
                     {
                         if (!arrows)
                         {
@@ -211,7 +210,7 @@
                         break;
                     }
 
-                    case Keys.Down or Keys.KeyPad2:
+                    case Keys.DownArrow or Keys.Keypad2:
                     {
                         if (!arrows)
                         {
@@ -225,19 +224,19 @@
                         break;
                     }
 
-                    case Keys.Left or Keys.KeyPad4:
+                    case Keys.LeftArrow or Keys.Keypad4:
                     {
                         gridMoveVec -= new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
                         break;
                     }
 
-                    case Keys.Right or Keys.KeyPad6:
+                    case Keys.RightArrow or Keys.Keypad6:
                     {
                         gridMoveVec += new Vector3(gridRight2D.X, gridRight2D.Y, 0.0f);
                         break;
                     }
 
-                    case Keys.PageUp or Keys.KeyPad9:
+                    case Keys.PageUp or Keys.Keypad9:
                     {
                         if (!arrows && !this.IsOrtho)
                         {
@@ -252,7 +251,7 @@
                         break;
                     }
 
-                    case Keys.PageDown or Keys.KeyPad3:
+                    case Keys.PageDown or Keys.Keypad3:
                     {
                         if (!arrows && !this.IsOrtho)
                         {
@@ -267,7 +266,7 @@
                         break;
                     }
 
-                    case Keys.Home or Keys.KeyPad7:
+                    case Keys.Home or Keys.Keypad7:
                     {
                         if (!arrows)
                         {
@@ -282,7 +281,7 @@
                         break;
                     }
 
-                    case Keys.End or Keys.KeyPad1:
+                    case Keys.End or Keys.Keypad1:
                     {
                         if (!arrows)
                         {
@@ -298,7 +297,7 @@
                     }
                 }
 
-                if ((gridMoveVec - Vector3.Zero).Length > 1e-7)
+                if ((gridMoveVec - Vector3.Zero).Length() > 1e-7)
                 {
                     if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space))
                     {
@@ -336,8 +335,8 @@
                             Type = PacketChangeObjectModelMatrix.ChangeType.Rotation,
                             MovedObjects = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Select(o =>
                             {
-                                Quaternion q = Quaternion.FromAxisAngle(Vector3.UnitZ, rot) * o.Rotation;
-                                return (o.MapID, o.ID, new Vector4(q.Xyz, q.W));
+                                Quaternion q = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, rot) * o.Rotation;
+                                return (o.MapID, o.ID, new Vector4(q.X, q.Y, q.Z, q.W));
                             }).ToList()
                         };
 
@@ -349,7 +348,7 @@
 
         public bool IsCameraMMBDown() => Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Middle) || (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && this.CameraControlMode != CameraControlMode.Standard);
 
-        public void HandleCamera(double time)
+        public void HandleCamera()
         {
             bool mouseCap = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
             bool spacebarDown = !ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space);
@@ -357,31 +356,31 @@
             float sensitivity = Client.Instance.Settings.Sensitivity;
             if (!ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && !drag && Client.Instance.CurrentMap != null)
             {
-                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy.Normalized();
-                Vector2 cameraRight2D = cameraForward2D.PerpendicularRight;
+                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy().Normalized();
+                Vector2 cameraRight2D = cameraForward2D.PerpendicularRight();
                 Vector3 keyboardMoveVec = default;
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Up) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad8))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.UpArrow) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad8))
                 {
                     keyboardMoveVec += new Vector3(cameraForward2D.X, cameraForward2D.Y, 0.0f);
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Down) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad2))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.DownArrow) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad2))
                 {
                     keyboardMoveVec -= new Vector3(cameraForward2D.X, cameraForward2D.Y, 0.0f);
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Left) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad4))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftArrow) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad4))
                 {
                     keyboardMoveVec -= new Vector3(cameraRight2D.X, cameraRight2D.Y, 0.0f);
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Right) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad6))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightArrow) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad6))
                 {
                     keyboardMoveVec += new Vector3(cameraRight2D.X, cameraRight2D.Y, 0.0f);
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.PageUp) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad9))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.PageUp) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad9))
                 {
                     if (!this.IsOrtho)
                     {
@@ -390,12 +389,12 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + (m * (float)time);
+                        this.camera2dzoom /= 1.0f + m * (1f / 60f);
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.PageDown) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad3))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.PageDown) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad3))
                 {
                     if (!this.IsOrtho)
                     {
@@ -404,12 +403,12 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + (m * (float)time);
+                        this.camera2dzoom *= 1.0f + m * (1f / 60f);
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad5))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad5))
                 {
                     if (!this.IsOrtho)
                     {
@@ -418,12 +417,12 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + (m * (float)time);
+                        this.camera2dzoom /= 1.0f + m * (1f / 60f);
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.KeyPad0))
+                if (Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Keypad0))
                 {
                     if (!this.IsOrtho)
                     {
@@ -432,7 +431,7 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + (m * (float)time);
+                        this.camera2dzoom *= 1.0f + m * (1f / 60f);
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -447,7 +446,7 @@
                     keyboardMoveVec *= sensitivity;
                     if (!keyboardMoveVec.Equals(default))
                     {
-                        Vector3 newPosVec = this.ClientCamera.Position + (keyboardMoveVec * (float)time * 3.0f);
+                        Vector3 newPosVec = this.ClientCamera.Position + (keyboardMoveVec * (1f / 60f) * 3.0f);
                         this.ClientCamera.Position = newPosVec;
                         this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                     }
@@ -514,8 +513,8 @@
                 Vector3 np2c;
                 if (dy != 0)
                 {
-                    Quaternion q = Quaternion.FromAxisAngle(camRight, MathHelper.DegreesToRadians(-dy * (float)time * mod));
-                    np2c = (q * new Vector4(point2camera, 1.0f)).Xyz;
+                    Quaternion q = Quaternion.CreateFromAxisAngle(camRight, (-dy * (1f / 60f) * mod) * MathF.PI / 180);
+                    np2c = Vector4.Transform(new Vector4(point2camera, 1.0f), q).Xyz();
                     float dot = Vector3.Dot(Vector3.UnitZ, -np2c.Normalized());
                     Vector3 oldUp = this.ClientCamera.Up;
                     if (MathF.Abs(dot) < 0.999f)
@@ -545,8 +544,8 @@
                         mod *= 0.1f;
                     }
 
-                    Quaternion q = Quaternion.FromAxisAngle(camUp, MathHelper.DegreesToRadians((float)-dx * (float)time * mod));
-                    np2c = (q * new Vector4(point2camera, 1.0f)).Xyz;
+                    Quaternion q = Quaternion.CreateFromAxisAngle(camUp, (-dx * (1f / 60f) * mod) * MathF.PI / 180);
+                    np2c = Vector4.Transform(new Vector4(point2camera, 1.0f), q).Xyz();
                     this.ClientCamera.Position = this._pt + np2c;
                     this.ClientCamera.Direction = -np2c.Normalized();
                     this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
@@ -609,7 +608,7 @@
             return lookingAtGround;
         }
 
-        public static Vector3 SnapToGrid(Vector3 world, float gridSize, Vector3i isBigObjectAxis = default)
+        public static Vector3 SnapToGrid(Vector3 world, float gridSize, Vector3 isBigObjectAxis = default)
         {
             float halfGrid = gridSize / 2;
             int fX = (int)MathF.Round(world.X / gridSize);

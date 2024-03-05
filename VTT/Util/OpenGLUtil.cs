@@ -46,9 +46,9 @@
 
             int exts = GL.GetInteger(GLPropertyName.NumExtensions)[0];
             string[] allExtensions = new string[exts];
-            for (int i = 0; i < exts; ++i)
+            for (uint i = 0; i < exts; ++i)
             {
-                string extension = GL.GetString(StringNameIndexed.Extensions, i);
+                string extension = GL.GetExtensionAt(i);
                 if (!extension.StartsWith("GL_"))
                 {
                     extension = "GL_" + extension;
@@ -111,23 +111,25 @@
             return new WavefrontObject(lines, desiredFormat);
         }
 
+        public static ShaderProgram LoadShader(string name, params ShaderType[] types) => LoadShaderCode(name, types);
+
         private static ShaderProgram LoadShaderCode(string name, params ShaderType[] types)
         {
             string vSh = null;
             string gSh = null;
             string fSh = null;
 
-            if (types.Contains(ShaderType.VertexShader))
+            if (types.Contains(ShaderType.Vertex))
             {
                 vSh = IOVTT.ResourceToString("VTT.Embed." + name + ".vert");
             }
 
-            if (types.Contains(ShaderType.GeometryShader))
+            if (types.Contains(ShaderType.Geometry))
             {
                 gSh = IOVTT.ResourceToString("VTT.Embed." + name + ".geom");
             }
 
-            if (types.Contains(ShaderType.FragmentShader))
+            if (types.Contains(ShaderType.Fragment))
             {
                 fSh = IOVTT.ResourceToString("VTT.Embed." + name + ".frag");
             }
@@ -144,14 +146,14 @@
             return sp;
         }
 
-        public static Texture LoadUIImage(string name, SizedInternalFormat format = SizedInternalFormat.Rgba, WrapParam wrap = WrapParam.ClampToBorder)
+        public static Texture LoadUIImage(string name, SizedInternalFormat format = SizedInternalFormat.Rgba8, WrapParam wrap = WrapParam.ClampToBorder)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
             tex.SetWrapParameters(wrap, wrap, wrap);
             if (wrap == WrapParam.ClampToBorder)
             {
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 0, 0, 0, 0 });
+                GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BorderColor, new float[] { 0, 0, 0, 0 });
             }
 
             tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
@@ -161,7 +163,7 @@
             return tex;
         }
 
-        public static Texture LoadFromOnePixel(Rgba32 pixel, SizedInternalFormat format = SizedInternalFormat.Rgba)
+        public static Texture LoadFromOnePixel(Rgba32 pixel, SizedInternalFormat format = SizedInternalFormat.Rgba8)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();
@@ -172,7 +174,7 @@
             return tex;
         }
 
-        public static Texture LoadBasicTexture(Image<Rgba32> img, SizedInternalFormat format = SizedInternalFormat.Rgba)
+        public static Texture LoadBasicTexture(Image<Rgba32> img, SizedInternalFormat format = SizedInternalFormat.Rgba8)
         {
             Texture tex = new Texture(TextureTarget.Texture2D);
             tex.Bind();

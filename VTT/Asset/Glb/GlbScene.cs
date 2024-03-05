@@ -3,15 +3,15 @@
     using glTFLoader;
     using glTFLoader.Schema;
     using Newtonsoft.Json.Linq;
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Numerics;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.LightShadow;
     using VTT.Util;
@@ -549,7 +549,7 @@
                             {
                                 Vector3 normalVec = normals[j];
                                 Vector4 tangentVec = tangents[j];
-                                Vector4 bitangentVec = new Vector4(Vector3.Cross(normalVec, tangentVec.Xyz) * tangentVec.W, 1.0f);
+                                Vector4 bitangentVec = new Vector4(Vector3.Cross(normalVec, tangentVec.Xyz()) * tangentVec.W, 1.0f);
                                 bitangents.Add(bitangentVec);
                             }
                         }
@@ -566,14 +566,14 @@
                         int vBufIndex = 0;
                         Vector3 posMin = default;
                         Vector3 posMax = default;
-                        Matrix4 mat = this.LookupChildMatrix(o);
+                        Matrix4x4 mat = this.LookupChildMatrix(o);
                         for (int j = 0; j < positions.Count; ++j)
                         {
                             Vector4 mpos = new Vector4(positions[j], 0.0f);
-                            mpos = mpos * mat;
+                            mpos = Vector4.Transform(mpos, mat);
 
-                            posMin = Vector3.ComponentMin(posMin, mpos.Xyz);
-                            posMax = Vector3.ComponentMax(posMax, mpos.Xyz);
+                            posMin = Vector3.Min(posMin, mpos.Xyz());
+                            posMax = Vector3.Max(posMax, mpos.Xyz());
                             // vec3 pos
                             // vec2 uv
                             // vec3 norm
@@ -583,8 +583,8 @@
                             Vector3 pos = positions[j];
                             Vector2 uv = uvs[j];
                             Vector3 norm = normals[j];
-                            Vector3 tan = tangents[j].Xyz;
-                            Vector3 bitan = bitangents[j].Xyz;
+                            Vector3 tan = tangents[j].Xyz();
+                            Vector3 bitan = bitangents[j].Xyz();
                             Vector4 color = colors[j];
                             Vector4 weights = weightsList.Count == 0 ? Vector4.Zero : weightsList[j];
                             Vector2 boneIndices = bones.Count == 0 ? Vector2.Zero : bones[j];
@@ -614,7 +614,7 @@
                             vBuffer[vBufIndex++] = boneIndices.Y;
                         }
 
-                        List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();
+                        List<Vector3> simplifiedTriangles = new List<Vector3>();
                         List<float> areaSums = new List<float>();
                         float areaSum = 0f;
                         for (int j = 0; j < indices.Length; j += 3)
@@ -622,15 +622,15 @@
                             int index0 = (int)indices[j + 0];
                             int index1 = (int)indices[j + 1];
                             int index2 = (int)indices[j + 2];
-                            System.Numerics.Vector3 a = positions[index0].SystemVector();
-                            System.Numerics.Vector3 b = positions[index1].SystemVector();
-                            System.Numerics.Vector3 c = positions[index2].SystemVector();
+                            Vector3 a = positions[index0];
+                            Vector3 b = positions[index1];
+                            Vector3 c = positions[index2];
                             simplifiedTriangles.Add(a);
                             simplifiedTriangles.Add(b);
                             simplifiedTriangles.Add(c);
-                            System.Numerics.Vector3 ab = b - a;
-                            System.Numerics.Vector3 ac = c - a;
-                            float l = System.Numerics.Vector3.Cross(ab, ac).Length() * 0.5f;
+                            Vector3 ab = b - a;
+                            Vector3 ac = c - a;
+                            float l = Vector3.Cross(ab, ac).Length() * 0.5f;
                             if (!float.IsNaN(l)) // Degenerate triangle
                             {
                                 areaSum += l;
@@ -772,8 +772,9 @@
                         int joint = arm.Joints[i];
                         Node n = g.Nodes[joint];
                         GlbBone bone = armature.UnsortedBones[i];
-                        Matrix4 world = Matrix4.CreateTranslation(n.Translation[0], n.Translation[1], n.Translation[2]) * Matrix4.CreateFromQuaternion(new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])) * Matrix4.CreateScale(n.Scale[0], n.Scale[1], n.Scale[2]);
-                        bone.InverseWorldTransform = Matrix4.Invert(world);
+                        Matrix4x4 world = Matrix4x4.CreateTranslation(n.Translation[0], n.Translation[1], n.Translation[2]) * Matrix4x4.CreateFromQuaternion(new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])) * Matrix4x4.CreateScale(n.Scale[0], n.Scale[1], n.Scale[2]);
+                        Matrix4x4.Invert(world, out Matrix4x4 biwt);
+                        bone.InverseWorldTransform = biwt;
                         List<GlbBone> cBones = new List<GlbBone>();
                         if (n.Children != null && n.Children.Length > 0)
                         {
@@ -842,7 +843,7 @@
                             float f14 = BitConverter.ToSingle(matrixByteBuffer, offset + 52);
                             float f15 = BitConverter.ToSingle(matrixByteBuffer, offset + 56);
                             float f16 = BitConverter.ToSingle(matrixByteBuffer, offset + 60);
-                            Matrix4 inverseBind = new Matrix4(
+                            Matrix4x4 inverseBind = new Matrix4x4(
                                 f1, f2, f3, f4,
                                 f5, f6, f7, f8,
                                 f9, f10, f11, f12,
@@ -857,7 +858,7 @@
                         // Uh-oh
                         foreach (GlbBone bone in armature.UnsortedBones)
                         {
-                            bone.InverseBindMatrix = Matrix4.Identity; // Invalid, but can't do much more, no inverse bind were provided anyway
+                            bone.InverseBindMatrix = Matrix4x4.Identity; // Invalid, but can't do much more, no inverse bind were provided anyway
                         }
                     }
 
@@ -980,10 +981,10 @@
                 glmat.AlphaMode = mat.AlphaMode;
                 this.HasTransparency |= mat.AlphaMode != Material.AlphaModeEnum.OPAQUE;
                 glmat.BaseColorFactor = new Vector4(mat.PbrMetallicRoughness.BaseColorFactor[0], mat.PbrMetallicRoughness.BaseColorFactor[1], mat.PbrMetallicRoughness.BaseColorFactor[2], mat.PbrMetallicRoughness.BaseColorFactor[3]);
-                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressAlbedo ? PixelInternalFormat.CompressedSrgbAlpha : PixelInternalFormat.SrgbAlpha);
+                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressAlbedo ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.Srgb8Alpha8);
                 glmat.BaseColorAnimation = new TextureAnimation(null);
                 glmat.CullFace = !mat.DoubleSided;
-                glmat.EmissionTexture = this.LoadIndependentTextureFromBinary(g, mat.EmissiveTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressEmissive ? PixelInternalFormat.CompressedSrgbAlpha : PixelInternalFormat.SrgbAlpha);
+                glmat.EmissionTexture = this.LoadIndependentTextureFromBinary(g, mat.EmissiveTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressEmissive ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.Srgb8Alpha8);
                 glmat.EmissionAnimation = new TextureAnimation(null);
                 glmat.MetallicFactor = mat.PbrMetallicRoughness.MetallicFactor;
                 glmat.OcclusionMetallicRoughnessTexture = this.LoadAOMRTextureFromBinary(g, mat.OcclusionTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, mat.PbrMetallicRoughness.MetallicRoughnessTexture?.Index, bin);
@@ -991,8 +992,8 @@
                 glmat.Name = mat.Name;
                 glmat.Index = (uint)i;
                 glmat.NormalTexture = this._meta.FullRangeNormals
-                    ? this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new RgbaVector(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.Rgb16f : PixelInternalFormat.Rgb32f)
-                    : this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? PixelInternalFormat.CompressedRgb : PixelInternalFormat.Rgb);
+                    ? this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new RgbaVector(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? SizedInternalFormat.RgbHalf : SizedInternalFormat.RgbFloat)
+                    : this.LoadIndependentTextureFromBinary(g, mat.NormalTexture?.Index, bin, new Rgba32(0.5f, 0.5f, 1.0f, 0.0f), this._meta.CompressNormal ? SizedInternalFormat.CompressedRgbaBPTC : SizedInternalFormat.Rgb8);
 
                 glmat.NormalAnimation = new TextureAnimation(null);
                 glmat.RoughnessFactor = mat.PbrMetallicRoughness.RoughnessFactor;
@@ -1058,7 +1059,7 @@
             // All images are present and refer to the same internal image, assume compressed rgb imgage, read and pass along as independant
             if (ao != null && m != null && r != null && ao.Value == m.Value && m.Value == r.Value)
             {
-                return this.LoadIndependentTextureFromBinary<Rgba32>(g, ao, bin, default, this._meta.CompressAOMR ? PixelInternalFormat.CompressedRgba : PixelInternalFormat.Rgba, i => i.ProcessPixelRows(a =>
+                return this.LoadIndependentTextureFromBinary<Rgba32>(g, ao, bin, default, this._meta.CompressAOMR ? SizedInternalFormat.CompressedRgbaBPTC : SizedInternalFormat.Rgba8, i => i.ProcessPixelRows(a =>
                     {
                         for (int r = 0; r < a.Height; ++r)
                         {
@@ -1117,7 +1118,7 @@
                 }
             }
 
-            VTT.GL.Texture glTex = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT }, this._meta.CompressAOMR ? PixelInternalFormat.CompressedRgba : PixelInternalFormat.Rgba);
+            VTT.GL.Texture glTex = this.LoadGLTexture(imgb, new Sampler() { MagFilter = Sampler.MagFilterEnum.NEAREST, MinFilter = Sampler.MinFilterEnum.NEAREST, WrapS = Sampler.WrapSEnum.REPEAT, WrapT = Sampler.WrapTEnum.REPEAT }, this._meta.CompressAOMR ? SizedInternalFormat.CompressedRgbaBPTC : SizedInternalFormat.Rgba8);
             imgAO.Dispose();
             imgM.Dispose();
             imgR.Dispose();
@@ -1125,7 +1126,7 @@
             return glTex;
         }
 
-        private VTT.GL.Texture LoadIndependentTextureFromBinary<TPixel>(Gltf g, int? tIndex, byte[] bin, TPixel defaultValue, PixelInternalFormat pif = PixelInternalFormat.Rgba, Action<Image<TPixel>> processor = null) where TPixel : unmanaged, IPixel<TPixel>
+        private VTT.GL.Texture LoadIndependentTextureFromBinary<TPixel>(Gltf g, int? tIndex, byte[] bin, TPixel defaultValue, SizedInternalFormat pif = SizedInternalFormat.Rgba8, Action<Image<TPixel>> processor = null) where TPixel : unmanaged, IPixel<TPixel>
         {
             if (tIndex == null) // No independent texture present
             {
@@ -1162,7 +1163,7 @@
         }
 
         private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
-        public void Render(ShaderProgram shader, Matrix4 baseMatrix, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
         {
             if (!this.GlReady)
             {
@@ -1185,12 +1186,11 @@
             // Create camera
             glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera.Camera) : this.Camera.Camera;
             GlbObject cameraObject = portrait ? (this.PortraitCamera ?? this.Camera) : this.Camera;
-            Matrix4 mat = this.LookupChildMatrix(cameraObject);
-            Quaternion q = mat.ExtractRotation();
-            Vector3 camLook = (q * new Vector4(0, 0, -1, 1)).Xyz.Normalized();
-            Vector3 camPos = mat.ExtractTranslation();
+            Matrix4x4 mat = this.LookupChildMatrix(cameraObject);
+            Matrix4x4.Decompose(mat, out Vector3 scale, out Quaternion q, out Vector3 camPos);
+            Vector3 camLook = (Vector4.Transform(new Vector4(0, 0, -1, 1), q)).Xyz().Normalized();
             Util.Camera camera = new VectorCamera(camPos, camLook);
-            camera.Projection = Matrix4.CreatePerspectiveFieldOfView(sceneCamera.Perspective.Yfov, (float)width / height, sceneCamera.Perspective.Znear, 100f);
+            camera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(sceneCamera.Perspective.Yfov, (float)width / height, sceneCamera.Perspective.Znear, 100f);
             camera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
 
             // Create sun
@@ -1199,10 +1199,10 @@
             if (sceneSun != null)
             {
                 mat = this.LookupChildMatrix(this.DirectionalLight);
-                q = mat.ExtractRotation();
+                Matrix4x4.Decompose(mat, out _, out q, out _);
                 Vector3 lightDir = new Vector3(0, 0, -1);
-                lightDir = (q * new Vector4(lightDir, 1.0f)).Xyz;
-                sun = new DirectionalLight(lightDir.Normalized(), sceneSun.Value.Color.Xyz);
+                lightDir = (Vector4.Transform(new Vector4(lightDir, 1.0f), q)).Xyz();
+                sun = new DirectionalLight(lightDir.Normalized(), sceneSun.Value.Color.Xyz());
             }
             else
             {
@@ -1210,12 +1210,11 @@
             }
 
             // Create framebuffer
-            int fbo = Client.Instance.Frontend.Renderer.Pipeline.CreateDummyForwardFBO(new Size(width, height), out VTT.GL.Texture d0, out VTT.GL.Texture d1, out VTT.GL.Texture d2, out VTT.GL.Texture d3, out VTT.GL.Texture d4, out VTT.GL.Texture d5, out VTT.GL.Texture tex);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
-            GL.ActiveTexture(TextureUnit.Texture0);
+            uint fbo = Client.Instance.Frontend.Renderer.Pipeline.CreateDummyForwardFBO(new Size(width, height), out VTT.GL.Texture d0, out VTT.GL.Texture d1, out VTT.GL.Texture d2, out VTT.GL.Texture d3, out VTT.GL.Texture d4, out VTT.GL.Texture d5, out VTT.GL.Texture tex);
+            GL.BindFramebuffer(FramebufferTarget.All, fbo);
+            GL.ActiveTexture(0);
 
-            int[] data = new int[4];
-            GL.GetInteger(GetPName.Viewport, data);
+            ReadOnlySpan<int> data = GL.GetInteger(GLPropertyName.Viewport);
             ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
             shader.Bind();
             Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader);
@@ -1224,36 +1223,36 @@
 
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             plr.Clear();
-            plr.ProcessScene(Matrix4.Identity, this);
+            plr.ProcessScene(Matrix4x4.Identity, this);
             plr.DrawLights(null, false, 0, null);
             plr.UniformLights(shader);
 
-            GL.ActiveTexture(TextureUnit.Texture14);
+            GL.ActiveTexture(14);
             shader["dl_shadow_map"].Set(14);
             Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
-            GL.ActiveTexture(TextureUnit.Texture13);
+            GL.ActiveTexture(13);
             shader["pl_shadow_maps"].Set(13);
             plr.DepthMap.Bind();
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
 
             shader["alpha"].Set(1.0f);
             shader["tint_color"].Set(Vector4.One);
 
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+            GL.BindFramebuffer(FramebufferTarget.All, fbo);
             GL.Viewport(0, 0, width, height);
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
 
-            this.Render(shader, Matrix4.Identity, camera.Projection, camera.View, 0, null, 0);
+            this.Render(shader, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0);
 
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             tex.Bind();
             Image<Rgba32> retImg = tex.GetImage<Rgba32>();
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             GL.DeleteFramebuffer(fbo);
             d0.Dispose();
@@ -1269,9 +1268,9 @@
             return retImg;
         }
 
-        private Matrix4 LookupChildMatrix(GlbObject obj)
+        private Matrix4x4 LookupChildMatrix(GlbObject obj)
         {
-            Matrix4 ret = Matrix4.Identity;
+            Matrix4x4 ret = Matrix4x4.Identity;
             Stack<GlbObject> walkStack = new Stack<GlbObject>();
             while (obj != null)
             {
@@ -1282,7 +1281,7 @@
             while (walkStack.Count > 0)
             {
                 obj = walkStack.Pop();
-                ret *= Matrix4.CreateScale(obj.Scale) * Matrix4.CreateFromQuaternion(obj.Rotation) * Matrix4.CreateTranslation(obj.Position);
+                ret *= Matrix4x4.CreateScale(obj.Scale) * Matrix4x4.CreateFromQuaternion(obj.Rotation) * Matrix4x4.CreateTranslation(obj.Position);
             }
 
             return ret;
@@ -1311,7 +1310,7 @@
             }
         }
 
-        private VTT.GL.Texture LoadGLTexture<TPixel>(Image<TPixel> img, Sampler s, PixelInternalFormat pif = PixelInternalFormat.Rgba) where TPixel : unmanaged, IPixel<TPixel>
+        private VTT.GL.Texture LoadGLTexture<TPixel>(Image<TPixel> img, Sampler s, SizedInternalFormat pif = SizedInternalFormat.Rgba8) where TPixel : unmanaged, IPixel<TPixel>
         {
             void LoadTexture(VTT.GL.Texture glTex)
             {
@@ -1329,7 +1328,7 @@
 
                 FilterParam fMag = s.MagFilter == Sampler.MagFilterEnum.LINEAR ? FilterParam.Linear : FilterParam.Nearest;
                 glTex.SetFilterParameters(fMin, fMag);
-                glTex.SetImage(img, OpenGLUtil.MapCompressedFormat(pif), type: pif is PixelInternalFormat.Rgb16f or PixelInternalFormat.Rgb32f ? PixelType.Float : PixelType.UnsignedByte);
+                glTex.SetImage(img, OpenGLUtil.MapCompressedFormat(pif), type: pif is SizedInternalFormat.RgbHalf or SizedInternalFormat.RgbaFloat ? PixelDataType.Float : PixelDataType.Byte);
                 if (fMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest)
                 {
                     glTex.GenerateMipMaps();

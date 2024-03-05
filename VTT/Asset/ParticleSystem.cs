@@ -1,19 +1,20 @@
 ﻿namespace VTT.Asset
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
+    using GL = GL.Bindings.GL;
 
     public class ParticleSystem
     {
@@ -168,9 +169,9 @@
             }
 
             this.AssetID = de.GetGuid("AssetID");
-            this.DoBillboard = de.Get<bool>("DoBillboard", true);
-            this.ClusterEmission = de.Get<bool>("ClusterEmission", false);
-            this.DoFow = de.Get<bool>("DoFow", false);
+            this.DoBillboard = de.Get("DoBillboard", true);
+            this.ClusterEmission = de.Get("ClusterEmission", false);
+            this.DoFow = de.Get("DoFow", false);
             this.IsSpriteSheet = de.Get("IsSpriteSheet", false);
             if (de.Has("SpriteSheetData", Util.DataType.Map))
             {
@@ -220,16 +221,16 @@
         {
             EmissionType = this.EmissionType,
             EmissionRadius = this.EmissionRadius,
-            EmissionVolume = new Vector3(this.EmissionVolume),
+            EmissionVolume = new Vector3(this.EmissionVolume.X, this.EmissionVolume.Y, this.EmissionVolume.Z),
             EmissionChance = this.EmissionChance,
             EmissionAmount = new RangeInt(this.EmissionAmount.Min, this.EmissionAmount.Max),
             EmissionCooldown = new RangeInt(this.EmissionCooldown.Min, this.EmissionCooldown.Max),
             Lifetime = new RangeInt(this.Lifetime.Min, this.Lifetime.Max),
             ScaleVariation = new RangeSingle(this.ScaleVariation.Min, this.ScaleVariation.Max),
             MaxParticles = this.MaxParticles,
-            InitialVelocity = new RangeVector3(new Vector3(this.InitialVelocity.Min), new Vector3(this.InitialVelocity.Max)),
+            InitialVelocity = new RangeVector3(new Vector3(this.InitialVelocity.Min.X, this.InitialVelocity.Min.Y, this.InitialVelocity.Min.Z), new Vector3(this.InitialVelocity.Max.X, this.InitialVelocity.Max.Y, this.InitialVelocity.Max.Z)),
             InitialVelocityRandomAngle = this.InitialVelocityRandomAngle,
-            Gravity = new Vector3(this.Gravity),
+            Gravity = new Vector3(this.Gravity.X, this.Gravity.Y, this.Gravity.Z),
             VelocityDampenFactor = this.VelocityDampenFactor,
             ColorOverLifetime = new Gradient<Vector4>(this.ColorOverLifetime),
             ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
@@ -343,7 +344,7 @@
                 this.NumRows = e.Get<int>("nR");
                 this.NumSprites = e.Get<int>("nS");
                 this.Selection = e.GetEnum<SelectionMode>("sM");
-                this.SelectionWeights = e.GetArray("sC", (n, c) => c.Get<int>(n, 0), Array.Empty<int>());
+                this.SelectionWeights = e.GetArray("sC", (n, c) => c.Get(n, 0), Array.Empty<int>());
                 this.SelectionWeightsList.Clear();
                 for (int i = 0; i < this.SelectionWeights.Length; ++i)
                 {
@@ -463,10 +464,10 @@
             particleShader["is_sprite_sheet"].Set(this.Template.IsSpriteSheet);
             particleShader["sprite_sheet_data"].Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
-            GL.ActiveTexture(TextureUnit.Texture14);
-            GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            a.Model.GLMdl.Render(particleShader, Matrix4.Identity, cam.Projection, cam.View, 0, null, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
+            GL.ActiveTexture(14);
+            GL.BindTexture(TextureTarget.Buffer, this._glBufferTexture);
+            GL.ActiveTexture(0);
+            a.Model.GLMdl.Render(particleShader, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
@@ -555,8 +556,8 @@
                     {
                         Vector4 bo4 = new Vector4(this.Container.ContainerPositionOffset, 1.0f);
                         Quaternion q = this.Container.UseContainerOrientation ? this.Container.Container.Rotation : Quaternion.Identity;
-                        bo4 = q * bo4;
-                        baseOffset = bo4.Xyz / bo4.W;
+                        bo4 = Vector4.Transform(bo4, q);
+                        baseOffset = bo4.Xyz() / bo4.W;
                         baseOffset *= this.Container.Container.Scale;
                         baseOffset += this.Container.Container.Position;
                     }
@@ -812,7 +813,7 @@
 
                                 if (this.Container.UseContainerOrientation)
                                 {
-                                    rPt = (this.Container.Container.Rotation * new Vector4(rPt, 1.0f)).Xyz;
+                                    rPt = Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
                                     rPt *= this.Container.Container.Scale;
                                 }
 
@@ -869,15 +870,15 @@
                                     //int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;
                                     int rIdx = sMesh.FindAreaSumIndex(rArea);
                                     rIdx *= 3;
-                                    System.Numerics.Vector3 v1 = sMesh.simplifiedTriangles[rIdx + 0];
-                                    System.Numerics.Vector3 v2 = sMesh.simplifiedTriangles[rIdx + 1];
-                                    System.Numerics.Vector3 v3 = sMesh.simplifiedTriangles[rIdx + 2];
+                                    Vector3 v1 = sMesh.simplifiedTriangles[rIdx + 0];
+                                    Vector3 v2 = sMesh.simplifiedTriangles[rIdx + 1];
+                                    Vector3 v3 = sMesh.simplifiedTriangles[rIdx + 2];
                                     float r1 = MathF.Sqrt(this._rand.NextSingle());
                                     float r2 = this._rand.NextSingle();
-                                    Vector3 rPt = (((1 - r1) * v1) + (r1 * (1 - r2) * v2) + (r2 * r1 * v3)).GLVector();
+                                    Vector3 rPt = (((1 - r1) * v1) + (r1 * (1 - r2) * v2) + (r2 * r1 * v3));
                                     if (this.Container.UseContainerOrientation)
                                     {
-                                        rPt = (this.Container.Container.Rotation * new Vector4(rPt, 1.0f)).Xyz;
+                                        rPt = Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
                                         rPt *= this.Container.Container.Scale;
                                     }
 
@@ -910,9 +911,9 @@
                                 (this._rand.NextSingle() - this._rand.NextSingle()),
                                 (this._rand.NextSingle() - this._rand.NextSingle()),
                                 (this._rand.NextSingle() - this._rand.NextSingle())).Normalized();
-                        Quaternion rndUnitQuaternion = Quaternion.FromAxisAngle(rndUnitVector, this.Template.InitialVelocityRandomAngle * this._rand.NextSingle());
-                        Vector4 v = (rndUnitQuaternion * new Vector4(p->velocity, 1.0f));
-                        p->velocity = v.Xyz / v.W;
+                        Quaternion rndUnitQuaternion = Quaternion.CreateFromAxisAngle(rndUnitVector, this.Template.InitialVelocityRandomAngle * this._rand.NextSingle());
+                        Vector4 v = Vector4.Transform(new Vector4(p->velocity, 1.0f), rndUnitQuaternion);
+                        p->velocity = v.Xyz() / v.W;
                     }
 
                     if (!this.IsFake)
@@ -920,8 +921,8 @@
                         if (this.Container.RotateVelocityByOrientation && this.Container?.Container != null)
                         {
                             Quaternion cRot = this.Container.Container.Rotation;
-                            Vector4 v = (cRot * new Vector4(p->velocity, 1.0f));
-                            p->velocity = v.Xyz / v.W;
+                            Vector4 v = Vector4.Transform(new Vector4(p->velocity, 1.0f), cRot);
+                            p->velocity = v.Xyz() / v.W;
                         }
                     }
                 }
@@ -968,19 +969,19 @@
         {
             if (!this._glInit)
             {
-                GL.GenBuffers(1, out this._glTextureBuffer);
-                GL.BindBuffer(BufferTarget.TextureBuffer, this._glTextureBuffer);
-                GL.BufferData(BufferTarget.TextureBuffer, this._sizeInBytes, IntPtr.Zero, BufferUsageHint.DynamicDraw);
+                this._glTextureBuffer = GL.GenBuffer();
+                GL.BindBuffer(BufferTarget.Texture, this._glTextureBuffer);
+                GL.BufferData(BufferTarget.Texture, this._sizeInBytes, IntPtr.Zero, BufferUsage.DynamicDraw);
 
-                GL.GenTextures(1, out this._glBufferTexture);
-                GL.BindTexture(TextureTarget.TextureBuffer, this._glBufferTexture);
-                GL.TexBuffer(TextureBufferTarget.TextureBuffer, (SizedInternalFormat)Version30.Rgba32f, this._glTextureBuffer);
+                this._glBufferTexture = GL.GenTexture();
+                GL.BindTexture(TextureTarget.Buffer, this._glBufferTexture);
+                GL.TexBuffer(SizedInternalFormat.RgbaFloat, this._glTextureBuffer);
 
                 this._glInit = true;
             }
 
-            GL.BindBuffer(BufferTarget.TextureBuffer, this._glTextureBuffer);
-            GL.BufferSubData(BufferTarget.TextureBuffer, IntPtr.Zero, this._sizeInBytes, (IntPtr)this._buffer);
+            GL.BindBuffer(BufferTarget.Texture, this._glTextureBuffer);
+            GL.BufferSubData(BufferTarget.Texture, IntPtr.Zero, this._sizeInBytes, (IntPtr)this._buffer);
         }
 
         public Particle* FindFirstDeactivatedParticle()

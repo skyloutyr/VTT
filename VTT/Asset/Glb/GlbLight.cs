@@ -1,6 +1,6 @@
 ﻿namespace VTT.Asset.Glb
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
 
     public readonly struct GlbLight
     {

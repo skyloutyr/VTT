@@ -1,12 +1,13 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
     using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using GL = VTT.GL.Bindings.GL;
 
     public static class CustomShaderRenderer
     {
@@ -32,7 +33,7 @@
                     shader["tint_color"].Set(passthroughData.TintColor);
                     shader["alpha"].Set(passthroughData.Alpha);
                     shader["grid_alpha"].Set(passthroughData.GridAlpha);
-                    OpenTK.Graphics.OpenGL.GL.ActiveTexture(OpenTK.Graphics.OpenGL.TextureUnit.Texture12);
+                    GL.ActiveTexture(12);
                     if (a.Shader.NodeGraph.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
                     {
                         t.Bind();
@@ -47,7 +48,7 @@
                         Client.Instance.Frontend.Renderer.White.Bind();
                     }
 
-                    OpenTK.Graphics.OpenGL.GL.ActiveTexture(OpenTK.Graphics.OpenGL.TextureUnit.Texture0);
+                    GL.ActiveTexture(0);
                     return true;
                 }
             }

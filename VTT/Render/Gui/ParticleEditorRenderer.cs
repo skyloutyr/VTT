@@ -7,7 +7,9 @@
     using System;
     using System.IO;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -16,8 +18,8 @@
     {
         internal bool popupState = false;
 
-        private GradientPoint<OpenTK.Mathematics.Vector4> _editedColorPt;
-        private Gradient<OpenTK.Mathematics.Vector4> _editedColor;
+        private GradientPoint<Vector4> _editedColorPt;
+        private Gradient<Vector4> _editedColor;
         private bool editColorPopup = false;
 
         public void Render(Guid particleSystemId, AssetRef draggedRef, GuiState state)
@@ -29,8 +31,8 @@
                 if (ImGui.Begin(lang.Translate("ui.particle.title") + "###Edit Particle System"))
                 {
                     ParticleRenderer pr = Client.Instance.Frontend.Renderer.ParticleRenderer;
-                    System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
-                    System.Numerics.Vector2 texSize = winSize - new System.Numerics.Vector2(340, 40);
+                    Vector2 winSize = ImGui.GetWindowSize();
+                    Vector2 texSize = winSize - new Vector2(340, 40);
                     if (texSize.X != texSize.Y)
                     {
                         if (texSize.X < texSize.Y)
@@ -58,20 +60,20 @@
                     bool npRmb = false;
 
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
-                    ImGui.Image(pr.RenderTexture, texSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
+                    ImGui.Image(pr.RenderTexture, texSize, new Vector2(0, 1), new Vector2(1, 0));
                     ImGui.PopStyleVar();
-                    ImGui.SetCursorPos(new System.Numerics.Vector2(winSize.X - 328, 28));
+                    ImGui.SetCursorPos(new Vector2(winSize.X - 328, 28));
                     bool focused = ImGui.IsWindowFocused();
-                    ImGui.BeginChild("##ParamsEditor", new System.Numerics.Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar);
+                    ImGui.BeginChild("##ParamsEditor", new Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar);
                     if (doRender)
                     {
-                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !_lmbDown && ImGui.IsWindowFocused())
+                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !_lmbDown && ImGui.IsWindowFocused())
                         {
                             _lmbDown = true;
                             npLbm = true;
                         }
 
-                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Right) && !_rmbDown && ImGui.IsWindowFocused())
+                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && !_rmbDown && ImGui.IsWindowFocused())
                         {
                             _rmbDown = true;
                             npRmb = true;
@@ -109,20 +111,20 @@
                             }
 
                             ImGui.Text(lang.Translate("ui.particle.emission_volume_sphere"));
-                            System.Numerics.Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume.SystemVector();
+                            Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
                             if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
                             {
-                                pr.CurrentlyEditedSystem.EmissionVolume = v3.GLVector();
+                                pr.CurrentlyEditedSystem.EmissionVolume = v3;
                             }
                         }
 
                         if ((cEmissionType >= 3 && cEmissionType <= 8) || cEmissionType == 11)
                         {
                             ImGui.Text(lang.Translate("ui.particle.emission_volume"));
-                            System.Numerics.Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume.SystemVector();
+                            Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
                             if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
                             {
-                                pr.CurrentlyEditedSystem.EmissionVolume = v3.GLVector();
+                                pr.CurrentlyEditedSystem.EmissionVolume = v3;
                             }
                         }
 
@@ -244,18 +246,18 @@
                         }
 
                         ImGui.Text(lang.Translate("ui.particle.velocity"));
-                        System.Numerics.Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min.SystemVector();
+                        Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min;
                         if (ImGui.DragFloat3("##VelMin", ref vVec, 0.01f))
                         {
-                            pr.CurrentlyEditedSystem.InitialVelocity.Min = vVec.GLVector();
+                            pr.CurrentlyEditedSystem.InitialVelocity.Min = vVec;
                         }
 
                         ImGui.SameLine();
                         ImGui.Text(lang.Translate("ui.generic.min"));
-                        vVec = pr.CurrentlyEditedSystem.InitialVelocity.Max.SystemVector();
+                        vVec = pr.CurrentlyEditedSystem.InitialVelocity.Max;
                         if (ImGui.DragFloat3("##VelMax", ref vVec, 0.01f))
                         {
-                            pr.CurrentlyEditedSystem.InitialVelocity.Max = vVec.GLVector();
+                            pr.CurrentlyEditedSystem.InitialVelocity.Max = vVec;
                         }
 
                         ImGui.SameLine();
@@ -268,10 +270,10 @@
                         }
 
                         ImGui.Text(lang.Translate("ui.particle.gravity"));
-                        vVec = pr.CurrentlyEditedSystem.Gravity.SystemVector();
+                        vVec = pr.CurrentlyEditedSystem.Gravity;
                         if (ImGui.DragFloat3("##Grav", ref vVec, 0.01f))
                         {
-                            pr.CurrentlyEditedSystem.Gravity = vVec.GLVector();
+                            pr.CurrentlyEditedSystem.Gravity = vVec;
                         }
 
                         ImGui.Text(lang.Translate("ui.particle.velocity_dampen"));
@@ -427,7 +429,7 @@
                 ImGui.End();
             }
 
-            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && _lmbDown)
+            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && _lmbDown)
             {
                 _lmbDown = false;
                 _imDraggedGradientKey = 0;
@@ -435,7 +437,7 @@
                 _lastClickedSingle = null;
             }
 
-            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Right) && _rmbDown)
+            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && _rmbDown)
             {
                 _rmbDown = false;
                 _lastClicked = null;
@@ -449,10 +451,10 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.generic.color") + "###Edit Gradient Color"))
             {
-                System.Numerics.Vector4 c = this._editedColorPt.Color.SystemVector();
+                Vector4 c = this._editedColorPt.Color;
                 if (ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###GradColor", ref c))
                 {
-                    this._editedColorPt = new GradientPoint<OpenTK.Mathematics.Vector4>(this._editedColorPt.Key, c.GLVector());
+                    this._editedColorPt = new GradientPoint<Vector4>(this._editedColorPt.Key, c);
                 }
 
                 bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
@@ -477,18 +479,18 @@
         private static float _imDraggedGradientKey;
         private static bool _lmbDown;
         private static bool _rmbDown;
-        private static GradientPoint<OpenTK.Mathematics.Vector4>? _lastClicked;
+        private static GradientPoint<Vector4>? _lastClicked;
         private static GradientPoint<float>? _lastClickedSingle;
         private static GradientPoint<float>? _editedValueSingle;
 
-        private bool ImGradient(Gradient<OpenTK.Mathematics.Vector4> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
+        private bool ImGradient(Gradient<Vector4> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             float w = 208;
-            System.Numerics.Vector2 curWin = ImGui.GetCursorScreenPos() + new System.Numerics.Vector2(0, 16);
+            Vector2 curWin = ImGui.GetCursorScreenPos() + new Vector2(0, 16);
             drawList.AddRect(
-                new System.Numerics.Vector2(curWin.X, curWin.Y),
-                new System.Numerics.Vector2(curWin.X + w, curWin.Y + 24),
+                new Vector2(curWin.X, curWin.Y),
+                new Vector2(curWin.X + w, curWin.Y + 24),
                 ImGui.GetColorU32(ImGuiCol.Border)
             );
 
@@ -496,23 +498,23 @@
 
             for (int i = 0; i < grad.InternalList.Count; i++)
             {
-                GradientPoint<OpenTK.Mathematics.Vector4> curr = grad.InternalList[i];
-                GradientPoint<OpenTK.Mathematics.Vector4> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
+                GradientPoint<Vector4> curr = grad.InternalList[i];
+                GradientPoint<Vector4> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
                 float fS = curr.Key * w;
                 float fN = (next.Key < curr.Key ? 1 : next.Key) * w;
                 uint clrL = Extensions.FromVec4(curr.Color).Abgr();
                 uint clrR = Extensions.FromVec4(next.Color).Abgr();
                 drawList.AddRectFilledMultiColor(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y),
-                    new System.Numerics.Vector2(curWin.X + fN, curWin.Y + 24),
+                    new Vector2(curWin.X + fS, curWin.Y),
+                    new Vector2(curWin.X + fN, curWin.Y + 24),
                     clrL, clrR, clrR, clrL
                 );
 
                 bool hoverTri = PointInTriangle(
-                    Client.Instance.Frontend.GameHandle.MousePosition.SystemVector(),
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40)
+                    Client.Instance.Frontend.GameHandle.MousePosition,
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40)
                 );
 
                 if (needsProcessLmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
@@ -530,29 +532,29 @@
                 }
 
                 drawList.AddTriangleFilled(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40),
                     hoverTri ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button)
                 );
 
                 drawList.AddTriangle(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40),
                     ImGui.GetColorU32(ImGuiCol.Border)
                 );
 
                 drawList.AddRectFilled(
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2),
+                    new Vector2(curWin.X + fS - 4, curWin.Y - 10),
+                    new Vector2(curWin.X + fS + 4, curWin.Y - 2),
                     clrL
                 );
 
-                bool hoverQuad = ImGui.IsMouseHoveringRect(new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10), new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2));
+                bool hoverQuad = ImGui.IsMouseHoveringRect(new Vector2(curWin.X + fS - 4, curWin.Y - 10), new Vector2(curWin.X + fS + 4, curWin.Y - 2));
                 drawList.AddRect(
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2),
+                    new Vector2(curWin.X + fS - 4, curWin.Y - 10),
+                    new Vector2(curWin.X + fS + 4, curWin.Y - 2),
                     hoverQuad ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border)
                 );
 
@@ -571,7 +573,7 @@
                 if (MathF.Abs(mV - _imDraggedGradientKey) > float.Epsilon)
                 {
                     grad.InternalList.Remove(_lastClicked.Value);
-                    GradientPoint<OpenTK.Mathematics.Vector4> nPt = new GradientPoint<OpenTK.Mathematics.Vector4>(mV, _lastClicked.Value.Color);
+                    GradientPoint<Vector4> nPt = new GradientPoint<Vector4>(mV, _lastClicked.Value.Color);
                     grad.Add(nPt);
                     _lastClicked = nPt;
                     _imDraggedGradientKey = mV;
@@ -580,10 +582,10 @@
 
             if (_lmbDown && needsProcessLmb)
             {
-                if (ImGui.IsMouseHoveringRect(new System.Numerics.Vector2(curWin.X, curWin.Y), new System.Numerics.Vector2(curWin.X + w, curWin.Y + 24)))
+                if (ImGui.IsMouseHoveringRect(new Vector2(curWin.X, curWin.Y), new Vector2(curWin.X + w, curWin.Y + 24)))
                 {
                     float mV = Math.Clamp((ImGui.GetMousePos().X - curWin.X) / w, 0f, 1f);
-                    OpenTK.Mathematics.Vector4 v = grad.Interpolate(mV, GradientInterpolators.LerpVec4);
+                    Vector4 v = grad.Interpolate(mV, GradientInterpolators.LerpVec4);
                     grad.Add(mV, v);
                     needsProcessLmb = false;
                     _lastClicked = null;
@@ -604,10 +606,10 @@
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             float w = 208;
-            System.Numerics.Vector2 curWin = ImGui.GetCursorScreenPos() + new System.Numerics.Vector2(0, 16);
+            Vector2 curWin = ImGui.GetCursorScreenPos() + new Vector2(0, 16);
             drawList.AddRect(
-                new System.Numerics.Vector2(curWin.X, curWin.Y),
-                new System.Numerics.Vector2(curWin.X + w, curWin.Y + 24),
+                new Vector2(curWin.X, curWin.Y),
+                new Vector2(curWin.X + w, curWin.Y + 24),
                 ImGui.GetColorU32(ImGuiCol.Border)
             );
 
@@ -623,16 +625,16 @@
                 float fYS = curr.Color / maxVal;
                 float fYN = next.Color / maxVal;
                 drawList.AddLine(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24 - (fYS * 24)),
-                    new System.Numerics.Vector2(curWin.X + fN, curWin.Y + 24 - (fYN * 24)),
+                    new Vector2(curWin.X + fS, curWin.Y + 24 - (fYS * 24)),
+                    new Vector2(curWin.X + fN, curWin.Y + 24 - (fYN * 24)),
                     ImGui.GetColorU32(ImGuiCol.PlotLines)
                 );
 
                 bool hoverTri = PointInTriangle(
-                    Client.Instance.Frontend.GameHandle.MousePosition.SystemVector(),
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40)
+                    Client.Instance.Frontend.GameHandle.MousePosition,
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40)
                 );
 
                 if (needsProcessLmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
@@ -652,29 +654,29 @@
                 }
 
                 drawList.AddTriangleFilled(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40),
                     hoverTri ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button)
                 );
 
                 drawList.AddTriangle(
-                    new System.Numerics.Vector2(curWin.X + fS, curWin.Y + 24),
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y + 40),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS, curWin.Y + 24),
+                    new Vector2(curWin.X + fS - 4, curWin.Y + 40),
+                    new Vector2(curWin.X + fS + 4, curWin.Y + 40),
                     ImGui.GetColorU32(ImGuiCol.Border)
                 );
 
                 drawList.AddRectFilled(
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2),
+                    new Vector2(curWin.X + fS - 4, curWin.Y - 10),
+                    new Vector2(curWin.X + fS + 4, curWin.Y - 2),
                     Extensions.FromVec4(Extensions.FromArgb(ImGui.GetColorU32(ImGuiCol.PlotHistogram)).Vec4() * fYS).Abgr()
                 );
 
-                bool hoverQuad = ImGui.IsMouseHoveringRect(new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10), new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2));
+                bool hoverQuad = ImGui.IsMouseHoveringRect(new Vector2(curWin.X + fS - 4, curWin.Y - 10), new Vector2(curWin.X + fS + 4, curWin.Y - 2));
                 drawList.AddRect(
-                    new System.Numerics.Vector2(curWin.X + fS - 4, curWin.Y - 10),
-                    new System.Numerics.Vector2(curWin.X + fS + 4, curWin.Y - 2),
+                    new Vector2(curWin.X + fS - 4, curWin.Y - 10),
+                    new Vector2(curWin.X + fS + 4, curWin.Y - 2),
                     hoverQuad ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border)
                 );
 
@@ -701,7 +703,7 @@
 
             if (_lmbDown && needsProcessLmb)
             {
-                if (ImGui.IsMouseHoveringRect(new System.Numerics.Vector2(curWin.X, curWin.Y), new System.Numerics.Vector2(curWin.X + w, curWin.Y + 24)))
+                if (ImGui.IsMouseHoveringRect(new Vector2(curWin.X, curWin.Y), new Vector2(curWin.X + w, curWin.Y + 24)))
                 {
                     float mV = Math.Clamp((Client.Instance.Frontend.MouseX - curWin.X) / w, 0f, 1f);
                     float v = grad.Interpolate(mV, GradientInterpolators.Lerp);
@@ -725,7 +727,7 @@
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             var imScreenPos = ImGui.GetCursorScreenPos();
-            var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+            var rectEnd = imScreenPos + new Vector2(320, 24);
             bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
             bool acceptShader = type == 0 && draggedRef != null && draggedRef.Type == AssetType.Shader;
             bool acceptModel = type == 1 && draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture);
@@ -736,7 +738,7 @@
                 0 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetShaderIcon,
                 1 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetModelIcon,
                 _ => Client.Instance.Frontend.Renderer.GuiRenderer.AssetImageIcon
-            }, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+            }, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
             string mdlTxt = "";
             int mdlTxtOffset = 0;
             if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -748,7 +750,7 @@
                     GL.Texture tex = ap.GetGLTexture();
                     if (tex != null)
                     {
-                        drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                        drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
                         mdlTxtOffset += 20;
                     }
                 }
@@ -756,7 +758,7 @@
 
             mdlTxt += " (" + aId.ToString() + ")\0";
             drawList.PushClipRect(imScreenPos, rectEnd);
-            drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+            drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
             drawList.PopClipRect();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
             if (mouseOver && draggedRef != null && acceptModel)
@@ -804,9 +806,9 @@
             return b0 || b1;
         }
 
-        private static float Sign(System.Numerics.Vector2 p1, System.Numerics.Vector2 p2, System.Numerics.Vector2 p3) => ((p1.X - p3.X) * (p2.Y - p3.Y)) - ((p2.X - p3.X) * (p1.Y - p3.Y));
+        private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3) => ((p1.X - p3.X) * (p2.Y - p3.Y)) - ((p2.X - p3.X) * (p1.Y - p3.Y));
 
-        private static bool PointInTriangle(System.Numerics.Vector2 pt, System.Numerics.Vector2 v1, System.Numerics.Vector2 v2, System.Numerics.Vector2 v3)
+        private static bool PointInTriangle(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
         {
             float d1, d2, d3;
             bool has_neg, has_pos;

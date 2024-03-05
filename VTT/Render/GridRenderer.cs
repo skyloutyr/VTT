@@ -1,12 +1,12 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Diagnostics;
+    using System.Numerics;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
 
@@ -34,7 +34,7 @@
             };
 
             this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+            this._vbo = new GPUBuffer(BufferTarget.Array);
             this._vao.Bind();
             this._vbo.Bind();
             this._vbo.SetData(data);
@@ -74,7 +74,7 @@
             };
 
             this._highlightVao = new VertexArray();
-            this._highlightVbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+            this._highlightVbo = new GPUBuffer(BufferTarget.Array);
             this._highlightVao.Bind();
             this._highlightVbo.Bind();
             this._highlightVbo.SetData(data);
@@ -86,11 +86,11 @@
             float[] nData = new float[data.Length * 6];
             Quaternion[] q = new Quaternion[] {
                 Quaternion.Identity,                                                        // Up
-                Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(180)),  // Down
-                Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(90)),   // Front
-                Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(-90)),  // Back
-                Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(90)),   // Left
-                Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(-90))   // Right
+                Quaternion.CreateFromAxisAngle(Vector3.UnitY, 180 * MathF.PI / 180),  // Down
+                Quaternion.CreateFromAxisAngle(Vector3.UnitX, 90 * MathF.PI / 180),   // Front
+                Quaternion.CreateFromAxisAngle(Vector3.UnitX, -90 * MathF.PI / 180),  // Back
+                Quaternion.CreateFromAxisAngle(Vector3.UnitY, 90 * MathF.PI / 180),   // Left
+                Quaternion.CreateFromAxisAngle(Vector3.UnitY, -90 * MathF.PI / 180)   // Right
             };
 
             Vector3[] o = new Vector3[] {
@@ -107,7 +107,7 @@
                 for (int j = 0; j < 24; ++j)
                 {
                     int idx = (i * data.Length) + (j * 5);
-                    Vector4 v = (q[i] * new Vector4(data[j * 5], data[(j * 5) + 1], data[(j * 5) + 2], 1.0f)) + new Vector4(o[i], 1.0f);
+                    Vector4 v = Vector4.Transform(new Vector4(data[j * 5], data[(j * 5) + 1], data[(j * 5) + 2], 1.0f), q[i]) + new Vector4(o[i], 1.0f);
                     nData[idx + 0] = v.X;
                     nData[idx + 1] = v.Y;
                     nData[idx + 2] = v.Z;
@@ -117,7 +117,7 @@
             }
 
             this._quadGridHighlightVao = new VertexArray();
-            this._quadGridHighlightVbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+            this._quadGridHighlightVbo = new GPUBuffer(BufferTarget.Array);
             this._quadGridHighlightVao.Bind();
             this._quadGridHighlightVbo.Bind();
             this._quadGridHighlightVbo.SetData(nData);
@@ -126,8 +126,8 @@
             this._quadGridHighlightVao.PushElement(ElementType.Vec3);
             this._quadGridHighlightVao.PushElement(ElementType.Vec2);
 
-            this._shader = OpenGLUtil.LoadShader("grid", ShaderType.VertexShader, ShaderType.FragmentShader);
-            this.InWorldShader = OpenGLUtil.LoadShader("overlay", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this._shader = OpenGLUtil.LoadShader("grid", ShaderType.Vertex, ShaderType.Fragment);
+            this.InWorldShader = OpenGLUtil.LoadShader("overlay", ShaderType.Vertex, ShaderType.Fragment);
 
             this.CPUTimer = new Stopwatch();
         }
@@ -140,12 +140,12 @@
             }
 
             this.CPUTimer.Restart();
-            GL.Enable(EnableCap.CullFace);
-            GL.CullFace(cam.Position.Z < 0 ? CullFaceMode.Front : CullFaceMode.Back);
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.CullFace);
+            GL.CullFace(cam.Position.Z < 0 ? PolygonFaceMode.Front : PolygonFaceMode.Back);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            Matrix4 modelMatrix = Matrix4.CreateTranslation((cam.Position * new Vector3(1, 1, 0)) - new Vector3(0, 0, 0.5f));
+            Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation((cam.Position * new Vector3(1, 1, 0)) - new Vector3(0, 0, 0.5f));
             this._shader.Bind();
             this._shader["view"].Set(cam.View);
             this._shader["projection"].Set(cam.Projection);
@@ -157,9 +157,9 @@
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
-            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(Capability.DepthTest);
             GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
-            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(Capability.DepthTest);
             if (renderMisc)
             {
                 Vector3 cwScale = default;
@@ -171,32 +171,32 @@
 
                 if (cw.HasValue)
                 {
-                    GL.DepthFunc(DepthFunction.Always);
-                    GL.Disable(EnableCap.CullFace);
+                    GL.DepthFunction(ComparisonMode.Always);
+                    GL.Disable(Capability.CullFace);
                     Vector3 snapped = cw.Value;
-                    modelMatrix = Matrix4.CreateScale(MathF.Round(cwScale.X), MathF.Round(cwScale.Y), 1) * Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f));
+                    modelMatrix = Matrix4x4.CreateScale(MathF.Round(cwScale.X), MathF.Round(cwScale.Y), 1) * Matrix4x4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f));
                     this.InWorldShader.Bind();
                     this.InWorldShader["view"].Set(cam.View);
                     this.InWorldShader["projection"].Set(cam.Projection);
                     this.InWorldShader["model"].Set(modelMatrix);
                     this.InWorldShader["u_color"].Set(Color.RoyalBlue.Vec4());
-                    GL.ActiveTexture(TextureUnit.Texture0);
+                    GL.ActiveTexture(0);
                     Client.Instance.Frontend.Renderer.White.Bind();
                     this._highlightVao.Bind();
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 24);
-                    GL.Enable(EnableCap.CullFace);
-                    GL.DepthFunc(DepthFunction.Lequal);
+                    GL.Enable(Capability.CullFace);
+                    GL.DepthFunction(ComparisonMode.LessOrEqual);
                 }
 
                 if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                 {
-                    GL.DepthFunc(DepthFunction.Always);
-                    GL.Disable(EnableCap.CullFace);
+                    GL.DepthFunction(ComparisonMode.Always);
+                    GL.Disable(Capability.CullFace);
                     this.InWorldShader.Bind();
                     this.InWorldShader["view"].Set(cam.View);
                     this.InWorldShader["projection"].Set(cam.Projection);
                     this.InWorldShader["u_color"].Set(Color.Orange.Vec4());
-                    GL.ActiveTexture(TextureUnit.Texture0);
+                    GL.ActiveTexture(0);
                     Client.Instance.Frontend.Renderer.White.Bind();
 
                     foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects)
@@ -204,27 +204,27 @@
                         float msx = MathF.Abs(mo.Scale.X) % (m.GridSize * 2);
                         float msy = MathF.Abs(mo.Scale.Y) % (m.GridSize * 2);
                         float msz = MathF.Abs(mo.Scale.Z) % (m.GridSize * 2);
-                        Vector3i bigScale = new Vector3i(
+                        Vector3 bigScale = new Vector3(
                             msx - 0.075f <= 0 || (m.GridSize * 2) - msx <= 0.075f ? 1 : 0,
                             msy - 0.075f <= 0 || (m.GridSize * 2) - msy <= 0.075f ? 1 : 0,
                             msz - 0.075f <= 0 || (m.GridSize * 2) - msz <= 0.075f ? 1 : 0
                         );
 
                         Vector3 snapped = mo.Position;
-                        modelMatrix = Matrix4.CreateScale(MathF.Round(mo.Scale.X), MathF.Round(mo.Scale.Y), 1) * Matrix4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f) - new Vector3(0, 0, 0.5f));
+                        modelMatrix = Matrix4x4.CreateScale(MathF.Round(mo.Scale.X), MathF.Round(mo.Scale.Y), 1) * Matrix4x4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f) - new Vector3(0, 0, 0.5f));
                         this.InWorldShader["model"].Set(modelMatrix);
                         this._highlightVao.Bind();
                         GL.DrawArrays(PrimitiveType.Triangles, 0, 24);
                     }
 
-                    GL.Enable(EnableCap.CullFace);
-                    GL.DepthFunc(DepthFunction.Lequal);
+                    GL.Enable(Capability.CullFace);
+                    GL.DepthFunction(ComparisonMode.LessOrEqual);
                 }
             }
 
-            GL.Disable(EnableCap.Blend);
-            GL.CullFace(CullFaceMode.Back);
-            GL.Disable(EnableCap.CullFace);
+            GL.Disable(Capability.Blend);
+            GL.CullFace(PolygonFaceMode.Back);
+            GL.Disable(Capability.CullFace);
             this.CPUTimer.Stop();
         }
     }

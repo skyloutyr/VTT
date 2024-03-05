@@ -1,6 +1,6 @@
 ﻿namespace VTT.GL.Bindings
 {
-    public enum TextureSwizzleMask
+    public enum TextureSwizzleMask : uint
     {
         Red = 0x1903,
         Green = 0x1904,

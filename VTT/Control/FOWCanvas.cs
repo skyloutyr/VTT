@@ -1,12 +1,12 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
     using System.Linq;
+    using System.Numerics;
     using System.Threading.Tasks;
     using VTT.Util;
 

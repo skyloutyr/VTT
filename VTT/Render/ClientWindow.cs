@@ -1,18 +1,16 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Windowing.Common;
-    using OpenTK.Windowing.Common.Input;
-    using OpenTK.Windowing.Desktop;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
+    using System.Numerics;
     using System.Runtime.InteropServices;
     using System.Threading;
     using VTT.GL;
+    using VTT.GL.Bindings;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Render.Gui;
@@ -25,7 +23,7 @@
         public WindowRenderer Renderer { get; set; }
         public SoundManager Sound { get; set; }
         public FFmpegWrapper FFmpegWrapper { get; set; }
-        public GameWindow GameHandle { get; set; }
+        public GLFWWindowHandler GameHandle { get; set; }
         public AsyncTextureUploader TextureUploader { get; private set; }
 
         public ConcurrentQueue<Action> ActionsToDo { get; } = new ConcurrentQueue<Action>();
@@ -35,13 +33,13 @@
         public ulong UpdatesExisted { get; set; }
         public ulong FramesExisted { get; set; }
 
-        public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.Size.X;
-        public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.Size.Y;
-        public int GlfwWidth => this._lastWindowWidth > 0 ? this._lastWindowWidth : this.GameHandle.Size.X;
-        public int GlfwHeight => this._lastWindowHeight > 0 ? this._lastWindowHeight : this.GameHandle.Size.Y;
+        public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.Size.Value.Width;
+        public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.Size.Value.Height;
+        public int GlfwWidth => this._lastWindowWidth > 0 ? this._lastWindowWidth : this.GameHandle.Size.Value.Width;
+        public int GlfwHeight => this._lastWindowHeight > 0 ? this._lastWindowHeight : this.GameHandle.Size.Value.Height;
 
-        public float MouseX => this.GameHandle.MousePosition.X;
-        public float MouseY => this.GameHandle.MousePosition.Y;
+        public float MouseX => this.GameHandle.MousePosition.Value.X;
+        public float MouseY => this.GameHandle.MousePosition.Value.Y;
 
         private Thread _glThread;
 
@@ -63,13 +61,8 @@
                 }
             }
 
-            WindowIcon windowIcon = this.LoadIcon(postfix);
-            OpenTK.Windowing.Common.ContextFlags winFlags = OpenTK.Windowing.Common.ContextFlags.ForwardCompatible;
-            if (ArgsManager.TryGetValue("gldebug", out string val))
-            {
-                winFlags |= OpenTK.Windowing.Common.ContextFlags.Debug;
-            }
-
+            GLFWimage[] windowIcon = this.LoadIcon(postfix);
+            bool dbg = ArgsManager.TryGetValue<string>("gldebug", out _);
             if (Client.Instance.Settings.Resolution.Width <= 0 || Client.Instance.Settings.Resolution.Height <= 0)
             {
                 Client.Instance.Settings.Resolution = new Size(1366, 768);
@@ -77,20 +70,19 @@
 
             this.FFmpegWrapper = new FFmpegWrapper();
             this.FFmpegWrapper.Init();
-            this.GameHandle = new GameWindow(
+            this.GameHandle = new GLFWWindowHandler(
                 new GameWindowSettings()
                 {
-                    RenderFrequency = 0,
+                    RenderFrequency = -1,
                     UpdateFrequency = 60
                 },
                 new NativeWindowSettings()
                 {
-                    API = OpenTK.Windowing.Common.ContextAPI.OpenGL,
+                    API = ClientAPI.OpenGL,
                     APIVersion = new Version(3, 3),
-                    AutoLoadBindings = true,
-                    Flags = winFlags,
-                    IsEventDriven = false,
-                    WindowState = Client.Instance.Settings.ScreenMode == ClientSettings.FullscreenMode.Fullscreen ? OpenTK.Windowing.Common.WindowState.Fullscreen : OpenTK.Windowing.Common.WindowState.Normal,
+                    ForwardCompatible = true,
+                    DebugContext = dbg,
+                    Fullscreen = Client.Instance.Settings.ScreenMode != ClientSettings.FullscreenMode.Normal,
                     NumberOfSamples = Client.Instance.Settings.MSAA switch
                     {
                         ClientSettings.MSAAMode.Disabled => 0,
@@ -100,20 +92,16 @@
                         _ => 0
                     },
 
-                    Profile = OpenTK.Windowing.Common.ContextProfile.Core,
-                    Size = new OpenTK.Mathematics.Vector2i(Client.Instance.Settings.Resolution.Width, Client.Instance.Settings.Resolution.Height),
+                    Size = new Size(Client.Instance.Settings.Resolution.Width, Client.Instance.Settings.Resolution.Height),
                     Icon = windowIcon,
                     DepthBits = 24,
                     StencilBits = 8,
                 }
-            )
-            {
-                VSync = Client.Instance.Settings.VSync,
-                Title = "VTT " + Program.Version.ToString(),
-            };
+            );
 
+            this.GameHandle.Title.Value = "VTT" + Program.Version.ToString();
+            this.GameHandle.VSync.Value = Client.Instance.Settings.VSync;
             this.Renderer = new WindowRenderer(this);
-            this.GameHandle.Resize += this.Instance_Resize;
             this.GameHandle.RenderFrame += this.Instance_RenderFrame;
             this.GameHandle.UpdateFrame += this.Instance_UpdateFrame;
             this.GameHandle.Load += this.Instance_SetupHander;
@@ -128,7 +116,7 @@
             this.GameHandle.FocusedChanged += this.Instance_Focus;
         }
 
-        private unsafe WindowIcon LoadIcon(string postfix)
+        private unsafe GLFWimage[] LoadIcon(string postfix)
         {
             using Image<Rgba32> normal = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta{postfix}.png");
             using Image<Rgba32> small = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.icon-beta_small{postfix}.png");
@@ -142,21 +130,19 @@
             small.CopyPixelDataTo(smallBytes);
             smaller.CopyPixelDataTo(smallerBytes);
             smallest.CopyPixelDataTo(smallestBytes);
-            WindowIcon ret = new WindowIcon(new OpenTK.Windowing.Common.Input.Image[4] {
-                new OpenTK.Windowing.Common.Input.Image(256, 256, normalBytes.ToArray()),
-                new OpenTK.Windowing.Common.Input.Image(48, 48, smallBytes.ToArray()),
-                new OpenTK.Windowing.Common.Input.Image(32, 32, smallerBytes.ToArray()),
-                new OpenTK.Windowing.Common.Input.Image(16, 16, smallestBytes.ToArray())
-            });
-
+            GLFWimage[] ret = new GLFWimage[4];
+            ret[0] = new GLFWimage(256, 256, normalBytes.ToArray());
+            ret[1] = new GLFWimage(48, 48, smallBytes.ToArray());
+            ret[2] = new GLFWimage(32, 32, smallerBytes.ToArray());
+            ret[3] = new GLFWimage(16, 16, smallestBytes.ToArray());
             return ret;
         }
 
-        private void Instance_Focus(OpenTK.Windowing.Common.FocusedChangedEventArgs obj) => this.GuiWrapper.Focus(obj.IsFocused);
-        private void Instance_MouseDown(OpenTK.Windowing.Common.MouseButtonEventArgs obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Modifiers, false);
-        private void Instance_MouseUp(OpenTK.Windowing.Common.MouseButtonEventArgs obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Modifiers, true);
-        private void Instance_MouseMove(OpenTK.Windowing.Common.MouseMoveEventArgs obj) => this.GuiWrapper.MouseMove(obj.Position);
-        private void Instance_KeyUp(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj) => this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, true);
+        private void Instance_Focus(bool obj) => this.GuiWrapper.Focus(obj);
+        private void Instance_MouseDown(MouseEventData obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Mods, false);
+        private void Instance_MouseUp(MouseEventData obj) => this.GuiWrapper.MouseKey(obj.Button, obj.Mods, true);
+        private void Instance_MouseMove(Vector2 pos) => this.GuiWrapper.MouseMove(pos);
+        private void Instance_KeyUp(KeyEventData obj) => this.GuiWrapper.KeyEvent(obj.Key, obj.Scancode, obj.Mods, false, true);
 
         private readonly ConcurrentQueue<Action> _gpuReqs = new ConcurrentQueue<Action>();
         public void EnqueueOrExecuteTask(Action a)
@@ -179,7 +165,7 @@
                 {
                     unsafe
                     {
-                        GLFW.RequestWindowAttention(this.GameHandle.WindowPtr);
+                        this.GameHandle.RequestWindowAttention();
                     }
                 }
             });
@@ -192,17 +178,17 @@
         public void SwitchFullscreen(ClientSettings.FullscreenMode? fsMode)
         {
             bool toggled = !fsMode.HasValue;
-            ClientSettings.FullscreenMode switchTo = fsMode ?? this._lastFsMode ?? (this.GameHandle.WindowState != WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : ClientSettings.FullscreenMode.Normal);
-
-            this._lastFsMode = toggled ? this.GameHandle.WindowState == WindowState.Fullscreen ? ClientSettings.FullscreenMode.Fullscreen : Client.Instance.Settings.ScreenMode : null;
+            ClientSettings.FullscreenMode switchTo = fsMode ?? this._lastFsMode ?? (!this.GameHandle.IsFullscreen ? ClientSettings.FullscreenMode.Fullscreen : ClientSettings.FullscreenMode.Normal);
+            this._lastFsMode = toggled ? this.GameHandle.IsFullscreen ? ClientSettings.FullscreenMode.Fullscreen : Client.Instance.Settings.ScreenMode : null;
 
             unsafe
             {
-                VideoMode* vModePtr = GLFW.GetVideoMode((OpenTK.Windowing.GraphicsLibraryFramework.Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
-                Window* win = Client.Instance.Frontend.GameHandle.WindowPtr;
-                bool wasDecorated = Client.Instance.Frontend.GameHandle.WindowBorder != WindowBorder.Hidden;
-                int w = vModePtr->Width;
-                int h = vModePtr->Height;
+                IntPtr win = Client.Instance.Frontend.GameHandle.GLFWWindow;
+                IntPtr m = Glfw.GetWindowMonitor(win);
+                GLFWvidmode* vm = Glfw.GetVideoMode(m == IntPtr.Zero ? Glfw.GetPrimaryMonitor() : m);
+                bool wasDecorated = Client.Instance.Frontend.GameHandle.Decorated;
+                int w = vm->width;
+                int h = vm->height;
 
                 switch (switchTo)
                 {
@@ -213,14 +199,14 @@
                         int oh = this.oldScreenSize?.Height ?? 768;
                         int ox = this.oldPos?.X ?? 32;
                         int oy = this.oldPos?.Y ?? 32;
-                        Client.Instance.Frontend.GameHandle.WindowState = WindowState.Normal;
-                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
-                        GLFW.HideWindow(win);
-                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(ox, oy);
-                        GLFW.ShowWindow(win);
+                        Glfw.HideWindow(win);
+                        Glfw.SetWindowMonitor(win, IntPtr.Zero, ox, oy, ow, oh, Glfw.DontCare);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Resizable, true);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Decorated, true);
+                        Glfw.ShowWindow(win);
                         if (!wasDecorated)
                         {
-                            Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Resizable;
+                            Client.Instance.Frontend.GameHandle.Decorated.Value = true;
                         }
 
                         break;
@@ -229,38 +215,42 @@
                     case ClientSettings.FullscreenMode.Fullscreen:
                     {
                         Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Fullscreen;
-                        oldScreenSize = new Size(vModePtr->Width, vModePtr->Height);
-                        GLFW.GetWindowPos(win, out int wx, out int wy);
+                        Glfw.HideWindow(win);
+                        Glfw.SetWindowMonitor(win, Glfw.GetPrimaryMonitor(), 0, 0, w, h, Glfw.DontCare);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Decorated, false);
+                        Glfw.ShowWindow(win);
+                        Glfw.GetWindowPos(win, out int wx, out int wy);
                         oldPos = new Point(wx, wy);
-                        Client.Instance.Frontend.GameHandle.WindowState = WindowState.Fullscreen;
-                        Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
+                        Client.Instance.Frontend.GameHandle.Decorated.Value = false;
                         break;
                     }
 
                     case ClientSettings.FullscreenMode.Borderless:
                     {
                         Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Borderless;
-                        Client.Instance.Frontend.GameHandle.WindowBorder = WindowBorder.Hidden;
-                        Client.Instance.Frontend.GameHandle.CenterWindow();
-                        Client.Instance.Frontend.GameHandle.Location = new OpenTK.Mathematics.Vector2i(0, 0);
+                        Glfw.HideWindow(win);
+                        Glfw.SetWindowAttrib(win, WindowProperty.Decorated, false);
+                        Client.Instance.Frontend.GameHandle.Decorated.Value = false;
+                        Glfw.SetWindowMonitor(win, Glfw.GetPrimaryMonitor(), 0, 0, w, h, Glfw.DontCare);
+                        Glfw.ShowWindow(win);
                         break;
                     }
                 }
             }
         }
 
-        private void Instance_KeyDown(OpenTK.Windowing.Common.KeyboardKeyEventArgs obj)
+        private void Instance_KeyDown(KeyEventData obj)
         {
-            if (!obj.IsRepeat && obj.Key == Keys.F11 && this.GameHandle.IsFocused)
+            if (obj.Key == Keys.F11 && this.GameHandle.IsFocused)
             {
                 this.SwitchFullscreen(null);
             }
 
-            this.GuiWrapper.KeyEvent(obj.Key, obj.ScanCode, obj.Modifiers, obj.IsRepeat, false);
+            this.GuiWrapper.KeyEvent(obj.Key, obj.Scancode, obj.Mods, false, false);
             this.Renderer?.MapRenderer?.HandleKeys(obj);
         }
 
-        private void Instance_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj) => this.Renderer.GuiRenderer.HandleFileDrop(obj);
+        private void Instance_FileDrop(string[] obj) => this.Renderer.GuiRenderer.HandleFileDrop(obj);
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0022:Use expression body for methods", Justification = "False positive - only applicable in DEBUG builds due to preprocessor directives")]
         public void Run()
@@ -286,34 +276,31 @@
 #endif
         }
 
-        private void Instance_MouseWheel(OpenTK.Windowing.Common.MouseWheelEventArgs obj)
+        private void Instance_MouseWheel(double offsetX, double offsetY)
         {
-            this.GuiWrapper.MouseScroll(obj.Offset);
-            this.Renderer.ScrollWheel(obj.OffsetX, obj.OffsetY);
+            this.GuiWrapper.MouseScroll(new Vector2((float)offsetX, (float)offsetY));
+            this.Renderer.ScrollWheel((float)offsetX, (float)offsetY);
         }
 
-        private void Instance_TextInput(OpenTK.Windowing.Common.TextInputEventArgs obj)
-        {
-            unsafe
-            {
-                int uni = obj.Unicode;
-                this.GuiWrapper.PressChar(*(uint*)&uni);
-            }
-        }
+        private void Instance_TextInput(TextTypeEventData obj) => this.GuiWrapper.PressChar(obj.Unicode);
 
-        private DebugSeverity _argsGlSeverity;
-        private DebugProc _glDebugProc;
-        private void GL_DebugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
+        private void GL_DebugCallback(DebugMessageSource source, DebugMessageType type, uint id, DebugMessageSeverity severity, int length, IntPtr message, IntPtr userParam)
         {
-            if (type == DebugType.DebugTypeError && severity <= this._argsGlSeverity && severity != DebugSeverity.DontCare)
+            if (severity != DebugMessageSeverity.Notification)
             {
                 string msg = Marshal.PtrToStringAnsi(message, length);
-                Client.Instance.Logger.Log(LogLevel.Error, "GLMessage: " + msg);
+                Client.Instance.Logger.Log(severity switch
+                { 
+                    DebugMessageSeverity.High => LogLevel.Error,
+                    DebugMessageSeverity.Medium => LogLevel.Warn,
+                    DebugMessageSeverity.Low => LogLevel.Info,
+                    _ => LogLevel.Debug
+                }, "GLMessage: " + msg);
             }
         }
 
         private int _kaTimer;
-        private void Instance_UpdateFrame(OpenTK.Windowing.Common.FrameEventArgs obj)
+        private void Instance_UpdateFrame()
         {
             ++this.UpdatesExisted;
             NetClient nc = Client.Instance.NetClient;
@@ -343,8 +330,8 @@
             }
 
             this.Sound.Update();
-            this.Renderer.Update(obj.Time);
-            this.GuiWrapper.Update(obj.Time);
+            this.Renderer.Update();
+            this.GuiWrapper.Update();
             GuiRenderer.Instance.Update();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulseRequest();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulsePreview();
@@ -362,6 +349,7 @@
             Server.Instance?.NetworkOut.TickTimeframe();
         }
 
+        private VTT.GL.Bindings.GL.DebugProcCallback _debugProc;
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
@@ -370,10 +358,10 @@
             this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();
             this.Renderer.Create();
-            if (ArgsManager.TryGetValue("gldebug", out string val) && Enum.TryParse(val, out this._argsGlSeverity))
+            if (ArgsManager.TryGetValue("gldebug", out string val))
             {
-                this._glDebugProc = new DebugProc(this.GL_DebugCallback);
-                GL.DebugMessageCallback(this._glDebugProc, IntPtr.Zero);
+                this._debugProc = this.GL_DebugCallback;
+                GL.DebugMessageCallback(Marshal.GetFunctionPointerForDelegate(this._debugProc), IntPtr.Zero);
             }
 
             string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
@@ -403,7 +391,7 @@
         public bool CheckThread() => Thread.CurrentThread == this._glThread;
 
         private bool _lastFocusState;
-        private void Instance_RenderFrame(OpenTK.Windowing.Common.FrameEventArgs obj)
+        private void Instance_RenderFrame(double dt)
         {
             this.CheckResize();
 
@@ -414,7 +402,7 @@
                 this._lastFocusState = this.GameHandle.IsFocused;
                 if (this._lastFocusState)
                 {
-                    this.GameHandle.RenderFrequency = 0;
+                    Glfw.SwapInterval(this.GameHandle.MinSwapInterval);
                 }
                 else
                 {
@@ -424,8 +412,7 @@
                         {
                             unsafe
                             {
-                                OpenTK.Windowing.GraphicsLibraryFramework.VideoMode* vmode = OpenTK.Windowing.GraphicsLibraryFramework.GLFW.GetVideoMode(this.GameHandle.CurrentMonitor.ToUnsafePtr<OpenTK.Windowing.GraphicsLibraryFramework.Monitor>());
-                                this.GameHandle.RenderFrequency = vmode->RefreshRate;
+                                Glfw.SwapInterval(1);
                             }
 
                             break;
@@ -433,25 +420,25 @@
 
                         case ClientSettings.UnfocusedFramerateCap.High:
                         {
-                            this.GameHandle.RenderFrequency = 60;
+                            Glfw.SwapInterval(1);
                             break;
                         }
 
                         case ClientSettings.UnfocusedFramerateCap.Medium:
                         {
-                            this.GameHandle.RenderFrequency = 30;
+                            Glfw.SwapInterval(2);
                             break;
                         }
 
                         case ClientSettings.UnfocusedFramerateCap.Low:
                         {
-                            this.GameHandle.RenderFrequency = 10;
+                            Glfw.SwapInterval(6);
                             break;
                         }
 
                         case ClientSettings.UnfocusedFramerateCap.Lowest:
                         {
-                            this.GameHandle.RenderFrequency = 1;
+                            Glfw.SwapInterval(60);
                             break;
                         }
 
@@ -464,7 +451,7 @@
             }
 
             this.TextureUploader.ProcessPrimary();
-            this.Renderer.Render(obj.Time);
+            this.Renderer.Render(dt);
             while (!this._gpuReqs.IsEmpty)
             {
                 if (this._gpuReqs.TryDequeue(out Action a))
@@ -481,8 +468,8 @@
         private int _lastFramebufferHeight;
         private unsafe void CheckResize()
         {
-            GLFW.GetWindowSize(this.GameHandle.WindowPtr, out int ww, out int wh);
-            GLFW.GetFramebufferSize(this.GameHandle.WindowPtr, out int fw, out int fh);
+            Glfw.GetWindowSize(this.GameHandle.GLFWWindow, out int ww, out int wh);
+            Glfw.GetFramebufferSize(this.GameHandle.GLFWWindow, out int fw, out int fh);
 
             if (ww != this._lastWindowWidth || wh != this._lastWindowHeight)
             {
@@ -508,10 +495,6 @@
                 this.Renderer.SetWindowState(fw > 0 && fh > 0);
             }
 
-        }
-
-        private void Instance_Resize(OpenTK.Windowing.Common.ResizeEventArgs obj)
-        {
         }
     }
 }

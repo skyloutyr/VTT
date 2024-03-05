@@ -1,7 +1,7 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -11,6 +11,8 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using Plane = Util.Plane;
+    using VTT.GLFW;
 
     public class SelectionManager
     {
@@ -41,7 +43,7 @@
                 return;
             }
 
-            if (!ImGui.GetIO().WantCaptureKeyboard && !this._deleteDown && Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Delete))
+            if (!ImGui.GetIO().WantCaptureKeyboard && !this._deleteDown && Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Delete))
             {
                 if (Client.Instance.IsAdmin)
                 {
@@ -75,7 +77,7 @@
             if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
                 bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
-                if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
+                if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
                     this._lbmDown = true;
                     this._isBoxSelect = false;
@@ -93,8 +95,8 @@
                         for (int i = 1; i < this.SelectedObjects.Count; i++)
                         {
                             MapObject mo = this.SelectedObjects[i];
-                            min = Vector3.ComponentMin(min, mo.Position);
-                            max = Vector3.ComponentMax(max, mo.Position);
+                            min = Vector3.Min(min, mo.Position);
+                            max = Vector3.Max(max, mo.Position);
                         }
 
                         Vector3 half = (max - min) / 2;
@@ -125,9 +127,9 @@
                                 Vector3 axis = z ? Vector3.UnitZ : y ? Vector3.UnitY : Vector3.UnitX;
                                 for (int i = 0; i < 8; ++i)
                                 {
-                                    Quaternion q = Quaternion.FromAxisAngle(axis, MathF.PI * (i * 0.25f));
-                                    Vector4 offset4 = (q * offsetVector);
-                                    Vector3 offset = offset4.Xyz / offset4.W;
+                                    Quaternion q = Quaternion.CreateFromAxisAngle(axis, MathF.PI * (i * 0.25f));
+                                    Vector4 offset4 = Vector4.Transform(offsetVector, q);
+                                    Vector3 offset = offset4.Xyz() / offset4.W;
                                     BBBox box = new BBBox(-boxVector, boxVector, q).Scale(0.5f);
                                     Vector3? intersection = box.Intersects(r, half + offset);
                                     if (intersection.HasValue)
@@ -157,8 +159,8 @@
                             }
                             else
                             {
-                                Matrix4 viewProj = cam.ViewProj;
-                                Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
+                                Matrix4x4 viewProj = cam.ViewProj;
+                                Vector4 posScreen = Vector4.Transform(new Vector4(half, 1.0f), viewProj);
                                 float vScale = 0.2f * posScreen.W;
                                 if (is2d)
                                 {
@@ -196,7 +198,7 @@
                                     else
                                     {
                                         intersectionCenter = null;
-                                        float d = (intersectionPlane.Value - half).Length;
+                                        float d = (intersectionPlane.Value - half).Length();
                                         float dMax = 1.228f * vScale;
                                         float dMin = 1.168f * vScale;
                                         if (d > dMax || d < dMin)
@@ -206,16 +208,16 @@
                                     }
                                 }
 
-                                float dZ = intersectionZ.HasValue ? (cam.Position - intersectionZ.Value).Length : float.PositiveInfinity;
-                                float dX = intersectionX.HasValue ? (cam.Position - intersectionX.Value).Length : float.PositiveInfinity;
-                                float dY = intersectionY.HasValue ? (cam.Position - intersectionY.Value).Length : float.PositiveInfinity;
+                                float dZ = intersectionZ.HasValue ? (cam.Position - intersectionZ.Value).Length() : float.PositiveInfinity;
+                                float dX = intersectionX.HasValue ? (cam.Position - intersectionX.Value).Length() : float.PositiveInfinity;
+                                float dY = intersectionY.HasValue ? (cam.Position - intersectionY.Value).Length() : float.PositiveInfinity;
 
-                                float bZ = intersectionBoxZ.HasValue ? (cam.Position - intersectionBoxZ.Value).Length : float.PositiveInfinity;
-                                float bX = intersectionBoxX.HasValue ? (cam.Position - intersectionBoxX.Value).Length : float.PositiveInfinity;
-                                float bY = intersectionBoxY.HasValue ? (cam.Position - intersectionBoxY.Value).Length : float.PositiveInfinity;
+                                float bZ = intersectionBoxZ.HasValue ? (cam.Position - intersectionBoxZ.Value).Length() : float.PositiveInfinity;
+                                float bX = intersectionBoxX.HasValue ? (cam.Position - intersectionBoxX.Value).Length() : float.PositiveInfinity;
+                                float bY = intersectionBoxY.HasValue ? (cam.Position - intersectionBoxY.Value).Length() : float.PositiveInfinity;
 
-                                float iC = intersectionCenter.HasValue ? (cam.Position - intersectionCenter.Value).Length : float.PositiveInfinity;
-                                float iP = intersectionPlane.HasValue ? (cam.Position - intersectionPlane.Value).Length : float.PositiveInfinity;
+                                float iC = intersectionCenter.HasValue ? (cam.Position - intersectionCenter.Value).Length() : float.PositiveInfinity;
+                                float iP = intersectionPlane.HasValue ? (cam.Position - intersectionPlane.Value).Length() : float.PositiveInfinity;
 
                                 if (intersectionZ.HasValue || intersectionX.HasValue || intersectionY.HasValue || intersectionBoxZ.HasValue || intersectionBoxX.HasValue || intersectionBoxY.HasValue || intersectionCenter.HasValue || intersectionPlane.HasValue)
                                 {
@@ -269,8 +271,8 @@
 
                         if (mode == EditMode.Rotate)
                         {
-                            Matrix4 viewProj = cam.ViewProj;
-                            Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
+                            Matrix4x4 viewProj = cam.ViewProj;
+                            Vector4 posScreen = Vector4.Transform(new Vector4(half, 1.0f), viewProj);
                             float vScale = 0.4f * posScreen.W;
                             float radius = 0.197f * posScreen.W;
                             float radiusMin = 0.185f * posScreen.W;
@@ -312,9 +314,9 @@
                                 Vector3? yIntersection = TorusIntersects(r, yMat, yBox);
                                 */
 
-                                float dZ = zIntersection.HasValue ? (cam.Position - zIntersection.Value).Length : float.PositiveInfinity;
-                                float dX = xIntersection.HasValue ? (cam.Position - xIntersection.Value).Length : float.PositiveInfinity;
-                                float dY = yIntersection.HasValue ? (cam.Position - yIntersection.Value).Length : float.PositiveInfinity;
+                                float dZ = zIntersection.HasValue ? (cam.Position - zIntersection.Value).Length() : float.PositiveInfinity;
+                                float dX = xIntersection.HasValue ? (cam.Position - xIntersection.Value).Length() : float.PositiveInfinity;
+                                float dY = yIntersection.HasValue ? (cam.Position - yIntersection.Value).Length() : float.PositiveInfinity;
 
                                 bool rZ = zIntersection.HasValue;
                                 bool rX = xIntersection.HasValue;
@@ -337,8 +339,8 @@
                                         MathF.Sign(cam.Direction.Y) * -Vector3.UnitY;
 
                                     this._rayInitialHit = intersection;
-                                    Vector2 screenIntersection = cam.ToScreenspace(intersection).Xy;
-                                    Vector2 screenHalf = cam.ToScreenspace(half).Xy;
+                                    Vector2 screenIntersection = cam.ToScreenspace(intersection).Xy();
+                                    Vector2 screenHalf = cam.ToScreenspace(half).Xy();
                                     Vector2 screenDelta = screenIntersection - screenHalf;
                                     float dot = -screenDelta.Y;
                                     float det = -screenDelta.X;
@@ -357,13 +359,13 @@
 
                             if (!this._blockSelection) // Test plane
                             {
-                                if (pIntersection.HasValue && (pIntersection.Value - half).Length <= sRMax * vScale && (pIntersection.Value - half).Length >= sRMin * vScale)
+                                if (pIntersection.HasValue && (pIntersection.Value - half).Length() <= sRMax * vScale && (pIntersection.Value - half).Length() >= sRMin * vScale)
                                 {
                                     Vector3 intersection = pIntersection.Value;
                                     this._axisLockVector = -cam.Direction;
                                     this._rayInitialHit = intersection;
-                                    Vector2 screenIntersection = cam.ToScreenspace(intersection).Xy;
-                                    Vector2 screenHalf = cam.ToScreenspace(half).Xy;
+                                    Vector2 screenIntersection = cam.ToScreenspace(intersection).Xy();
+                                    Vector2 screenHalf = cam.ToScreenspace(half).Xy();
                                     Vector2 screenDelta = screenIntersection - screenHalf;
                                     float dot = -screenDelta.Y;
                                     float det = -screenDelta.X;
@@ -382,13 +384,13 @@
                         }
                     }
 
-                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt))
+                    if (Client.Instance.Frontend.GameHandle.IsAnyAltDown())
                     {
                         if (!this._blockSelection)
                         {
                             this._blockSelection = true;
                             this._moveMode = 4;
-                            Client.Instance.Frontend.Renderer.PingRenderer.BeginPingUI(Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl));
+                            Client.Instance.Frontend.Renderer.PingRenderer.BeginPingUI(Client.Instance.Frontend.GameHandle.IsAnyControlDown());
                         }
                     }
                 }
@@ -432,7 +434,7 @@
                     }
                 }
 
-                if (this._lbmDown && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
+                if (this._lbmDown && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
                     this._lbmDown = false;
                     if (!this._blockSelection)
@@ -447,7 +449,7 @@
                             if (em != EditMode.Select)
                             {
 
-                                List<(Guid, Guid, Vector4)> changes = this.SelectedObjects.Select(o => (o.MapID, o.ID, em == EditMode.Translate ? new Vector4(o.Position, 1.0f) : em == EditMode.Scale ? new Vector4(o.Scale, 1.0f) : new Vector4(o.Rotation.Xyz, o.Rotation.W))).ToList();
+                                List<(Guid, Guid, Vector4)> changes = this.SelectedObjects.Select(o => (o.MapID, o.ID, em == EditMode.Translate ? new Vector4(o.Position, 1.0f) : em == EditMode.Scale ? new Vector4(o.Scale, 1.0f) : new Vector4(o.Rotation.X, o.Rotation.Y, o.Rotation.Z, o.Rotation.W))).ToList();
                                 PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = (PacketChangeObjectModelMatrix.ChangeType)((int)em - 1) };
                                 pmo.Send();
                             }
@@ -476,7 +478,7 @@
                 this.BoxSelectCandidates.Clear();
             }
 
-            if (this._deleteDown && !Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Delete))
+            if (this._deleteDown && !Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Delete))
             {
                 this._deleteDown = false;
             }
@@ -487,47 +489,6 @@
 
         private static readonly List<Vector3> hits = new List<Vector3>();
 
-        private static unsafe Vector3? TorusIntersects(Ray r, Matrix4 torusTransform, AABox bounds)
-        {
-            if (!bounds.Intersects(r).HasValue)
-            {
-                return null;
-            }
-
-            hits.Clear();
-            WavefrontObject torus = Client.Instance.Frontend.Renderer.ObjectRenderer.RotateCircle;
-            Matrix4 mat = torusTransform.Inverted();
-            System.Numerics.Vector3 nOri = (new Vector4(r.Origin, 1.0f) * mat).Xyz.SystemVector();
-            System.Numerics.Vector3 nDir = (new Vector4(r.Direction, 1.0f) * mat.ClearTranslation()).Xyz.SystemVector();
-            nDir = System.Numerics.Vector3.Normalize(nDir);
-
-            fixed (System.Numerics.Vector3* v = &torus.triangles[0])
-            {
-                for (int i = 0; i < torus.triangles.Length; i += 3)
-                {
-                    RaycastResut.IterateTriangles(v, torusTransform, nOri, nDir, i, hits);
-                }
-            }
-
-            if (hits.Count > 0)
-            {
-                Vector3 ret = default;
-                float md = float.PositiveInfinity;
-                foreach (Vector3 hit in hits)
-                {
-                    float hd = (r.Origin - hit).Length;
-                    if (hd < md)
-                    {
-                        md = hd;
-                        ret = hit;
-                    }
-                }
-
-                return ret;
-            }
-
-            return null;
-        }
         private static Vector3? TorusIntersection(Ray r, Vector3 center, Vector3 torusAxis, float rMin, float rMax)
         {
             (Vector3, Vector3)? hits = r.IntersectsSphereBoth(center, rMax);
@@ -555,7 +516,7 @@
 
                 if (h1.HasValue && h2.HasValue)
                 {
-                    return (r.Origin - h1.Value).Length < (r.Origin - h2.Value).Length ? h1.Value : h2.Value;
+                    return (r.Origin - h1.Value).Length() < (r.Origin - h2.Value).Length() ? h1.Value : h2.Value;
                 }
             }
 
@@ -569,11 +530,11 @@
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                 Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                 Vector2 pCurrent;
-                bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Space);
-                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt);
+                bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space);
+                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);
                 if (cw != null && !shift)
                 {
-                    pCurrent = cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy;
+                    pCurrent = cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy();
                 }
                 else
                 {
@@ -585,16 +546,16 @@
                 for (int i = 1; i < this.SelectedObjects.Count; i++)
                 {
                     MapObject mo = this.SelectedObjects[i];
-                    min = Vector3.ComponentMin(min, mo.Position);
-                    max = Vector3.ComponentMax(max, mo.Position);
+                    min = Vector3.Min(min, mo.Position);
+                    max = Vector3.Max(max, mo.Position);
                 }
 
-                Vector2 screenHalf = cam.ToScreenspace(this.HalfRenderVector.Value).Xy;
+                Vector2 screenHalf = cam.ToScreenspace(this.HalfRenderVector.Value).Xy();
                 Vector2 screenDelta = pCurrent - screenHalf;
                 float dot = -screenDelta.Y;
                 float det = -screenDelta.X;
                 float angleDelta = MathF.Atan2(det, dot) - this._initialAngle;
-                Quaternion q = Quaternion.FromAxisAngle(this._axisLockVector, angleDelta);
+                Quaternion q = Quaternion.CreateFromAxisAngle(this._axisLockVector, angleDelta);
                 if (MathF.Abs(q.W) <= float.Epsilon || float.IsNaN(q.W) || float.IsInfinity(q.W))
                 {
                     return;
@@ -610,12 +571,12 @@
                     foreach (MapObject mo in this.SelectedObjects)
                     {
                         Vector3 o2h = mo.ClientDragMoveResetInitialPosition - this.HalfRenderVector.Value;
-                        o2h = (q * new Vector4(o2h, 1.0f)).Xyz;
+                        o2h = Vector4.Transform(new Vector4(o2h, 1.0f), q).Xyz();
                         mo.Position = this.HalfRenderVector.Value + o2h;
                         float msx = MathF.Abs(mo.Scale.X) % (m.GridSize * 2);
                         float msy = MathF.Abs(mo.Scale.Y) % (m.GridSize * 2);
                         float msz = MathF.Abs(mo.Scale.Z) % (m.GridSize * 2);
-                        Vector3i bigScale = new Vector3i(
+                        Vector3 bigScale = new Vector3(
                             msx - 0.075f <= 0 || (m.GridSize * 2) - msx <= 0.075f ? 1 : 0,
                             msy - 0.075f <= 0 || (m.GridSize * 2) - msy <= 0.075f ? 1 : 0,
                             msz - 0.075f <= 0 || (m.GridSize * 2) - msz <= 0.075f ? 1 : 0
@@ -646,15 +607,15 @@
                 }
 
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt);
+                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);
                 bool scale = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale;
                 Vector3 min = this.SelectedObjects[0].Position;
                 Vector3 max = this.SelectedObjects[0].Position;
                 for (int i = 1; i < this.SelectedObjects.Count; i++)
                 {
                     MapObject mo = this.SelectedObjects[i];
-                    min = Vector3.ComponentMin(min, mo.Position);
-                    max = Vector3.ComponentMax(max, mo.Position);
+                    min = Vector3.Min(min, mo.Position);
+                    max = Vector3.Max(max, mo.Position);
                 }
 
                 Vector3 half = (max - min) / 2;
@@ -736,7 +697,7 @@
                             {
                                 if (scale)
                                 {
-                                    Vector3 dN = Vector4.Transform(new Vector4(delta, 1.0f), mo.Rotation).Xyz;
+                                    Vector3 dN = Vector4.Transform(new Vector4(delta, 1.0f), mo.Rotation).Xyz();
                                     mo.Scale = mo.ClientDragMoveResetInitialPosition + dN;
                                     if (alt)
                                     {
@@ -748,7 +709,7 @@
                                     float msx = MathF.Abs(mo.Scale.X) % (map.GridSize * 2);
                                     float msy = MathF.Abs(mo.Scale.Y) % (map.GridSize * 2);
                                     float msz = MathF.Abs(mo.Scale.Z) % (map.GridSize * 2);
-                                    Vector3i bigScale = new Vector3i(
+                                    Vector3 bigScale = new Vector3(
                                         msx - 0.075f <= 0 || (map.GridSize * 2) - msx <= 0.075f ? 1 : 0,
                                         msy - 0.075f <= 0 || (map.GridSize * 2) - msy <= 0.075f ? 1 : 0,
                                         msz - 0.075f <= 0 || (map.GridSize * 2) - msz <= 0.075f ? 1 : 0
@@ -858,7 +819,7 @@
                     }*/
                     #endregion
                     Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
-                    Plane p = new Plane(-cam.Direction, this._rayInitialHit.Length);
+                    Plane p = new Plane(-cam.Direction, this._rayInitialHit.Length());
                     Vector3? intersection = p.Intersect(r, this._rayInitialHit);
 
                     if (intersection.HasValue && (Client.Instance.Frontend.MouseX - this._lastLmbX != 0 || Client.Instance.Frontend.MouseY - this._lastLmbY != 0))
@@ -867,8 +828,8 @@
                         {
                             if (scale)
                             {
-                                float lI = (half - this._rayInitialHit).Length;
-                                float lC = (half - intersection.Value).Length;
+                                float lI = (half - this._rayInitialHit).Length();
+                                float lC = (half - intersection.Value).Length();
                                 mo.Scale = mo.ClientDragMoveResetInitialPosition * (lC / lI);
                             }
                             else
@@ -883,8 +844,8 @@
 
         public void ProcessSelection()
         {
-            bool add = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift);
-            bool remove = Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl);
+            bool add = Client.Instance.Frontend.GameHandle.IsAnyShiftDown();
+            bool remove = Client.Instance.Frontend.GameHandle.IsAnyControlDown();
             if (!this._isBoxSelect) // Single click
             {
                 MapObject mouseOver = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;

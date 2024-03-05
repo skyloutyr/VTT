@@ -1,7 +1,7 @@
 ﻿namespace VTT.Asset.Shader.NodeGraph
 {
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
     using VTT.Util;
 
     public class NodeInput : ISerializable

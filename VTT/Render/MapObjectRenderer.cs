@@ -1,18 +1,18 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.LightShadow;
     using VTT.Util;
@@ -73,8 +73,8 @@
         public void Create()
         {
             this._noAssetVao = new VertexArray();
-            this._noAssetVbo = new GPUBuffer(BufferTarget.ArrayBuffer);
-            this._noAssetEbo = new GPUBuffer(BufferTarget.ElementArrayBuffer);
+            this._noAssetVbo = new GPUBuffer(BufferTarget.Array);
+            this._noAssetEbo = new GPUBuffer(BufferTarget.ElementArray);
             this._noAssetVao.Bind();
             this._noAssetVbo.Bind();
             this._noAssetVbo.SetData(new float[] {
@@ -108,8 +108,8 @@
             this._noAssetVao.PushElement(ElementType.Vec3);
             this._noAssetVao.PushElement(ElementType.Vec2);
 
-            this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.VertexShader, ShaderType.FragmentShader);
-            this.HighlightShader = OpenGLUtil.LoadShader("highlight", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment);
+            this.HighlightShader = OpenGLUtil.LoadShader("highlight", ShaderType.Vertex, ShaderType.Fragment);
             this.PrecomputeSelectionBox();
 
             this.MoveArrow = OpenGLUtil.LoadModel("arrow_arrow", VertexFormat.Pos);
@@ -213,12 +213,12 @@
 
         private static readonly Quaternion[] boxRotationalQuaternions = new Quaternion[] {
             Quaternion.Identity,                                                       // -X, -Y, -Z
-            Quaternion.FromAxisAngle(Vector3.UnitZ, MathHelper.DegreesToRadians(90)),  // +X, -Y, -Z
-            Quaternion.FromAxisAngle(Vector3.UnitZ, MathHelper.DegreesToRadians(-90)), // -X, +Y, -Z
-            Quaternion.FromAxisAngle(Vector3.UnitZ, MathHelper.DegreesToRadians(180)), // +X, +Y, -Z
-            Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(180)), // -X, +Y, +Z
-            Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(180)), // +X, -Y, +Z
-            Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.DegreesToRadians(90)),  // -X, -Y, +Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 90 * MathF.PI / 180),  // +X, -Y, -Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitZ, -90 * MathF.PI / 180), // -X, +Y, -Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 180 * MathF.PI / 180), // +X, +Y, -Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitX, 180 * MathF.PI / 180), // -X, +Y, +Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, 180 * MathF.PI / 180), // +X, -Y, +Z
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, 90 * MathF.PI / 180),  // -X, -Y, +Z
             new Quaternion(0.707f, -0.707f, 0f, -0f)                                   // +X, +Y, +Z and we don't talk about the -0f                                  
         };
 
@@ -247,7 +247,7 @@
                     int idx = indexData[j] - 1;
                     Vector3 v = new Vector3((float)vertexData[(idx * 3) + 0], (float)vertexData[(idx * 3) + 1], (float)vertexData[(idx * 3) + 2]);
                     v = v / 50.0f;
-                    v = (boxRotationalQuaternions[i] * new Vector4(v, 1.0f)).Xyz;
+                    v = Vector4.Transform(new Vector4(v, 1.0f), boxRotationalQuaternions[i]).Xyz();
                     v += boxTranslations[i] / 2f;
                     boxDataArray[aIdx++] = v.X;
                     boxDataArray[aIdx++] = v.Y;
@@ -260,7 +260,7 @@
             }
 
             this._boxVao = new VertexArray();
-            this._boxVbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+            this._boxVbo = new GPUBuffer(BufferTarget.Array);
             this._boxVao.Bind();
             this._boxVbo.Bind();
             this._boxVbo.SetData(boxDataArray);
@@ -275,7 +275,7 @@
 
         private readonly List<(Vector3, MapObject)> _mouseOverList = new List<(Vector3, MapObject)>();
         private bool _mouseOverInFow = false;
-        public void Update(Map m, double delta)
+        public void Update(Map m)
         {
             this.ObjectMouseOver = null;
             if (m != null && this.EditMode != EditMode.FOW)
@@ -295,8 +295,7 @@
                             bounds.End.X - bounds.Start.X, bounds.End.Y - bounds.Start.Y
                         );
 
-                        bool oob = true;
-                        fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FastTestRect(projectedRect, out oob);
+                        fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FastTestRect(projectedRect, out bool oob);
                         this._mouseOverInFow = !fowTest;
                         if (oob)
                         {
@@ -364,19 +363,19 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             this.OverlayShader.Bind();
             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
-            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(Capability.DepthTest);
             foreach (MapObject mo in this._crossedOutObjects)
             {
-                Matrix4 modelMatrix = mo.ClientAssignedModelBounds
-                    ? Matrix4.CreateScale(mo.ClientRaycastBox.Size * mo.Scale) * Matrix4.CreateTranslation(mo.Position)
+                Matrix4x4 modelMatrix = mo.ClientAssignedModelBounds
+                    ? Matrix4x4.CreateScale(mo.ClientRaycastBox.Size * mo.Scale) * Matrix4x4.CreateTranslation(mo.Position)
                     : mo.ClientCachedModelMatrix.ClearRotation();
                 this.OverlayShader["model"].Set(modelMatrix);
                 this.Cross.Render();
             }
 
-            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(Capability.DepthTest);
 
-            GL.Disable(EnableCap.CullFace);
+            GL.Disable(Capability.CullFace);
             ShaderProgram shader = this.HighlightShader;
             shader.Bind();
             shader["view"].Set(cam.View);
@@ -389,7 +388,7 @@
                     AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                    Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
+                    Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
                     shader["model"].Set(modelMatrix);
                     shader["bounds"].Set(size);
                     this._boxVao.Bind();
@@ -405,7 +404,7 @@
                     AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                    Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
+                    Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
                     shader["model"].Set(modelMatrix);
                     shader["bounds"].Set(size);
                     this._boxVao.Bind();
@@ -413,7 +412,7 @@
                 }
             }
 
-            GL.Enable(EnableCap.CullFace);
+            GL.Enable(Capability.CullFace);
             this.CPUTimerHighlights.Stop();
         }
 
@@ -444,8 +443,8 @@
                 for (int i = 1; i < sm.SelectedObjects.Count; i++)
                 {
                     MapObject mo = sm.SelectedObjects[i];
-                    min = Vector3.ComponentMin(min, mo.Position);
-                    max = Vector3.ComponentMax(max, mo.Position);
+                    min = Vector3.Min(min, mo.Position);
+                    max = Vector3.Max(max, mo.Position);
                 }
 
                 Vector3 half;
@@ -463,10 +462,10 @@
 
                 bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                 float orthozoom = Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho;
-                GL.Enable(EnableCap.CullFace);
-                GL.CullFace(CullFaceMode.Back);
-                GL.Disable(EnableCap.DepthTest);
-                GL.Enable(EnableCap.Blend);
+                GL.Enable(Capability.CullFace);
+                GL.CullFace(PolygonFaceMode.Back);
+                GL.Disable(Capability.DepthTest);
+                GL.Enable(Capability.Blend);
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 GL.DepthMask(false);
 
@@ -487,10 +486,10 @@
                                 dotZ > dotX && dotZ > dotY ? new Vector3(0, -1.5f, 0) :
                                 dotY > dotX ? new Vector3(0, 0, -1.5f) : new Vector3(0, -1.5f, 0);
 
-                            Matrix4 baseRotation =
-                                dotZ > dotX && dotZ > dotY ? Matrix4.Identity :
-                                dotY > dotX ? Matrix4.CreateRotationY(MathF.PI * 0.5f) * Matrix4.CreateRotationX(MathF.PI * 0.5f) * Matrix4.CreateRotationZ(MathF.PI * 0.5f) :
-                                Matrix4.CreateRotationY(MathF.PI * 0.5f);
+                            Matrix4x4 baseRotation =
+                                dotZ > dotX && dotZ > dotY ? Matrix4x4.Identity :
+                                dotY > dotX ? Matrix4x4.CreateRotationY(MathF.PI * 0.5f) * Matrix4x4.CreateRotationX(MathF.PI * 0.5f) * Matrix4x4.CreateRotationZ(MathF.PI * 0.5f) :
+                                Matrix4x4.CreateRotationY(MathF.PI * 0.5f);
 
                             Vector4 renderClr = (
                                 dotZ <= dotX || dotZ <= dotY ? Color.SkyBlue.Vec4() :
@@ -499,8 +498,8 @@
 
                             for (int i = 0; i < 8; ++i)
                             {
-                                Quaternion q = Quaternion.FromAxisAngle(majorAxis, MathF.PI * (i * 0.25f));
-                                Matrix4 modelMatrix = baseRotation * Matrix4.CreateTranslation(offsetAxis) * Matrix4.CreateScale(0.5f) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(half);
+                                Quaternion q = Quaternion.CreateFromAxisAngle(majorAxis, MathF.PI * (i * 0.25f));
+                                Matrix4x4 modelMatrix = baseRotation * Matrix4x4.CreateTranslation(offsetAxis) * Matrix4x4.CreateScale(0.5f) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader.Bind();
                                 this.OverlayShader["view"].Set(cam.View);
                                 this.OverlayShader["projection"].Set(cam.Projection);
@@ -517,31 +516,31 @@
                         {
                             if (is2d)
                             {
-                                Matrix4 modelMatrix;
+                                Matrix4x4 modelMatrix;
                                 this.OverlayShader.Bind();
                                 this.OverlayShader["view"].Set(cam.View);
                                 this.OverlayShader["projection"].Set(cam.Projection);
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Red.Vec4());
                                 this.MoveArrow.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Green.Vec4());
                                 this.MoveArrow.Render();
 
-                                modelMatrix = Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
                             }
                             else
                             {
-                                Matrix4 viewProj = cam.ViewProj;
-                                Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
-                                Matrix4 modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateTranslation(half);
+                                Matrix4x4 viewProj = cam.ViewProj;
+                                Vector4 posScreen = Vector4.Transform(new Vector4(half, 1.0f), viewProj);
+                                Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                                 this.OverlayShader.Bind();
                                 this.OverlayShader["view"].Set(cam.View);
@@ -550,32 +549,32 @@
                                 this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
                                 this.MoveArrow.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Red.Vec4());
                                 this.MoveArrow.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Green.Vec4());
                                 this.MoveArrow.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
-                                modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
-                                modelMatrix = Matrix4.CreateScale(0.1f * posScreen.W) * Matrix4.CreateTranslation(half);
+                                modelMatrix = Matrix4x4.CreateScale(0.1f * posScreen.W) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader["model"].Set(modelMatrix);
                                 this.OverlayShader["u_color"].Set(Color.White.Vec4());
                                 this.MoveCenter.Render();
@@ -589,31 +588,31 @@
                     {
                         if (is2d)
                         {
-                            Matrix4 modelMatrix;
+                            Matrix4x4 modelMatrix;
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
                             this.ScaleArrow.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Green.Vec4());
                             this.ScaleArrow.Render();
 
-                            modelMatrix = Matrix4.CreateScale(150f * orthozoom) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.MoveSide.Render();
                         }
                         else
                         {
-                            Matrix4 viewProj = cam.ViewProj;
-                            Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
-                            Matrix4 modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateTranslation(half);
+                            Matrix4x4 viewProj = cam.ViewProj;
+                            Vector4 posScreen = Vector4.Transform(new Vector4(half, 1.0f), viewProj);
+                            Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
@@ -622,34 +621,34 @@
                             this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
                             this.ScaleArrow.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
                             this.ScaleArrow.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Green.Vec4());
                             this.ScaleArrow.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
-                            modelMatrix = Matrix4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4.CreateScale(0.2f * posScreen.W) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader["model"].Set(modelMatrix);
                             this.OverlayShader["u_color"].Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
                             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
-                            modelMatrix = Matrix4.CreateScale(0.5f * posScreen.W) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateScale(0.5f * posScreen.W) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
@@ -665,7 +664,7 @@
                     {
                         if (is2d)
                         {
-                            Matrix4 modelMatrix = Matrix4.CreateScale(220f * orthozoom) * Matrix4.CreateTranslation(half);
+                            Matrix4x4 modelMatrix = Matrix4x4.CreateScale(220f * orthozoom) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
@@ -675,9 +674,9 @@
                         }
                         else
                         {
-                            Matrix4 viewProj = cam.ViewProj;
-                            Vector4 posScreen = new Vector4(half, 1.0f) * viewProj;
-                            Matrix4 modelMatrix = Matrix4.CreateScale(0.4f * posScreen.W) * Matrix4.CreateTranslation(half);
+                            Matrix4x4 viewProj = cam.ViewProj;
+                            Vector4 posScreen = Vector4.Transform(new Vector4(half, 1.0f), viewProj);
+                            Matrix4x4 modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
@@ -686,7 +685,7 @@
                             this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
                             this.RotateCircle.Render();
 
-                            modelMatrix = Matrix4.CreateScale(0.4f * posScreen.W) * Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
@@ -694,7 +693,7 @@
                             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
                             this.RotateCircle.Render();
 
-                            modelMatrix = Matrix4.CreateScale(0.4f * posScreen.W) * Matrix4.CreateRotationX(MathHelper.DegreesToRadians(90)) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
@@ -705,7 +704,7 @@
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
                             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
 
-                            modelMatrix = Matrix4.CreateScale(0.5f * posScreen.W) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(half);
+                            modelMatrix = Matrix4x4.CreateScale(0.5f * posScreen.W) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
                             this.OverlayShader["view"].Set(cam.View);
                             this.OverlayShader["projection"].Set(cam.Projection);
@@ -719,9 +718,9 @@
                 }
 
                 GL.DepthMask(true);
-                GL.Disable(EnableCap.Blend);
-                GL.Enable(EnableCap.DepthTest);
-                GL.Disable(EnableCap.CullFace);
+                GL.Disable(Capability.Blend);
+                GL.Enable(Capability.DepthTest);
+                GL.Disable(Capability.CullFace);
             }
 
             this.CPUTimerGizmos.Stop();
@@ -731,12 +730,12 @@
         {
             if (this.ObjectMouseOver != null && Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Count == 0)
             {
-                GL.Disable(EnableCap.CullFace);
+                GL.Disable(Capability.CullFace);
                 MapObject mo = this.ObjectMouseOver;
                 AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
                 Vector3 size = cBB.Size;
                 Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-                Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(this.ObjectMouseOver.Rotation) * Matrix4.CreateTranslation(this.ObjectMouseOver.Position);
+                Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(this.ObjectMouseOver.Rotation) * Matrix4x4.CreateTranslation(this.ObjectMouseOver.Position);
                 ShaderProgram shader = this.HighlightShader;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                 shader.Bind();
@@ -750,7 +749,7 @@
                 shader["bounds"].Set(size + new Vector3(sineMod));
                 this._boxVao.Bind();
                 GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                GL.Enable(EnableCap.CullFace);
+                GL.Enable(Capability.CullFace);
             }
         }
 
@@ -787,14 +786,14 @@
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                     if (status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                     {
-                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
+                        Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         plr.ProcessScene(modelMatrix, a.Model.GLMdl, mo);
 
                         if (mo.ID.Equals(selfDarkvision))
                         {
                             plr.AddLightCandidate(new PointLight(
                                 mo.Position + (a?.Model.GLMdl?.CombinedBounds.Center ?? Vector3.Zero),
-                                Vector3.One, 0, mo, true, false, new VTT.Asset.Glb.GlbLight(Vector4.One, dvLuma, VTT.Asset.Glb.KhrLight.LightTypeEnum.Point)));
+                                Vector3.One, 0, mo, true, false, new GlbLight(Vector4.One, dvLuma, KhrLight.LightTypeEnum.Point)));
                         }
                     }
                 }
@@ -809,13 +808,13 @@
         private void RenderDeferred(Map m, double delta)
         {
             this.CPUTimerDeferred.Restart();
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(Capability.DepthTest);
+            GL.DepthFunction(ComparisonMode.LessOrEqual);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             this.RenderLights(m, delta);
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
 
             ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
@@ -853,11 +852,11 @@
                             continue;
                         }
 
-                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
+                        Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
                         shader["grid_alpha"].Set(i == -2 && m.GridEnabled ? ga : 0.0f);
                         shader["tint_color"].Set(mo.TintColor.Vec4());
-                        GL.ActiveTexture(TextureUnit.Texture0);
+                        GL.ActiveTexture(0);
                         mo.LastRenderModel = a.Model.GLMdl;
                         a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
                     }
@@ -869,23 +868,23 @@
             }
 
             Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m);
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
 
             ShaderProgram forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
-            GL.Enable(EnableCap.Blend);
-            GL.Disable(IndexedEnableCap.Blend, 1);
-            GL.Disable(IndexedEnableCap.Blend, 2);
-            GL.Disable(IndexedEnableCap.Blend, 3);
-            GL.Disable(IndexedEnableCap.Blend, 4);
-            GL.Disable(IndexedEnableCap.Blend, 5);
+            GL.Enable(Capability.Blend);
+            GL.DisableIndexed(IndexedCapability.Blend, 1);
+            GL.DisableIndexed(IndexedCapability.Blend, 2);
+            GL.DisableIndexed(IndexedCapability.Blend, 3);
+            GL.DisableIndexed(IndexedCapability.Blend, 4);
+            GL.DisableIndexed(IndexedCapability.Blend, 5);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                GL.Enable(Capability.SampleAlphaToCoverage);
             }
 
             for (int i = -2; i <= maxLayer; ++i)
@@ -934,7 +933,7 @@
                             continue;
                         }
 
-                        Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
+                        Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
 
                         shader = forwardShader;
                         this._passthroughData.TintColor = mo.TintColor.Vec4();
@@ -970,26 +969,26 @@
 
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(EnableCap.SampleAlphaToCoverage);
+                GL.Disable(Capability.SampleAlphaToCoverage);
             }
 
-            GL.Disable(EnableCap.Blend);
+            GL.Disable(Capability.Blend);
 
             this.CPUTimerMain.Stop();
             this.FastLightRenderer.Render(m);
             this.CPUTimerCompound.Restart();
             Client.Instance.Frontend.Renderer.Pipeline.FinishRender();
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             this.CPUTimerCompound.Stop();
         }
 
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
         {
-            GL.Disable(EnableCap.CullFace);
+            GL.Disable(Capability.CullFace);
             AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
             Vector3 size = cBB.Size;
             Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) / 2);
-            Matrix4 modelMatrix = Matrix4.CreateTranslation(cAvg) * Matrix4.CreateFromQuaternion(mo.Rotation) * Matrix4.CreateTranslation(mo.Position);
+            Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
             ShaderProgram shader = this.HighlightShader;
             shader.Bind();
             shader["model"].Set(modelMatrix);
@@ -997,7 +996,7 @@
             shader["bounds"].Set(size * extraScale);
             this._boxVao.Bind();
             GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-            GL.Enable(EnableCap.CullFace);
+            GL.Enable(Capability.CullFace);
         }
 
         public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor, ShaderProgram shader)
@@ -1013,9 +1012,9 @@
                 shader["dl_direction"].Set(sun.Direction.Normalized());
                 shader["dl_color"].Set(sun.Color);
                 shader["al_color"].Set(new Vector3(0.03f));
-                shader["sun_view"].Set(Matrix4.Identity);
-                shader["sun_projection"].Set(Matrix4.Identity);
-                shader["sky_color"].Set(clearColor.Xyz);
+                shader["sun_view"].Set(Matrix4x4.Identity);
+                shader["sun_projection"].Set(Matrix4x4.Identity);
+                shader["sky_color"].Set(clearColor.Xyz());
                 shader["grid_color"].Set(Vector4.Zero);
                 shader["grid_alpha"].Set(0.0f);
                 shader["grid_size"].Set(1.0f);
@@ -1031,17 +1030,17 @@
                     this.FrameUBOManager.memory->projection = cam.Projection;
                     this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
                     this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                    this.FrameUBOManager.memory->camera_position.Xyz = cam.Position;
-                    this.FrameUBOManager.memory->camera_direction.Xyz = cam.Direction;
-                    this.FrameUBOManager.memory->dl_direction.Xyz = sun.Direction.Normalized();
-                    this.FrameUBOManager.memory->dl_color.Xyz = sun.Color;
-                    this.FrameUBOManager.memory->al_color.Xyz = new Vector3(0.03f);
-                    this.FrameUBOManager.memory->sun_view = Matrix4.Identity;
-                    this.FrameUBOManager.memory->sun_projection = Matrix4.Identity;
-                    this.FrameUBOManager.memory->sky_color.Xyz = clearColor.Xyz;
+                    this.FrameUBOManager.memory->camera_position = new Vector4(cam.Position, 0.0f);
+                    this.FrameUBOManager.memory->camera_direction = new Vector4(cam.Direction, 0.0f);
+                    this.FrameUBOManager.memory->dl_direction = new Vector4(sun.Direction.Normalized(), 0.0f);
+                    this.FrameUBOManager.memory->dl_color = new Vector4(sun.Color, 0.0f);
+                    this.FrameUBOManager.memory->al_color = new Vector4(0.03f, 0.03f, 0.03f, 0.0f);
+                    this.FrameUBOManager.memory->sun_view = Matrix4x4.Identity;
+                    this.FrameUBOManager.memory->sun_projection = Matrix4x4.Identity;
+                    this.FrameUBOManager.memory->sky_color = clearColor;
                     this.FrameUBOManager.memory->grid_color = Vector4.Zero;
                     this.FrameUBOManager.memory->grid_size = 1.0f;
-                    this.FrameUBOManager.memory->cursor_position.Xyz = Vector3.Zero;
+                    this.FrameUBOManager.memory->cursor_position = Vector4.Zero;
                     this.FrameUBOManager.memory->dv_data = Vector4.Zero;
                     this.FrameUBOManager.memory->frame_delta = 0f;
                 }
@@ -1063,17 +1062,17 @@
                     this.FrameUBOManager.memory->projection = cam.Projection;
                     this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
                     this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                    this.FrameUBOManager.memory->camera_position.Xyz = cam.Position;
-                    this.FrameUBOManager.memory->camera_direction.Xyz = cam.Direction;
-                    this.FrameUBOManager.memory->dl_direction.Xyz = this._cachedSunDir;
-                    this.FrameUBOManager.memory->dl_color.Xyz = this._cachedSunColor.Vec3() * m.SunIntensity;
-                    this.FrameUBOManager.memory->al_color.Xyz = this._cachedAmbientColor * m.AmbietIntensity;
+                    this.FrameUBOManager.memory->camera_position = new Vector4(cam.Position, 0);
+                    this.FrameUBOManager.memory->camera_direction = new Vector4(cam.Direction, 0);
+                    this.FrameUBOManager.memory->dl_direction = new Vector4(this._cachedSunDir, 1.0f);
+                    this.FrameUBOManager.memory->dl_color = this._cachedSunColor.Vec4() * m.SunIntensity;
+                    this.FrameUBOManager.memory->al_color = new Vector4(this._cachedAmbientColor, 1.0f) * m.AmbietIntensity;
                     this.FrameUBOManager.memory->sun_view = this.DirectionalLightRenderer.SunView;
                     this.FrameUBOManager.memory->sun_projection = this.DirectionalLightRenderer.SunProjection;
-                    this.FrameUBOManager.memory->sky_color.Xyz = this._cachedSkyColor.Vec3();
+                    this.FrameUBOManager.memory->sky_color = this._cachedSkyColor.Vec4();
                     this.FrameUBOManager.memory->grid_color = m.GridColor.Vec4();
                     this.FrameUBOManager.memory->grid_size = m.GridSize;
-                    this.FrameUBOManager.memory->cursor_position.Xyz = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero;
+                    this.FrameUBOManager.memory->cursor_position = new Vector4(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero, 1.0f);
                     this.FrameUBOManager.memory->dv_data = Vector4.Zero;
                     this.FrameUBOManager.memory->frame_delta = (float)delta;
                     if (m.EnableDarkvision)
@@ -1162,12 +1161,12 @@
             }
             else
             {
-                this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared.CompareTo((l.Position - cam.Position).LengthSquared));
+                this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared().CompareTo((l.Position - cam.Position).LengthSquared()));
             }
 
-            GL.Disable(EnableCap.Multisample);
-            GL.Enable(EnableCap.Blend);
-            GL.Enable(EnableCap.CullFace);
+            GL.Disable(Capability.Multisample);
+            GL.Enable(Capability.Blend);
+            GL.Enable(Capability.CullFace);
             GL.DepthMask(false);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             ShaderProgram shader = this.OverlayShader;
@@ -1186,20 +1185,20 @@
                 this._auraL.Sort((l, r) => l.Item1.CompareTo(r.Item1));
                 foreach ((float, Color) aData in this._auraL)
                 {
-                    Matrix4 model = Matrix4.CreateScale(aData.Item1 * 2.0f / m.GridUnit) * Matrix4.CreateTranslation(mo.Position);
+                    Matrix4x4 model = Matrix4x4.CreateScale(aData.Item1 * 2.0f / m.GridUnit) * Matrix4x4.CreateTranslation(mo.Position);
                     shader["model"].Set(model);
                     shader["u_color"].Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f * (halfAura ? Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier : 1.0f)));
-                    GL.CullFace(CullFaceMode.Front);
+                    GL.CullFace(PolygonFaceMode.Front);
                     this.AuraSphere.Render();
-                    GL.CullFace(CullFaceMode.Back);
+                    GL.CullFace(PolygonFaceMode.Back);
                     this.AuraSphere.Render();
                 }
             }
 
             GL.DepthMask(true);
-            GL.Disable(EnableCap.Blend);
-            GL.Disable(EnableCap.CullFace);
-            GL.Enable(EnableCap.Multisample);
+            GL.Disable(Capability.Blend);
+            GL.Disable(Capability.CullFace);
+            GL.Enable(Capability.Multisample);
 
             this.CPUTimerAuras.Stop();
         }
@@ -1219,10 +1218,10 @@
     [StructLayout(LayoutKind.Explicit, Size = 420, Pack = 0)]
     public unsafe struct FrameUBO
     {
-        [FieldOffset(0)] public Matrix4 view;
-        [FieldOffset(64)] public Matrix4 projection;
-        [FieldOffset(128)] public Matrix4 sun_view;
-        [FieldOffset(192)] public Matrix4 sun_projection;
+        [FieldOffset(0)] public Matrix4x4 view;
+        [FieldOffset(64)] public Matrix4x4 projection;
+        [FieldOffset(128)] public Matrix4x4 sun_view;
+        [FieldOffset(192)] public Matrix4x4 sun_projection;
         [FieldOffset(256)] public Vector4 camera_position;
         [FieldOffset(272)] public Vector4 camera_direction;
         [FieldOffset(288)] public Vector4 dl_direction;
@@ -1248,11 +1247,11 @@
         public FrameUBOManager()
         {
             this.memory = (FrameUBO*)Marshal.AllocHGlobal(sizeof(FrameUBO));
-            this._ubo = new GPUBuffer(BufferTarget.UniformBuffer, BufferUsageHint.StreamDraw);
+            this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
             this._ubo.Bind();
             this._ubo.SetData(IntPtr.Zero, 420);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 1, this._ubo);
+            GL.BindBuffer(BufferTarget.Uniform, 0);
+            GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 1, this._ubo);
         }
 
         public void Dispose()
@@ -1265,25 +1264,25 @@
         {
             this._ubo.Bind();
             this._ubo.SetSubData((IntPtr)this.memory, 420, 0);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BindBuffer(BufferTarget.Uniform, 0);
         }
     }
 
     public class BonesUBO
     {
         private readonly GPUBuffer _ubo;
-        private unsafe Matrix4* _matrixArray;
+        private unsafe Matrix4x4* _matrixArray;
 
         public BonesUBO()
         {
-            this._ubo = new GPUBuffer(BufferTarget.UniformBuffer, BufferUsageHint.StreamDraw);
+            this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
             this._ubo.Bind();
             this._ubo.SetData(IntPtr.Zero, sizeof(float) * 4 * 4 * 256);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, 2, this._ubo);
+            GL.BindBuffer(BufferTarget.Uniform, 0);
+            GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 2, this._ubo);
             unsafe
             {
-                this._matrixArray = (Matrix4*)Marshal.AllocHGlobal(sizeof(Matrix4) * 256);
+                this._matrixArray = (Matrix4x4*)Marshal.AllocHGlobal(sizeof(Matrix4x4) * 256);
             }
         }
 
@@ -1297,7 +1296,7 @@
                 this._matrixArray[i] = bone.Transform;
             }
 
-            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4) * armature.UnsortedBones.Count, 0);
+            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4x4) * armature.UnsortedBones.Count, 0);
         }
     }
 }

@@ -15,8 +15,7 @@
     using SVec2 = System.Numerics.Vector2;
     using SVec3 = System.Numerics.Vector3;
     using SVec4 = System.Numerics.Vector4;
-    using OGL = VTT.GL.Bindings.GL;
-    using DotGLFW;
+    using OGL = GL.Bindings.GL;
     using VTT.GL.Bindings;
 
     public class ShaderGraphEditorRenderer
@@ -257,7 +256,7 @@
                                             ImGui.SetNextItemWidth(200 - 16);
                                             if (ImGui.ColorPicker4(igbid, ref clr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoSmallPreview | ImGuiColorEditFlags.NoLabel | ImGuiColorEditFlags.NoBorder | ImGuiColorEditFlags.NoDragDrop | ImGuiColorEditFlags.NoTooltip))
                                             {
-                                                ni.CurrentValue = clr.GLVector();
+                                                ni.CurrentValue = clr;
                                             }
 
                                             yOffset += 240;
@@ -306,7 +305,7 @@
                                                     SVec2 sv2 = ni.CurrentValue is SVec2 v2 ? v2 : SVec2.Zero;
                                                     if (ImGui.InputFloat2(igbid, ref sv2))
                                                     {
-                                                        ni.CurrentValue = sv2.GLVector();
+                                                        ni.CurrentValue = sv2;
                                                     }
 
                                                     break;
@@ -317,7 +316,7 @@
                                                     SVec3 sv3 = ni.CurrentValue is SVec3 v3 ? v3 : SVec3.Zero;
                                                     if (ImGui.InputFloat3(igbid, ref sv3))
                                                     {
-                                                        ni.CurrentValue = sv3.GLVector();
+                                                        ni.CurrentValue = sv3;
                                                     }
 
                                                     break;
@@ -328,7 +327,7 @@
                                                     SVec4 sv4 = ni.CurrentValue is SVec4 v4 ? v4 : SVec4.Zero;
                                                     if (ImGui.InputFloat4(igbid, ref sv4))
                                                     {
-                                                        ni.CurrentValue = sv4.GLVector();
+                                                        ni.CurrentValue = sv4;
                                                     }
 
                                                     break;
@@ -531,7 +530,7 @@
                                         }
                                     }
 
-                                    bool shouldSnap = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightAlt);
+                                    bool shouldSnap = Client.Instance.Frontend.GameHandle.IsAnyAltDown();
                                     if (shouldSnap)
                                     {
                                         SVec2 m = this._nodeInitialPosition + mouseDelta;
@@ -543,7 +542,7 @@
                                     }
                                     else
                                     {
-                                        this._nodeMoved.Location = (this._nodeInitialPosition + mouseDelta).GLVector();
+                                        this._nodeMoved.Location = (this._nodeInitialPosition + mouseDelta);
                                     }
 
                                     break;
@@ -668,7 +667,7 @@
                                 if (ImGui.MenuItem(t.Name))
                                 {
                                     ShaderNode n = t.CreateNode();
-                                    n.Location = (popupPos - this._cameraLocation).GLVector();
+                                    n.Location = (popupPos - this._cameraLocation);
                                     this.EditedGraph.AddNode(n);
                                     if (this._ctxOutput != null && n.Inputs.Count > 0)
                                     {
@@ -782,11 +781,11 @@
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             var imScreenPos = ImGui.GetCursorScreenPos();
-            var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+            var rectEnd = imScreenPos + new SVec2(320, 24);
             bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
             uint bClr = mouseOver ? GuiRenderer.Instance.DraggedAssetReference != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
             drawList.AddRect(imScreenPos, rectEnd, bClr);
-            drawList.AddImage(iconTex ?? GuiRenderer.Instance.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+            drawList.AddImage(iconTex ?? GuiRenderer.Instance.AssetModelIcon, imScreenPos + new SVec2(4, 4), imScreenPos + new SVec2(20, 20));
             string mdlTxt = "";
             int mdlTxtOffset = 0;
             if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
@@ -795,10 +794,10 @@
                 mdlTxt += aRef.Name;
                 if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
                 {
-                    GL.Texture tex = ap.GetGLTexture();
+                    VTT.GL.Texture tex = ap.GetGLTexture();
                     if (tex != null)
                     {
-                        drawList.AddImage(tex, imScreenPos + new System.Numerics.Vector2(20, 4), imScreenPos + new System.Numerics.Vector2(36, 20));
+                        drawList.AddImage(tex, imScreenPos + new SVec2(20, 4), imScreenPos + new SVec2(36, 20));
                         mdlTxtOffset += 20;
                     }
                 }
@@ -814,7 +813,7 @@
             }
 
             drawList.PushClipRect(imScreenPos, rectEnd);
-            drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+            drawList.AddText(imScreenPos + new SVec2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
             drawList.PopClipRect();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
             return mouseOver;

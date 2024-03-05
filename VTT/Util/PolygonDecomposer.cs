@@ -1,8 +1,8 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using System.Runtime.CompilerServices;
 
     public static class PolygonDecomposer
@@ -39,8 +39,8 @@
                 return false;
             }
 
-            var s = ((dx * (q1[1] - p1[1])) + (dy * (p1[0] - q1[0]))) / ((da * dy) - (db * dx));
-            var t = ((da * (p1[1] - q1[1])) + (db * (q1[0] - p1[0]))) / ((db * dx) - (da * dy));
+            var s = ((dx * (q1.Y - p1.Y)) + (dy * (p1.X - q1.X))) / ((da * dy) - (db * dx));
+            var t = ((da * (p1.Y - q1.Y)) + (db * (q1.X - p1.X))) / ((db * dx) - (da * dy));
 
             return (s >= 0 && s <= 1 && t >= 0 && t <= 1);
         }
@@ -402,8 +402,8 @@
                     if (lowerIndex == (upperIndex + 1) % polygon.Length)
                     {
                         //console.log("Case 1: Vertex("+i+"), lowerIndex("+lowerIndex+"), upperIndex("+upperIndex+"), poly.size("+polygon.length+")");
-                        p[0] = (lowerInt[0] + upperInt[0]) / 2;
-                        p[1] = (lowerInt[1] + upperInt[1]) / 2;
+                        p.X = (lowerInt.X + upperInt.X) / 2;
+                        p.Y = (lowerInt.Y + upperInt.Y) / 2;
                         steinerPoints.Add(p);
 
                         if (i < upperIndex)

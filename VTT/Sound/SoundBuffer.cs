@@ -1,10 +1,10 @@
 ﻿namespace VTT.Sound
 {
-    using OpenTK.Audio.OpenAL;
     using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using VTT.Network;
+    using VTT.Sound.Bindings;
 
     public class SoundBuffer
     {
@@ -29,10 +29,10 @@
 
         public SoundBuffer(int frequency, int numChannels, int numChunks, Guid assetID, out int src)
         {
-            this._front = AL.GenBuffer();
-            this._back = AL.GenBuffer();
+            this._front = (int)AL.GenBuffer();
+            this._back = (int)AL.GenBuffer();
 
-            src = AL.GenSource();
+            src = (int)AL.GenSource();
 
             this._freq = frequency;
             this._nChannels = numChannels;
@@ -59,7 +59,7 @@
                     }
                 }
 
-                AL.BufferData(buffer, this._nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
+                AL.BufferData((uint)buffer, this._nChannels == 1 ? SoundDataFormat.Mono16 : SoundDataFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
                 return true;
             }
 
@@ -91,18 +91,18 @@
                 {
                     this._lastChunkFetched = 1;
                     this._initialized = true;
-                    AL.SourceQueueBuffer(container.SourceID, this._front);
-                    AL.SourceQueueBuffer(container.SourceID, this._back);
+                    AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._front);
+                    AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._back);
                     mgr.BufferedSourceReadyCallback(container.Category, container.SourceID);
-                    AL.SourcePlay(container.SourceID);
+                    AL.SourcePlay((uint)container.SourceID);
                 }
             }
             else
             {
-                AL.GetSource(container.SourceID, ALGetSourcei.BuffersProcessed, out int i);
+                int i = AL.GetSourceBuffersProcessed((uint)container.SourceID);
                 if (i > 0 && this._operationalBuffer == -1)
                 {
-                    int buf = AL.SourceUnqueueBuffer(container.SourceID);
+                    int buf = (int)AL.SourceUnqueueBuffer((uint)container.SourceID);
                     this._operationalBuffer = buf;
                 }
 
@@ -112,7 +112,7 @@
                     {
                         if (this.QueueBuffer(container.ID, this._operationalBuffer, this._lastChunkFetched + 1))
                         {
-                            AL.SourceQueueBuffer(container.SourceID, this._operationalBuffer);
+                            AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._operationalBuffer);
                             this._lastChunkFetched += 1;
                             this._operationalBuffer = -1;
                         }
@@ -125,8 +125,8 @@
         {
             if (this._initialized)
             {
-                AL.DeleteBuffer(this._front);
-                AL.DeleteBuffer(this._back);
+                AL.DeleteBuffer((uint)this._front);
+                AL.DeleteBuffer((uint)this._back);
             }
 
             foreach (KeyValuePair<int, IntPtr> a in this._ptrs)

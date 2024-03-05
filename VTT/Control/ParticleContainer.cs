@@ -1,6 +1,6 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using System;
     using VTT.Asset;
     using VTT.GL;

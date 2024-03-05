@@ -1,6 +1,6 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -86,18 +86,18 @@
                 if (a.Model != null && a.Model.GLMdl != null)
                 {
                     GlbScene s = a.Model.GLMdl;
-                    Matrix4 oMat = mo.ClientCachedModelMatrix;
+                    Matrix4x4 oMat = mo.ClientCachedModelMatrix;
                     ms.Push(oMat);
                     GlbObjectType sType = s.SimplifiedRaycastMesh != null ? GlbObjectType.RaycastMesh : GlbObjectType.Mesh;
                     foreach (GlbMesh mesh in s.RootObjects.SelectMany(o => IterateGlbModel(ms, o, sType)))
                     {
-                        Matrix4 omat = ms.Current;
-                        Matrix4 mat = ms.Current.Inverted();
-                        System.Numerics.Vector3 nOri = (vOri4 * mat).Xyz.SystemVector();
-                        System.Numerics.Vector3 nDir = (vDir4 * mat.ClearTranslation()).Xyz.SystemVector();
-                        nDir = System.Numerics.Vector3.Normalize(nDir);
+                        Matrix4x4 omat = ms.Current;
+                        Matrix4x4.Invert(ms.Current, out Matrix4x4 mat);
+                        Vector3 nOri = Vector4.Transform(vOri4, mat).Xyz();
+                        Vector3 nDir = Vector4.Transform(vDir4, mat.ClearTranslation()).Xyz();
+                        nDir = Vector3.Normalize(nDir);
                         int l = mesh.simplifiedTriangles.Length;
-                        fixed (System.Numerics.Vector3* ptr = &mesh.simplifiedTriangles[0])
+                        fixed (Vector3* ptr = &mesh.simplifiedTriangles[0])
                         {
                             if (l < nMaxVertsForMultithreading)
                             {
@@ -131,7 +131,7 @@
                         float cD = float.MaxValue;
                         foreach (Vector3 hit in hitPoints)
                         {
-                            float hD = (r.Origin - hit).Length;
+                            float hD = (r.Origin - hit).Length();
                             if (hD < cD)
                             {
                                 cD = hD;
@@ -157,7 +157,7 @@
                 int i = 0;
                 foreach ((MapObject, Vector3) hit in hitResults)
                 {
-                    float hD = (r.Origin - hit.Item2).Length;
+                    float hD = (r.Origin - hit.Item2).Length();
                     if (hD < cD)
                     {
                         cD = hD;
@@ -177,53 +177,45 @@
             return new RaycastResut() { AllHit = Array.Empty<Vector3>(), AllObjectsHit = Array.Empty<MapObject>(), Hit = default, ObjectHit = null, HitIndex = 0, Result = false };
         }
 
-        private static System.Numerics.Vector3* iterStoredFixedPtr;
-        private static Matrix4 iterStoredMat;
-        private static System.Numerics.Vector3 iterStoredRayOrigin;
-        private static System.Numerics.Vector3 iterStoredRayDirection;
+        private static Vector3* iterStoredFixedPtr;
+        private static Matrix4x4 iterStoredMat;
+        private static Vector3 iterStoredRayOrigin;
+        private static Vector3 iterStoredRayDirection;
         private static unsafe void ParallelIterationDelegate(int i) => IterateTriangles(iterStoredFixedPtr, iterStoredMat, iterStoredRayOrigin, iterStoredRayDirection, i * 3, hitPoints);
 
-        private static Vector3 TransformFull(Vector3 vec, Matrix4 mat)
+        public static unsafe void IterateTriangles(Vector3* arrayPtr, Matrix4x4 mat, Vector3 rOrigin, Vector3 rDirection, int index, List<Vector3> hitPoints)
         {
-            return new Vector3(
-                (vec.X * mat.Row0.X) + (vec.Y * mat.Row1.X) + (vec.Z * mat.Row2.X) + (1 * mat.Row3.X),
-                (vec.X * mat.Row0.Y) + (vec.Y * mat.Row1.Y) + (vec.Z * mat.Row2.Y) + (1 * mat.Row3.Y),
-                (vec.X * mat.Row0.Z) + (vec.Y * mat.Row1.Z) + (vec.Z * mat.Row2.Z) + (1 * mat.Row3.Z));
-        }
+            Vector3 t0 = arrayPtr[index + 0];
+            Vector3 t1 = arrayPtr[index + 1];
+            Vector3 t2 = arrayPtr[index + 2];
 
-        public static unsafe void IterateTriangles(System.Numerics.Vector3* arrayPtr, Matrix4 mat, System.Numerics.Vector3 rOrigin, System.Numerics.Vector3 rDirection, int index, List<Vector3> hitPoints)
-        {
-            System.Numerics.Vector3 t0 = arrayPtr[index + 0];
-            System.Numerics.Vector3 t1 = arrayPtr[index + 1];
-            System.Numerics.Vector3 t2 = arrayPtr[index + 2];
+            Vector3 t10 = t1 - t0;
+            Vector3 t20 = t2 - t0;
 
-            System.Numerics.Vector3 t10 = t1 - t0;
-            System.Numerics.Vector3 t20 = t2 - t0;
-
-            System.Numerics.Vector3 tNormal = System.Numerics.Vector3.Cross(t10, t20);
-            float d = System.Numerics.Vector3.Dot(tNormal, t0);
-            float nd = System.Numerics.Vector3.Dot(tNormal, rDirection);
+            Vector3 tNormal = Vector3.Cross(t10, t20);
+            float d = Vector3.Dot(tNormal, t0);
+            float nd = Vector3.Dot(tNormal, rDirection);
             if (MathF.Abs(nd) > float.Epsilon)
             {
-                System.Numerics.Vector3 hit = rOrigin + (rDirection * ((d - System.Numerics.Vector3.Dot(tNormal, rOrigin)) / nd));
+                Vector3 hit = rOrigin + (rDirection * ((d - Vector3.Dot(tNormal, rOrigin)) / nd));
 
-                System.Numerics.Vector3 v0 = t20;
-                System.Numerics.Vector3 v1 = t10;
-                System.Numerics.Vector3 v2 = hit - t0;
+                Vector3 v0 = t20;
+                Vector3 v1 = t10;
+                Vector3 v2 = hit - t0;
 
-                float dot00 = System.Numerics.Vector3.Dot(v0, v0);
-                float dot01 = System.Numerics.Vector3.Dot(v0, v1);
-                float dot02 = System.Numerics.Vector3.Dot(v0, v2);
-                float dot11 = System.Numerics.Vector3.Dot(v1, v1);
-                float dot12 = System.Numerics.Vector3.Dot(v1, v2);
+                float dot00 = Vector3.Dot(v0, v0);
+                float dot01 = Vector3.Dot(v0, v1);
+                float dot02 = Vector3.Dot(v0, v2);
+                float dot11 = Vector3.Dot(v1, v1);
+                float dot12 = Vector3.Dot(v1, v2);
 
                 float invDenom = 1 / ((dot00 * dot11) - (dot01 * dot01));
                 float u = ((dot11 * dot02) - (dot01 * dot12)) * invDenom;
                 float v = ((dot00 * dot12) - (dot01 * dot02)) * invDenom;
                 if ((u >= 0) && (v >= 0) && (u + v < 1))
                 {
-                    Vector4 hit4 = new Vector4(hit.X, hit.Y, hit.Z, 1.0f) * mat;
-                    hitPoints.Add(hit4.Xyz / hit4.W);
+                    Vector4 hit4 = Vector4.Transform(new Vector4(hit.X, hit.Y, hit.Z, 1.0f), mat);
+                    hitPoints.Add(hit4.Xyz() / hit4.W);
                 }
             }
         }

@@ -1,19 +1,21 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using Plane = Util.Plane;
 
     public class RulerRenderer
     {
@@ -48,7 +50,7 @@
 
         public Stopwatch CPUTimer { get; } = new Stopwatch();
 
-        public void Update(double delta)
+        public void Update()
         {
             Map m = Client.Instance.CurrentMap;
             if (m == null)
@@ -68,7 +70,7 @@
             bool imMouse = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
             if (!imMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
             {
-                if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !this._lmbDown)
+                if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !this._lmbDown)
                 {
                     this._lmbDown = true;
                     if (this.CurrentMode != RulerType.Eraser)
@@ -100,7 +102,7 @@
                             for (int i = this.ActiveInfos.Count - 1; i >= 0; i--)
                             {
                                 RulerInfo ri = this.ActiveInfos[i];
-                                if (ri.KeepAlive && (ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length <= this.CurrentExtraValue))
+                                if (ri.KeepAlive && (ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length() <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length() <= this.CurrentExtraValue))
                                 {
                                     if (this.CanErase(ri))
                                     {
@@ -119,7 +121,7 @@
                 {
                     Vector3 now = this.GetCursorWorldNow();
 
-                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift))
+                    if (Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
                     {
                         Plane p = new Plane(-Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction, 0f);
                         r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
@@ -130,12 +132,12 @@
                         }
                     }
 
-                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftAlt) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightAlt))
+                    if (Client.Instance.Frontend.GameHandle.IsAnyAltDown())
                     {
                         now = MapRenderer.SnapToGrid(now, m.GridSize);
                     }
 
-                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl))
+                    if (Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                     {
                         now = new Vector3(now.X, now.Y, this.CurrentInfo.Start.Z);
                     }
@@ -146,7 +148,7 @@
                     }
                 }
 
-                if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Right) && !this._rmbDown)
+                if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && !this._rmbDown)
                 {
                     this._rmbDown = true;
                     if (this.CurrentInfo != null)
@@ -178,7 +180,7 @@
                             RulerInfo ri = this.ActiveInfos[i];
                             if (ri.KeepAlive && (ri.OwnerID.Equals(Guid.Empty) || ri.OwnerID.Equals(Client.Instance.ID) || Client.Instance.IsAdmin))
                             {
-                                float distance = (now - ri.Start).Length;
+                                float distance = (now - ri.Start).Length();
                                 if (distance <= 0.2f)
                                 {
                                     ri.IsDead = true;
@@ -197,7 +199,7 @@
                 }
             }
 
-            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && this._lmbDown)
+            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && this._lmbDown)
             {
                 this._lmbDown = false;
                 if (this.CurrentInfo != null)
@@ -220,7 +222,7 @@
                 }
             }
 
-            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Right) && this._rmbDown)
+            if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && this._rmbDown)
             {
                 this._rmbDown = false;
             }
@@ -284,7 +286,7 @@
                         {
                             case RulerType.Circle:
                             {
-                                float radiusSq = (ri.End.Xy - ri.Start.Xy).LengthSquared;
+                                float radiusSq = (ri.End.Xy() - ri.Start.Xy()).LengthSquared();
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
                                     BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
@@ -299,7 +301,7 @@
 
                             case RulerType.Sphere:
                             {
-                                float radiusSq = (ri.End - ri.Start).LengthSquared;
+                                float radiusSq = (ri.End - ri.Start).LengthSquared();
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
                                     BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
@@ -411,8 +413,8 @@
             this.ModelArrow = OpenGLUtil.LoadModel("arrow_ptr", VertexFormat.Pos);
             this.ModelCube = OpenGLUtil.LoadModel("cube", VertexFormat.Pos);
             this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
-            this._ebo = new GPUBuffer(BufferTarget.ElementArrayBuffer);
+            this._vbo = new GPUBuffer(BufferTarget.Array);
+            this._ebo = new GPUBuffer(BufferTarget.ElementArray);
             this._vao.Bind();
             this._vbo.Bind();
             this._vbo.SetData<float>(IntPtr.Zero, 16);
@@ -438,17 +440,17 @@
             shader.Bind();
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
-            Matrix4 model;
+            Matrix4x4 model;
             Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
 
             foreach (RulerInfo ri in this.ActiveInfos)
             {
-                model = Matrix4.CreateScale(0.2f) * Matrix4.CreateTranslation(ri.Start);
+                model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(ri.Start);
                 shader["model"].Set(model);
                 Vector4 riClr = ri.Color.Vec4();
                 if (this.CurrentMode == RulerType.Eraser && tHit.HasValue)
                 {
-                    bool inRange = ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length <= this.CurrentExtraValue;
+                    bool inRange = ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length() <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length() <= this.CurrentExtraValue;
                     if (inRange)
                     {
                         if (this.CanErase(ri))
@@ -466,7 +468,7 @@
 
                 if (!ri.KeepAlive || ((ri.Type is RulerType.Ruler or RulerType.Polyline) && ri.CumulativeLength > 0.2f))
                 {
-                    model = Matrix4.CreateScale(0.2f) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(ri.End);
+                    model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(ri.End);
                     shader["model"].Set(model);
                     this.ModelArrow.Render();
                     if (ri.Type == RulerType.Polyline)
@@ -475,7 +477,7 @@
                         {
                             if (i > 0)
                             {
-                                model = Matrix4.CreateScale(0.2f) * Matrix4.CreateTranslation(ri.Points[i]);
+                                model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(ri.Points[i]);
                                 shader["model"].Set(model);
                                 this.ModelSphere.Render();
                             }
@@ -490,23 +492,23 @@
 
                     this.UploadBuffers();
                     this._vao.Bind();
-                    shader["model"].Set(Matrix4.Identity);
-                    GL.Disable(EnableCap.CullFace);
-                    GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                    shader["model"].Set(Matrix4x4.Identity);
+                    GL.Disable(Capability.CullFace);
+                    GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
                 }
                 else
                 {
-                    shader["model"].Set(Matrix4.Identity);
-                    GL.Disable(EnableCap.CullFace);
+                    shader["model"].Set(Matrix4x4.Identity);
+                    GL.Disable(Capability.CullFace);
                 }
 
                 this._vertexData.Clear();
                 this._indexData.Clear();
-                GL.Enable(EnableCap.Blend);
+                GL.Enable(Capability.Blend);
                 if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
                 {
-                    GL.Enable(EnableCap.Multisample);
-                    GL.Enable(EnableCap.SampleAlphaToCoverage);
+                    GL.Enable(Capability.Multisample);
+                    GL.Enable(Capability.SampleAlphaToCoverage);
                 }
 
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -514,11 +516,11 @@
                 {
                     case RulerType.Circle:
                     {
-                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length);
+                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length());
                         this.UploadBuffers();
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this._vao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
                         this._vertexData.Clear();
                         this._indexData.Clear();
                         break;
@@ -526,16 +528,16 @@
 
                     case RulerType.Sphere:
                     {
-                        float radius = (ri.End - ri.Start).Length;
-                        model = Matrix4.CreateScale(radius * 2) * Matrix4.CreateTranslation(ri.Start);
+                        float radius = (ri.End - ri.Start).Length();
+                        model = Matrix4x4.CreateScale(radius * 2) * Matrix4x4.CreateTranslation(ri.Start);
                         shader["model"].Set(model);
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
-                        GL.Enable(EnableCap.CullFace);
-                        GL.CullFace(CullFaceMode.Front);
+                        GL.Enable(Capability.CullFace);
+                        GL.CullFace(PolygonFaceMode.Front);
                         this.ModelSphere.Render();
-                        GL.CullFace(CullFaceMode.Back);
+                        GL.CullFace(PolygonFaceMode.Back);
                         this.ModelSphere.Render();
-                        GL.Disable(EnableCap.CullFace);
+                        GL.Disable(Capability.CullFace);
                         break;
                     }
 
@@ -561,7 +563,7 @@
                         this.UploadBuffers();
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this._vao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
                         this._vertexData.Clear();
                         this._indexData.Clear();
                         break;
@@ -571,15 +573,15 @@
                     {
                         Vector3 vE2Snn = (ri.End - ri.Start);
                         float r = MathF.Max(MathF.Max(MathF.Abs(vE2Snn.X), MathF.Abs(vE2Snn.Y)), MathF.Abs(vE2Snn.Z));
-                        model = Matrix4.CreateScale(r * 2) * Matrix4.CreateTranslation(ri.Start);
+                        model = Matrix4x4.CreateScale(r * 2) * Matrix4x4.CreateTranslation(ri.Start);
                         shader["model"].Set(model);
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
-                        GL.Enable(EnableCap.CullFace);
-                        GL.CullFace(CullFaceMode.Front);
+                        GL.Enable(Capability.CullFace);
+                        GL.CullFace(PolygonFaceMode.Front);
                         this.ModelCube.Render();
-                        GL.CullFace(CullFaceMode.Back);
+                        GL.CullFace(PolygonFaceMode.Back);
                         this.ModelCube.Render();
-                        GL.Disable(EnableCap.CullFace);
+                        GL.Disable(Capability.CullFace);
                         break;
                     }
 
@@ -587,15 +589,15 @@
                     {
                         Vector3 vE2Snn = ri.End - ri.Start;
                         float gFac = m.GridUnit;
-                        model = Matrix4.CreateScale(ri.ExtraInfo / gFac, vE2Snn.Length, ri.ExtraInfo / gFac) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(ri.Start + ((ri.End - ri.Start) / 2));
+                        model = Matrix4x4.CreateScale(ri.ExtraInfo / gFac, vE2Snn.Length(), ri.ExtraInfo / gFac) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(ri.Start + ((ri.End - ri.Start) / 2));
                         shader["model"].Set(model);
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
-                        GL.Enable(EnableCap.CullFace);
-                        GL.CullFace(CullFaceMode.Front);
+                        GL.Enable(Capability.CullFace);
+                        GL.CullFace(PolygonFaceMode.Front);
                         this.ModelCube.Render();
-                        GL.CullFace(CullFaceMode.Back);
+                        GL.CullFace(PolygonFaceMode.Back);
                         this.ModelCube.Render();
-                        GL.Disable(EnableCap.CullFace);
+                        GL.Disable(Capability.CullFace);
                         break;
                     }
 
@@ -605,32 +607,32 @@
                         this.UploadBuffers();
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this._vao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
                         this._vertexData.Clear();
                         this._indexData.Clear();
                         break;
                     }
                 }
 
-                GL.Disable(EnableCap.Blend);
+                GL.Disable(Capability.Blend);
                 if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
                 {
-                    GL.Disable(EnableCap.Multisample);
-                    GL.Disable(EnableCap.SampleAlphaToCoverage);
+                    GL.Disable(Capability.Multisample);
+                    GL.Disable(Capability.SampleAlphaToCoverage);
                 }
 
-                GL.Enable(EnableCap.CullFace);
+                GL.Enable(Capability.CullFace);
             }
 
             if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
             {
-                model = Matrix4.CreateScale(this.CurrentExtraValue * 2) * Matrix4.CreateTranslation(tHit.Value);
+                model = Matrix4x4.CreateScale(this.CurrentExtraValue * 2) * Matrix4x4.CreateTranslation(tHit.Value);
                 shader["model"].Set(model);
                 shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
-                GL.Enable(EnableCap.Blend);
+                GL.Enable(Capability.Blend);
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 this.ModelSphere.Render();
-                GL.Disable(EnableCap.Blend);
+                GL.Disable(Capability.Blend);
             }
 
             foreach ((MapObject, Color) d in this._highlightedObjects)
@@ -674,10 +676,10 @@
             this._vertexData.Add(end.Z);
             for (int i = 0; i < 36; ++i)
             {
-                float angleRad = MathHelper.DegreesToRadians(i * 10f);
-                Quaternion q = Quaternion.FromAxisAngle(planeNormal, angleRad);
-                Vector4 v = q * planePerpendicular;
-                Vector3 v3 = end + (v.Xyz.Normalized() * radius);
+                float angleRad = (i * 10f) * MathF.PI / 180;
+                Quaternion q = Quaternion.CreateFromAxisAngle(planeNormal, angleRad);
+                Vector4 v = Vector4.Transform(planePerpendicular, q);
+                Vector3 v3 = end + (v.Xyz().Normalized() * radius);
                 this._vertexData.Add(v3.X);
                 this._vertexData.Add(v3.Y);
                 this._vertexData.Add(v3.Z);
@@ -808,7 +810,7 @@
             zHeight += rEffect;
             start *= new Vector3(1, 1, 0); // Discard Z component
             int numSegments = (int)(12 * MathF.Max(1, (radius / 2.5f)));
-            float angleStep = MathHelper.DegreesToRadians(360.0f / numSegments);
+            float angleStep = (360.0f / numSegments) * MathF.PI / 180;
             float cos = MathF.Cos(angleStep);
             float sin = MathF.Sin(angleStep);
             Vector3 v = Vector3.UnitY;
@@ -818,7 +820,7 @@
                 float dX = (v.X * cos) - (v.Y * sin);
                 float dY = (v.X * sin) + (v.Y * cos);
                 v = new Vector3(dX, dY, 0);
-                this._groundQuadGenTempList.Add(v.Xy);
+                this._groundQuadGenTempList.Add(v.Xy());
 
                 this._vertexData.Add(start.X + (v.X * radius));
                 this._vertexData.Add(start.Y + (v.Y * radius));
@@ -850,8 +852,8 @@
                 Vector2 next = i == numSegments - 1 ? this._groundQuadGenTempList[0] : this._groundQuadGenTempList[i + 1];
                 Vector2 c2n = next - current;
                 Vector2 p2c = prev - current;
-                Vector2 l1 = c2n.PerpendicularLeft;
-                Vector2 l2 = p2c.PerpendicularRight;
+                Vector2 l1 = c2n.PerpendicularLeft();
+                Vector2 l2 = p2c.PerpendicularRight();
                 Vector2 l = Vector2.Lerp(l1, l2, 0.5f).Normalized();
 
                 Vector3 v1 = start + new Vector3(current.X, current.Y, 0) + (new Vector3(l.X, l.Y, 0) * 0.2f);
@@ -895,7 +897,7 @@
             Vector3 a = Vector3.Cross(Vector3.UnitX, vE2S);
             Quaternion qZ = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitX, vE2S)).Normalized();
 
-            Vector3 oZ = (qZ * new Vector4(0, 0, 1, 1)).Xyz.Normalized() * 0.03f;
+            Vector3 oZ = Vector4.Transform(new Vector4(0, 0, 1, 1), qZ).Xyz().Normalized() * 0.03f;
             Vector3 oX = Vector3.Cross(vE2S, oZ).Normalized() * 0.03f;
 
             end -= vE2S * 0.1f;
@@ -1018,16 +1020,16 @@
 
         private static bool IsInCircle(BBBox box, Vector3 offset, Vector3 point, float rSq)
         {
-            Vector2 cPoint = point.Xy - offset.Xy;
-            Vector3 bRnd = box.Rotation * box.Start;
-            if ((bRnd.Xy - cPoint).LengthSquared <= rSq)
+            Vector2 cPoint = point.Xy() - offset.Xy();
+            Vector3 bRnd = Vector3.Transform(box.Start, box.Rotation);
+            if ((bRnd.Xy() - cPoint).LengthSquared() <= rSq)
             {
                 return true;
             }
 
             foreach (Vector3 v in box)
             {
-                if ((v.Xy - cPoint).LengthSquared <= rSq)
+                if ((v.Xy() - cPoint).LengthSquared() <= rSq)
                 {
                     return true;
                 }
@@ -1039,15 +1041,15 @@
         private static bool IsInSphere(BBBox box, Vector3 offset, Vector3 point, float rSq)
         {
             point -= offset;
-            Vector3 bRnd = box.Rotation * box.Start;
-            if ((bRnd - point).LengthSquared <= rSq)
+            Vector3 bRnd = Vector3.Transform(box.Start, box.Rotation);
+            if ((bRnd - point).LengthSquared() <= rSq)
             {
                 return true;
             }
 
             foreach (Vector3 v in box)
             {
-                if ((v - point).LengthSquared <= rSq)
+                if ((v - point).LengthSquared() <= rSq)
                 {
                     return true;
                 }
@@ -1064,7 +1066,7 @@
             float h = MathF.Abs(end.Y - start.Y);
             float mv = MathF.Max(w, h);
             RectangleF rect = new RectangleF(start.X - mv, start.Y - mv, mv * 2, mv * 2);
-            Vector3 bRnd = box.Rotation * box.Start;
+            Vector3 bRnd = Vector3.Transform(box.Start, box.Rotation);
             if (rect.Contains(bRnd.X, bRnd.Y))
             {
                 return true;
@@ -1091,7 +1093,7 @@
             float mv = MathF.Max(h, MathF.Max(w, l));
 
             AABox cBox = new AABox(start.X - mv, start.Y - mv, start.Z - mv, start.X + mv, start.Y + mv, start.Z + mv);
-            Vector3 bRnd = box.Rotation * box.Start;
+            Vector3 bRnd = Vector3.Transform(box.Start, box.Rotation);
             if (cBox.Contains(bRnd))
             {
                 return true;
@@ -1119,7 +1121,7 @@
             Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);
 
             AABox originBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
-            Vector3 scale = new Vector3(radius / gFac, vE2Snn.Length, radius / gFac);
+            Vector3 scale = new Vector3(radius / gFac, vE2Snn.Length(), radius / gFac);
             Quaternion rotation = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitY, vE2S)).Normalized();
             Vector3 translation = start + (vE2Snn / 2);
             if (IsAroundZero(scale.X) || IsAroundZero(scale.Y) || IsAroundZero(scale.Z) || float.IsNaN(rotation.X) || float.IsNaN(rotation.Y) || float.IsNaN(rotation.Z) || float.IsNaN(rotation.W))
@@ -1127,12 +1129,12 @@
                 return false;
             }
 
-            Matrix4 model = Matrix4.CreateScale(scale) * Matrix4.CreateFromQuaternion(rotation) * Matrix4.CreateTranslation(translation);
-            model.Invert();
+            Matrix4x4 modelO = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rotation) * Matrix4x4.CreateTranslation(translation);
+            Matrix4x4.Invert(modelO, out Matrix4x4 model);
             foreach (Vector3 v in box)
             {
-                Vector4 vT = new Vector4(v + offset, 1.0f) * model;
-                if (originBox.Contains(vT.Xyz / vT.W))
+                Vector4 vT = Vector4.Transform(new Vector4(v + offset, 1.0f), model);
+                if (originBox.Contains(vT.Xyz() / vT.W))
                 {
                     return true;
                 }
@@ -1149,7 +1151,7 @@
 
             foreach (Vector3 c in box)
             {
-                if (IsPointInCone(offset + c, start, v.Normalized(), v.Length, radius))
+                if (IsPointInCone(offset + c, start, v.Normalized(), v.Length(), radius))
                 {
                     return true;
                 }
@@ -1167,7 +1169,7 @@
             }
 
             float cRad = cDist / len * rad;
-            float orthoDist = (point - start - (cDist * dir)).Length;
+            float orthoDist = (point - start - (cDist * dir)).Length();
             return orthoDist < cRad;
         }
     }

@@ -1,9 +1,9 @@
 ﻿namespace VTT.Asset.Glb
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
 
@@ -28,8 +28,8 @@
         public void CreateGl()
         {
             this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
-            this._ebo = new GPUBuffer(BufferTarget.ElementArrayBuffer);
+            this._vbo = new GPUBuffer(BufferTarget.Array);
+            this._ebo = new GPUBuffer(BufferTarget.ElementArray);
 
             this._vao.Bind();
             this._vbo.Bind();
@@ -52,10 +52,10 @@
             this.IndexBuffer = null;
         }
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4 projection, Matrix4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
-            Matrix4 cm = matrixStack.Current;
+            Matrix4x4 cm = matrixStack.Current;
             shader["model"].Set(cm);
             shader["mvp"].Set(cm * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
@@ -74,7 +74,7 @@
             this._vao.Bind();
             if (renderer == null)
             {
-                GL.DrawElements(PrimitiveType.Triangles, this.AmountToRender, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                GL.DrawElements(PrimitiveType.Triangles, this.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero);
             }
             else
             {
@@ -82,7 +82,7 @@
             }
 
             // Reset GL state
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
         }
 
         public int FindAreaSumIndex(float aSumValue)

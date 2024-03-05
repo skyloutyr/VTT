@@ -1,8 +1,9 @@
 ﻿namespace VTT.Asset.Glb
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
+    using VTT.Util;
 
     public class GlbAnimation
     {
@@ -22,13 +23,13 @@
                     {
                         case Path.Translation:
                         {
-                            bone.CachedLocalTranslation = c.Sampler.GetValue(time, false).Xyz;
+                            bone.CachedLocalTranslation = c.Sampler.GetValue(time, false).Xyz();
                             break;
                         }
 
                         case Path.Scale:
                         {
-                            bone.CachedLocalScale = c.Sampler.GetValue(time, false).Xyz;
+                            bone.CachedLocalScale = c.Sampler.GetValue(time, false).Xyz();
                             break;
                         }
 
@@ -133,16 +134,16 @@
         public GlbBone Parent { get; set; }
         public GlbBone[] Children { get; set; }
         public int ModelIndex { get; set; }
-        public Matrix4 InverseBindMatrix { get; set; }
-        public Matrix4 InverseWorldTransform { get; set; }
+        public Matrix4x4 InverseBindMatrix { get; set; }
+        public Matrix4x4 InverseWorldTransform { get; set; }
 
         public Vector3 CachedLocalTranslation { get; set; } = Vector3.Zero;
         public Vector3 CachedLocalScale { get; set; } = Vector3.One;
         public Quaternion CachedLocalRotation { get; set; } = Quaternion.Identity;
-        public Matrix4 CachedGlobalTransform { get; set; }
-        public Matrix4 Transform { get; set; }
+        public Matrix4x4 CachedGlobalTransform { get; set; }
+        public Matrix4x4 Transform { get; set; }
 
-        public Matrix4 CalculateGlobalTransform() => this.InverseBindMatrix * this.CachedGlobalTransform;
+        public Matrix4x4 CalculateGlobalTransform() => this.InverseBindMatrix * this.CachedGlobalTransform;
         public void ResetTransforms()
         {
             this.CachedLocalTranslation = Vector3.Zero;
@@ -179,7 +180,7 @@
             foreach (GlbBone bone in this.SortedBones)
             {
                 // Calculate animation data (local translation, local scale, local rotation, global transform)
-                bone.CachedGlobalTransform = Matrix4.CreateScale(bone.CachedLocalScale) * Matrix4.CreateFromQuaternion(bone.CachedLocalRotation) * Matrix4.CreateTranslation(bone.CachedLocalTranslation);
+                bone.CachedGlobalTransform = Matrix4x4.CreateScale(bone.CachedLocalScale) * Matrix4x4.CreateFromQuaternion(bone.CachedLocalRotation) * Matrix4x4.CreateTranslation(bone.CachedLocalTranslation);
                 if (bone.Parent != null)
                 {
                     bone.CachedGlobalTransform = bone.CachedGlobalTransform * bone.Parent.CachedGlobalTransform;

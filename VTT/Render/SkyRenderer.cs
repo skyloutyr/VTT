@@ -1,12 +1,12 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using VTT.GL.Bindings;
 
     public class SkyRenderer
     {
@@ -124,9 +124,9 @@
 
         public void Create()
         {
-            this.SkyShader = OpenGLUtil.LoadShader("sky", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this.SkyShader = OpenGLUtil.LoadShader("sky", ShaderType.Vertex, ShaderType.Fragment);
             this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+            this._vbo = new GPUBuffer(BufferTarget.Array);
             this._vao.Bind();
             this._vbo.Bind();
             this._vbo.SetData(new float[] {
@@ -147,17 +147,17 @@
         public Vector3 GetSunDirection(float yaw, float pitch)
         {
             Vector4 vec = -Vector4.UnitZ;
-            Quaternion q = Quaternion.FromAxisAngle(Vector3.UnitZ, yaw);
-            Quaternion q1 = Quaternion.FromAxisAngle(Vector3.UnitY, pitch);
-            return (q * (q1 * vec)).Xyz.Normalized();
+            Quaternion q = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, yaw);
+            Quaternion q1 = Quaternion.CreateFromAxisAngle(Vector3.UnitY, pitch);
+            return Vector4.Transform(Vector4.Transform(vec, q1), q).Xyz().Normalized();
         }
 
         public Vector3 GetSunUp(float yaw, float pitch)
         {
             Vector4 vec = -Vector4.UnitY;
-            Quaternion q = Quaternion.FromAxisAngle(Vector3.UnitZ, yaw);
-            Quaternion q1 = Quaternion.FromAxisAngle(Vector3.UnitY, pitch);
-            return (q * (q1 * vec)).Xyz.Normalized();
+            Quaternion q = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, yaw);
+            Quaternion q1 = Quaternion.CreateFromAxisAngle(Vector3.UnitY, pitch);
+            return Vector4.Transform(Vector4.Transform(vec, q1), q).Xyz().Normalized();
         }
 
         public void Render(double time)
@@ -174,7 +174,7 @@
                 return;
             }
 
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -184,12 +184,12 @@
             this.SkyShader["view"].Set(cam.View);
             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
-            Matrix4 model = Matrix4.CreateScale(8) * Matrix4.CreateFromQuaternion(q) * Matrix4.CreateTranslation(cam.Position - (sunDir * 99));
+            Matrix4x4 model = Matrix4x4.CreateScale(8) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(cam.Position - (sunDir * 99));
             this.SkyShader["model"].Set(model);
             this._vao.Bind();
 
             GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
-            GL.Disable(EnableCap.Blend);
+            GL.Disable(Capability.Blend);
         }
 
         public Color GetSkyColor()

@@ -168,7 +168,7 @@
                         for (int j = 0; j < this._requestWorkedWith.MipmapAmount; ++j)
                         {
                             Size s = this._requestWorkedWith.MipmapSizes[j];
-                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, PixelDataFormat.Rgba, PixelDataType.Byte, (IntPtr)bOffset);
+                            OGL.TexImage2D(this._requestWorkedWith.Texture.Target, j, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, PixelDataFormat.Rgba, PixelDataType.Byte, (IntPtr)bOffset);
                             bOffset += sizeof(Rgba32) * s.Width * s.Height;
                         }
                     }
@@ -178,7 +178,7 @@
                         for (int i = 0; i < this._requestWorkedWith.MipmapAmount; ++i)
                         {
                             Size s = this._requestWorkedWith.MipmapSizes[i];
-                            OGL.CompressedTexImage2D(this._requestWorkedWith.Texture.Target, i, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, 0, this._requestWorkedWith.CompressedData.dataLength[i], (IntPtr)bOffset);
+                            OGL.CompressedTexImage2D(this._requestWorkedWith.Texture.Target, i, this._requestWorkedWith.DesiredPixelFormat, s.Width, s.Height, this._requestWorkedWith.CompressedData.dataLength[i], (void*)bOffset);
                             bOffset += this._requestWorkedWith.CompressedData.dataLength[i];
                         }
                     }

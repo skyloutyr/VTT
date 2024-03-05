@@ -1,6 +1,6 @@
 ﻿namespace VTT.Asset.Shader.NodeGraph
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
@@ -246,7 +246,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = reflect($INPUT@0$, $INPUT@1$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector3.Reflect(((Vector3)x[0]).SystemVector(), ((Vector3)x[1]).SystemVector()).GLVector())
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector3.Reflect(((Vector3)x[0]), ((Vector3)x[1])))
 );
 
         public static ShaderNodeTemplate Vec3Invert { get; } = new ShaderNodeTemplate(Guid.Parse("7428236d-634e-46d4-82c3-8a2e852712f9"), ShaderTemplateCategory.MathVec3, "Invert Vec3", true, new NodeInput[] {
@@ -303,7 +303,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = length($INPUT@0$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector3)x[0]).Length)
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector3)x[0]).Length())
 );
 
         public static ShaderNodeTemplate Vec3Abs { get; } = new ShaderNodeTemplate(Guid.Parse("bad0e1c7-a45e-4abc-b76e-41d221c7374a"), ShaderTemplateCategory.MathVec3, "Absolute of Vec3", true, new NodeInput[] {
@@ -705,7 +705,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = reflect($INPUT@0$, $INPUT@1$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector2.Reflect(((Vector2)x[0]).SystemVector(), ((Vector2)x[1]).SystemVector()).GLVector())
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector2.Reflect(((Vector2)x[0]), ((Vector2)x[1])))
 );
 
         public static ShaderNodeTemplate Vec2Invert { get; } = new ShaderNodeTemplate(Guid.Parse("24ee2e34-ca37-4f2d-8062-3c36d0af4aa0"), ShaderTemplateCategory.MathVec2, "Invert Vec2", true, new NodeInput[] {
@@ -760,7 +760,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = length($INPUT@0$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector2)x[0]).Length)
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector2)x[0]).Length())
 );
 
         public static ShaderNodeTemplate Vec2Abs { get; } = new ShaderNodeTemplate(Guid.Parse("9c81e22c-cb6b-43dd-865e-fd75759a8006"), ShaderTemplateCategory.MathVec2, "Absolute of Vec2", true, new NodeInput[] {
@@ -1198,7 +1198,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = length($INPUT@0$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).Length)
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).Length())
 );
 
         public static ShaderNodeTemplate Vec4Abs { get; } = new ShaderNodeTemplate(Guid.Parse("2045bb08-3b82-4aec-a009-5f7f02088042"), ShaderTemplateCategory.MathVec4, "Absolute of Vec4", true, new NodeInput[] {
@@ -2585,9 +2585,9 @@ $OUTPUT@9$ = m_metal_factor;
 $OUTPUT@10$ = m_roughness_factor;
 $OUTPUT@11$ = material_index;",
 (matrix, outIndex) => outIndex switch {
-    0 => new NodeSimulationMatrix(dummyAlbedo.Value).Cast<Vector4, Vector3>(x => x.Xyz),
+    0 => new NodeSimulationMatrix(dummyAlbedo.Value).Cast<Vector4, Vector3>(x => x.Xyz()),
     1 => new NodeSimulationMatrix(1.0f),
-    2 => new NodeSimulationMatrix(dummyNormal.Value).Cast<Vector4, Vector3>(x => x.Xyz),
+    2 => new NodeSimulationMatrix(dummyNormal.Value).Cast<Vector4, Vector3>(x => x.Xyz()),
     3 => new NodeSimulationMatrix(Vector3.Zero),
     4 => new NodeSimulationMatrix(dummyAOMR.Value).Cast<Vector4, float>(x => x.X),
     5 => new NodeSimulationMatrix(0.0f),
@@ -2705,7 +2705,7 @@ $OUTPUT@3$ = inst_lifespan;",
 $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;",
 (matrix, outIndex) => outIndex switch {
-    0 => new NodeSimulationMatrix(dummyAlbedo.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz),
+    0 => new NodeSimulationMatrix(dummyAlbedo.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz()),
     _ => new NodeSimulationMatrix(1.0f)
 });
 
@@ -2736,7 +2736,7 @@ $OUTPUT@1$ = $TEMP@0$.a;",
 @"$OUTPUT@0$ = getNormalFromMapCustom($INPUT@0$);",
 (matrix, outIndex) => outIndex switch
 {
-    0 => new NodeSimulationMatrix(dummyNormal.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz),
+    0 => new NodeSimulationMatrix(dummyNormal.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz()),
     _ => new NodeSimulationMatrix(1.0f)
 });
 
@@ -2772,7 +2772,7 @@ $OUTPUT@2$ = $TEMP@0$.b;",
 $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;",
 (matrix, outIndex) => outIndex switch {
-    0 => new NodeSimulationMatrix(GetCustomTextureForIndex((int)matrix[0].SimulationPixels[0]).Value, matrix[1]).Cast<Vector4, Vector3>(x => x.Xyz),
+    0 => new NodeSimulationMatrix(GetCustomTextureForIndex((int)matrix[0].SimulationPixels[0]).Value, matrix[1]).Cast<Vector4, Vector3>(x => x.Xyz()),
     _ => new NodeSimulationMatrix(1.0f),
 });
 
@@ -2790,7 +2790,7 @@ $OUTPUT@1$ = $TEMP@0$.a;",
 $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;",
 (matrix, outIndex) => outIndex switch {
-    0 => new NodeSimulationMatrix(dummyAlbedo.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz),
+    0 => new NodeSimulationMatrix(dummyAlbedo.Value, matrix[0]).Cast<Vector4, Vector3>(x => x.Xyz()),
     _ => new NodeSimulationMatrix(1.0f)
 });
 
@@ -2887,7 +2887,7 @@ $OUTPUT@1$ = $INPUT@0$.rgb;
 $OUTPUT@2$ = $INPUT@0$.a;",
 (matrix, outIndex) => outIndex switch {
     0 => NodeSimulationMatrix.Parallel(matrix, x => (Vector4)x[0]),
-    1 => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).Xyz),
+    1 => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).Xyz()),
     _ => NodeSimulationMatrix.Parallel(matrix, x => ((Vector4)x[0]).W),
 });
 

@@ -4,13 +4,12 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Threading;
     using static VTT.GL.Bindings.MiniGLLoader;
 
     public static unsafe class GL
     {
         public static void ClearColor(float r, float g, float b, float a) => clearColorO(r, g, b, a);
+        public static void ClearColor(Vector4 vec) => clearColorO(vec.X, vec.Y, vec.Z, vec.W);
         public static void Viewport(int x, int y, int w, int h) => viewportO(x, y, w, h);
         public static void Clear(ClearBufferMask mask) => clearO((uint)mask);
         public static uint GenBuffer()
@@ -260,9 +259,13 @@
         public static void TexParameter(TextureTarget target, TextureProperty prop, TextureWrapMode wrapMode) => TexParameter(target, prop, (int)wrapMode);
         public static void TexParameter(TextureTarget target, TextureProperty prop, TextureSwizzleMask[] swizzleMask)
         {
-            GCHandle gch = GCHandle.Alloc(swizzleMask, GCHandleType.Pinned);
-            texParameterivO((uint)target, (uint)prop, (int*)Marshal.UnsafeAddrOfPinnedArrayElement(swizzleMask, 0));
-            gch.Free();
+            int* tsm = stackalloc int[swizzleMask.Length];
+            for (int i = swizzleMask.Length - 1; i >= 0; --i)
+            {
+                tsm[i] = (int)swizzleMask[i];
+            }
+
+            texParameterivO((uint)target, (uint)prop, tsm);
         }
 
         public static void TexParameter(TextureTarget target, TextureProperty prop, float[] values)
@@ -390,10 +393,78 @@
 
         public static void BindBufferBase(BaseBufferTarget target, uint index, uint buffer) => bindBufferBaseO((uint)target, index, buffer);
 
-        public static string GetExtensionAt(int index)
+        public static string GetExtensionAt(uint index) => Marshal.PtrToStringAnsi((IntPtr)getStringiO(0x1F03, index));
+        public static void Scissor(int x, int y, int width, int height) => scissorO(x, y, width, height);
+        public static void BindFramebuffer(FramebufferTarget target, uint fbo) => bindFramebufferO((uint)target, fbo);
+        public static void DepthMask(bool b) => depthMaskO(b);
+        public static void DrawBuffer(DrawBufferMode mode) => drawBufferO((uint)mode);
+        public static void ReadBuffer(DrawBufferMode mode) => readBufferO((uint)mode);
+        public static FramebufferStatus CheckFramebufferStatus(FramebufferTarget target) => (FramebufferStatus)checkFramebufferStatusO((uint)target);
+        public static uint GenFramebuffer()
         {
-
+            uint r = 0;
+            genFramebuffersO(1, &r);
+            return r;
         }
+
+        public static ReadOnlySpan<uint> GenFramebuffers(int n)
+        {
+            uint[] uints = new uint[n];
+            GCHandle gch = GCHandle.Alloc(uints, GCHandleType.Pinned);
+            genFramebuffersO(n, (uint*)Marshal.UnsafeAddrOfPinnedArrayElement(uints, 0));
+            ReadOnlySpan<uint> buffers = new(uints);
+            gch.Free();
+            return buffers;
+        }
+
+        public static void FramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, uint texture, int level) => framebufferTexture2DO((uint)target, (uint)attachment, (uint)textarget, texture, level);
+        public static void FramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, uint texture, int level) => framebufferTextureO((uint)target, (uint)attachment, texture, level);
+        public static void DrawBuffers(DrawBufferMode[] buffers)
+        {
+            uint* bufs = stackalloc uint[buffers.Length];
+            for (int i = buffers.Length - 1; i >= 0; --i)
+            {
+                bufs[i] = (uint)buffers[i];
+            }
+
+            drawBuffersO(buffers.Length, bufs);
+        }
+
+        public static void DeleteFramebuffer(uint b) => deleteFramebuffersO(1, &b);
+        public static void DeleteFramebuffers(Span<uint> buffers)
+        {
+            fixed (uint* ui = buffers)
+            {
+                deleteFramebuffersO(buffers.Length, ui);
+            }
+        }
+
+        public static void ColorMask(bool r, bool g, bool b, bool a) => colorMaskO(r, g, b, a);
+
+        public delegate void DebugProcCallback(DebugMessageSource source, DebugMessageType type, uint id, DebugMessageSeverity severity, int length, IntPtr message, IntPtr userParam);
+        public static void DebugMessageCallback(IntPtr proc, IntPtr userParam) => debugMessageCallbackO((void*)proc, (void*)userParam);
+        public static void TexBuffer(SizedInternalFormat internalformat, uint buffer) => texBufferO((uint)TextureTarget.Buffer, (uint)internalformat, buffer);
+        public static void VertexAttribDivisor(uint index, uint divisor) => vertexAttribDivisorO(index, divisor);
+        public static uint GenRenderbuffer()
+        {
+            uint r = 0;
+            genRenderbuffersO(1, &r);
+            return r;
+        }
+
+        public static ReadOnlySpan<uint> GenRenderbuffer(int n)
+        {
+            uint[] uints = new uint[n];
+            GCHandle gch = GCHandle.Alloc(uints, GCHandleType.Pinned);
+            genRenderbuffersO(n, (uint*)Marshal.UnsafeAddrOfPinnedArrayElement(uints, 0));
+            ReadOnlySpan<uint> buffers = new(uints);
+            gch.Free();
+            return buffers;
+        }
+
+        public static void BindRenderbuffer(uint rbo) => bindRenderbufferO(0x8D41, rbo);
+        public static void RenderbufferStorage(SizedInternalFormat internalFormat, int w, int h) => renderbufferStorageO(0x8D41, (uint)internalFormat, w, h);
+        public static void FramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, uint rbo) => framebufferRenderbufferO((uint)target, (uint)attachment, 0x8D41, rbo);
     }
 
     public enum UniformDataType
@@ -464,6 +535,9 @@
         BlendEnabled = 0x0BE2,
         BlendColor = 0x8005,
         NumExtensions = 0x821D,
+        Viewport = 0x0BA2,
+        MaxTextureSize = 0x0D33,
+        FramebufferBinding = 0x8CA6,
 
         // TODO properties starting from GL_BLEND_DST_ALPHA
 

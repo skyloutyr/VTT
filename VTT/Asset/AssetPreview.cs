@@ -5,6 +5,7 @@
     using System;
     using VTT.Asset.Glb;
     using VTT.GL;
+    using VTT.GL.Bindings;
 
     public class AssetPreview // Client-only
     {
@@ -59,7 +60,7 @@
             if (this.GLTex == null)
             {
                 Image<Rgba32> img = Image.Load<Rgba32>(this.Data);
-                Texture tex = new Texture(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D);
+                Texture tex = new Texture(TextureTarget.Texture2D);
                 tex.Bind();
                 tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                 tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
@@ -68,7 +69,7 @@
                     System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
                 }
 
-                tex.SetImage(img, OpenTK.Graphics.OpenGL.PixelInternalFormat.Rgba);
+                tex.SetImage(img, SizedInternalFormat.Rgba8);
                 tex.GenerateMipMaps();
                 img.Dispose();
                 this.Data = null;

@@ -1,16 +1,16 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System.Collections.Generic;
+    using System.Numerics;
 
     public class MatrixStack
     {
-        private readonly List<Matrix4> _matStack = new List<Matrix4>();
-        private Matrix4 _currentMat = Matrix4.Identity;
+        private readonly List<Matrix4x4> _matStack = new List<Matrix4x4>();
+        private Matrix4x4 _currentMat = Matrix4x4.Identity;
 
         public bool Reversed { get; set; }
 
-        public void Push(Matrix4 newMat)
+        public void Push(Matrix4x4 newMat)
         {
             if (this.Reversed)
             {
@@ -20,7 +20,7 @@
             else
             {
                 this._matStack.Add(this._currentMat);
-                this._currentMat = Matrix4.Mult(this._currentMat, newMat);
+                this._currentMat = Matrix4x4.Multiply(this._currentMat, newMat);
             }
         }
 
@@ -40,22 +40,22 @@
 
         public void Clear()
         {
-            this._currentMat = Matrix4.Identity;
+            this._currentMat = Matrix4x4.Identity;
             this._matStack.Clear();
         }
 
-        private Matrix4 IterativelyMulMat()
+        private Matrix4x4 IterativelyMulMat()
         {
-            Matrix4 ret = Matrix4.Identity;
+            Matrix4x4 ret = Matrix4x4.Identity;
             for (int i = this._matStack.Count - 1; i >= 0; i--)
             {
-                Matrix4 m = this._matStack[i];
-                ret = Matrix4.Mult(ret, m);
+                Matrix4x4 m = this._matStack[i];
+                ret = Matrix4x4.Multiply(ret, m);
             }
 
             return ret;
         }
 
-        public Matrix4 Current => this._currentMat;
+        public Matrix4x4 Current => this._currentMat;
     }
 }

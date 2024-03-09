@@ -14,6 +14,8 @@
         private GPUBuffer _ebo;
 
         public System.Numerics.Vector3[] simplifiedTriangles;
+        public BoneData[] boneData;
+
         public float[] areaSums;
 
         public int AmountToRender { get; set; }
@@ -60,7 +62,6 @@
             shader["mvp"].Set(cm * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
-                this.AnimationArmature.ResetAllBones();
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime);
                 Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
                 shader["is_animated"].Set(true);
@@ -116,6 +117,37 @@
             GL.DeleteVertexArray(this._vao);
             GL.DeleteBuffer(this._vbo);
             GL.DeleteBuffer(this._ebo);
+        }
+
+        public struct BoneData
+        {
+            public uint index0;
+            public uint index1;
+            public uint index2;
+            public uint index3;
+
+            public float weight1;
+            public float weight2;
+            public float weight3;
+            public float weight4;
+
+            public BoneData(Vector4 weights, Vector2 indices)
+            {
+                this.weight1 = weights.X;
+                this.weight2 = weights.Y;
+                this.weight3 = weights.Z;
+                this.weight4 = weights.W;
+
+                DecomposeSingle(indices.X, out this.index0, out this.index1);
+                DecomposeSingle(indices.Y, out this.index2, out this.index3);
+            }
+
+            private static void DecomposeSingle(in float f, out uint us1, out uint us2)
+            {
+                uint ui = VTTMath.SingleBitsToUInt32(f);
+                us1 = (ui >> 16);
+                us2 = (ui & ushort.MaxValue);
+            }
         }
     }
 }

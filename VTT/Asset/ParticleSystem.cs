@@ -878,6 +878,44 @@
                                     Vector3 rPt = (((1 - r1) * v1) + (r1 * (1 - r2) * v2) + (r2 * r1 * v3));
                                     if (this.Container.UseContainerOrientation)
                                     {
+                                        if (a.Model.GLMdl.IsAnimated && sMesh.IsAnimated && sMesh.boneData.Length > 0)
+                                        {
+                                            GlbAnimation anim = this.Container.Container.AnimationContainer.CurrentAnimation;
+                                            if (anim != null)
+                                            {
+                                                double time = this.Container.Container.AnimationContainer.GetTime(0);
+                                                GlbMesh.BoneData bd1 = sMesh.boneData[rIdx + 0];
+                                                GlbMesh.BoneData bd2 = sMesh.boneData[rIdx + 1];
+                                                GlbMesh.BoneData bd3 = sMesh.boneData[rIdx + 2];
+                                                float inf1 = 1 - r1;
+                                                float inf2 = r1 * (1 - r2);
+                                                float inf3 = r2 * r1;
+                                                GlbMesh.BoneData transformData;
+                                                if (inf1 > inf2 && inf1 > inf3)
+                                                {
+                                                    transformData = bd1;
+                                                }
+                                                else
+                                                {
+                                                    if (inf2 > inf3 && inf2 > inf1)
+                                                    {
+                                                        transformData = bd2;
+                                                    }
+                                                    else
+                                                    {
+                                                        transformData = bd3;
+                                                    }
+                                                }
+
+                                                Matrix4x4 m0 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index0].Transform * transformData.weight1;
+                                                Matrix4x4 m1 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index1].Transform * transformData.weight2;
+                                                Matrix4x4 m2 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index2].Transform * transformData.weight3;
+                                                Matrix4x4 m3 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index3].Transform * transformData.weight4;
+                                                Matrix4x4 mf = m0 + m1 + m2 + m3;
+                                                rPt = Vector4.Transform(new Vector4(rPt, 1.0f), mf).Xyz();
+                                            }
+                                        }
+
                                         rPt = Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
                                         rPt *= this.Container.Container.Scale;
                                     }

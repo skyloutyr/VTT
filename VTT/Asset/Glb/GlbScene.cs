@@ -615,6 +615,7 @@
                         }
 
                         List<Vector3> simplifiedTriangles = new List<Vector3>();
+                        List<GlbMesh.BoneData> simplifiedBones = new List<GlbMesh.BoneData>();
                         List<float> areaSums = new List<float>();
                         float areaSum = 0f;
                         for (int j = 0; j < indices.Length; j += 3)
@@ -637,9 +638,22 @@
                             }
 
                             areaSums.Add(areaSum);
+                            if (weightsList.Count > 0)
+                            {
+                                Vector4 ws0 = weightsList[index0];
+                                Vector4 ws1 = weightsList[index1];
+                                Vector4 ws2 = weightsList[index2];
+                                Vector2 inds0 = bones[index0];
+                                Vector2 inds1 = bones[index1];
+                                Vector2 inds2 = bones[index2];
+                                simplifiedBones.Add(new GlbMesh.BoneData(ws0, inds0));
+                                simplifiedBones.Add(new GlbMesh.BoneData(ws1, inds1));
+                                simplifiedBones.Add(new GlbMesh.BoneData(ws2, inds2));
+                            }
                         }
 
                         glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
+                        glbm.boneData = simplifiedBones.ToArray();
                         glbm.areaSums = areaSums.ToArray();
                         glbm.Bounds = new AABox(posMin, posMax); // Bounds generated from transformed positions
                         glbm.VertexBuffer = vBuffer;

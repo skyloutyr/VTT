@@ -480,6 +480,7 @@
                 this._lastWindowHeight = wh;
                 if (ww != 0 && wh != 0) // Don't save zero-size
                 {
+                    Client.Instance.Frontend.GameHandle.Size.ChangeWithoutNotify(new Size(ww, wh));
                     Client.Instance.Settings.Resolution = new Size(ww, wh); // Actually window size
                     Client.Instance.Settings.Save();
                 }
@@ -491,6 +492,7 @@
                 this._lastFramebufferHeight = fh;
                 if (fw != 0 && fh != 0)
                 {
+                    Client.Instance.Frontend.GameHandle.FramebufferSize.ChangeWithoutNotify(new Size(fw, fh));
                     this.Renderer.Resize(fw, fh);
                     this.GuiWrapper.Resize(fw, fh);
                 }

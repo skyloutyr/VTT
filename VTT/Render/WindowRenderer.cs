@@ -125,7 +125,7 @@
                 this.Container.GuiWrapper.NewFrame(time);
                 GL.BindFramebuffer(FramebufferTarget.All, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);
-                GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.Size.Value.Width, Client.Instance.Frontend.GameHandle.Size.Value.Height);
+                GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
 
                 this.MapRenderer.Render(m, time);
                 this.ObjectRenderer.Render(m, time);

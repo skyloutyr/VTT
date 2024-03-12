@@ -1,9 +1,9 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.IO;
+    using System.Numerics;
     using VTT.Render;
     using VTT.Util;
 
@@ -49,7 +49,7 @@
                 {
                     Vector3 v = this.Points[i];
                     Vector3 v1 = this.Points[i + 1];
-                    accum += (v1 - v).Length;
+                    accum += (v1 - v).Length();
                 }
 
                 return accum;

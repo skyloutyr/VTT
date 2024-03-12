@@ -1,18 +1,20 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Numerics;
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
-    using OGL = OpenTK.Graphics.OpenGL.GL;
+    using OGL = VTT.GL.Bindings.GL;
 
     public class DrawingRenderer
     {
@@ -31,7 +33,7 @@
 
         public void Init()
         {
-            this.Shader = OpenGLUtil.LoadShader("drawing", OpenTK.Graphics.OpenGL.ShaderType.VertexShader, OpenTK.Graphics.OpenGL.ShaderType.FragmentShader);
+            this.Shader = OpenGLUtil.LoadShader("drawing", ShaderType.Vertex, ShaderType.Fragment);
             this.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
             this.EraserSphere = OpenGLUtil.LoadModel("sphere_mediumres", VertexFormat.Pos);
         }
@@ -118,7 +120,7 @@
                 return true;
             }
 
-            bool gLmbDown = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left);
+            bool gLmbDown = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left);
             if (!this._lmbDown && gLmbDown)
             {
                 this._lmbDown = true;
@@ -145,7 +147,7 @@
                         Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                         if (cw.HasValue)
                         {
-                            float cDelta = (this._lastCursorWorld - cw.Value).Length;
+                            float cDelta = (this._lastCursorWorld - cw.Value).Length();
                             float acceptibleCDelta = this._editedDPC.Radius * 0.25f;
                             if (cDelta > acceptibleCDelta)
                             {
@@ -264,8 +266,8 @@
                 _ => int.MaxValue
             };
 
-            OGL.Enable(OpenTK.Graphics.OpenGL.EnableCap.CullFace);
-            OGL.CullFace(OpenTK.Graphics.OpenGL.CullFaceMode.Back);
+            OGL.Enable(Capability.CullFace);
+            OGL.CullFace(PolygonFaceMode.Back);
 
             this.Shader.Bind();
             this.Shader["projection"].Set(cam.Projection);
@@ -295,17 +297,17 @@
                 Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                 if (tHit.HasValue)
                 {
-                    Matrix4 model = Matrix4.CreateScale(this.CurrentRadius) * Matrix4.CreateTranslation(tHit.Value);
+                    Matrix4x4 model = Matrix4x4.CreateScale(this.CurrentRadius) * Matrix4x4.CreateTranslation(tHit.Value);
                     ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                     shader.Bind();
                     shader["view"].Set(cam.View);
                     shader["projection"].Set(cam.Projection);
                     shader["model"].Set(model);
                     shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
-                    OGL.Enable(OpenTK.Graphics.OpenGL.EnableCap.Blend);
-                    OGL.BlendFunc(OpenTK.Graphics.OpenGL.BlendingFactor.SrcAlpha, OpenTK.Graphics.OpenGL.BlendingFactor.OneMinusSrcAlpha);
+                    OGL.Enable(Capability.Blend);
+                    OGL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                     this.EraserSphere.Render();
-                    OGL.Disable(OpenTK.Graphics.OpenGL.EnableCap.Blend);
+                    OGL.Disable(Capability.Blend);
                 }
             }
 

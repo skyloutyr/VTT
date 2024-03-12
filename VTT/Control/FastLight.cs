@@ -1,7 +1,7 @@
 ﻿
 namespace VTT.Control
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using VTT.Util;
 
     public class FastLight : ISerializable
@@ -14,18 +14,18 @@ namespace VTT.Control
         public float Radius
         {
             get => this.Color.W;
-            set => this.Color = new Vector4(this.Color.Xyz, value);
+            set => this.Color = new Vector4(this.Color.Xyz(), value);
         }
 
         public Vector3 LightColor
         {
-            get => this.Color.Xyz;
+            get => this.Color.Xyz();
             set => this.Color = new Vector4(value, this.Color.W);
         }
 
         public Vector3 Translation
         {
-            get => this.Offset.Xyz;
+            get => this.Offset.Xyz();
             set => this.Offset = new Vector4(value, this.Offset.W);
         }
 

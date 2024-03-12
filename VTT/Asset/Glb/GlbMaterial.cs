@@ -1,11 +1,11 @@
 ﻿namespace VTT.Asset.Glb
 {
     using glTFLoader.Schema;
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
+    using System.Numerics;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.LightShadow;
 
@@ -50,7 +50,7 @@
         {
             if (SunShadowRenderer.ShadowPass)
             {
-                GL.Disable(EnableCap.CullFace);
+                GL.Disable(Capability.CullFace);
                 return;
             }
             /* Material data:
@@ -94,26 +94,26 @@
 
             shader["material_index"].Set(this.Index);
 
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             this.BaseColorTexture.Bind();
 
-            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.ActiveTexture(1);
             this.NormalTexture.Bind();
 
-            GL.ActiveTexture(TextureUnit.Texture2);
+            GL.ActiveTexture(2);
             this.EmissionTexture.Bind();
 
-            GL.ActiveTexture(TextureUnit.Texture3);
+            GL.ActiveTexture(3);
             this.OcclusionMetallicRoughnessTexture.Bind();
 
             if (this.CullFace)
             {
-                GL.Enable(EnableCap.CullFace);
-                GL.CullFace(CullFaceMode.Back);
+                GL.Enable(Capability.CullFace);
+                GL.CullFace(PolygonFaceMode.Back);
             }
             else
             {
-                GL.Disable(EnableCap.CullFace);
+                GL.Disable(Capability.CullFace);
             }
         }
 

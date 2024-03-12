@@ -1,6 +1,5 @@
 ﻿namespace VTT.Sound
 {
-    using OpenTK.Audio.OpenAL;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -9,14 +8,15 @@
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Sound.Bindings;
     using VTT.Util;
 
     public class SoundManager
     {
         public bool IsAvailable { get; set; }
 
-        private ALDevice _device;
-        private ALContext _ctx;
+        private IntPtr _device;
+        private IntPtr _ctx;
 
         public ALSoundContainer ChatMessage { get; set; }
         public ALSoundContainer YourTurn { get; set; }
@@ -39,8 +39,8 @@
 
             try
             {
-                List<string> devices = ALC.GetString(AlcGetStringList.DeviceSpecifier);
-                string deviceName = ALC.GetString(ALDevice.Null, AlcGetString.DefaultDeviceSpecifier);
+                List<string> devices = ALC.GetDeviceSpecifier();
+                string deviceName = ALC.GetString(IntPtr.Zero, ALCString.DefaultDeviceSpecifier);
                 foreach (string d in devices)
                 {
                     if (d.Contains("OpenAL Soft")) // find AL soft
@@ -50,16 +50,16 @@
                 }
 
                 this._device = ALC.OpenDevice(deviceName);
-                this._ctx = ALC.CreateContext(this._device, (int[])null);
+                this._ctx = ALC.CreateContext(this._device);
                 ALC.MakeContextCurrent(this._ctx);
                 ALError ale = AL.GetError();
                 if (ale != ALError.NoError)
                 {
-                    Client.Instance.Logger.Log(LogLevel.Error, $"OpenAL creation error - {AL.GetErrorString(ale)}");
+                    Client.Instance.Logger.Log(LogLevel.Error, $"OpenAL creation error - {ale}");
                     IsAvailable = false;
                     try
                     {
-                        ALC.MakeContextCurrent(ALContext.Null);
+                        ALC.MakeContextCurrent(IntPtr.Zero);
                         ALC.DestroyContext(this._ctx);
                         ALC.CloseDevice(this._device);
                         return;
@@ -70,9 +70,7 @@
                     }
                 }
 
-                int major = ALC.GetInteger(this._device, AlcGetInteger.MajorVersion);
-                int minor = ALC.GetInteger(this._device, AlcGetInteger.MinorVersion);
-                Client.Instance.Logger.Log(LogLevel.Info, $"OpenAL {major}.{minor} initialized.");
+                Client.Instance.Logger.Log(LogLevel.Info, $"OpenAL {ALC.GetVersion(this._device)} initialized.");
                 this.IsAvailable = true;
                 this.LoadSounds();
             }
@@ -202,7 +200,7 @@
                 return;
             }
 
-            AL.Source(src, ALSourcef.Gain, this.AdjustVolumeForNonLinearity(this.GetCategoryVolume(cat)));
+            AL.Source((uint)src, SourceFloatProperty.Gain, this.AdjustVolumeForNonLinearity(this.GetCategoryVolume(cat)));
         }
 
         public float AdjustVolumeForNonLinearity(float vIn) => vIn < 0.0001f ? 0 : MathF.Pow(100, vIn - 1.0f);
@@ -244,15 +242,15 @@
                 for (int i = this.ActiveSources.Count - 1; i >= 0; i--)
                 {
                     (SoundCategory, int) src = this.ActiveSources[i];
-                    ALSourceState state = AL.GetSourceState(src.Item2);
+                    SourceState state = AL.GetSourceState((uint)src.Item2);
                     if (this._assetsClear)
                     {
-                        AL.SourceStop(src.Item2);
+                        AL.SourceStop((uint)src.Item2);
                     }
 
-                    if (state == ALSourceState.Stopped || this._assetsClear)
+                    if (state == SourceState.Stopped || this._assetsClear)
                     {
-                        AL.DeleteSource(src.Item2);
+                        AL.DeleteSource((uint)src.Item2);
                         this.ActiveSources.RemoveAt(i);
                     }
                     else
@@ -367,7 +365,7 @@
                     {
                         this.ActiveSources.Add((sc.Item1, src));
                         this.SetSourceVolume(sc.Item1, src);
-                        AL.SourcePlay(src);
+                        AL.SourcePlay((uint)src);
                     }
                 }
 

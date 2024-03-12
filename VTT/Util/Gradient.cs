@@ -1,10 +1,10 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
 
     public class Gradient<T> : IDictionary<float, T>
     {

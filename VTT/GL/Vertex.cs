@@ -1,10 +1,10 @@
 ﻿namespace VTT.GL
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
 
     public enum VertexElementType
     {
@@ -58,7 +58,7 @@
         public static VertexFormatElement ElementVec2 { get; } = new VertexFormatElement(VertexElementType.Vec2, o => new float[] { ((Vector2)o).X, ((Vector2)o).Y }, v => v.PushElement(ElementType.Vec2), AppenderVec2, 2);
         public static VertexFormatElement ElementVec3 { get; } = new VertexFormatElement(VertexElementType.Vec3, o => new float[] { ((Vector3)o).X, ((Vector3)o).Y, ((Vector3)o).Z }, v => v.PushElement(ElementType.Vec3), AppenderVec3, 3);
         public static VertexFormatElement ElementVec4 { get; } = new VertexFormatElement(VertexElementType.Vec4, o => new float[] { ((Vector4)o).X, ((Vector4)o).Y, ((Vector4)o).Z, ((Vector4)o).W }, v => v.PushElement(ElementType.Vec4), AppenderVec4, 4);
-        public static VertexFormatElement ElementMat4 { get; } = new VertexFormatElement(VertexElementType.Mat4, o => new float[] { ((Matrix4)o).M11, ((Matrix4)o).M12, ((Matrix4)o).M13, ((Matrix4)o).M14, ((Matrix4)o).M21, ((Matrix4)o).M22, ((Matrix4)o).M23, ((Matrix4)o).M24, ((Matrix4)o).M31, ((Matrix4)o).M32, ((Matrix4)o).M33, ((Matrix4)o).M34, ((Matrix4)o).M41, ((Matrix4)o).M42, ((Matrix4)o).M43, ((Matrix4)o).M44 }, v => v.PushElement(ElementType.Mat4), AppenderMat4, 16);
+        public static VertexFormatElement ElementMat4 { get; } = new VertexFormatElement(VertexElementType.Mat4, o => new float[] { ((Matrix4x4)o).M11, ((Matrix4x4)o).M12, ((Matrix4x4)o).M13, ((Matrix4x4)o).M14, ((Matrix4x4)o).M21, ((Matrix4x4)o).M22, ((Matrix4x4)o).M23, ((Matrix4x4)o).M24, ((Matrix4x4)o).M31, ((Matrix4x4)o).M32, ((Matrix4x4)o).M33, ((Matrix4x4)o).M34, ((Matrix4x4)o).M41, ((Matrix4x4)o).M42, ((Matrix4x4)o).M43, ((Matrix4x4)o).M44 }, v => v.PushElement(ElementType.Mat4), AppenderMat4, 16);
 
         public static VertexFormat Pos { get; } = new VertexFormat(new[] { VertexData.Position }, ElementVec3);
         public static VertexFormat AnimatedPos { get; } = new VertexFormat(new[] { VertexData.Position, VertexData.BoneIndexMatrix, VertexData.BoneWeightMatrix }, ElementVec3, ElementMat4, ElementMat4);
@@ -182,7 +182,7 @@
 
         private static void AppenderMat4(object data, float[] array, ref int index)
         {
-            Matrix4 mat = (Matrix4)data;
+            Matrix4x4 mat = (Matrix4x4)data;
             array[index++] = mat.M11;
             array[index++] = mat.M12;
             array[index++] = mat.M13;

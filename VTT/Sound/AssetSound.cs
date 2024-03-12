@@ -1,9 +1,9 @@
 ﻿namespace VTT.Sound
 {
-    using OpenTK.Audio.OpenAL;
     using System;
     using VTT.Asset;
     using VTT.Network;
+    using VTT.Sound.Bindings;
 
     public class AssetSound
     {
@@ -60,7 +60,7 @@
                 vCat *= Client.Instance.CurrentMap?.AmbientSoundVolume ?? 1.0f;
             }
 
-            AL.Source(this._srcId, ALSourcef.Gain, this.Container.AdjustVolumeForNonLinearity(vCat * this._volumeBase));
+            AL.Source((uint)this._srcId, SourceFloatProperty.Gain, this.Container.AdjustVolumeForNonLinearity(vCat * this._volumeBase));
         }
 
         public void Update()
@@ -76,7 +76,7 @@
                 {
                     this._srcId = soundContainer.Instantiate();
                     this.Container.SetSourceVolume(this.Category, this._srcId);
-                    AL.SourcePlay(this._srcId);
+                    AL.SourcePlay((uint)this._srcId);
                     this.Started = true;
                     this.DataType = AssetDataType.Full;
                     Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Sound {this.ID} is RAW, playing.");
@@ -137,12 +137,12 @@
                 }
             }
 
-            if (AL.IsSource(this._srcId))
+            if (AL.IsSource((uint)this._srcId))
             {
                 this.Buffer?.Update(this);
-                ALSourceState alss = AL.GetSourceState(this._srcId);
+                SourceState alss = AL.GetSourceState((uint)this._srcId);
 
-                if (alss == ALSourceState.Playing)
+                if (alss == SourceState.Playing)
                 {
                     if (this._volumeChanged && this.Started)
                     {
@@ -151,14 +151,14 @@
                     }
                 }
 
-                if (alss == ALSourceState.Stopped)
+                if (alss == SourceState.Stopped)
                 {
                     this.Stopped = true;
-                    AL.DeleteSource(this._srcId);
+                    AL.DeleteSource((uint)this._srcId);
                     this._srcId = -1;
                 }
 
-                AL.GetSource(this._srcId, ALSourcef.SecOffset, out float vS);
+                float vS = AL.GetSource((uint)this._srcId, SourceFloatProperty.SecOffset);
                 float delta = vS - this._lastSoundVS;
                 if (delta > 0)
                 {
@@ -186,14 +186,14 @@
             if (this._srcId != -1)
             {
                 this.Stopped = true;
-                if (AL.IsSource(this._srcId))
+                if (AL.IsSource((uint)this._srcId))
                 {
-                    if (AL.GetSourceState(this._srcId) == ALSourceState.Playing)
+                    if (AL.GetSourceState((uint)this._srcId) == SourceState.Playing)
                     {
-                        AL.SourceStop(this._srcId);
+                        AL.SourceStop((uint)this._srcId);
                     }
 
-                    AL.DeleteSource(this._srcId);
+                    AL.DeleteSource((uint)this._srcId);
                 }
             }
 

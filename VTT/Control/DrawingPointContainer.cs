@@ -1,12 +1,13 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using VTT.Asset.Obj;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Util;
-    using OGL = OpenTK.Graphics.OpenGL.GL;
+    using OGL = VTT.GL.Bindings.GL;
 
     public class DrawingPointContainer : ISerializable
     {
@@ -22,7 +23,7 @@
         private GPUBuffer _vbo;
         private GPUBuffer _instancedVBO;
         private GPUBuffer _instancedEBO;
-        private int _vao;
+        private uint _vao;
 
         private float[] _modelRawPositions;
         private uint[] _modelRawIndices;
@@ -102,19 +103,19 @@
             this.SetupInitialModelData();
             this._vao = OGL.GenVertexArray();
             OGL.BindVertexArray(this._vao);
-            this._vbo = new GPUBuffer(OpenTK.Graphics.OpenGL.BufferTarget.ArrayBuffer);
+            this._vbo = new GPUBuffer(BufferTarget.Array);
             this._vbo.Bind();
             this._vbo.SetData(this._modelRawPositions);
-            this._instancedEBO = new GPUBuffer(OpenTK.Graphics.OpenGL.BufferTarget.ElementArrayBuffer);
+            this._instancedEBO = new GPUBuffer(BufferTarget.ElementArray);
             this._instancedEBO.Bind();
             this._instancedEBO.SetData(this._modelRawIndices);
             OGL.EnableVertexAttribArray(0);
-            OGL.VertexAttribPointer(0, 3, OpenTK.Graphics.OpenGL.VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            OGL.VertexAttribPointer(0, 3, VertexAttributeType.Float, false, 3 * sizeof(float), 0);
 
             OGL.EnableVertexAttribArray(1);
-            this._instancedVBO = new GPUBuffer(OpenTK.Graphics.OpenGL.BufferTarget.ArrayBuffer);
+            this._instancedVBO = new GPUBuffer(BufferTarget.Array);
             this._instancedVBO.Bind();
-            OGL.VertexAttribPointer(1, 3, OpenTK.Graphics.OpenGL.VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            OGL.VertexAttribPointer(1, 3, VertexAttributeType.Float, false, 3 * sizeof(float), 0);
             OGL.VertexAttribDivisor(1, 1);
             this._haveBuffers = true;
         }
@@ -143,7 +144,7 @@
             if (this._numInstances > 0)
             {
                 OGL.BindVertexArray(this._vao);
-                OGL.DrawElementsInstanced(OpenTK.Graphics.OpenGL.PrimitiveType.Triangles, this._modelRawIndices.Length, OpenTK.Graphics.OpenGL.DrawElementsType.UnsignedInt, IntPtr.Zero, this._numInstances);
+                OGL.DrawElementsInstanced(PrimitiveType.Triangles, this._modelRawIndices.Length, ElementsType.UnsignedInt, IntPtr.Zero, this._numInstances);
             }
 
             return this._numInstances;

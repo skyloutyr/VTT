@@ -1,13 +1,15 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
     using System;
+    using System.Numerics;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.Gui;
     using VTT.Render.LightShadow;
     using VTT.Util;
+    using GL = VTT.GL.Bindings.GL;
 
     public class WindowRenderer
     {
@@ -49,25 +51,25 @@
             this.ParticleRenderer.Create();
             this.Pipeline = new UniversalPipeline();
             this.Pipeline.Create();
-            int[] lMax = new int[1];
+            int lMax = 0;
             OpenGLUtil.DetermineCompressedFormats();
-            GL.GetInteger(GetPName.MaxTextureSize, lMax);
-            Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax[0];
+            lMax = GL.GetInteger(GLPropertyName.MaxTextureSize)[0];
+            Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax;
             this.White = OpenGLUtil.LoadFromOnePixel(new SixLabors.ImageSharp.PixelFormats.Rgba32(1, 1, 1, 1f));
             this.Black = OpenGLUtil.LoadFromOnePixel(new SixLabors.ImageSharp.PixelFormats.Rgba32(0, 0, 0, 1f));
         }
 
         private int _mapTrackerUpdateCounter;
         private bool _windowNeedsDrawing;
-        public void Update(double time)
+        public void Update()
         {
             Map m = Client.Instance.CurrentMap;
-            this.ObjectRenderer?.Update(m, time);
+            this.ObjectRenderer?.Update(m);
             this.SelectionManager?.Update();
-            this.MapRenderer?.Update(m, time);
-            this.RulerRenderer?.Update(time);
-            this.GuiRenderer?.MainMenuRenderer?.Update(time);
-            this.ParticleRenderer?.CurrentlyEditedSystemInstance?.Update(new OpenTK.Mathematics.Vector3(5, 5, 5));
+            this.MapRenderer?.Update(m);
+            this.RulerRenderer?.Update();
+            this.GuiRenderer?.MainMenuRenderer?.Update();
+            this.ParticleRenderer?.CurrentlyEditedSystemInstance?.Update(new Vector3(5, 5, 5));
             this.ParticleRenderer?.CurrentlyEditedSystemInstance?.UpdateBufferState();
             if (m != null)
             {
@@ -84,7 +86,7 @@
                         MapObject mo = m.Objects[i];
                         if (!mo.IsRemoved)
                         {
-                            mo.Update(time);
+                            mo.Update();
                         }
                         else
                         {
@@ -112,18 +114,18 @@
             if (this._windowNeedsDrawing)
             {
                 Map m = Client.Instance.CurrentMap;
-                GL.ClearColor(this.SkyRenderer.GetSkyColor().ToGLColor());
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+                GL.ClearColor(this.SkyRenderer.GetSkyColor().Vec4());
+                GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth | ClearBufferMask.Stencil);
                 if (Client.Instance.Settings.MSAA == ClientSettings.MSAAMode.Disabled)
                 {
-                    GL.Disable(EnableCap.Multisample);
+                    GL.Disable(Capability.Multisample);
                 }
 
                 this.Container.GuiWrapper.BeforeFrame();
                 this.Container.GuiWrapper.NewFrame(time);
-                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                GL.BindFramebuffer(FramebufferTarget.All, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);
-                GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.Size.X, Client.Instance.Frontend.GameHandle.Size.Y);
+                GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
 
                 this.MapRenderer.Render(m, time);
                 this.ObjectRenderer.Render(m, time);

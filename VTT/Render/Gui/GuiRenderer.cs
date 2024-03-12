@@ -2,13 +2,14 @@
 {
     using ImGuiNET;
     using Newtonsoft.Json.Linq;
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Render.MainMenu;
@@ -108,18 +109,19 @@
 
         private int _lastLogNum;
         private string _newFolderNameString = string.Empty;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "To be reworked - directory movement pending")]
         private AssetDirectory _contextDir;
         private bool _mouseOverAssets;
         private bool _lmbDown;
 
         private int _editedBarIndex;
         private MapObject _editedMapObject;
-        private System.Numerics.Vector4 _editedBarColor;
+        private Vector4 _editedBarColor;
 
-        private System.Numerics.Vector4 _editedMapColor;
+        private Vector4 _editedMapColor;
         private int _editedMapColorIndex;
 
-        private System.Numerics.Vector4 _editedTeamColor;
+        private Vector4 _editedTeamColor;
         private string _editedTeamName;
 
         private AssetRef _draggedRef;
@@ -132,7 +134,7 @@
         private Guid _deletedMapId;
         private string _chatString = string.Empty;
 
-        private System.Numerics.Vector2 _chatClientRect = default;
+        private Vector2 _chatClientRect = default;
 
         private bool _needsRefocusChat = false;
 
@@ -176,16 +178,16 @@
 
         #region Draw Consts
 
-        private static readonly System.Numerics.Vector2 Vec12x12 = new System.Numerics.Vector2(12, 12);
-        private static readonly System.Numerics.Vector2 Vec24x24 = new System.Numerics.Vector2(24, 24);
-        private static readonly System.Numerics.Vector2 Vec32x32 = new System.Numerics.Vector2(32, 32);
-        private static readonly System.Numerics.Vector2 Vec56x0 = new(56, 0);
-        private static readonly System.Numerics.Vector2 Vec56x70 = new(56, 70);
-        private static readonly System.Numerics.Vector2 Vec320x70 = new(320, 70);
-        private static readonly System.Numerics.Vector2 Vec48x60 = new System.Numerics.Vector2(48, 60);
-        private static readonly System.Numerics.Vector2 Vec48x36 = new System.Numerics.Vector2(48, 36);
+        private static readonly Vector2 Vec12x12 = new Vector2(12, 12);
+        private static readonly Vector2 Vec24x24 = new Vector2(24, 24);
+        private static readonly Vector2 Vec32x32 = new Vector2(32, 32);
+        private static readonly Vector2 Vec56x0 = new(56, 0);
+        private static readonly Vector2 Vec56x70 = new(56, 70);
+        private static readonly Vector2 Vec320x70 = new(320, 70);
+        private static readonly Vector2 Vec48x60 = new Vector2(48, 60);
+        private static readonly Vector2 Vec48x36 = new Vector2(48, 36);
 
-        private static readonly System.Numerics.Vector4 ImColBlack = new System.Numerics.Vector4(0, 0, 0, 1);
+        private static readonly Vector4 ImColBlack = new Vector4(0, 0, 0, 1);
 
         #endregion
 
@@ -378,13 +380,13 @@
                             Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace((ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start) + Vector3.UnitZ);
                             if (screen.Z >= 0)
                             {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
                                 string text = len.ToString("0.00");
-                                System.Numerics.Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
-                                System.Numerics.Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
-                                System.Numerics.Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
+                                Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
+                                Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
+                                Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
                                 float maxW = MathF.Max(tLen.X, MathF.Max(tLen2.X, tLen3.X));
-                                ImGui.SetNextWindowPos(screen.Xy.SystemVector() - (new System.Numerics.Vector2(maxW, tLen.Y) / 2));
+                                ImGui.SetNextWindowPos(screen.Xy() - (new Vector2(maxW, tLen.Y) / 2));
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
                                 if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
                                 {
@@ -437,10 +439,10 @@
                             Vector3 halfScreen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half);
                             if (halfScreen.Z >= 0)
                             {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length * cMap.GridUnit;
+                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
                                 string text = len.ToString("0.00");
                                 var tLen = ImGuiHelper.CalcTextSize(text);
-                                ImGui.SetNextWindowPos(halfScreen.Xy.SystemVector() - (tLen / 2));
+                                ImGui.SetNextWindowPos(halfScreen.Xy() - (tLen / 2));
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
                                 if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
                                 {
@@ -467,7 +469,7 @@
             }
 
             // Copy-paste
-            if (!ImGui.GetIO().WantCaptureMouse && !ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl))
+            if (!ImGui.GetIO().WantCaptureMouse && !ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsAnyControlDown())
             {
                 if (Client.Instance.IsAdmin)
                 {
@@ -595,7 +597,7 @@
             }
 
             bool kOpen = true;
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 400));
+            ImGui.SetNextWindowSize(new Vector2(300, 400));
             if (ImGui.BeginPopupModal("Inspect Window", ref kOpen, ImGuiWindowFlags.NoDecoration))
             {
                 if (this._inspectedObject != null)
@@ -603,28 +605,28 @@
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(this._inspectedObject.AssetID, out AssetPreview ap);
                     if (status == AssetStatus.Return && ap != null)
                     {
-                        System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
-                        System.Numerics.Vector2 screenPos = ImGui.GetCursorScreenPos();
+                        Vector2 winSize = ImGui.GetWindowSize();
+                        Vector2 screenPos = ImGui.GetCursorScreenPos();
 
-                        System.Numerics.Vector4 winBack = *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg);
-                        System.Numerics.Vector4 winBorder = *ImGui.GetStyleColorVec4(ImGuiCol.Border);
+                        Vector4 winBack = *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg);
+                        Vector4 winBorder = *ImGui.GetStyleColorVec4(ImGuiCol.Border);
 
                         ImDrawListPtr drawList = ImGui.GetForegroundDrawList();
-                        screenPos -= new System.Numerics.Vector2((-winSize.X / 2) + 52, 32);
+                        screenPos -= new Vector2((-winSize.X / 2) + 52, 32);
                         drawList.AddQuadFilled(
                             screenPos,
-                            screenPos + new System.Numerics.Vector2(96, 0),
-                            screenPos + new System.Numerics.Vector2(96, 96),
-                            screenPos + new System.Numerics.Vector2(0, 96),
-                            Extensions.FromVec4(winBack.GLVector()).Abgr()
+                            screenPos + new Vector2(96, 0),
+                            screenPos + new Vector2(96, 96),
+                            screenPos + new Vector2(0, 96),
+                            Extensions.FromVec4(winBack).Abgr()
                         );
 
                         drawList.AddQuad(
                            screenPos,
-                           screenPos + new System.Numerics.Vector2(96, 0),
-                           screenPos + new System.Numerics.Vector2(96, 96),
-                           screenPos + new System.Numerics.Vector2(0, 96),
-                           Extensions.FromVec4(winBorder.GLVector()).Abgr()
+                           screenPos + new Vector2(96, 0),
+                           screenPos + new Vector2(96, 96),
+                           screenPos + new Vector2(0, 96),
+                           Extensions.FromVec4(winBorder).Abgr()
                         );
 
                         Texture glTex = ap.GetGLTexture();
@@ -639,15 +641,15 @@
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;
                                 float tE = tS + (frame.Height / tH);
-                                drawList.AddImage(glTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), new System.Numerics.Vector2(sS, tS), new System.Numerics.Vector2(sE, tE), this._inspectedObject.TintColor.Abgr());
+                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), new Vector2(sS, tS), new Vector2(sE, tE), this._inspectedObject.TintColor.Abgr());
                             }
                             else
                             {
-                                drawList.AddImage(glTex, screenPos, screenPos + new System.Numerics.Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
                             }
                         }
 
-                        System.Numerics.Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
+                        Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
                         ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
                         ImGui.SetCursorPosY(72);
 
@@ -661,7 +663,7 @@
                         ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
                         ImGui.PopStyleColor();
 
-                        ImGui.BeginChild("ObjectMouseOverDesc", new System.Numerics.Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
+                        ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
                         if (this._inspectedObject.UseMarkdownForDescription)
                         {
                             try
@@ -696,7 +698,7 @@
 
                         ImGui.EndChild();
 
-                        if (ImGui.Button(close + "###Close", new System.Numerics.Vector2(284, 36)))
+                        if (ImGui.Button(close + "###Close", new Vector2(284, 36)))
                         {
                             ImGui.CloseCurrentPopup();
                         }
@@ -718,15 +720,14 @@
 
         private void LoadStatuses()
         {
-            int[] textureSize = new int[1];
-            OpenTK.Graphics.OpenGL.GL.GetInteger(OpenTK.Graphics.OpenGL.GetPName.MaxTextureSize, textureSize);
-            OpenTK.Graphics.OpenGL.PixelInternalFormat f = OpenTK.Graphics.OpenGL.PixelInternalFormat.R8;
-            this.StatusAtlas = textureSize[0] >= 4096 ? OpenGLUtil.LoadUIImage("atlas", f) : OpenGLUtil.LoadUIImage("atlas_low", f);
-            OpenTK.Graphics.OpenGL.GL.TexParameter(OpenTK.Graphics.OpenGL.TextureTarget.Texture2D, OpenTK.Graphics.OpenGL.TextureParameterName.TextureSwizzleRgba, new int[] {
-                (int)OpenTK.Graphics.OpenGL.Version10.Red,
-                (int)OpenTK.Graphics.OpenGL.Version10.Red,
-                (int)OpenTK.Graphics.OpenGL.Version10.Red,
-                (int)OpenTK.Graphics.OpenGL.Version10.One
+            int textureSize = GL.GetInteger(GLPropertyName.MaxTextureSize)[0];
+            SizedInternalFormat f = SizedInternalFormat.Red8;
+            this.StatusAtlas = textureSize >= 4096 ? OpenGLUtil.LoadUIImage("atlas", f) : OpenGLUtil.LoadUIImage("atlas_low", f);
+            GL.TexParameter(TextureTarget.Texture2D, TextureProperty.SwizzleRgba, new TextureSwizzleMask[] {
+                TextureSwizzleMask.Red,
+                TextureSwizzleMask.Red,
+                TextureSwizzleMask.Red,
+                TextureSwizzleMask.One
             });
 
             JObject o = JObject.Parse(IOVTT.ResourceToString("VTT.Embed.atlas_info.json"));

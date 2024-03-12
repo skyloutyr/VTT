@@ -1,13 +1,14 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.GL;
+    using VTT.GL.Bindings;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -44,8 +45,8 @@
         public void Create()
         {
             this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer, BufferUsageHint.StreamDraw);
-            this._ebo = new GPUBuffer(BufferTarget.ElementArrayBuffer, BufferUsageHint.StreamDraw);
+            this._vbo = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
+            this._ebo = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.StreamDraw);
             this._vao.Bind();
             this._vbo.Bind();
             this._data = new float[3];
@@ -110,7 +111,7 @@
             this.FOWTexture.Bind();
             this.FOWTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.FOWTexture.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            this.FOWTexture.SetImage(img, PixelInternalFormat.Rgba16ui, 0, PixelType.UnsignedShort);
+            this.FOWTexture.SetImage(img, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
             this.FOWWorldSize = new Vector2(1, 1);
             this.FOWOffset = new Vector2(-0.5f, -0.5f);
             this.HasFOW = false;
@@ -126,14 +127,14 @@
             if (fowSize.Equals(this.FOWWorldSize)) // Update
             {
                 this.FOWTexture.Bind();
-                this.FOWTexture.SetImage(texture, PixelInternalFormat.Rgba16ui, 0, PixelType.UnsignedShort);
+                this.FOWTexture.SetImage(texture, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
             }
             else
             {
                 this.FOWTexture?.Dispose();
                 this.FOWTexture = new Texture(TextureTarget.Texture2D);
                 this.FOWTexture.Bind();
-                this.FOWTexture.SetImage(texture, PixelInternalFormat.Rgba16ui, 0, PixelType.UnsignedShort);
+                this.FOWTexture.SetImage(texture, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
                 this.FOWTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
                 this.FOWTexture.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
                 this.FOWWorldSize = fowSize;
@@ -311,7 +312,7 @@
 
         public void Uniform(ShaderProgram shader)
         {
-            GL.ActiveTexture(TextureUnit.Texture15);
+            GL.ActiveTexture(15);
             this.FOWTexture.Bind();
             shader["fow_texture"].Set(15);
             shader["fow_offset"].Set(this.FOWOffset);
@@ -321,7 +322,7 @@
 
         public void UniformBlank(ShaderProgram shader)
         {
-            GL.ActiveTexture(TextureUnit.Texture15);
+            GL.ActiveTexture(15);
             Client.Instance.Frontend.Renderer.White.Bind();
             shader["fow_texture"].Set(15);
             shader["fow_offset"].Set(Vector2.Zero);
@@ -356,7 +357,7 @@
                 return;
             }
 
-            if (!this._lmbPressed && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left) && !ImGuiNET.ImGui.GetIO().WantCaptureMouse)
+            if (!this._lmbPressed && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !ImGuiNET.ImGui.GetIO().WantCaptureMouse)
             {
                 this._lmbPressed = true;
                 if (this.PaintMode == SelectionMode.Box)
@@ -398,7 +399,7 @@
                             if (this.FowSelectionPoints.Count >= 3)
                             {
                                 List<Vector2> pos = new List<Vector2>();
-                                Triangulate.Process(this.FowSelectionPoints.Select(v => v.Xy).ToArray(), pos, out this._couldTriangulate);
+                                Triangulate.Process(this.FowSelectionPoints.Select(v => v.Xy()).ToArray(), pos, out this._couldTriangulate);
                                 List<Vector3> v3p = new List<Vector3>(pos.Select(v => new Vector3(v.X, v.Y, 0.0f)));
                                 this._indicesList.Clear();
                                 for (int i = 0; i < v3p.Count; ++i)
@@ -434,9 +435,9 @@
                     this._indicesList[5] = 3;
                     this.UploadData(this.FowSelectionPoints, this._indicesList);
 
-                    GL.Disable(EnableCap.DepthTest);
-                    GL.Disable(EnableCap.CullFace);
-                    GL.Enable(EnableCap.Blend);
+                    GL.Disable(Capability.DepthTest);
+                    GL.Disable(Capability.CullFace);
+                    GL.Enable(Capability.Blend);
                     GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
                     ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
@@ -444,14 +445,14 @@
                     shader.Bind();
                     shader["view"].Set(cam.View);
                     shader["projection"].Set(cam.Projection);
-                    shader["model"].Set(Matrix4.Identity);
+                    shader["model"].Set(Matrix4x4.Identity);
                     shader["u_color"].Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
                     this._vao.Bind();
-                    GL.DrawElements(PrimitiveType.Triangles, this._numVertices, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                    GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
 
-                    GL.Disable(EnableCap.Blend);
-                    GL.Enable(EnableCap.CullFace);
-                    GL.Enable(EnableCap.DepthTest);
+                    GL.Disable(Capability.Blend);
+                    GL.Enable(Capability.CullFace);
+                    GL.Enable(Capability.DepthTest);
                 }
             }
 
@@ -466,9 +467,9 @@
                 {
                     if (this.FowSelectionPoints.Count >= 3)
                     {
-                        GL.Disable(EnableCap.DepthTest);
-                        GL.Disable(EnableCap.CullFace);
-                        GL.Enable(EnableCap.Blend);
+                        GL.Disable(Capability.DepthTest);
+                        GL.Disable(Capability.CullFace);
+                        GL.Enable(Capability.Blend);
                         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
                         ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
@@ -476,14 +477,14 @@
                         shader.Bind();
                         shader["view"].Set(cam.View);
                         shader["projection"].Set(cam.Projection);
-                        shader["model"].Set(Matrix4.Identity);
+                        shader["model"].Set(Matrix4x4.Identity);
                         shader["u_color"].Set((this._couldTriangulate ? Color.RoyalBlue.Vec4() : Color.Crimson.Vec4()) * new Vector4(1, 1, 1, 0.35f));
                         this._vao.Bind();
 
-                        GL.DrawElements(PrimitiveType.Triangles, this._numVertices, DrawElementsType.UnsignedInt, IntPtr.Zero);
-                        GL.Disable(EnableCap.Blend);
-                        GL.Enable(EnableCap.CullFace);
-                        GL.Enable(EnableCap.DepthTest);
+                        GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.Disable(Capability.Blend);
+                        GL.Enable(Capability.CullFace);
+                        GL.Enable(Capability.DepthTest);
                     }
                 }
             }
@@ -495,9 +496,9 @@
                 {
                     this.UploadData(this._brushRenderData, this._brushRenderIndices);
 
-                    GL.Disable(EnableCap.DepthTest);
-                    GL.Disable(EnableCap.CullFace);
-                    GL.Enable(EnableCap.Blend);
+                    GL.Disable(Capability.DepthTest);
+                    GL.Disable(Capability.CullFace);
+                    GL.Enable(Capability.Blend);
                     GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
                     ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
@@ -505,14 +506,14 @@
                     shader.Bind();
                     shader["view"].Set(cam.View);
                     shader["projection"].Set(cam.Projection);
-                    shader["model"].Set(Matrix4.CreateScale(this.BrushSize) * Matrix4.CreateTranslation(v.Value));
+                    shader["model"].Set(Matrix4x4.CreateScale(this.BrushSize) * Matrix4x4.CreateTranslation(v.Value));
                     shader["u_color"].Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
                     this._vao.Bind();
-                    GL.DrawElements(PrimitiveType.TriangleFan, this._numVertices, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                    GL.DrawElements(PrimitiveType.TriangleFan, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
 
-                    GL.Disable(EnableCap.Blend);
-                    GL.Enable(EnableCap.CullFace);
-                    GL.Enable(EnableCap.DepthTest);
+                    GL.Disable(Capability.Blend);
+                    GL.Enable(Capability.CullFace);
+                    GL.Enable(Capability.DepthTest);
                 }
             }
 
@@ -522,7 +523,7 @@
                 if (v.HasValue)
                 {
                     Vector2 now = new Vector2(v.Value.X, v.Value.Y);
-                    if (!MathHelper.ApproximatelyEquivalent(now.X, this._brushLastXYZ.X, 1e-7f) || !MathHelper.ApproximatelyEquivalent(now.Y, this._brushLastXYZ.Y, 1e-7f))
+                    if (!ApproximatelyEquivalent(now.X, this._brushLastXYZ.X, 1e-7f) || !ApproximatelyEquivalent(now.Y, this._brushLastXYZ.Y, 1e-7f))
                     {
                         this._brushLastXYZ = now;
                         long unixNow = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -542,19 +543,19 @@
                 }
             }
 
-            if (this._lmbPressed && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left))
+            if (this._lmbPressed && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
             {
                 if (this._isDrawingBox)
                 {
                     bool action = this.CanvasMode == RevealMode.Reveal;
-                    PacketFOWRequest pfowr = new PacketFOWRequest() { Polygon = new List<Vector2>(this.FowSelectionPoints.Select(v => v.Xy)), RequestType = action };
+                    PacketFOWRequest pfowr = new PacketFOWRequest() { Polygon = new List<Vector2>(this.FowSelectionPoints.Select(v => v.Xy())), RequestType = action };
                     pfowr.Send();
                 }
 
                 this._lmbPressed = this._isDrawingBox = false;
             }
 
-            if (!this._escapePressed && Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Escape))
+            if (!this._escapePressed && Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape))
             {
                 this._escapePressed = true;
                 this._lmbPressed = false;
@@ -562,13 +563,13 @@
                 this.FowSelectionPoints.Clear();
             }
 
-            if (!this._enterPressed && Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Enter))
+            if (!this._enterPressed && Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Enter))
             {
                 this._enterPressed = true;
                 if (this.HasFOW && this.FowSelectionPoints.Count > 2)
                 {
                     bool action = this.CanvasMode == RevealMode.Reveal;
-                    PacketFOWRequest pfowr = new PacketFOWRequest() { Polygon = new List<Vector2>(this.FowSelectionPoints.Select(v => v.Xy)), RequestType = action };
+                    PacketFOWRequest pfowr = new PacketFOWRequest() { Polygon = new List<Vector2>(this.FowSelectionPoints.Select(v => v.Xy())), RequestType = action };
                     pfowr.Send();
                 }
 
@@ -577,16 +578,18 @@
                 this.FowSelectionPoints.Clear();
             }
 
-            if (this._enterPressed && !Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Enter))
+            if (this._enterPressed && !Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Enter))
             {
                 this._enterPressed = false;
             }
 
-            if (this._escapePressed && !Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.Escape))
+            if (this._escapePressed && !Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape))
             {
                 this._escapePressed = false;
             }
         }
+
+        private static bool ApproximatelyEquivalent(float f1, float f2, float eps = 1e-7f) => MathF.Abs(f1 - f2) <= eps;
 
         public enum RevealMode
         {

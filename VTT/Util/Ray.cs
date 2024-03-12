@@ -1,7 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
 
     public struct Ray
     {

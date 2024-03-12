@@ -2,18 +2,17 @@
 {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
-    using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using VTT.Asset.Glb;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
 
@@ -64,12 +63,12 @@
             ret.Materials.Add(mat);
             ret.DefaultMaterial = mat;
 
-            glTFLoader.Schema.Camera glbCam = new glTFLoader.Schema.Camera() { Name = "camera", Type = glTFLoader.Schema.Camera.TypeEnum.perspective, Perspective = new glTFLoader.Schema.CameraPerspective() { AspectRatio = 1, Yfov = MathHelper.DegreesToRadians(60), Znear = 0.0001f, Zfar = 10f } };
+            glTFLoader.Schema.Camera glbCam = new glTFLoader.Schema.Camera() { Name = "camera", Type = glTFLoader.Schema.Camera.TypeEnum.perspective, Perspective = new glTFLoader.Schema.CameraPerspective() { AspectRatio = 1, Yfov = 60 * MathF.PI / 180, Znear = 0.0001f, Zfar = 10f } };
             camera.Camera = glbCam;
             camera.Name = "camera";
             camera.Type = GlbObjectType.Camera;
             camera.Position = Vector3.UnitZ;
-            camera.Rotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(179));
+            camera.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, 179 * MathF.PI / 180);
             camera.Scale = Vector3.One;
             ret.Camera = camera;
             ret.PortraitCamera = camera;
@@ -116,8 +115,8 @@
                 Vector3 pos = positions[j];
                 Vector2 uv = uvs[j];
                 Vector3 norm = normals[j];
-                Vector3 tan = tangents[j].Xyz;
-                Vector3 bitan = bitangents[j].Xyz;
+                Vector3 tan = tangents[j].Xyz();
+                Vector3 bitan = bitangents[j].Xyz();
                 Vector4 color = colors[j];
                 vBuffer[vBufIndex++] = pos.X;
                 vBuffer[vBufIndex++] = pos.Y;
@@ -145,7 +144,7 @@
                 vBuffer[vBufIndex++] = 0;
             }
 
-            List<System.Numerics.Vector3> simplifiedTriangles = new List<System.Numerics.Vector3>();
+            List<Vector3> simplifiedTriangles = new List<Vector3>();
             List<float> areaSums = new List<float>();
             float areaSum = 0;
             for (int j = 0; j < indices.Length; j += 3)
@@ -153,15 +152,15 @@
                 int index0 = (int)indices[j + 0];
                 int index1 = (int)indices[j + 1];
                 int index2 = (int)indices[j + 2];
-                System.Numerics.Vector3 a = positions[index0].SystemVector();
-                System.Numerics.Vector3 b = positions[index1].SystemVector();
-                System.Numerics.Vector3 c = positions[index2].SystemVector();
+                Vector3 a = positions[index0];
+                Vector3 b = positions[index1];
+                Vector3 c = positions[index2];
                 simplifiedTriangles.Add(a);
                 simplifiedTriangles.Add(b);
                 simplifiedTriangles.Add(c);
-                System.Numerics.Vector3 ab = b - a;
-                System.Numerics.Vector3 ac = c - a;
-                float l = System.Numerics.Vector3.Cross(ab, ac).Length() * 0.5f;
+                Vector3 ab = b - a;
+                Vector3 ac = c - a;
+                float l = Vector3.Cross(ab, ac).Length() * 0.5f;
                 if (!float.IsNaN(l)) // Degenerate triangle
                 {
                     areaSum += l;
@@ -191,7 +190,7 @@
 
             GlbLight sunlight = new GlbLight(Vector4.One, 10, KhrLight.LightTypeEnum.Directional);
             sun.Scale = Vector3.One;
-            sun.Rotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(179));
+            sun.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, 179 * MathF.PI / 180);
             sun.Position = Vector3.Zero;
             sun.Light = sunlight;
             sun.Name = "generated_sun";
@@ -340,15 +339,15 @@
             return ms.ToArray();
         }
 
-        public Texture CopyGlTexture(PixelInternalFormat internalFormat = PixelInternalFormat.One)
+        public Texture CopyGlTexture(SizedInternalFormat internalFormat = SizedInternalFormat.Red8)
         {
             Texture tex = this.GetOrCreateGLTexture(true, out _);
             Texture ret = new Texture(TextureTarget.Texture2D);
             ret.Bind();
-            if (internalFormat == PixelInternalFormat.One)
+            if (internalFormat == SizedInternalFormat.Red8)
             {
-                internalFormat = this.Meta.Compress ? this.Meta.GammaCorrect ? PixelInternalFormat.CompressedSrgbAlpha : PixelInternalFormat.CompressedRgba :
-                    this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha : PixelInternalFormat.Rgba;
+                internalFormat = this.Meta.Compress ? this.Meta.GammaCorrect ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.CompressedRgbaBPTC :
+                    this.Meta.GammaCorrect ? SizedInternalFormat.Srgb8Alpha8 : SizedInternalFormat.Rgba8;
             }
 
             ret.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
@@ -373,12 +372,12 @@
 
                 this._glTex = new Texture(TextureTarget.Texture2D);
                 this._glTex.Bind();
-                PixelInternalFormat pif =
+                SizedInternalFormat pif =
                     this.Meta.Compress ?
-                        this.Meta.GammaCorrect ? PixelInternalFormat.CompressedSrgbAlpha :
-                    PixelInternalFormat.CompressedRgba :
-                this.Meta.GammaCorrect ? PixelInternalFormat.SrgbAlpha :
-                    PixelInternalFormat.Rgba;
+                        this.Meta.GammaCorrect ? SizedInternalFormat.CompressedSrgbAlphaBPTC :
+                    SizedInternalFormat.CompressedRgbaBPTC :
+                this.Meta.GammaCorrect ? SizedInternalFormat.Srgb8Alpha8 :
+                    SizedInternalFormat.Rgba8;
 
                 this._glTex.SetFilterParameters(this.Meta.FilterMin, this.Meta.FilterMag);
                 this._glTex.SetWrapParameters(this.Meta.WrapS, this.Meta.WrapT, WrapParam.Repeat);
@@ -407,8 +406,8 @@
                                 if (isTexture && sameID)
                                 {
                                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
-                                    InternalFormat glif = this.Meta.GammaCorrect ? InternalFormat.CompressedSrgbAlphaS3tcDxt5Ext : InternalFormat.CompressedRgbaS3tcDxt5Ext;
-                                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), (PixelInternalFormat)glif, mipArray, (d, r) => mipArray.Free()))
+                                    SizedInternalFormat glif = this.Meta.GammaCorrect ? SizedInternalFormat.CompressedSrgbAlphaS3TCDxt5Ext : SizedInternalFormat.CompressedRgbaS3TCDxt5Ext;
+                                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), glif, mipArray, (d, r) => mipArray.Free()))
                                     {
                                         gTex.AsyncState = AsyncLoadState.NonAsync;
                                         GL.BindTexture(TextureTarget.Texture2D, gTex);
@@ -416,20 +415,27 @@
                                         int nMips = mipArray.numMips;
                                         if (nMips > 1)
                                         {
-                                            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
-                                            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, nMips - 1);
+                                            GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BaseLevel, 0);
+                                            GL.TexParameter(TextureTarget.Texture2D, TextureProperty.MaxLevel, nMips - 1);
                                             int dw = imgS.Width;
                                             int dh = imgS.Height;
                                             for (int i = 0; i < nMips; ++i)
                                             {
-                                                GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, 0, mipArray.dataLength[i], mipArray.data[i]);
+                                                unsafe
+                                                {
+                                                    GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, mipArray.dataLength[i], (void*)mipArray.data[i]);
+                                                }
+
                                                 dw >>= 1;
                                                 dh >>= 1;
                                             }
                                         }
                                         else
                                         {
-                                            GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, 0, mipArray.dataLength[0], mipArray.data[0]);
+                                            unsafe
+                                            {
+                                                GL.CompressedTexImage2D(TextureTarget.Texture2D, 0, glif, imgS.Width, imgS.Height, mipArray.dataLength[0], (void*)mipArray.data[0]);
+                                            }
                                         }
 
                                         mipArray.Free();

@@ -1,6 +1,6 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using VTT.Util;

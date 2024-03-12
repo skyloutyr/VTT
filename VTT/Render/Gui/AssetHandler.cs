@@ -3,8 +3,6 @@
     using ImGuiNET;
     using NLayer;
     using NVorbis;
-    using OpenTK.Mathematics;
-    using OpenTK.Windowing.Common;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
@@ -13,6 +11,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
@@ -25,13 +24,13 @@
 
     public partial class GuiRenderer
     {
-        public void HandleFileDrop(FileDropEventArgs e) => this._queuedDropEvents.Enqueue(e);
+        public void HandleFileDrop(string[] e) => this._queuedDropEvents.Enqueue(e);
 
-        public void ProcessFileDrop(FileDropEventArgs e)
+        public void ProcessFileDrop(string[] e)
         {
             if (this._mouseOverAssets && Client.Instance.IsAdmin)
             {
-                foreach (string s in e.FileNames)
+                foreach (string s in e)
                 {
                     string ext = Path.GetExtension(s).ToLower();
                     if (ext.EndsWith("glb")) // Model
@@ -934,12 +933,12 @@
             this.ProcessFileDropEvents();
         }
 
-        private readonly ConcurrentQueue<FileDropEventArgs> _queuedDropEvents = new ConcurrentQueue<FileDropEventArgs>();
+        private readonly ConcurrentQueue<string[]> _queuedDropEvents = new ConcurrentQueue<string[]>();
         private unsafe void ProcessFileDropEvents()
         {
             while (!this._queuedDropEvents.IsEmpty)
             {
-                if (!this._queuedDropEvents.TryDequeue(out FileDropEventArgs fdea))
+                if (!this._queuedDropEvents.TryDequeue(out string[] fdea))
                 {
                     break;
                 }

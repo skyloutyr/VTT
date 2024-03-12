@@ -1,12 +1,12 @@
 ﻿namespace VTT.GL
 {
-    using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Buffers;
     using System.Collections.Concurrent;
     using System.Runtime.InteropServices;
+    using VTT.GL.Bindings;
 
     public class Texture
     {
@@ -30,12 +30,15 @@
                         }
                         else
                         {
-                            GL.GetSync(this.AsyncFenceID, SyncParameterName.SyncStatus, 1, out int vLen, out int vals); 
-                            if (vals == (int)Version32.Signaled)
+                            unsafe
                             {
-                                GL.DeleteSync(this.AsyncFenceID);
-                                this.AsyncFenceID = IntPtr.Zero;
-                                return true;
+                                int vals = GL.GetSync((void*)this.AsyncFenceID, SyncProperty.SyncStatus);
+                                if (vals == (int)SyncStatus.Signaled)
+                                {
+                                    GL.DeleteSync((void*)this.AsyncFenceID);
+                                    this.AsyncFenceID = IntPtr.Zero;
+                                    return true;
+                                }
                             }
 
                             return false;
@@ -59,14 +62,14 @@
             this._type = tt;
             if (gl)
             {
-                GL.GenTextures(1, out this._glId);
+                this._glId = GL.GenTexture();
                 _textureProtection[this._glId] = Guid.NewGuid();
             }
         }
 
         public void Allocate()
         {
-            GL.GenTextures(1, out this._glId);
+            this._glId = GL.GenTexture();
             _textureProtection[this._glId] = Guid.NewGuid();
         }
 
@@ -81,28 +84,28 @@
 
         public void SetFilterParameters(FilterParam min, FilterParam mag)
         {
-            GL.TexParameter(this._type, TextureParameterName.TextureMinFilter, GLParamFromFilter(min));
-            GL.TexParameter(this._type, TextureParameterName.TextureMagFilter, GLParamFromFilter(mag));
+            GL.TexParameter(this._type, TextureProperty.MinFilter, GLParamFromFilter(min));
+            GL.TexParameter(this._type, TextureProperty.MagFilter, GLParamFromFilter(mag));
         }
 
         public void SetWrapParameters(WrapParam x, WrapParam y, WrapParam z)
         {
-            GL.TexParameter(this._type, TextureParameterName.TextureWrapS, GLParamFromWrap(x));
+            GL.TexParameter(this._type, TextureProperty.WrapS, GLParamFromWrap(x));
             if (this._type is TextureTarget.Texture2D or TextureTarget.Texture2DArray)
             {
-                GL.TexParameter(this._type, TextureParameterName.TextureWrapT, GLParamFromWrap(y));
+                GL.TexParameter(this._type, TextureProperty.WrapT, GLParamFromWrap(y));
             }
 
             if (this._type is TextureTarget.Texture3D)
             {
-                GL.TexParameter(this._type, TextureParameterName.TextureWrapR, GLParamFromWrap(z));
+                GL.TexParameter(this._type, TextureProperty.WrapR, GLParamFromWrap(z));
             }
         }
 
         public unsafe Image<T> GetImage<T>(int level = 0) where T : unmanaged, IPixel<T>
         {
-            GL.GetTexLevelParameter(this._type, level, GetTextureParameter.TextureWidth, out int w);
-            GL.GetTexLevelParameter(this._type, level, GetTextureParameter.TextureHeight, out int h);
+            int w = GL.GetTexLevelParameter(this._type, level, TextureLevelPropertyGetter.Width);
+            int h = GL.GetTexLevelParameter(this._type, level, TextureLevelPropertyGetter.Height);
             Image<T> ret = new Image<T>(w, h);
             if (IntPtr.Size == 4 && ((long)sizeof(T) * w * h > int.MaxValue))
             {
@@ -110,7 +113,7 @@
             }
 
             T* data = IntPtr.Size == 8 ? (T*)Marshal.AllocHGlobal(new IntPtr((long)sizeof(T) * w * h)) : (T*)Marshal.AllocHGlobal(sizeof(T) * w * h);
-            GL.GetTexImage(this._type, level, GetFormatFromPixelType(typeof(T)), PixelType.UnsignedByte, (IntPtr)data);
+            GL.GetTexImage(this._type, level, GetFormatFromPixelType(typeof(T)), PixelDataType.Byte, data);
             ret.ProcessPixelRows(x =>
             {
                 for (int y = 0; y < x.Height; ++y)
@@ -125,7 +128,7 @@
             return ret;
         }
 
-        public unsafe void SetImage<T>(Image<T> img, PixelInternalFormat format, int level = 0, PixelType type = PixelType.UnsignedByte, TextureTarget tType = 0) where T : unmanaged, IPixel<T>
+        public unsafe void SetImage<T>(Image<T> img, SizedInternalFormat format, int level = 0, PixelDataType type = PixelDataType.Byte, TextureTarget tType = 0) where T : unmanaged, IPixel<T>
         {
             if (tType == 0)
             {
@@ -136,7 +139,7 @@
             if (img.Configuration.PreferContiguousImageBuffers && img.DangerousTryGetSinglePixelMemory(out Memory<T> mem))
             {
                 MemoryHandle mh = mem.Pin();
-                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, GetFormatFromPixelType(typeof(T)), type, new IntPtr(mh.Pointer));
                 mh.Dispose();
                 return;
             }
@@ -157,12 +160,12 @@
                     }
                 });
 
-                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixels);
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixels);
                 Marshal.FreeHGlobal((IntPtr)pixels);
             }
             else
             {
-                GL.TexImage2D(tType, level, format, img.Width, img.Height, 0, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
+                GL.TexImage2D(tType, level, format, img.Width, img.Height, GetFormatFromPixelType(typeof(T)), type, IntPtr.Zero);
                 TextureTarget selfTT = tType;
                 if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
                 {
@@ -204,16 +207,16 @@
             }
         }
 
-        public void GenerateMipMaps() => GL.GenerateMipmap((GenerateMipmapTarget)this._type);
+        public void GenerateMipMaps() => GL.GenerateMipmap(this._type);
 
         private static int GLParamFromFilter(FilterParam param)
         {
             return param switch
             {
-                FilterParam.LinearMipmapLinear => (int)All.LinearMipmapLinear,
-                FilterParam.LinearMipmapNearest => (int)All.LinearMipmapNearest,
-                FilterParam.Linear => (int)All.Linear,
-                _ => (int)All.Nearest
+                FilterParam.LinearMipmapLinear => (int)TextureMinFilter.LinearMipmapLinear,
+                FilterParam.LinearMipmapNearest => (int)TextureMinFilter.LinearMipmapNearest,
+                FilterParam.Linear => (int)TextureMinFilter.Linear,
+                _ => (int)TextureMinFilter.Nearest
             };
         }
 
@@ -221,23 +224,23 @@
         {
             return param switch
             {
-                WrapParam.Mirror => (int)All.MirroredRepeat,
-                WrapParam.ClampToBorder => (int)All.ClampToBorder,
-                WrapParam.ClampToEdge => (int)All.ClampToEdge,
-                _ => (int)All.Repeat,
+                WrapParam.Mirror => (int)TextureWrapMode.MirroredRepeat,
+                WrapParam.ClampToBorder => (int)TextureWrapMode.BorderClamp,
+                WrapParam.ClampToEdge => (int)TextureWrapMode.EdgeClamp,
+                _ => (int)TextureWrapMode.Repeat,
             };
         }
 
-        private static PixelFormat GetFormatFromPixelType(Type t)
+        private static PixelDataFormat GetFormatFromPixelType(Type t)
         {
             return
                 t == typeof(Rgba32)
-                ? PixelFormat.Rgba
+                ? PixelDataFormat.Rgba
                 : t == typeof(Rgba64)
-                    ? PixelFormat.RgbaInteger
+                    ? PixelDataFormat.RgbaInteger
                     : t == typeof(Rgb24)
-                        ? PixelFormat.Rgb
-                        : t == typeof(RgbaVector) ? PixelFormat.Rgba : PixelFormat.DepthComponent;
+                        ? PixelDataFormat.Rgb
+                        : t == typeof(RgbaVector) ? PixelDataFormat.Rgba : PixelDataFormat.DepthComponent;
         }
 
         public void Dispose()
@@ -249,7 +252,10 @@
 
             if (!IntPtr.Zero.Equals(this.AsyncFenceID))
             {
-                GL.DeleteSync(this.AsyncFenceID);
+                unsafe
+                {
+                    GL.DeleteSync((void*)this.AsyncFenceID);
+                }
             }
         }
 

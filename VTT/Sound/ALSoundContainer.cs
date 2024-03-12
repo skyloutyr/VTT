@@ -1,12 +1,12 @@
 ﻿namespace VTT.Sound
 {
-    using OpenTK.Audio.OpenAL;
     using System;
     using VTT.Network;
+    using VTT.Sound.Bindings;
 
     public class ALSoundContainer
     {
-        private readonly int _alId;
+        private readonly uint _alId;
         public bool IsValid { get; private set; }
         public bool IsDataLoaded { get; private set; }
         public ISoundProvider WaveData { get; }
@@ -22,9 +22,9 @@
             this.LoadData(this.WaveData);
             if (this.IsValid)
             {
-                int src = AL.GenSource();
-                AL.Source(src, ALSourcei.Buffer, this._alId);
-                return src;
+                uint src = AL.GenSource();
+                AL.SourceBuffer(src, this._alId);
+                return (int)src;
             }
 
             return -1;
@@ -35,11 +35,11 @@
             if (data.IsReady && !this.IsDataLoaded)
             {
                 data.GetRawDataFull(out IntPtr dataPtr, out int dataLength);
-                AL.BufferData(this._alId, data.NumChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, dataPtr, dataLength, data.SampleRate);
+                AL.BufferData(this._alId, data.NumChannels == 1 ? SoundDataFormat.Mono16 : SoundDataFormat.Stereo16, dataPtr, dataLength, data.SampleRate);
                 ALError ale = AL.GetError();
                 if (ale != ALError.NoError)
                 {
-                    Client.Instance.Logger.Log(Util.LogLevel.Error, $"OpenAL error when loading audio data - {AL.GetErrorString(ale)}");
+                    Client.Instance.Logger.Log(Util.LogLevel.Error, $"OpenAL error when loading audio data - {ale}");
                     this.IsValid = false;
                 }
                 else

@@ -1,6 +1,6 @@
 ﻿namespace VTT.Network.Packet
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -34,19 +34,19 @@
                                 {
                                     case ChangeType.Position:
                                     {
-                                        mo.Position = d.Item3.Xyz;
+                                        mo.Position = d.Item3.Xyz();
                                         break;
                                     }
 
                                     case ChangeType.Rotation:
                                     {
-                                        mo.Rotation = new Quaternion(d.Item3.Xyz, d.Item3.W);
+                                        mo.Rotation = new Quaternion(d.Item3.Xyz(), d.Item3.W);
                                         break;
                                     }
 
                                     case ChangeType.Scale:
                                     {
-                                        mo.Scale = d.Item3.Xyz;
+                                        mo.Scale = d.Item3.Xyz();
                                         break;
                                     }
                                 }
@@ -56,7 +56,7 @@
                             else
                             {
                                 server.Logger.Log(LogLevel.Error, "Client requested a position/scale change for object without sufficient permissions to do so!");
-                                senderChanges.Add((d.Item1, d.Item2, this.Type == ChangeType.Scale ? new Vector4(mo.Scale, 1.0f) : this.Type == ChangeType.Position ? new Vector4(mo.Position, 1.0f) : new Vector4(mo.Rotation.Xyz, mo.Rotation.W)));
+                                senderChanges.Add((d.Item1, d.Item2, this.Type == ChangeType.Scale ? new Vector4(mo.Scale, 1.0f) : this.Type == ChangeType.Position ? new Vector4(mo.Position, 1.0f) : new Vector4(mo.Rotation.X, mo.Rotation.Y, mo.Rotation.Z, mo.Rotation.W)));
                                 continue;
                             }
                         }
@@ -98,19 +98,19 @@
                                 {
                                     case ChangeType.Position:
                                     {
-                                        mo.Position = d.Item3.Xyz;
+                                        mo.Position = d.Item3.Xyz();
                                         break;
                                     }
 
                                     case ChangeType.Rotation:
                                     {
-                                        mo.Rotation = new Quaternion(d.Item3.Xyz, d.Item3.W);
+                                        mo.Rotation = new Quaternion(d.Item3.Xyz(), d.Item3.W);
                                         break;
                                     }
 
                                     case ChangeType.Scale:
                                     {
-                                        mo.Scale = d.Item3.Xyz;
+                                        mo.Scale = d.Item3.Xyz();
                                         break;
                                     }
                                 }
@@ -123,13 +123,13 @@
                                     {
                                         mo.ClientDragMoveServerInducedPositionChangeProgress = 1;
                                         mo.ClientDragMoveInitialPosition = mo.Position;
-                                        mo.ClientDragMoveServerInducedNewPosition = d.Item3.Xyz;
+                                        mo.ClientDragMoveServerInducedNewPosition = d.Item3.Xyz();
                                         break;
                                     }
 
                                     case ChangeType.Rotation:
                                     {
-                                        Quaternion q = new Quaternion(d.Item3.Xyz, d.Item3.W);
+                                        Quaternion q = new Quaternion(d.Item3.Xyz(), d.Item3.W);
                                         mo.ClientDragMoveServerInducedRotationChangeProgress = 1;
                                         mo.ClientDragMoveInitialRotation = mo.Rotation;
                                         mo.ClientDragMoveServerInducedNewRotation = q;
@@ -140,7 +140,7 @@
                                     {
                                         mo.ClientDragMoveServerInducedScaleChangeProgress = 1;
                                         mo.ClientDragMoveInitialScale = mo.Scale;
-                                        mo.ClientDragMoveServerInducedNewScale = d.Item3.Xyz;
+                                        mo.ClientDragMoveServerInducedNewScale = d.Item3.Xyz();
                                         break;
                                     }
                                 }

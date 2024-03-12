@@ -1,12 +1,12 @@
 ﻿namespace VTT.Asset.Obj
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using System.Threading;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Util;
 
     public class WavefrontObject
@@ -24,7 +24,7 @@
             List<Vector2> uvs = new List<Vector2>();
             List<Vector3> normals = new List<Vector3>();
 
-            List<Vector3i> faces = new List<Vector3i>();
+            List<(int X, int Y, int Z)> faces = new List<(int X, int Y, int Z)>();
 
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
@@ -70,7 +70,7 @@
                         int x = int.Parse(dd[0]);
                         int y = dd.Length == 2 ? -1 : int.Parse(dd[1]); // Format may be v1//vn1
                         int z = dd.Length == 1 ? -1 : int.Parse(dd[^1]);
-                        faces.Add(new Vector3i(x, y, z));
+                        faces.Add(new (x, y, z));
                     }
 
                     continue;
@@ -104,8 +104,8 @@
                 this._numElements = indices.Length;
 
                 this._vao = new VertexArray();
-                this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
-                this._ebo = new GPUBuffer(BufferTarget.ElementArrayBuffer);
+                this._vbo = new GPUBuffer(BufferTarget.Array);
+                this._ebo = new GPUBuffer(BufferTarget.ElementArray);
                 this._vao.Bind();
                 this._vbo.Bind();
                 this._vbo.SetData(vertices);
@@ -121,17 +121,17 @@
 
                 for (int i = 0; i < faces.Count; i += 3)
                 {
-                    Vector3i v1 = faces[i + 0];
-                    Vector3i v2 = faces[i + 1];
-                    Vector3i v3 = faces[i + 2];
+                    (int X, int Y, int Z) v1 = faces[i + 0];
+                    (int X, int Y, int Z) v2 = faces[i + 1];
+                    (int X, int Y, int Z) v3 = faces[i + 2];
 
                     Vector3 p1 = positions[v1.X - 1];
                     Vector3 p2 = positions[v2.X - 1];
                     Vector3 p3 = positions[v3.X - 1];
 
-                    tris.Add(p1.SystemVector());
-                    tris.Add(p2.SystemVector());
-                    tris.Add(p3.SystemVector());
+                    tris.Add(p1);
+                    tris.Add(p2);
+                    tris.Add(p3);
 
                     Vector3 a = p2 - p1;
                     Vector3 b = p3 - p1;
@@ -215,7 +215,7 @@
                 this._numElements = vertices.Count;
 
                 this._vao = new VertexArray();
-                this._vbo = new GPUBuffer(BufferTarget.ArrayBuffer);
+                this._vbo = new GPUBuffer(BufferTarget.Array);
                 this._vao.Bind();
                 this._vbo.Bind();
                 this._vbo.SetData(data.ToArray());
@@ -231,7 +231,7 @@
             this._vao.Bind();
             if (this._ebo.HasValue)
             {
-                GL.DrawElements(PrimitiveType.Triangles, this._numElements, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                GL.DrawElements(PrimitiveType.Triangles, this._numElements, ElementsType.UnsignedInt, IntPtr.Zero);
             }
             else
             {
@@ -243,7 +243,7 @@
         {
             List<Vector3> positions = new List<Vector3>();
 
-            List<Vector3i> faces = new List<Vector3i>();
+            List<(int X, int Y, int Z)> faces = new List<(int X, int Y, int Z)>();
 
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
@@ -270,7 +270,7 @@
                         int x = int.Parse(dd[0]);
                         int y = dd.Length == 2 ? -1 : int.Parse(dd[1]); // Format may be v1//vn1
                         int z = dd.Length == 1 ? -1 : int.Parse(dd[^1]);
-                        faces.Add(new Vector3i(x, y, z));
+                        faces.Add(new (x, y, z));
                     }
 
                     continue;

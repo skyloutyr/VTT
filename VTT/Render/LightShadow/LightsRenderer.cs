@@ -1,13 +1,13 @@
 ﻿namespace VTT.Render.LightShadow
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
 
@@ -35,7 +35,7 @@
         public int NumLights { get; set; }
 
         public Texture DepthMap { get; set; }
-        public int FBO { get; set; }
+        public uint FBO { get; set; }
         public ShaderProgram Shader { get; set; }
 
         public void Clear()
@@ -78,26 +78,26 @@
             ShadowMapResolution = r;
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
-            GL.TexImage3D(TextureTarget.Texture2DArray, 0, PixelInternalFormat.DepthComponent, ShadowMapResolution, ShadowMapResolution, 6 * MaxLightsNum, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.DepthComponent32Float, ShadowMapResolution, ShadowMapResolution, 6 * MaxLightsNum, PixelDataFormat.DepthComponent, PixelDataType.Float, IntPtr.Zero);
             this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
             //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
 
             this.FBO = GL.GenFramebuffer();
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO);
-            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, this.DepthMap, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
+            GL.FramebufferTexture(FramebufferTarget.All, FramebufferAttachment.Depth, this.DepthMap, 0);
             GL.DrawBuffer(DrawBufferMode.None);
-            GL.ReadBuffer(ReadBufferMode.None);
-            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (fec != FramebufferErrorCode.FramebufferComplete)
+            GL.ReadBuffer(DrawBufferMode.None);
+            FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
+            if (fec != FramebufferStatus.Complete)
             {
                 throw new Exception();
             }
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
-            this.Shader = OpenGLUtil.LoadShader("pl", ShaderType.VertexShader, ShaderType.FragmentShader, ShaderType.GeometryShader);
+            this.Shader = OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry);
         }
 
         public void ResizeShadowMaps(int resolution)
@@ -105,7 +105,7 @@
             this.DepthMap?.Dispose();
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
-            GL.TexImage3D(TextureTarget.Texture2DArray, 0, PixelInternalFormat.DepthComponent, resolution, resolution, 6 * MaxLightsNum, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.DepthComponent32Float, resolution, resolution, 6 * MaxLightsNum, PixelDataFormat.DepthComponent, PixelDataType.Float, IntPtr.Zero);
             this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             //GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
@@ -115,17 +115,17 @@
                 GL.DeleteFramebuffer(this.FBO);
             }
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO);
-            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, this.DepthMap, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
+            GL.FramebufferTexture(FramebufferTarget.All, FramebufferAttachment.Depth, this.DepthMap, 0);
             GL.DrawBuffer(DrawBufferMode.None);
-            GL.ReadBuffer(ReadBufferMode.None);
-            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (fec != FramebufferErrorCode.FramebufferComplete)
+            GL.ReadBuffer(DrawBufferMode.None);
+            FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
+            if (fec != FramebufferStatus.Complete)
             {
                 throw new Exception();
             }
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             ShadowMapResolution = resolution;
         }
@@ -164,7 +164,7 @@
 
         private readonly MatrixStack _ms = new MatrixStack() { Reversed = true };
         private readonly List<PointLight> _selectedLights = new List<PointLight>();
-        public void ProcessScene(Matrix4 baseModelMatrix, GlbScene s, MapObject owner = null)
+        public void ProcessScene(Matrix4x4 baseModelMatrix, GlbScene s, MapObject owner = null)
         {
             this._ms.Reversed = true;
             if (s.Lights.Count > 0)
@@ -199,7 +199,7 @@
         public void AddLightCandidate(PointLight pl) => this._selectedLights.Add(pl);
 
         private readonly List<MapObject> _objsCache = new List<MapObject>();
-        private readonly Matrix4[] _lightMatrices = new Matrix4[6];
+        private readonly Matrix4x4[] _lightMatrices = new Matrix4x4[6];
         public void DrawLights(Map m, bool doDraw, double delta, Camera cam = null)
         {
             if (cam != null) // Frustrum cull, sort and push lights
@@ -214,7 +214,7 @@
                     }
                 }
 
-                this._selectedLights.Sort((l, r) => (l.Position - cam.Position).Length.CompareTo((r.Position - cam.Position).Length));
+                this._selectedLights.Sort((l, r) => (l.Position - cam.Position).Length().CompareTo((r.Position - cam.Position).Length()));
             }
 
             for (int i = 0; i < this._selectedLights.Count && i < MaxLightsNum; ++i) // Push all eligible light sources
@@ -222,9 +222,9 @@
                 this.PushLight(this._selectedLights[i]);
             }
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, this.FBO);
+            GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
             GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
-            GL.Clear(ClearBufferMask.DepthBufferBit);
+            GL.Clear(ClearBufferMask.Depth);
             GL.ColorMask(false, false, false, false);
 
             if (doDraw && m != null)
@@ -234,11 +234,11 @@
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {
                     PointLight pl = this.Lights[i1];
-                    Matrix4 proj = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(90), 1, 0.0001f, pl.LightPtr.Intensity);
+                    Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(90 * MathF.PI / 180, 1, 0.0001f, pl.LightPtr.Intensity);
                     Vector3 lightPos = pl.Position;
                     for (int i = 0; i < 6; ++i)
                     {
-                        this._lightMatrices[i] = Matrix4.LookAt(lightPos, lightPos + LightLook[i, 0], LightLook[i, 1]) * proj;
+                        this._lightMatrices[i] = Matrix4x4.CreateLookAt(lightPos, lightPos + LightLook[i, 0], LightLook[i, 1]) * proj;
                     }
 
                     this.Shader["layer_offset"].Set(pl.LightIndex * 6);
@@ -275,7 +275,7 @@
                             {
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {
-                                    Matrix4 modelMatrix = mo.ClientCachedModelMatrix;
+                                    Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                                     a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
                                 }
                             }
@@ -288,7 +288,7 @@
 
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             GL.ColorMask(true, true, true, true);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
         }
     }
@@ -318,8 +318,8 @@
 
         public PointLight(MatrixStack ms, GlbLight light, int lightIndex, MapObject objectPtr)
         {
-            this.Position = (new Vector4(0, 0, 0, 1) * ms.Current).Xyz;
-            this.Color = light.Color.Xyz;
+            this.Position = Vector4.Transform(new Vector4(0, 0, 0, 1), ms.Current).Xyz();
+            this.Color = light.Color.Xyz();
             this.LightPtr = light;
             this.LightIndex = lightIndex;
             this.ObjectPtr = objectPtr;

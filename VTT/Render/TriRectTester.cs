@@ -1,6 +1,6 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using VTT.Util;
@@ -279,19 +279,19 @@
         private static readonly BoxSide[] bsArray = new BoxSide[6];
         public static bool Intersects(in RectangleF rect, in BBBox box, in Vector3 bboxOffset, Camera caster)
         {
-            Vector4 s = new Vector4(box.Start);
-            Vector4 e = new Vector4(box.End);
+            Vector4 s = new Vector4(box.Start, 1.0f);
+            Vector4 e = new Vector4(box.End, 1.0f);
 
-            Matrix4 matMod = Matrix4.CreateFromQuaternion(box.Rotation) * Matrix4.CreateTranslation(bboxOffset);
+            Matrix4x4 matMod = Matrix4x4.CreateFromQuaternion(box.Rotation) * Matrix4x4.CreateTranslation(bboxOffset);
 
-            Vector3 p0 = caster.ToScreenspace((new Vector4(s.X, s.Y, s.Z, 1.0f) * matMod).Xyz); // -X, -Y, -Z
-            Vector3 p1 = caster.ToScreenspace((new Vector4(e.X, s.Y, s.Z, 1.0f) * matMod).Xyz); // +X, -Y, -Z
-            Vector3 p2 = caster.ToScreenspace((new Vector4(s.X, e.Y, s.Z, 1.0f) * matMod).Xyz); // -X, +Y, -Z
-            Vector3 p3 = caster.ToScreenspace((new Vector4(e.X, e.Y, s.Z, 1.0f) * matMod).Xyz); // +X, +Y, -Z
-            Vector3 p4 = caster.ToScreenspace((new Vector4(s.X, s.Y, e.Z, 1.0f) * matMod).Xyz); // -X, -Y, +Z
-            Vector3 p5 = caster.ToScreenspace((new Vector4(e.X, s.Y, e.Z, 1.0f) * matMod).Xyz); // +X, -Y, +Z
-            Vector3 p6 = caster.ToScreenspace((new Vector4(s.X, e.Y, e.Z, 1.0f) * matMod).Xyz); // -X, +Y, +Z
-            Vector3 p7 = caster.ToScreenspace((new Vector4(e.X, e.Y, e.Z, 1.0f) * matMod).Xyz); // +X, +Y, +Z
+            Vector3 p0 = caster.ToScreenspace(Vector4.Transform(new Vector4(s.X, s.Y, s.Z, 1.0f), matMod).Xyz()); // -X, -Y, -Z
+            Vector3 p1 = caster.ToScreenspace(Vector4.Transform(new Vector4(e.X, s.Y, s.Z, 1.0f), matMod).Xyz()); // +X, -Y, -Z
+            Vector3 p2 = caster.ToScreenspace(Vector4.Transform(new Vector4(s.X, e.Y, s.Z, 1.0f), matMod).Xyz()); // -X, +Y, -Z
+            Vector3 p3 = caster.ToScreenspace(Vector4.Transform(new Vector4(e.X, e.Y, s.Z, 1.0f), matMod).Xyz()); // +X, +Y, -Z
+            Vector3 p4 = caster.ToScreenspace(Vector4.Transform(new Vector4(s.X, s.Y, e.Z, 1.0f), matMod).Xyz()); // -X, -Y, +Z
+            Vector3 p5 = caster.ToScreenspace(Vector4.Transform(new Vector4(e.X, s.Y, e.Z, 1.0f), matMod).Xyz()); // +X, -Y, +Z
+            Vector3 p6 = caster.ToScreenspace(Vector4.Transform(new Vector4(s.X, e.Y, e.Z, 1.0f), matMod).Xyz()); // -X, +Y, +Z
+            Vector3 p7 = caster.ToScreenspace(Vector4.Transform(new Vector4(e.X, e.Y, e.Z, 1.0f), matMod).Xyz()); // +X, +Y, +Z
 
             Vector3 max = VMax(p0, p1, p2, p3, p4, p5, p6, p7);
             Vector3 min = VMin(p0, p1, p2, p3, p4, p5, p6, p7);
@@ -364,25 +364,25 @@
 
         private static Vector3 VMax(in Vector3 v0, in Vector3 v1, in Vector3 v2, in Vector3 v3, in Vector3 v4, in Vector3 v5, in Vector3 v6, in Vector3 v7)
         {
-            Vector3 r = Vector3.ComponentMax(v0, v1);
-            r = Vector3.ComponentMax(r, v2);
-            r = Vector3.ComponentMax(r, v3);
-            r = Vector3.ComponentMax(r, v4);
-            r = Vector3.ComponentMax(r, v5);
-            r = Vector3.ComponentMax(r, v6);
-            r = Vector3.ComponentMax(r, v7);
+            Vector3 r = Vector3.Max(v0, v1);
+            r = Vector3.Max(r, v2);
+            r = Vector3.Max(r, v3);
+            r = Vector3.Max(r, v4);
+            r = Vector3.Max(r, v5);
+            r = Vector3.Max(r, v6);
+            r = Vector3.Max(r, v7);
             return r;
         }
 
         private static Vector3 VMin(in Vector3 v0, in Vector3 v1, in Vector3 v2, in Vector3 v3, in Vector3 v4, in Vector3 v5, in Vector3 v6, in Vector3 v7)
         {
-            Vector3 r = Vector3.ComponentMin(v0, v1);
-            r = Vector3.ComponentMin(r, v2);
-            r = Vector3.ComponentMin(r, v3);
-            r = Vector3.ComponentMin(r, v4);
-            r = Vector3.ComponentMin(r, v5);
-            r = Vector3.ComponentMin(r, v6);
-            r = Vector3.ComponentMin(r, v7);
+            Vector3 r = Vector3.Min(v0, v1);
+            r = Vector3.Min(r, v2);
+            r = Vector3.Min(r, v3);
+            r = Vector3.Min(r, v4);
+            r = Vector3.Min(r, v5);
+            r = Vector3.Min(r, v6);
+            r = Vector3.Min(r, v7);
             return r;
         }
 
@@ -401,7 +401,7 @@
                 this.p3 = p3;
             }
 
-            public BoxSide(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3) : this(p0.Xy, p1.Xy, p2.Xy, p3.Xy)
+            public BoxSide(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3) : this(p0.Xy(), p1.Xy(), p2.Xy(), p3.Xy())
             {
             }
         }

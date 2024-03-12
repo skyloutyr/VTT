@@ -1,7 +1,8 @@
 ﻿namespace VTT.GL
 {
-    using OpenTK.Graphics.OpenGL;
     using System;
+    using VTT.GL.Bindings;
+    using GL = VTT.GL.Bindings.GL;
 
     public class ShaderProgram
     {
@@ -19,89 +20,6 @@
 
         public static bool IsLastShaderSame(ShaderProgram currentShader) => currentShader._glID == _lastProgramID;
 
-        public static bool TryLoadBinary(out ShaderProgram sp, byte[] vert, byte[] geom, byte[] frag, Func<ShaderType, SpirVSpecializationData> specializer, out string error)
-        {
-            int vShader = -1;
-            int gShader = -1;
-            int fShader = -1;
-
-            static void IncludeShader(ShaderType sType, ref int s, byte[] code, Func<ShaderType, SpirVSpecializationData> specializer)
-            {
-                s = GL.CreateShader(sType);
-                GL.ShaderBinary(1, ref s, (BinaryFormat)All.ShaderBinaryFormatSpirVArb, code, code.Length);
-                SpirVSpecializationData data = specializer(sType);
-                GL.SpecializeShader(s, "main", data.SpecializationConstantIndices?.Length ?? 0, data.SpecializationConstantIndices, data.SpecializationConstantValues);
-            }
-
-            static bool IsNullOrEmpty(byte[] data) => data == null || data.Length == 0;
-
-
-            if (!IsNullOrEmpty(vert))
-            {
-                IncludeShader(ShaderType.VertexShader, ref vShader, vert, specializer);
-            }
-
-            if (!IsNullOrEmpty(geom))
-            {
-                IncludeShader(ShaderType.GeometryShader, ref gShader, geom, specializer);
-            }
-
-            if (!IsNullOrEmpty(frag))
-            {
-                IncludeShader(ShaderType.FragmentShader, ref fShader, frag, specializer);
-            }
-
-            ShaderProgram ret = new ShaderProgram();
-            int pId = (int)ret._glID;
-            if (vShader != -1)
-            {
-                GL.AttachShader(pId, vShader);
-            }
-
-            if (gShader != -1)
-            {
-                GL.AttachShader(pId, gShader);
-            }
-
-            if (fShader != -1)
-            {
-                GL.AttachShader(pId, fShader);
-            }
-
-            GL.LinkProgram(pId);
-            GL.GetProgram(pId, GetProgramParameterName.LinkStatus, out int pls);
-            if (pls != 1)
-            {
-                GL.DeleteProgram(pId);
-                sp = default;
-                GL.GetProgramInfoLog(pId, out error);
-                return false;
-            }
-
-            if (vShader != -1)
-            {
-                GL.DetachShader(pId, vShader);
-                GL.DeleteShader(vShader);
-            }
-
-            if (gShader != -1)
-            {
-                GL.DetachShader(pId, gShader);
-                GL.DeleteShader(gShader);
-            }
-
-            if (fShader != -1)
-            {
-                GL.DetachShader(pId, fShader);
-                GL.DeleteShader(fShader);
-            }
-
-            sp = ret;
-            ret.UniformManager.InitUniforms(ret);
-            error = string.Empty;
-            return true;
-        }
-
         public static bool TryCompile(out ShaderProgram sp, string vertCode, string geomCode, string fragCode, out string error)
         {
             int vShader = -1;
@@ -110,15 +28,16 @@
 
             static bool CompileShader(ShaderType sType, ref int s, string code, out string lerror)
             {
-                s = GL.CreateShader(sType);
-                GL.ShaderSource(s, code);
-                GL.CompileShader(s);
-                GL.GetShader(s, ShaderParameter.CompileStatus, out int result);
+                s = (int)GL.CreateShader(sType);
+                GL.ShaderSource((uint)s, code);
+                GL.CompileShader((uint)s);
+                int result = GL.GetShaderProperty((uint)s, ShaderProperty.CompileStatus);
                 bool ret = result == 1;
                 if (!ret)
                 {
-                    GL.GetShaderInfoLog(s, out lerror);
-                    GL.DeleteShader(s);
+                    lerror = GL.GetShaderInfoLog((uint)s);
+                    GL.DeleteShader((uint)s);
+                    s = -1;
                 }
                 else
                 {
@@ -128,19 +47,19 @@
                 return ret;
             }
 
-            if (!string.IsNullOrEmpty(vertCode) && !CompileShader(ShaderType.VertexShader, ref vShader, vertCode, out error))
+            if (!string.IsNullOrEmpty(vertCode) && !CompileShader(ShaderType.Vertex, ref vShader, vertCode, out error))
             {
                 sp = default;
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(geomCode) && !CompileShader(ShaderType.GeometryShader, ref gShader, geomCode, out error))
+            if (!string.IsNullOrEmpty(geomCode) && !CompileShader(ShaderType.Geometry, ref gShader, geomCode, out error))
             {
                 sp = default;
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(fragCode) && !CompileShader(ShaderType.FragmentShader, ref fShader, fragCode, out error))
+            if (!string.IsNullOrEmpty(fragCode) && !CompileShader(ShaderType.Fragment, ref fShader, fragCode, out error))
             {
                 sp = default;
                 return false;
@@ -150,45 +69,45 @@
             int pId = (int)ret._glID;
             if (vShader != -1)
             {
-                GL.AttachShader(pId, vShader);
+                GL.AttachShader((uint)pId, (uint)vShader);
             }
 
             if (gShader != -1)
             {
-                GL.AttachShader(pId, gShader);
+                GL.AttachShader((uint)pId, (uint)gShader);
             }
 
             if (fShader != -1)
             {
-                GL.AttachShader(pId, fShader);
+                GL.AttachShader((uint)pId, (uint)fShader);
             }
 
-            GL.LinkProgram(pId);
-            GL.GetProgram(pId, GetProgramParameterName.LinkStatus, out int pls);
+            GL.LinkProgram((uint)pId);
+            int pls = GL.GetProgramProperty((uint)pId, ProgramProperty.LinkStatus)[0];
             if (pls != 1)
             {
-                GL.DeleteProgram(pId);
+                GL.DeleteProgram((uint)pId);
                 sp = default;
-                GL.GetProgramInfoLog(pId, out error);
+                error = GL.GetProgramInfoLog((uint)pId);
                 return false;
             }
 
             if (vShader != -1)
             {
-                GL.DetachShader(pId, vShader);
-                GL.DeleteShader(vShader);
+                GL.DetachShader((uint)pId, (uint)vShader);
+                GL.DeleteShader((uint)vShader);
             }
 
             if (gShader != -1)
             {
-                GL.DetachShader(pId, gShader);
-                GL.DeleteShader(gShader);
+                GL.DetachShader((uint)pId, (uint)gShader);
+                GL.DeleteShader((uint)gShader);
             }
 
             if (fShader != -1)
             {
-                GL.DetachShader(pId, fShader);
-                GL.DeleteShader(fShader);
+                GL.DetachShader((uint)pId, (uint)fShader);
+                GL.DeleteShader((uint)fShader);
             }
 
             sp = ret;
@@ -204,10 +123,10 @@
         }
 
         public void Dispose() => GL.DeleteProgram(this._glID);
-        public void BindUniformBlock(string blockName, int slot)
+        public void BindUniformBlock(string blockName, uint slot)
         {
-            int index = GL.GetUniformBlockIndex(this._glID, blockName);
-            GL.UniformBlockBinding((int)this._glID, index, slot);
+            uint index = GL.GetUniformBlockIndex(this._glID, blockName);
+            GL.UniformBlockBinding(this._glID, index, slot);
         }
 
         public static implicit operator uint(ShaderProgram self) => self._glID;

@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -12,6 +11,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using VTT.GL.Bindings;
 
     public class ParticleRenderer
     {
@@ -20,8 +20,8 @@
         public ParticleSystemInstance CurrentlyEditedSystemInstance { get; set; }
 
         private Texture _renderTex;
-        private int _fbo;
-        private int _rbo;
+        private uint _fbo;
+        private uint _rbo;
         private VectorCamera _cam;
 
         public Texture RenderTexture => this._renderTex;
@@ -32,7 +32,7 @@
 
         public void Create()
         {
-            this.ParticleShader = OpenGLUtil.LoadShader("particle", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this.ParticleShader = OpenGLUtil.LoadShader("particle", ShaderType.Vertex, ShaderType.Fragment);
             this.ParticleShader.Bind();
             this.ParticleShader["m_texture_diffuse"].Set(0);
             this.ParticleShader["m_texture_normal"].Set(1);
@@ -40,28 +40,28 @@
             this.ParticleShader["m_texture_aomr"].Set(3);
 
             this._fbo = GL.GenFramebuffer();
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._fbo);
+            GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
             this._rbo = GL.GenRenderbuffer();
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, this._rbo);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, 2048, 2048);
+            GL.BindRenderbuffer(this._rbo);
+            GL.RenderbufferStorage(SizedInternalFormat.DepthComponent24, 2048, 2048);
 
             this._renderTex = new Texture(TextureTarget.Texture2D);
             this._renderTex.Bind();
             this._renderTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._renderTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.SrgbAlpha, 2048, 2048, 0, PixelFormat.Rgba, PixelType.UnsignedByte, System.IntPtr.Zero);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, this._renderTex, 0);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, this._rbo);
-            FramebufferErrorCode fec = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (fec != FramebufferErrorCode.FramebufferComplete)
+            GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Srgb8Alpha8, 2048, 2048, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
+            GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color0, TextureTarget.Texture2D, this._renderTex, 0);
+            GL.FramebufferRenderbuffer(FramebufferTarget.All, FramebufferAttachment.Depth, this._rbo);
+            FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
+            if (fec != FramebufferStatus.Complete)
             {
                 throw new System.Exception("Framebuffer could not be completed - " + fec);
             }
 
             this._cam = new VectorCamera(new Vector3(5, 5, 5), new Vector3(-5, -5, -5).Normalized());
-            this._cam.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60), 1, 0.01f, 100f);
+            this._cam.Projection = Matrix4x4.CreatePerspectiveFieldOfView(60 * MathF.PI / 180, 1, 0.01f, 100f);
             this._cam.RecalculateData(assumedUpVector: Vector3.UnitZ);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
 
             this.SecondaryWorker = new Thread(this.UpdateOffscreen) { Priority = ThreadPriority.BelowNormal, IsBackground = true };
@@ -78,19 +78,19 @@
                 return;
             }
 
-            int fboID = GL.GetInteger(GetPName.FramebufferBinding);
-            GL.GetInteger(GetPName.Viewport, this.viewport);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, this._fbo);
+            uint fboID = (uint)GL.GetInteger(GLPropertyName.FramebufferBinding)[0];
+            GL.GetInteger(GLPropertyName.Viewport).CopyTo(this.viewport);
+            GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
             Map m = Client.Instance.CurrentMap;
             if (m != null)
             {
                 Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.Render(0, this._cam, m, false);
             }
 
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             ShaderProgram shader;
             if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out shader))
@@ -99,7 +99,7 @@
                 shader.Bind();
                 shader["view"].Set(this._cam.View);
                 shader["projection"].Set(this._cam.Projection);
-                shader["model"].Set(Matrix4.Identity);
+                shader["model"].Set(Matrix4x4.Identity);
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -108,16 +108,16 @@
                 shader["cursor_position"].Set(new Vector3(0, 0, 0));
                 shader["dataBuffer"].Set(14);
                 Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
-                GL.ActiveTexture(TextureUnit.Texture3);
+                GL.ActiveTexture(3);
                 Client.Instance.Frontend.Renderer.Black.Bind();
-                GL.ActiveTexture(TextureUnit.Texture2);
+                GL.ActiveTexture(2);
                 Client.Instance.Frontend.Renderer.Black.Bind();
             }
             
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
-            GL.Disable(EnableCap.Blend);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboID);
+            GL.Disable(Capability.Blend);
+            GL.BindFramebuffer(FramebufferTarget.All, fboID);
             GL.Viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
         }
 
@@ -212,12 +212,12 @@
 
             this.CPUTimer.Restart();
 
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Enable(EnableCap.Multisample);
-                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                GL.Enable(Capability.Multisample);
+                GL.Enable(Capability.SampleAlphaToCoverage);
             }
 
             this._programsPopulated.Clear();
@@ -226,7 +226,7 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
-            shader["model"].Set(Matrix4.Identity);
+            shader["model"].Set(Matrix4x4.Identity);
             shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -234,11 +234,11 @@
             shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
             shader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
-            GL.ActiveTexture(TextureUnit.Texture3);
+            GL.ActiveTexture(3);
             Client.Instance.Frontend.Renderer.Black.Bind();
-            GL.ActiveTexture(TextureUnit.Texture2);
+            GL.ActiveTexture(2);
             Client.Instance.Frontend.Renderer.Black.Bind();
-            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.ActiveTexture(0);
             foreach (MapObject mo in m.IterateObjects(null))
             {
                 if (mo.MapLayer <= 0 || Client.Instance.IsAdmin)
@@ -259,11 +259,11 @@
 
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(EnableCap.Multisample);
-                GL.Disable(EnableCap.SampleAlphaToCoverage);
+                GL.Disable(Capability.Multisample);
+                GL.Disable(Capability.SampleAlphaToCoverage);
             }
 
-            GL.Disable(EnableCap.Blend);
+            GL.Disable(Capability.Blend);
 
             this.CPUTimer.Stop();
         }
@@ -296,7 +296,7 @@
                     {
                         shader["view"].Set(cam.View);
                         shader["projection"].Set(cam.Projection);
-                        shader["model"].Set(Matrix4.Identity);
+                        shader["model"].Set(Matrix4x4.Identity);
                         shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                         shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                         shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -312,13 +312,13 @@
                             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
                         }
 
-                        GL.ActiveTexture(TextureUnit.Texture3);
+                        GL.ActiveTexture(3);
                         Client.Instance.Frontend.Renderer.Black.Bind();
-                        GL.ActiveTexture(TextureUnit.Texture2);
+                        GL.ActiveTexture(2);
                         Client.Instance.Frontend.Renderer.Black.Bind();
 
                         // Load custom texture
-                        GL.ActiveTexture(TextureUnit.Texture12);
+                        GL.ActiveTexture(12);
                         if (a.Shader.NodeGraph.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
                         {
                             t.Bind();
@@ -333,7 +333,7 @@
                             Client.Instance.Frontend.Renderer.White.Bind();
                         }
 
-                        GL.ActiveTexture(TextureUnit.Texture0);
+                        GL.ActiveTexture(0);
                         if (enableMemory)
                         {
                             this._programsPopulated.Add(shader);

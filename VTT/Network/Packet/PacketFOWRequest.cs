@@ -1,6 +1,6 @@
 ﻿namespace VTT.Network.Packet
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using System;
     using System.Collections.Generic;
     using System.IO;

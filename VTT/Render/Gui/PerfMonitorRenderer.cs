@@ -1,24 +1,29 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Windowing.GraphicsLibraryFramework;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Numerics;
+    using System.Reflection;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Util;
 
     public partial class GuiRenderer
     {
-        private readonly Lazy<int> _cachedRefreshRate = new Lazy<int>(() =>
+        private int _cachedRefreshRate
         {
-            unsafe
+            get
             {
-                VideoMode* vm = GLFW.GetVideoMode((Monitor*)Client.Instance.Frontend.GameHandle.CurrentMonitor.Pointer);
-                return vm->RefreshRate;
+                unsafe
+                {
+                    IntPtr m = Glfw.GetWindowMonitor(Client.Instance.Frontend.GameHandle.GLFWWindow);
+                    GLFWvidmode* vm = Glfw.GetVideoMode(m == IntPtr.Zero ? Glfw.GetPrimaryMonitor() : m);
+                    return vm->refreshRate;
+                }
             }
-        });
+        }
 
         private readonly Gradient<Vector4> _gradColors = new Gradient<Vector4>()
         {
@@ -76,21 +81,13 @@
             if (ImGui.Begin(lang.Translate("ui.performance") + "###Performance Monitor"))
             {
                 double frameTarget;
-                if (Client.Instance.Frontend.GameHandle.RenderFrequency != 0)
+                if (Client.Instance.Frontend.GameHandle.VSync.Value != ClientSettings.VSyncMode.Off)
                 {
-                    frameTarget = 1000d / Client.Instance.Frontend.GameHandle.RenderFrequency;
+                    frameTarget = 1000d / this._cachedRefreshRate;
                 }
                 else
                 {
-                    if (Client.Instance.Frontend.GameHandle.VSync != OpenTK.Windowing.Common.VSyncMode.Off)
-                    {
-                        int rr = this._cachedRefreshRate.Value;
-                        frameTarget = rr != 0 ? 1000d / rr : 0;
-                    }
-                    else
-                    {
-                        frameTarget = 0;
-                    }
+                    frameTarget = 0;
                 }
 
                 double cpuDeferred = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerDeferred?.ElapsedMillis() ?? 0;

@@ -18,12 +18,12 @@
         }
 
         private static readonly System.Numerics.Vector4[] colors = {
-            Color.Black.Vec4().SystemVector(),
-            Color.DarkGray.Vec4().SystemVector(),
-            Color.White.Vec4().SystemVector(),
-            Color.Yellow.Vec4().SystemVector(),
-            Color.Red.Vec4().SystemVector(),
-            Color.DarkRed.Vec4().SystemVector()
+            Color.Black.Vec4(),
+            Color.DarkGray.Vec4(),
+            Color.White.Vec4(),
+            Color.Yellow.Vec4(),
+            Color.Red.Vec4(),
+            Color.DarkRed.Vec4()
         };
 
         public System.Numerics.Vector4 GetColor(LogLevel level) => Enum.IsDefined(level) ? colors[(int)level] : colors[2];

@@ -1,14 +1,14 @@
 ﻿namespace VTT.Asset.Shader.NodeGraph
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset.Glb;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
 
@@ -726,7 +726,7 @@
 
                         case NodeValueType.Vec2:
                         {
-                            return vec.Xy;
+                            return vec.Xy();
                         }
 
                         case NodeValueType.Vec4:
@@ -768,12 +768,12 @@
 
                         case NodeValueType.Vec2:
                         {
-                            return vec.Xy;
+                            return vec.Xy();
                         }
 
                         case NodeValueType.Vec3:
                         {
-                            return vec.Xyz;
+                            return vec.Xyz();
                         }
 
                         default:
@@ -1402,14 +1402,14 @@
                 this.CombinedExtraTextures.Bind();
                 this.CombinedExtraTextures.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                 this.CombinedExtraTextures.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
-                GL.TexImage3D(TextureTarget.Texture2DArray, 0, PixelInternalFormat.Rgba, maxW, maxH, this.ExtraTexturesAttachments.Count, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+                GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, maxW, maxH, this.ExtraTexturesAttachments.Count, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
                 for (i = 0; i < this.ExtraTexturesAttachments.Count; ++i)
                 {
                     Image<Rgba32> img = imgs[i];
                     this.CombinedExtraTexturesData[i] = new Vector2(img.Width, img.Height);
                     img.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);
                     System.Buffers.MemoryHandle hnd = mem.Pin();
-                    GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, i, img.Width, img.Height, 1, PixelFormat.Rgba, PixelType.UnsignedByte, new IntPtr(hnd.Pointer));
+                    GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, i, img.Width, img.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, new IntPtr(hnd.Pointer));
                     hnd.Dispose();
                     img.Dispose();
                 }

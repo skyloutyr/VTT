@@ -1,0 +1,40 @@
+﻿namespace VTT.GL.Bindings
+{
+    public enum FramebufferAttachment
+    {
+        Depth = 0x8D00,
+        Stencil = 0x8D20,
+        Color0 = 0x8CE0,
+        Color1 = 0x8CE1,
+        Color2 = 0x8CE2,
+        Color3 = 0x8CE3,
+        Color4 = 0x8CE4,
+        Color5 = 0x8CE5,
+        Color6 = 0x8CE6,
+        Color7 = 0x8CE7,
+        Color8 = 0x8CE8,
+        Color9 = 0x8CE9,
+        Color10 = 0x8CEA,
+        Color11 = 0x8CEB,
+        Color12 = 0x8CEC,
+        Color13 = 0x8CED,
+        Color14 = 0x8CEE,
+        Color15 = 0x8CEF,
+        Color16 = 0x8CF0,
+        Color17 = 0x8CF1,
+        Color18 = 0x8CF2,
+        Color19 = 0x8CF3,
+        Color20 = 0x8CF4,
+        Color21 = 0x8CF5,
+        Color22 = 0x8CF6,
+        Color23 = 0x8CF7,
+        Color24 = 0x8CF8,
+        Color25 = 0x8CF9,
+        Color26 = 0x8CFA,
+        Color27 = 0x8CFB,
+        Color28 = 0x8CFC,
+        Color29 = 0x8CFD,
+        Color30 = 0x8CFE,
+        Color31 = 0x8CFF
+    }
+}

@@ -1,6 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
+    using System;
+    using System.Numerics;
     using VTT.Network;
     using SysMath = System.Math;
 
@@ -23,13 +24,13 @@
         public virtual Vector3 Up { get; set; }
         public virtual float Yaw { get; set; }
         public virtual float Pitch { get; set; }
-        public virtual Matrix4 View { get; set; }
-        public virtual Matrix4 OriginView { get; set; }
-        public virtual Matrix4 Projection { get; set; }
-        public virtual Matrix4 ViewProj { get; set; }
-        public virtual Matrix4 ProjView { get; set; }
-        public virtual Matrix4 OriginViewProj { get; set; }
-        public virtual Matrix4 OriginProjView { get; set; }
+        public virtual Matrix4x4 View { get; set; }
+        public virtual Matrix4x4 OriginView { get; set; }
+        public virtual Matrix4x4 Projection { get; set; }
+        public virtual Matrix4x4 ViewProj { get; set; }
+        public virtual Matrix4x4 ProjView { get; set; }
+        public virtual Matrix4x4 OriginViewProj { get; set; }
+        public virtual Matrix4x4 OriginProjView { get; set; }
         public Plane[] Frustrum { get; set; } = new Plane[6];
 
         public virtual void RecalculateData(bool calculateDirection = true, bool calculateUp = true, Vector3 assumedUpAxis = default)
@@ -37,11 +38,11 @@
             Vector3 direction = this.Direction;
             if (calculateDirection)
             {
-                float c = (float)SysMath.Cos(MathHelper.DegreesToRadians(this.Pitch));
+                float c = (float)SysMath.Cos(this.Pitch * MathF.PI / 180);
                 direction = this.Direction = new Vector3(
-                        c * (float)SysMath.Cos(MathHelper.DegreesToRadians(this.Yaw)),
-                            (float)SysMath.Sin(MathHelper.DegreesToRadians(this.Pitch)),
-                        c * (float)SysMath.Sin(MathHelper.DegreesToRadians(this.Yaw))).Normalized();
+                        c * (float)SysMath.Cos(this.Yaw * MathF.PI / 180),
+                            (float)SysMath.Sin(this.Pitch * MathF.PI / 180),
+                        c * (float)SysMath.Sin(this.Yaw * MathF.PI / 180)).Normalized();
             }
 
             if (assumedUpAxis.Equals(default))
@@ -55,8 +56,8 @@
                 this.Up = Vector3.Normalize(Vector3.Cross(this.Right, direction));
             }
 
-            this.View = Matrix4.LookAt(this.Position, this.Position + direction, this.Up);
-            this.OriginView = Matrix4.LookAt(Vector3.Zero, direction, this.Up);
+            this.View = Matrix4x4.CreateLookAt(this.Position, this.Position + direction, this.Up);
+            this.OriginView = Matrix4x4.CreateLookAt(Vector3.Zero, direction, this.Up);
             this.ViewProj = this.View * this.Projection;
             this.ProjView = this.Projection * this.View;
             this.OriginViewProj = this.OriginView * this.Projection;
@@ -96,7 +97,7 @@
         public virtual Vector3 ToScreenspace(Vector3 worldSpace)
         {
             Vector4 worldVec = new Vector4(worldSpace, 1);
-            Vector4 postProjectivePosition = Vector4.TransformRow(worldVec, this.ViewProj);
+            Vector4 postProjectivePosition = Vector4.Transform(worldVec, this.ViewProj);
             float clipSpaceX = postProjectivePosition.X / postProjectivePosition.W;
             float clipSpaceY = postProjectivePosition.Y / postProjectivePosition.W;
             float clipSpaceZ = postProjectivePosition.Z;
@@ -109,12 +110,12 @@
         {
             float x = (2.0f * mouseX / width) - 1.0f;
             float y = 1.0f - (2.0f * mouseY / height);
-            Matrix4 mat = this.OriginViewProj.Inverted();
+            Matrix4x4.Invert(this.OriginViewProj, out Matrix4x4 mat);
             Vector4 vec = new Vector4(x, y, 1, 1);
-            vec *= mat;
+            vec = Vector4.Transform(vec, mat);
             vec /= vec.W;
             vec = vec.Normalized();
-            return new Ray(this.Position, vec.Xyz);
+            return new Ray(this.Position, vec.Xyz());
         }
 
         public virtual bool IsPointInFrustrum(Vector3 point)

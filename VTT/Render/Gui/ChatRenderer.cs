@@ -93,7 +93,7 @@
                     }
                 }
 
-                if (!b && ImGui.IsItemFocused() && (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftControl) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightControl)))
+                if (!b && ImGui.IsItemFocused() && Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                 {
                     if (this._chat.Count > 0)
                     {

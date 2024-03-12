@@ -3,8 +3,6 @@
     using NetCoreServer;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
-    using OpenTK.Mathematics;
-    using OpenTK.Windowing.Common;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Concurrent;
@@ -12,6 +10,7 @@
     using System.ComponentModel;
     using System.IO;
     using System.Net;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
@@ -727,6 +726,13 @@
             Client.Instance.Logger.Log(LogLevel.Info, "Saved client settings");
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
+        }
+
+        public enum VSyncMode
+        {
+            Off,
+            On,
+            Adaptive
         }
 
         public enum FullscreenMode

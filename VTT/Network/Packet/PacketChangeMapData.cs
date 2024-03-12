@@ -1,6 +1,6 @@
 ﻿namespace VTT.Network.Packet
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using System.IO;

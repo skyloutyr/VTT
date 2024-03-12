@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Network.UndoRedo;
     using VTT.Util;
@@ -83,7 +84,7 @@
         {
             this.MapID = br.ReadGuid();
             DataElement de = new DataElement(br);
-            this.DPC = new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, OpenTK.Mathematics.Vector4.Zero);
+            this.DPC = new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, Vector4.Zero);
             this.DPC.Deserialize(de);
         }
 

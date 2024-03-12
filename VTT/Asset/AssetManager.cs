@@ -1,7 +1,6 @@
 ﻿namespace VTT.Asset
 {
     using Newtonsoft.Json;
-    using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.Formats.Gif;
     using SixLabors.ImageSharp.PixelFormats;
@@ -12,10 +11,12 @@
     using System.IO;
     using System.Linq;
     using System.Net.Http;
+    using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using VTT.Asset.Glb;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -349,7 +350,7 @@
                                 {
                                     tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                                     tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                                    tex.SetImage(img, PixelInternalFormat.Rgba);
+                                    tex.SetImage(img, SizedInternalFormat.Rgba8);
                                     tex.GenerateMipMaps();
                                     img.Dispose();
                                     Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
@@ -359,7 +360,7 @@
                                     tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
                                     tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
                                     System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
-                                    tex.SetImage(img, PixelInternalFormat.Rgba);
+                                    tex.SetImage(img, SizedInternalFormat.Rgba8);
                                     img.Dispose();
                                     Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
                                 }
@@ -434,7 +435,7 @@
                     Texture t1 = a.Texture.GetOrCreateGLTexture(false, out TextureAnimation anim);
                     if (t1.IsAsyncReady)
                     {
-                        Texture tex = a.Texture.CopyGlTexture(PixelInternalFormat.Rgba);
+                        Texture tex = a.Texture.CopyGlTexture(SizedInternalFormat.Rgba8);
                         AssetPreview prev = new AssetPreview() { GLTex = tex };
                         prev.CopyFromAnimation(anim, tex.Size);
                         this.Container.Portraits[aID] = prev;
@@ -449,12 +450,12 @@
 
                 if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.GlReady ?? false))
                 {
-                    using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new OpenTK.Mathematics.Vector4(0, 0, 0, 0), true);
+                    using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new Vector4(0, 0, 0, 0), true);
                     Texture tex = new Texture(TextureTarget.Texture2D);
                     tex.Bind();
                     tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                     tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                    tex.SetImage(img, PixelInternalFormat.Rgba);
+                    tex.SetImage(img, SizedInternalFormat.Rgba8);
                     tex.GenerateMipMaps();
                     AssetPreview prev = new AssetPreview() { GLTex = tex };
                     this.Container.Portraits[aID] = prev;

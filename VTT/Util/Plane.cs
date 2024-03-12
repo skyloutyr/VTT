@@ -1,7 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
+    using System.Numerics;
 
     public readonly struct Plane
     {
@@ -20,7 +20,7 @@
             this.Distance = d;
         }
 
-        public Plane Normalized() => new Plane(this.Normal.Normalized(), this.Distance / this.Normal.Length);
+        public Plane Normalized() => new Plane(this.Normal.Normalized(), this.Distance / this.Normal.Length());
         public float DotProduct(Vector3 vec) => Vector3.Dot(this.Normal, vec) + this.Distance;
 
         public Vector3? Intersect(Ray r, Vector3 planeCenter)

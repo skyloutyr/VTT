@@ -1,7 +1,7 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using OpenTK.Mathematics;
+    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -618,7 +618,7 @@
                                     Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                                     cam.Position = p - (cam.Direction * 5.0f);
                                     cam.RecalculateData(assumedUpAxis: Vector3.UnitZ);
-                                    if (Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(OpenTK.Windowing.GraphicsLibraryFramework.Keys.RightShift))
+                                    if (Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
                                     {
                                         Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();
                                         Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);

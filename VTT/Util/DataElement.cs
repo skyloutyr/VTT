@@ -1,11 +1,11 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Numerics;
 
     public class DataElement
     {

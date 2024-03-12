@@ -107,10 +107,11 @@
             {
                 if (ImGui.Begin("Debug", window_flags))
                 {
-                    ImGui.Text("Frame: " + (time * 1000).ToString("0.000") + "ms");
+                    PerformanceMetrics pm = Client.Instance.Frontend.GameHandle.MetricsFramerate;
+                    ImGui.TextUnformatted($"Frame: {((double)pm.LastTickAvg / TimeSpan.TicksPerMillisecond):0.000}ms, {pm.LastNumFrames} frames");
                     ImGui.Text("Cursor: " + Client.Instance.Frontend.MouseX + ", " + Client.Instance.Frontend.MouseY);
 
-                    OpenTK.Mathematics.Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                    Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
                     ImGui.Text("World: " + (cw.HasValue ? cw.Value.ToString() : "null"));
                 }
 
@@ -336,11 +337,11 @@
                 ImGui.Separator();
                 if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###RulerColorPicker"))
                 {
-                    Vector3 cclr = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor.Xyz.SystemVector();
+                    Vector3 cclr = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor.Xyz();
                     ImGui.PushItemWidth(200);
                     if (ImGui.ColorPicker3("##RulerColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs))
                     {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = new OpenTK.Mathematics.Vector4(cclr.GLVector(), 1.0f);
+                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = new Vector4(cclr, 1.0f);
                     }
 
                     string rTt = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip;
@@ -584,11 +585,11 @@
                 ImGui.Separator();
                 if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###DrawColorPicker"))
                 {
-                    Vector3 cclr = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor.Xyz.SystemVector();
+                    Vector3 cclr = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor.Xyz();
                     ImGui.PushItemWidth(200);
                     if (ImGui.ColorPicker3("##DrawColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs))
                     {
-                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = new OpenTK.Mathematics.Vector4(cclr.GLVector(), 1.0f);
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = new Vector4(cclr, 1.0f);
                     }
 
                     if (ImGui.Button(lang.Translate("ui.generic.reset") + "###DrawClear"))

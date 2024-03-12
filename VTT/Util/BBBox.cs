@@ -1,9 +1,9 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Numerics;
 
     public struct BBBox : IEquatable<BBBox>, IEnumerable<Vector3>
     {
@@ -35,7 +35,7 @@
 
         public readonly AABox GetBounds()
         {
-            Matrix3 m = Matrix3.CreateFromQuaternion(this.Rotation.Normalized());
+            Matrix4x4 m = Matrix4x4.CreateFromQuaternion(this.Rotation.Normalized());
 
             float minX = 0, minY = 0, minZ = 0;
             float maxX = 0, maxY = 0, maxZ = 0;
@@ -43,50 +43,50 @@
             Vector3 sStart = this.Start;
             Vector3 sEnd = this.End;
 
-            float a = m.Row0.X * sStart.X;
-            float b = m.Row0.X * this.End.X;
+            float a = m.M11 * sStart.X;
+            float b = m.M11 * this.End.X;
             bool ab = a < b;
             minX += ab ? a : b;
             maxX += ab ? b : a;
-            a = m.Row1.X * sStart.X;
-            b = m.Row1.X * sEnd.X;
+            a = m.M21 * sStart.X;
+            b = m.M21 * sEnd.X;
             ab = a < b;
             minX += ab ? a : b;
             maxX += ab ? b : a;
-            a = m.Row2.X * sStart.X;
-            b = m.Row2.X * sEnd.X;
+            a = m.M31 * sStart.X;
+            b = m.M31 * sEnd.X;
             ab = a < b;
             minX += ab ? a : b;
             maxX += ab ? b : a;
 
-            a = m.Row0.Y * sStart.Y;
-            b = m.Row0.Y * sEnd.Y;
+            a = m.M12 * sStart.Y;
+            b = m.M12 * sEnd.Y;
             ab = a < b;
             minY += ab ? a : b;
             maxY += ab ? b : a;
-            a = m.Row1.Y * sStart.Y;
-            b = m.Row1.Y * sEnd.Y;
+            a = m.M22 * sStart.Y;
+            b = m.M22 * sEnd.Y;
             ab = a < b;
             minY += ab ? a : b;
             maxY += ab ? b : a;
-            a = m.Row2.Y * sStart.Y;
-            b = m.Row2.Y * sEnd.Y;
+            a = m.M32 * sStart.Y;
+            b = m.M32 * sEnd.Y;
             ab = a < b;
             minY += ab ? a : b;
             maxY += ab ? b : a;
 
-            a = m.Row0.Z * sStart.Z;
-            b = m.Row0.Z * sEnd.Z;
+            a = m.M13 * sStart.Z;
+            b = m.M13 * sEnd.Z;
             ab = a < b;
             minZ += ab ? a : b;
             maxZ += ab ? b : a;
-            a = m.Row1.Z * sStart.Z;
-            b = m.Row1.Z * sEnd.Z;
+            a = m.M23 * sStart.Z;
+            b = m.M23 * sEnd.Z;
             ab = a < b;
             minZ += ab ? a : b;
             maxZ += ab ? b : a;
-            a = m.Row2.Z * sStart.Z;
-            b = m.Row2.Z * sEnd.Z;
+            a = m.M33 * sStart.Z;
+            b = m.M33 * sEnd.Z;
             ab = a < b;
             minZ += ab ? a : b;
             maxZ += ab ? b : a;
@@ -96,16 +96,16 @@
 
         public readonly Vector3? Intersects(Ray ray, Vector3 offset = default)
         {
-            Matrix4 modelMatrix = Matrix4.CreateFromQuaternion(this.Rotation) * Matrix4.CreateTranslation(offset);
+            Matrix4x4 modelMatrix = Matrix4x4.CreateFromQuaternion(this.Rotation) * Matrix4x4.CreateTranslation(offset);
 
             float tMin = 0.0f;
             float tMax = 100000.0f;
 
-            Vector3 worldSpace = (modelMatrix[3, 0], modelMatrix[3, 1], modelMatrix[3, 2]);
+            Vector3 worldSpace = new Vector3(modelMatrix.M41, modelMatrix.M42, modelMatrix.M43);
             Vector3 delta = worldSpace - ray.Origin;
 
             {
-                Vector3 xaxis = (modelMatrix[0, 0], modelMatrix[0, 1], modelMatrix[0, 2]);
+                Vector3 xaxis = new Vector3(modelMatrix.M11, modelMatrix.M12, modelMatrix.M13);
                 float e = Vector3.Dot(xaxis, delta);
                 float f = Vector3.Dot(ray.Direction, xaxis);
 
@@ -132,7 +132,7 @@
 
 
             {
-                Vector3 yaxis = (modelMatrix[1, 0], modelMatrix[1, 1], modelMatrix[1, 2]);
+                Vector3 yaxis = new Vector3(modelMatrix.M21, modelMatrix.M22, modelMatrix.M23);
                 float e = Vector3.Dot(yaxis, delta);
                 float f = Vector3.Dot(ray.Direction, yaxis);
 
@@ -160,7 +160,7 @@
 
 
             {
-                Vector3 zaxis = (modelMatrix[2, 0], modelMatrix[2, 1], modelMatrix[2, 2]);
+                Vector3 zaxis = new Vector3(modelMatrix.M31, modelMatrix.M32, modelMatrix.M33);
                 float e = Vector3.Dot(zaxis, delta);
                 float f = Vector3.Dot(ray.Direction, zaxis);
 
@@ -206,14 +206,14 @@
 
             Quaternion q = this.Rotation.Normalized();
 
-            Vector3 p0 = q * new Vector3(s.X, s.Y, s.Z); // -X, -Y, -Z
-            Vector3 p1 = q * new Vector3(e.X, s.Y, s.Z); // +X, -Y, -Z
-            Vector3 p2 = q * new Vector3(s.X, e.Y, s.Z); // -X, +Y, -Z
-            Vector3 p3 = q * new Vector3(e.X, e.Y, s.Z); // +X, +Y, -Z
-            Vector3 p4 = q * new Vector3(s.X, s.Y, e.Z); // -X, -Y, +Z
-            Vector3 p5 = q * new Vector3(e.X, s.Y, e.Z); // +X, -Y, +Z
-            Vector3 p6 = q * new Vector3(s.X, e.Y, e.Z); // -X, +Y, +Z
-            Vector3 p7 = q * new Vector3(e.X, e.Y, e.Z); // +X, +Y, +Z
+            Vector3 p0 = Vector4.Transform(new Vector3(s.X, s.Y, s.Z), q).Xyz(); // -X, -Y, -Z
+            Vector3 p1 = Vector4.Transform(new Vector3(e.X, s.Y, s.Z), q).Xyz(); // +X, -Y, -Z
+            Vector3 p2 = Vector4.Transform(new Vector3(s.X, e.Y, s.Z), q).Xyz(); // -X, +Y, -Z
+            Vector3 p3 = Vector4.Transform(new Vector3(e.X, e.Y, s.Z), q).Xyz(); // +X, +Y, -Z
+            Vector3 p4 = Vector4.Transform(new Vector3(s.X, s.Y, e.Z), q).Xyz(); // -X, -Y, +Z
+            Vector3 p5 = Vector4.Transform(new Vector3(e.X, s.Y, e.Z), q).Xyz(); // +X, -Y, +Z
+            Vector3 p6 = Vector4.Transform(new Vector3(s.X, e.Y, e.Z), q).Xyz(); // -X, +Y, +Z
+            Vector3 p7 = Vector4.Transform(new Vector3(e.X, e.Y, e.Z), q).Xyz(); // +X, +Y, +Z
             yield return p0;
             yield return p1;
             yield return p2;

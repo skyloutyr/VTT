@@ -1,8 +1,9 @@
 ﻿namespace VTT.GL
 {
-    using OpenTK.Graphics.OpenGL;
-    using OpenTK.Mathematics;
     using System.Collections.Generic;
+    using System.Numerics;
+    using VTT.GL.Bindings;
+    using GL = VTT.GL.Bindings.GL;
 
     public readonly struct UniformManager
     {
@@ -13,13 +14,13 @@
         {
         }
 
-        public void InitUniforms(int pId)
+        public void InitUniforms(uint pId)
         {
             GL.UseProgram(pId);
-            GL.GetProgram(pId, GetProgramParameterName.ActiveUniforms, out int count);
+            int count = GL.GetProgramProperty(pId, ProgramProperty.ActiveUniforms)[0];
             for (int i = 0; i < count; ++i)
             {
-                GL.GetActiveUniform(pId, i, 128, out _, out _, out _, out string nameStr);
+                GL.GetActiveUniform(pId, (uint)i, 128, out _, out _, out _, out string nameStr);
                 if (nameStr.IndexOf('[') != -1)
                 {
                     int c = 0;
@@ -62,7 +63,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform1(this._id, f);
+                GL.Uniform(this._id, f);
             }
         }
 
@@ -70,7 +71,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform1(this._id, i);
+                GL.Uniform(this._id, i);
             }
         }
 
@@ -78,7 +79,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform1(this._id, i);
+                GL.Uniform(this._id, i);
             }
         }
 
@@ -86,7 +87,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform1(this._id, b ? 1 : 0);
+                GL.Uniform(this._id, b ? 1 : 0);
             }
         }
 
@@ -94,15 +95,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform2(this._id, vec);
-            }
-        }
-
-        public void Set(System.Numerics.Vector2 vec)
-        {
-            if (this.Valid)
-            {
-                GL.Uniform2(this._id, vec.X, vec.Y);
+                GL.Uniform(this._id, vec);
             }
         }
 
@@ -110,15 +103,7 @@
         {
             if (this.Valid)
             {
-                GL.Uniform3(this._id, vec);
-            }
-        }
-
-        public void Set(System.Numerics.Vector3 vec)
-        {
-            if (this.Valid)
-            {
-                GL.Uniform3(this._id, vec.X, vec.Y, vec.Z);
+                GL.Uniform(this._id, vec);
             }
         }
 
@@ -126,39 +111,16 @@
         {
             if (this.Valid)
             {
-                GL.Uniform4(this._id, vec);
+                GL.Uniform(this._id, vec);
             }
         }
 
-        public void Set(System.Numerics.Vector4 vec)
-        {
-            if (this.Valid)
-            {
-                GL.Uniform4(this._id, vec.X, vec.Y, vec.Z, vec.W);
-            }
-        }
 
-        public void Set(Matrix2 mat)
+        public void Set(Matrix4x4 mat)
         {
             if (this.Valid)
             {
-                GL.UniformMatrix2(this._id, 1, false, ref mat.Row0.X);
-            }
-        }
-
-        public void Set(Matrix3 mat)
-        {
-            if (this.Valid)
-            {
-                GL.UniformMatrix3(this._id, 1, false, ref mat.Row0.X);
-            }
-        }
-
-        public void Set(Matrix4 mat)
-        {
-            if (this.Valid)
-            {
-                GL.UniformMatrix4(this._id, 1, false, ref mat.Row0.X);
+                GL.Uniform(this._id, mat);
             }
         }
 

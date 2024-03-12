@@ -1,6 +1,6 @@
 ﻿namespace VTT.Util
 {
-    using OpenTK.Mathematics;
+    using System.Numerics;
 
     /// <summary>
     /// This version of <see cref="Camera"/> type omits the pitch and yaw system in favour of the position and look vectors.

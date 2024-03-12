@@ -1,10 +1,10 @@
 ﻿namespace VTT.Control
 {
-    using OpenTK.Mathematics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using VTT.Asset.Glb;
     using VTT.Util;
 
@@ -65,7 +65,7 @@
         public Color TintColor { get; set; } = Color.White;
         public Color NameColor { get; set; } = Color.Transparent;
 
-        public Matrix4 ClientCachedModelMatrix { get; set; } = Matrix4.Identity;
+        public Matrix4x4 ClientCachedModelMatrix { get; set; } = Matrix4x4.Identity;
 
         public DataElement CustomProperties { get; set; } = new DataElement();
 
@@ -307,11 +307,11 @@
 
         public void RecalculateModelMatrix()
         {
-            this.ClientCachedModelMatrix = Matrix4.CreateScale(this.scale) * Matrix4.CreateFromQuaternion(this.rotation) * Matrix4.CreateTranslation(this.position);
+            this.ClientCachedModelMatrix = Matrix4x4.CreateScale(this.scale) * Matrix4x4.CreateFromQuaternion(this.rotation) * Matrix4x4.CreateTranslation(this.position);
             this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).GetBounds();
         }
 
-        public void Update(double delta) // Client-only
+        public void Update() // Client-only
         {
             if (this.ClientRenderedThisFrame)
             {
@@ -320,7 +320,7 @@
 
             if (this.ClientDragMoveServerInducedPositionChangeProgress > 0)
             {
-                this.ClientDragMoveServerInducedPositionChangeProgress -= (float)delta;
+                this.ClientDragMoveServerInducedPositionChangeProgress -= (1f / 60f);
                 Vector3 nPos = Vector3.Lerp(this.ClientDragMoveServerInducedNewPosition, this.ClientDragMoveInitialPosition, this.ClientDragMoveServerInducedPositionChangeProgress);
                 this.Position = nPos;
                 if (this.ClientDragMoveServerInducedPositionChangeProgress <= 0)
@@ -332,7 +332,7 @@
 
             if (this.ClientDragMoveServerInducedScaleChangeProgress > 0)
             {
-                this.ClientDragMoveServerInducedScaleChangeProgress -= (float)delta;
+                this.ClientDragMoveServerInducedScaleChangeProgress -= (1f / 60f);
                 Vector3 nPos = Vector3.Lerp(this.ClientDragMoveServerInducedNewScale, this.ClientDragMoveInitialScale, this.ClientDragMoveServerInducedScaleChangeProgress);
                 this.Scale = nPos;
                 if (this.ClientDragMoveServerInducedScaleChangeProgress <= 0)
@@ -344,7 +344,7 @@
 
             if (this.ClientDragMoveServerInducedRotationChangeProgress > 0)
             {
-                this.ClientDragMoveServerInducedRotationChangeProgress -= (float)delta;
+                this.ClientDragMoveServerInducedRotationChangeProgress -= (1f / 60f);
                 Quaternion nPos = Quaternion.Slerp(this.ClientDragMoveServerInducedNewRotation, this.ClientDragMoveInitialRotation, this.ClientDragMoveServerInducedRotationChangeProgress);
                 this.Rotation = nPos;
                 if (this.ClientDragMoveServerInducedRotationChangeProgress <= 0)

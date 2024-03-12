@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using OpenTK.Graphics.OpenGL;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -10,6 +9,7 @@
     using VTT.Asset.Obj;
     using VTT.Control;
     using VTT.GL;
+    using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Sound;
@@ -46,7 +46,7 @@
             this.PingQuestion = OpenGLUtil.LoadUIImage("icons8-help-80");
             this.ModelPing = OpenGLUtil.LoadModel("ping_lower", VertexFormat.Pos);
             this.EmojiTextures = new Texture[12];
-            this.EmojiShader = OpenGLUtil.LoadShader("emojiping", ShaderType.VertexShader, ShaderType.FragmentShader);
+            this.EmojiShader = OpenGLUtil.LoadShader("emojiping", ShaderType.Vertex, ShaderType.Fragment);
             for (int i = 0; i < 12; ++i)
             {
                 this.EmojiTextures[i] = OpenGLUtil.LoadUIImage("emoji-" + (Ping.PingType.Smiling + i).ToString().ToLower());
@@ -92,7 +92,7 @@
 
             this.QuadVAO = new VertexArray();
             this.QuadVAO.Bind();
-            this.QuadVBO = new GPUBuffer(BufferTarget.ArrayBuffer, BufferUsageHint.StaticDraw);
+            this.QuadVBO = new GPUBuffer(BufferTarget.Array, BufferUsage.StaticDraw);
             this.QuadVBO.Bind();
             this.QuadVBO.SetData(new float[]
             {
@@ -102,7 +102,7 @@
                 -1, 1, 0, 0
             });
 
-            this.QuadEBO = new GPUBuffer(BufferTarget.ElementArrayBuffer, BufferUsageHint.StaticDraw);
+            this.QuadEBO = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.StaticDraw);
             this.QuadEBO.Bind();
             this.QuadEBO.SetData(new uint[] {
                 0, 1, 2, 0, 2, 3
@@ -154,7 +154,7 @@
 
         private bool _pingUI;
         private bool _emojiUI;
-        private OpenTK.Mathematics.Vector3 _pingUIAnchor;
+        private Vector3 _pingUIAnchor;
         public void BeginPingUI(bool emoji)
         {
             this._pingUI = true;
@@ -166,7 +166,7 @@
         {
             if (this._pingUI)
             {
-                Vector3 c = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(this._pingUIAnchor).SystemVector();
+                Vector3 c = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(this._pingUIAnchor);
                 Vector2 uic = new Vector2(c.X, c.Y);
                 Vector2 mouseC = ImGui.GetMousePos();
 
@@ -217,11 +217,11 @@
 
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Enable(EnableCap.Multisample);
-                GL.Enable(EnableCap.SampleAlphaToCoverage);
+                GL.Enable(Capability.Multisample);
+                GL.Enable(Capability.SampleAlphaToCoverage);
             }
 
-            GL.Enable(EnableCap.Blend);
+            GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -249,18 +249,18 @@
 
                 float scale = MathF.Max(0.00001f, (((p.DeathTime - now) % 2000) - 500) / 500f);
                 float a = MathF.Min(1, MathF.Abs(1.0f / scale));
-                shader["model"].Set(OpenTK.Mathematics.Matrix4.CreateScale(scale) * OpenTK.Mathematics.Matrix4.CreateTranslation(p.Position));
-                shader["u_color"].Set(p.OwnerColor.Vec4() * new OpenTK.Mathematics.Vector4(1, 1, 1, a));
+                shader["model"].Set(Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(p.Position));
+                shader["u_color"].Set(p.OwnerColor.Vec4() * new Vector4(1, 1, 1, a));
                 this.ModelPing.Render();
             }
 
-            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(Capability.DepthTest);
             shader = this.EmojiShader;
             shader.Bind();
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
-            shader["u_color"].Set(new OpenTK.Mathematics.Vector4(1, 1, 1, 1));
-            shader["screenSize"].Set(new OpenTK.Mathematics.Vector2(1f / Client.Instance.Frontend.Width, 1f / Client.Instance.Frontend.Height));
+            shader["u_color"].Set(new Vector4(1, 1, 1, 1));
+            shader["screenSize"].Set(new Vector2(1f / Client.Instance.Frontend.Width, 1f / Client.Instance.Frontend.Height));
             this.QuadVAO.Bind();
             for (int i = this.ActivePings.Count - 1; i >= 0; i--)
             {
@@ -275,18 +275,18 @@
                 float zOffset = lifetimeProgression * 1.25f;
                 float sizeInfluence = MathF.Sin(lifetimeProgression * MathF.PI) * (1 - MathF.Pow(lifetimeProgression, 4));
                 float a = MathF.Min(1, 1 - (MathF.Pow(lifetimeProgression - 0.4f, 3) * 4.6f));
-                shader["position"].Set(new OpenTK.Mathematics.Vector4(p.Position + new OpenTK.Mathematics.Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + (32 * sizeInfluence)));
-                shader["u_color"].Set(new OpenTK.Mathematics.Vector4(1, 1, 1, a));
+                shader["position"].Set(new Vector4(p.Position + new Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + (32 * sizeInfluence)));
+                shader["u_color"].Set(new Vector4(1, 1, 1, a));
                 this.EmojiTextures[p.Type - Ping.PingType.Smiling].Bind();
-                GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                GL.DrawElements(PrimitiveType.Triangles, 6, ElementsType.UnsignedInt, IntPtr.Zero);
             }
 
-            GL.Enable(EnableCap.DepthTest);
-            GL.Disable(EnableCap.Blend);
+            GL.Enable(Capability.DepthTest);
+            GL.Disable(Capability.Blend);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(EnableCap.SampleAlphaToCoverage);
-                GL.Disable(EnableCap.Multisample);
+                GL.Disable(Capability.SampleAlphaToCoverage);
+                GL.Disable(Capability.Multisample);
             }
 
             this.CPUTimer.Stop();
@@ -330,7 +330,7 @@
             ImDrawListPtr winDrawList = ImGui.GetForegroundDrawList();
             if (this._pingUI)
             {
-                Vector3 c = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(this._pingUIAnchor).SystemVector();
+                Vector3 c = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(this._pingUIAnchor);
                 Vector2 uic = new Vector2(c.X, c.Y);
                 Vector2 mouseC = ImGui.GetMousePos();
 
@@ -396,13 +396,13 @@
                     continue;
                 }
 
-                Vector3 world2 = (p.Position + OpenTK.Mathematics.Vector3.UnitZ).SystemVector();
-                Vector3 screen2 = cam.ToScreenspace(world2.GLVector()).SystemVector();
+                Vector3 world2 = (p.Position + Vector3.UnitZ);
+                Vector3 screen2 = cam.ToScreenspace(world2);
                 Vector2 screenxy2 = new Vector2(screen2.X, screen2.Y);
                 bool anyOOB = screenxy2.X < 16 || screenxy2.X > Client.Instance.Frontend.Width - 16 ||
                                 screenxy2.Y < 16 || screenxy2.Y > Client.Instance.Frontend.Height - 16;
-                screenxy2.X = OpenTK.Mathematics.MathHelper.Clamp(screenxy2.X, 16, Client.Instance.Frontend.Width - 16);
-                screenxy2.Y = OpenTK.Mathematics.MathHelper.Clamp(screenxy2.Y, 16, Client.Instance.Frontend.Height - 16);
+                screenxy2.X = Math.Clamp(screenxy2.X, 16, Client.Instance.Frontend.Width - 16);
+                screenxy2.Y = Math.Clamp(screenxy2.Y, 16, Client.Instance.Frontend.Height - 16);
 
                 Texture pTex = p.Type == Ping.PingType.Question ? this.PingQuestion : p.Type == Ping.PingType.Attack ? this.PingAttack : p.Type == Ping.PingType.Exclamation ? this.PingExclamation : p.Type == Ping.PingType.Generic ? this.PingGeneric : this.PingDefend;
                 winDrawList.AddImage(pTex, screenxy2 - new Vector2(16, 16), screenxy2 + new Vector2(16, 16));

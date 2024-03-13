@@ -129,9 +129,6 @@
 
         private void CursorPosCallback(IntPtr w, double x, double y)
         {
-            this.MousePosition.Value = new Vector2((float)x, (float)y);
-            this.MouseMove?.Invoke(this.MousePosition.Value);
-            this.MousePosition.ValueChanged = false;
         }
 
         private void WindowFBOSizeCallback(IntPtr win, int w, int h) => this._needsFboResize = true;
@@ -246,6 +243,16 @@
                 if (this.MousePosition.ValueChanged)
                 {
                     Glfw.SetCursorPos(this._nativeWindow, this.MousePosition.Value.X, this.MousePosition.Value.Y);
+                    this.MousePosition.ValueChanged = false;
+                }
+
+                Glfw.GetCursorPos(this._nativeWindow, out double cx, out double cy);
+                float mx = (float)cx;
+                float my = (float)cy;
+                if (mx != this.MousePosition.Value.X || my != this.MousePosition.Value.Y)
+                {
+                    this.MousePosition.Value = new Vector2((float)mx, (float)my);
+                    this.MouseMove?.Invoke(this.MousePosition.Value);
                     this.MousePosition.ValueChanged = false;
                 }
 

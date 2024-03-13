@@ -195,5 +195,13 @@
         }
 
         public static double GetTime() => glfwGetTime();
+        public static unsafe void GetCursorPos(IntPtr window, out double x, out double y)
+        {
+            double dx = 0;
+            double dy = 0;
+            glfwGetCursorPos(window, &dx, &dy);
+            x = dx;
+            y = dy;
+        }
     }
 }

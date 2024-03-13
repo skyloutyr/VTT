@@ -130,5 +130,8 @@
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern double glfwGetTime();
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void glfwGetCursorPos(IntPtr window, double* x, double* y);
     }
 }

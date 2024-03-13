@@ -2,7 +2,10 @@
 {
     using ImGuiNET;
     using Newtonsoft.Json.Linq;
+    using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
@@ -289,6 +292,8 @@
             this.LoadStatuses();
         }
 
+        
+
         private Texture[] _modeTextures;
         private Texture[] _rulerModeTextures;
 
@@ -312,10 +317,11 @@
 
             #region Frame Setup
             this._mouseOverAssets = false;
+            this.FrameState.Reset();
 
             if (Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnected)
             {
-                this.MainMenuRenderer.Render(ref this.showDisconnect, time);
+                this.MainMenuRenderer.Render(ref this.showDisconnect, time, this.FrameState);
                 return;
             }
 
@@ -327,7 +333,6 @@
                 }
             }
 
-            this.FrameState.Reset();
             #endregion
 
             if (this._showImGuiDemoWindow)

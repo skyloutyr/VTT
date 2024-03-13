@@ -1,5 +1,7 @@
 ﻿namespace VTT.Render.Gui
 {
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
@@ -46,6 +48,8 @@
         public Map clientMap = null;
         public Map mapAmbianceHovered = null;
         public bool movingAssetOverMusicPlayerAddPoint = false;
+        public ConcurrentQueue<string> dropEventsReceiver = new ConcurrentQueue<string>();
+        public List<string> dropEvents = new List<string>();
 
         public void Reset()
         {
@@ -88,6 +92,16 @@
             editModelPopup = false;
             mapAmbianceHovered = null;
             movingAssetOverMusicPlayerAddPoint = false;
+            dropEvents.Clear();
+            while (!dropEventsReceiver.IsEmpty)
+            {
+                if (!dropEventsReceiver.TryDequeue(out string res))
+                {
+                    break;
+                }
+
+                dropEvents.Add(res);
+            }
         }
     }
 }

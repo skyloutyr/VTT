@@ -29,6 +29,7 @@
                     else
                     {
                         client.ClientInfos[ci.ID] = ci;
+                        client.Frontend.Renderer.AvatarLibrary.ClientImagesQueue.Enqueue((ci.ID, ci.Image));
                     }
                 }
             }

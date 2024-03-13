@@ -678,3 +678,7 @@ ui.particle.emission.mask=2D Image Mask
 ui.properties.custom_mask.tt=An image asset can be drag'n'dropped here to serve as an emission mask.\nParticles will emit from bright parts of the image.\nBrighter parts will get more particle coverage.
 ui.animtions.set_default=Set Default
 ui.animations.play_rate=Playback Rate
+menu.settings.player_image=Avatar
+menu.settings.player_image.tt=An image can be drag'n'dropped here to be set as the user avatar.\nAvatars will be displayed in chat next to sender name.\nAvatar images will be auto-scaled to a 32x32 resolution.
+menu.settings.player_image.needs_connection.tt=Player avatars are unique per server.\nYou can connect to a server to change your avatar for that server.
+menu.settings.player_image.clear=Clear Aavatar

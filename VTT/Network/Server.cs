@@ -3,6 +3,7 @@
     using NetCoreServer;
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -813,6 +814,12 @@
         {
             get => this.Info.Color;
             set => this.Info.Color = value;
+        }
+
+        public Image<Rgba32> Image
+        {
+            get => this.Info.Image;
+            set => this.Info.Image = value;
         }
 
         public Server Container { get; set; }

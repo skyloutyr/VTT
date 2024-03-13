@@ -2,6 +2,8 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
+    using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -11,8 +13,10 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.GL;
+    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Gui;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
 
@@ -51,7 +55,7 @@
             this._connectPort = Client.Instance.Settings.LastConnectPort;
         }
 
-        public void Render(ref bool showDC, double delta)
+        public void Render(ref bool showDC, double delta, GuiState state)
         {
             SimpleLanguage lang = Client.Instance.Lang;
             ImGui.SetNextWindowSize(new(ImGui.GetIO().DisplaySize.X, ImGui.GetIO().DisplaySize.Y));
@@ -218,7 +222,7 @@
                 if (this.MenuMode == 3)
                 {
                     ImGui.SetCursorPos(new Vector2((width / 2) - 200, 532));
-                    DrawSettings(lang);
+                    DrawSettings(lang, state);
 
                 }
                 if (this.MenuMode == 2)
@@ -446,7 +450,7 @@
             ImGui.PopStyleVar();
         }
 
-        public static unsafe void DrawSettings(SimpleLanguage lang)
+        public static unsafe void DrawSettings(SimpleLanguage lang, GuiState state)
         {
             if (ImGui.BeginChild("Main Menu Setting", new Vector2(400, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
             {
@@ -578,6 +582,62 @@
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.sound_compression.tt"));
+                    }
+
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.player_image"));
+                    if (Client.Instance.Connected)
+                    {
+                        Texture clientImage = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon;
+                        if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(Client.Instance.ID, out (Texture, bool) cImgData) && cImgData.Item2)
+                        {
+                            clientImage = cImgData.Item1;
+                        }
+
+                        Vector2 v = ImGui.GetCursorScreenPos();
+                        Vector2 m = Client.Instance.Frontend.GameHandle.MousePosition.Value;
+                        ImGui.Image(clientImage, new Vector2(64, 64));
+                        if (m.X >= v.X && m.Y >= v.Y && m.X <= v.X + 64 && m.Y <= v.Y + 64)
+                        {
+                            for (int i = state.dropEvents.Count - 1; i >= 0; i--)
+                            {
+                                string s = state.dropEvents[i];
+                                if (s.EndsWith(".png"))
+                                {
+                                    try
+                                    {
+                                        Image<Rgba32> img = Image.Load<Rgba32>(s);
+                                        if (img.Width != 32 || img.Height != 32)
+                                        {
+                                            img.Mutate(x => x.Resize(32, 32, KnownResamplers.Bicubic));
+                                        }
+
+                                        new PacketClientAvatar() { Image = img }.Send(Client.Instance.NetClient);
+                                        state.dropEvents.RemoveAt(i);
+                                        break;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Client.Instance.Logger.Log(LogLevel.Error, "Could not read image for client's avatar!");
+                                        Client.Instance.Logger.Exception(LogLevel.Error, e);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            ImGui.SetTooltip(lang.Translate("menu.settings.player_image.tt"));
+                        }
+
+                        if (ImGui.Button(lang.Translate("menu.settings.player_image.clear")))
+                        {
+                            new PacketClientAvatar() { Image = null }.Send(Client.Instance.NetClient);
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("menu.settings.player_image.needs_connection.tt"));
+                        }
                     }
 
                     ImGui.TreePop();

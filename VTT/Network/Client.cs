@@ -14,6 +14,7 @@
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
+    using VTT.GL;
     using VTT.Network.Packet;
     using VTT.Network.VSCC;
     using VTT.Render;
@@ -39,6 +40,7 @@
         public SimpleLanguage Lang { get; } = new SimpleLanguage();
         public AppVersion ClientVersion { get; set; }
         public NetClient NetClient { get; set; }
+        public bool Connected => this.NetClient?.IsConnected ?? false;
 
         public AssetManager AssetManager { get; } = new AssetManager() { IsServer = false };
 

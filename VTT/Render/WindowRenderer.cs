@@ -1,6 +1,10 @@
 ﻿namespace VTT.Render
 {
+    using SixLabors.ImageSharp.PixelFormats;
+    using SixLabors.ImageSharp;
     using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Numerics;
     using VTT.Control;
     using VTT.GL;
@@ -10,6 +14,7 @@
     using VTT.Render.LightShadow;
     using VTT.Util;
     using GL = VTT.GL.Bindings.GL;
+    using static System.Net.Mime.MediaTypeNames;
 
     public class WindowRenderer
     {
@@ -24,6 +29,7 @@
         public PingRenderer PingRenderer { get; set; }
         public ParticleRenderer ParticleRenderer { get; set; }
         public UniversalPipeline Pipeline { get; set; }
+        public ClientAvatarLibrary AvatarLibrary { get; set; } = new ClientAvatarLibrary();
 
         public Texture White { get; set; }
         public Texture Black { get; set; }
@@ -127,6 +133,7 @@
                 GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
 
+                this.AvatarLibrary.Render();
                 this.MapRenderer.Render(m, time);
                 this.ObjectRenderer.Render(m, time);
                 this.RulerRenderer?.Render(time);
@@ -155,5 +162,46 @@
         }
 
         public void SetWindowState(bool state) => this._windowNeedsDrawing = state;
+    }
+
+    public class ClientAvatarLibrary
+    {
+        public Dictionary<Guid, (Texture, bool)> ClientImages { get; } = new Dictionary<Guid, (Texture, bool)>();
+        public ConcurrentQueue<(Guid, Image<Rgba32>)> ClientImagesQueue { get; } = new ConcurrentQueue<(Guid, Image<Rgba32>)>();
+        public void UploadClientTexture(Guid clientID, Image<Rgba32> img)
+        {
+            bool b = img != null;
+            if (!b)
+            {
+                img = new Image<Rgba32>(32, 32, new Rgba32(0, 0, 0, 255));
+            }
+
+            if (!this.ClientImages.TryGetValue(clientID, out (Texture, bool) value))
+            {
+                Texture tex = new Texture(TextureTarget.Texture2D);
+                tex.Bind();
+                tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
+                this.ClientImages[clientID] = value = (tex, b);
+            }
+
+            value.Item1.Bind();
+            value.Item1.SetImage(img, SizedInternalFormat.Rgba8);
+            value.Item1.GenerateMipMaps();
+            this.ClientImages[clientID] = (value.Item1, b);
+        }
+
+        public void Render()
+        {
+            while (!this.ClientImagesQueue.IsEmpty)
+            {
+                if (!this.ClientImagesQueue.TryDequeue(out (Guid, Image<Rgba32>) val))
+                {
+                    break;
+                }
+
+                this.UploadClientTexture(val.Item1, val.Item2);
+            }
+        }
     }
 }

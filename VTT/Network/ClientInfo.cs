@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.ComponentModel;
     using System.IO;
@@ -42,6 +43,11 @@
         [JsonProperty(PropertyName = "CanDraw", DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool CanDraw { get; set; } = true;
 
+        [DefaultValue(null)]
+        [JsonProperty(PropertyName = "Image", DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonConverter(typeof(ImageBase64Converter))]
+        public Image<Rgba32> Image { get; set; }
+
         public static ClientInfo Empty { get; } = new ClientInfo()
         {
             ID = Guid.Empty,
@@ -50,7 +56,8 @@
             Color = Color.White,
             IsAdmin = false,
             IsObserver = false,
-            CanDraw = false
+            CanDraw = false,
+            Image = null,
         };
 
         public ClientInfo()
@@ -92,6 +99,18 @@
             bw.Write(this.IsLoggedOn);
             bw.Write(this.IsBanned);
             bw.Write(this.CanDraw);
+            if (this.Image == null)
+            {
+                bw.Write(0);
+            }
+            else
+            {
+                using MemoryStream ms = new MemoryStream();
+                this.Image.SaveAsPng(ms);
+                byte[] arr = ms.ToArray();
+                bw.Write(arr.Length);
+                bw.Write(arr);
+            }
         }
 
         public void Read(BinaryReader br)
@@ -105,6 +124,15 @@
             this.IsLoggedOn = br.ReadBoolean();
             this.IsBanned = br.ReadBoolean();
             this.CanDraw = br.ReadBoolean();
+            int amt = br.ReadInt32();
+            if (amt == 0)
+            {
+                this.Image = null;
+            }
+            else
+            {
+                this.Image = SixLabors.ImageSharp.Image.Load<Rgba32>(br.ReadBytes(amt));
+            }
         }
     }
 }

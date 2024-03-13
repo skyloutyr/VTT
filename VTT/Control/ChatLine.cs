@@ -12,6 +12,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Render.Chat;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ChatLine
@@ -164,6 +165,14 @@
                         }
                     }
                 }
+                else
+                {
+                    if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(this.SenderID, out (Texture, bool) val) && val.Item2)
+                    {
+                        ImGui.Image(val.Item1, new Vector2(16, 16));
+                        ImGui.SameLine();
+                    }
+                }
 
                 if (!this.SendTime.Equals(DateTime.UnixEpoch))
                 {
@@ -186,6 +195,15 @@
                 ImGui.SameLine();
                 ImGui.Text("->");
                 ImGui.SameLine();
+                if (!this.DestID.IsEmpty())
+                {
+                    if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(this.DestID, out (Texture, bool) val) && val.Item2)
+                    {
+                        ImGui.Image(val.Item1, new Vector2(16, 16));
+                        ImGui.SameLine();
+                    }
+                }
+
                 ImGui.PushStyleColor(ImGuiCol.Text, this.DestColor.Abgr());
                 ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
                 ImGui.PopStyleColor();
@@ -195,7 +213,14 @@
                 ImGui.NewLine();
                 if (ImGui.IsMouseHoveringRect(sV, eV))
                 {
-                    ImGui.SetTooltip(this.Sender);
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(this.Sender);
+                    if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(this.SenderID, out (Texture, bool) val) && val.Item2)
+                    {
+                        ImGui.Image(val.Item1, new Vector2(32, 32));
+                    }
+
+                    ImGui.EndTooltip();
                 }
 
                 this.Renderer?.Render();

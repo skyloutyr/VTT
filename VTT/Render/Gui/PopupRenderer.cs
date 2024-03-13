@@ -732,7 +732,7 @@
 
                 if (ImGui.CollapsingHeader(lang.Translate("menu.settings") + "###Settings"))
                 {
-                    MainMenu.MainMenuRenderer.DrawSettings(lang);
+                    MainMenu.MainMenuRenderer.DrawSettings(lang, state);
                 }
 
                 ImGui.EndPopup();

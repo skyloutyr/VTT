@@ -52,6 +52,7 @@ You can download the application in the releases section. VTT is still in its be
 An automatic updater companion app is built-in. When it detects a new version being released it will notify you in the main menu. Updating is as simple as pressing the "Update" button there.
 
 **Windows only, but since the application is built with .net core and uses opengl 3.3 it should be relatively simple to run on linux.**
+Note that for a linux installation you will need a compiled glfw3.so library available, as well as any openal library.
 
 
 ### Requires .NET 6, msvcr 120 and msvcr 140.
@@ -262,7 +263,10 @@ In case you don't wish to use Visual Studio the following nuget packages are use
 * ImGui .NET
 * NetCoreServer
 * Newtonsoft.Json
-* OpenTK
+* NLayer
+* NVorbis
+* Any native Glfw distribution (project uses Ultz.Native.GLFW but any native package should work)
+* NetStandard.Library
 * SixLabours.ImageSharp
 
 Everything in the Embed folder is a manifest resource of the resulting VTT.dll

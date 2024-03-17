@@ -296,7 +296,7 @@
             foreach (KeyValuePair<Guid, ParticleContainer> p in this.ParticleContainers)
             {
                 Guid nID = Guid.NewGuid();
-                ParticleContainer p1 = new ParticleContainer(ret) { AttachmentPoint = p.Value.AttachmentPoint, ContainerPositionOffset = p.Value.ContainerPositionOffset, IsActive = p.Value.IsActive, UseContainerOrientation = p.Value.UseContainerOrientation, SystemID = p.Value.SystemID, ID = nID };
+                ParticleContainer p1 = new ParticleContainer(ret) { AttachmentPoint = p.Value.AttachmentPoint, ContainerPositionOffset = p.Value.ContainerPositionOffset, IsActive = p.Value.IsActive, UseContainerOrientation = p.Value.UseContainerOrientation, RotateVelocityByOrientation = p.Value.RotateVelocityByOrientation, SystemID = p.Value.SystemID, ID = nID };
                 ret.ParticleContainers[nID] = p1;
             }
 

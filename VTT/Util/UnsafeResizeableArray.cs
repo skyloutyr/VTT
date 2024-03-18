@@ -1,6 +1,7 @@
 ﻿namespace VTT.Util
 {
     using System;
+    using System.Collections.Generic;
     using System.Runtime.InteropServices;
 
     public unsafe class UnsafeResizeableArray<T> where T : unmanaged
@@ -21,6 +22,28 @@
             this._index = 0;
             this._count = amt;
             this._ptr = (T*)Marshal.AllocHGlobal(amt * sizeof(T));
+        }
+
+        public UnsafeResizeableArray(T[] managed)
+        {
+            this._index = managed.Length - 1;
+            this._count = managed.Length;
+            this._ptr = (T*)Marshal.AllocHGlobal((int)managed.Length * sizeof(T));
+            for (int i = managed.Length - 1; i >= 0; --i)
+            {
+                this._ptr[i] = managed[i];
+            }
+        }
+
+        public UnsafeResizeableArray(IList<T> managed)
+        {
+            this._index = managed.Count - 1;
+            this._count = managed.Count;
+            this._ptr = (T*)Marshal.AllocHGlobal((int)managed.Count * sizeof(T));
+            for (int i = managed.Count - 1; i >= 0; --i)
+            {
+                this._ptr[i] = managed[i];
+            }
         }
 
         private void CheckSize(int nSz)
@@ -85,6 +108,8 @@
 
             return ret;
         }
+
+        public unsafe T* GetPointer(int element = 0) => this._ptr + element;
 
         public void Free() => Marshal.FreeHGlobal((IntPtr)this._ptr);
     }

@@ -19,7 +19,7 @@
     public class ParticleSystem
     {
         public static Dictionary<Guid, List<WeightedList<Vector2>>> ImageEmissionLocations { get; } = new Dictionary<Guid, List<WeightedList<Vector2>>>();
-        public static object imageEmissionLock = new object();
+        public static readonly object imageEmissionLock = new object();
 
         public EmissionMode EmissionType { get; set; } = EmissionMode.Point;
         public float EmissionRadius { get; set; } = 1.0f;
@@ -770,13 +770,9 @@
                                     if (!ParticleSystem.ImageEmissionLocations.TryGetValue(this.Template.MaskID, out masks))
                                     {
                                         Image<Rgba32> img = a.Texture.CompoundImage();
-                                        TextureAnimation anima = a.Texture.CachedAnimation;
-                                        if (anima == null)
-                                        {
-                                            anima = new TextureAnimation(new TextureAnimation.Frame[] {
-                                                new TextureAnimation.Frame(){ Index = 0, Duration = 1, Location = new RectangleF(0, 0, 1, 1) }
-                                            });
-                                        }
+                                        TextureAnimation anima = a.Texture.CachedAnimation ?? new TextureAnimation(new TextureAnimation.Frame[] {
+                                            new TextureAnimation.Frame(){ Index = 0, Duration = 1, Location = new RectangleF(0, 0, 1, 1) }
+                                        });
 
                                         masks = this.AnalyzeImage(img, anima);
                                         img.Dispose();
@@ -890,23 +886,7 @@
                                                 float inf1 = 1 - r1;
                                                 float inf2 = r1 * (1 - r2);
                                                 float inf3 = r2 * r1;
-                                                GlbMesh.BoneData transformData;
-                                                if (inf1 > inf2 && inf1 > inf3)
-                                                {
-                                                    transformData = bd1;
-                                                }
-                                                else
-                                                {
-                                                    if (inf2 > inf3 && inf2 > inf1)
-                                                    {
-                                                        transformData = bd2;
-                                                    }
-                                                    else
-                                                    {
-                                                        transformData = bd3;
-                                                    }
-                                                }
-
+                                                GlbMesh.BoneData transformData = inf1 > inf2 && inf1 > inf3 ? bd1 : inf2 > inf3 && inf2 > inf1 ? bd2 : bd3;
                                                 Matrix4x4 m0 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index0].Transform * transformData.weight1;
                                                 Matrix4x4 m1 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index1].Transform * transformData.weight2;
                                                 Matrix4x4 m2 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index2].Transform * transformData.weight3;

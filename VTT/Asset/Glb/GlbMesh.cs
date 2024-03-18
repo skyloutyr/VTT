@@ -13,10 +13,9 @@
         private GPUBuffer _vbo;
         private GPUBuffer _ebo;
 
-        public System.Numerics.Vector3[] simplifiedTriangles;
-        public BoneData[] boneData;
-
-        public float[] areaSums;
+        public UnsafeResizeableArray<Vector3> simplifiedTriangles;
+        public UnsafeResizeableArray<BoneData> boneData;
+        public UnsafeResizeableArray<float> areaSums;
 
         public int AmountToRender { get; set; }
         public float[] VertexBuffer { get; set; }

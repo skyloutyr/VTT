@@ -169,8 +169,8 @@
                 areaSums.Add(areaSum);
             }
 
-            glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
-            glbm.areaSums = areaSums.ToArray();
+            glbm.simplifiedTriangles = new(simplifiedTriangles);
+            glbm.areaSums = new(areaSums);
             glbm.Bounds = new AABox(new Vector3(-0.5f, -0.5f, -0.01f), new Vector3(0.5f, 0.5f, 0.01f));
             glbm.VertexBuffer = vBuffer;
             glbm.IndexBuffer = indices;

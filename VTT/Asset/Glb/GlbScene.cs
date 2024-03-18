@@ -652,9 +652,9 @@
                             }
                         }
 
-                        glbm.simplifiedTriangles = simplifiedTriangles.ToArray();
-                        glbm.boneData = simplifiedBones.ToArray();
-                        glbm.areaSums = areaSums.ToArray();
+                        glbm.simplifiedTriangles = new(simplifiedTriangles);
+                        glbm.boneData = new(simplifiedBones);
+                        glbm.areaSums = new(areaSums);
                         glbm.Bounds = new AABox(posMin, posMax); // Bounds generated from transformed positions
                         glbm.VertexBuffer = vBuffer;
                         glbm.IndexBuffer = indices;

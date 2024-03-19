@@ -368,6 +368,7 @@
                         ImGui.Text("    rectangle");
                         ImGui.Text("    resize");
                         ImGui.Text("    return");
+                        ImGui.Text("    search");
                         ImGui.Text("    security-lock");
                         ImGui.Text("    so-so");
                         ImGui.Text("    sound");

@@ -105,6 +105,8 @@
         public Texture CameraMove { get; set; }
         public Texture CameraRotate { get; set; }
 
+        public Texture Search { get; set; }
+
         public int LoadingSpinnerFrames { get; set; }
         #endregion
 
@@ -278,6 +280,8 @@
 
             this.CameraMove = OpenGLUtil.LoadUIImage("icons8-video-camera-move-40");
             this.CameraRotate = OpenGLUtil.LoadUIImage("icons8-video-camera-rotate-40");
+
+            this.Search = OpenGLUtil.LoadUIImage("icons8-search-40");
 
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };

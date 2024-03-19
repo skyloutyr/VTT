@@ -295,6 +295,7 @@
             return false;
         }
 
+        private string _searchText = "";
         private unsafe void RenderAssets(SimpleLanguage lang, GuiState state)
         {
             this._mouseOverAssets = false;
@@ -603,7 +604,7 @@
 
                     System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
 
-                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X - 300, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
                     if (ImGui.BeginMenuBar())
                     {
                         if (ImGui.BeginMenu(lang.Translate("ui.menu.new")))
@@ -670,6 +671,17 @@
                     }
 
                     ImGui.EndChild();
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(300 - 64);
+                    ImGui.InputText("##AssetsSearchBar", ref this._searchText, ushort.MaxValue, ImGuiInputTextFlags.EscapeClearsAll);
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    {
+                        ImGui.SetKeyboardFocusHere();
+                        this._searchText = "";
+                    }
+
+                    ImGui.SameLine();
+                    ImGui.Image(this.Search, new Vector2(24, 24));
 
                     var winPadding = ImGui.GetStyle().WindowPadding;
                     var framePadding = ImGui.GetStyle().FramePadding;
@@ -741,6 +753,14 @@
                     this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
                     foreach (AssetRef aRef in this.CurrentFolder.Refs.OrderBy(x => x.Name))
                     {
+                        if (!string.IsNullOrEmpty(this._searchText))
+                        {
+                            if (!aRef.Name.Contains(this._searchText, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
+                        }
+
                         float cursorXBeforeElement = ImGui.GetCursorPosX();
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, System.Numerics.Vector2.Zero);
                         ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, System.Numerics.Vector2.Zero);

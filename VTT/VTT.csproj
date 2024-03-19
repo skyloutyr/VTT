@@ -118,6 +118,7 @@
     <None Remove="Embed\icons8-rectangle-40.png" />
     <None Remove="Embed\icons8-resize-40.png" />
     <None Remove="Embed\icons8-return-40.png" />
+    <None Remove="Embed\icons8-search-40.png" />
     <None Remove="Embed\icons8-security-lock-80.png" />
     <None Remove="Embed\icons8-so-so-40.png" />
     <None Remove="Embed\icons8-sound-40.png" />
@@ -225,6 +226,7 @@
     <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
+    <EmbeddedResource Include="Embed\icons8-search-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
     <EmbeddedResource Include="Embed\pattern0.png" />

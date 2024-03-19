@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
+    using System;
     using System.IO;
     using VTT.Util;
 
@@ -25,6 +26,9 @@
 
         [JsonIgnore]
         public bool ConstructedFromOldBinaryEncoding { get; set; }
+
+        [JsonConverter(typeof(UnixDateTimeConverter))]
+        public DateTime UploadTime { get; set; } = DateTime.UnixEpoch;
 
         public AssetMetadata()
         {
@@ -58,6 +62,8 @@
                 this.SoundInfo = new SoundData.Metadata();
                 this.SoundInfo.Deserialize(e.Get<DataElement>("SoundInfo"));
             }
+
+            this.UploadTime = e.GetDateTime("UploadTime", DateTime.UnixEpoch);
         }
 
         public DataElement Serialize()
@@ -80,6 +86,8 @@
             {
                 ret.Set("SoundInfo", this.SoundInfo.Serialize());
             }
+
+            ret.SetDateTime("UploadTime", this.UploadTime);
 
             return ret;
         }

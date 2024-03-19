@@ -296,6 +296,7 @@
         }
 
         private string _searchText = "";
+        private int _sortOption = 0;
         private unsafe void RenderAssets(SimpleLanguage lang, GuiState state)
         {
             this._mouseOverAssets = false;
@@ -604,7 +605,7 @@
 
                     System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
 
-                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X - 300, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X - 500, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
                     if (ImGui.BeginMenuBar())
                     {
                         if (ImGui.BeginMenu(lang.Translate("ui.menu.new")))
@@ -672,14 +673,18 @@
 
                     ImGui.EndChild();
                     ImGui.SameLine();
+                    string[] sortOptions = { lang.Translate("ui.asset.sort.name"), lang.Translate("ui.asset.sort.type"), lang.Translate("ui.asset.sort.upload_date") };
+                    ImGui.SetNextItemWidth(140);
+                    ImGui.Combo(lang.Translate("ui.asset.sort_by") + "###AssetSortBar", ref this._sortOption, sortOptions, sortOptions.Length);
+                    ImGui.SameLine();
                     ImGui.SetNextItemWidth(300 - 64);
                     ImGui.InputText("##AssetsSearchBar", ref this._searchText, ushort.MaxValue, ImGuiInputTextFlags.EscapeClearsAll);
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                     {
                         ImGui.SetKeyboardFocusHere();
                         this._searchText = "";
-                    }
 
+                    }
                     ImGui.SameLine();
                     ImGui.Image(this.Search, new Vector2(24, 24));
 
@@ -751,7 +756,29 @@
                     cw = ImGui.GetColumnWidth();
                     ImGui.BeginChild(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
                     this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
-                    foreach (AssetRef aRef in this.CurrentFolder.Refs.OrderBy(x => x.Name))
+                    IOrderedEnumerable<AssetRef> assetEnumeration;
+                    switch (this._sortOption)
+                    {
+                        case 1:
+                        {
+                            assetEnumeration = this.CurrentFolder.Refs.OrderBy(x => x.Type).ThenBy(x => x.Name);
+                            break;
+                        }
+
+                        case 2:
+                        {
+                            assetEnumeration = this.CurrentFolder.Refs.OrderBy(x => x.UploadTime).ThenBy(x => x.Name);
+                            break;
+                        }
+
+                        default:
+                        {
+                            assetEnumeration = this.CurrentFolder.Refs.OrderBy(x => x.Name);
+                            break;
+                        }
+                    }
+
+                    foreach (AssetRef aRef in assetEnumeration)
                     {
                         if (!string.IsNullOrEmpty(this._searchText))
                         {

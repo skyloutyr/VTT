@@ -682,3 +682,7 @@ menu.settings.player_image=Аватар
 menu.settings.player_image.tt=Сюда можно перенести изображение чтобы установить его как аватар.\nАватары отображаются в чате рядом с именем отправителя.\nИзображения будут автоматически подогнаны под разрешение 32х32.
 menu.settings.player_image.needs_connection.tt=Аватары уникальны для каждого сервера.\nВы можете подключиться к серверу, чтобы поменять ваш аватар на этом сервере.
 menu.settings.player_image.clear=Удалить Аватар
+ui.asset.sort_by=Фильтр
+ui.asset.sort.name=Название
+ui.asset.sort.type=Тип
+ui.asset.sort.upload_date=Дата

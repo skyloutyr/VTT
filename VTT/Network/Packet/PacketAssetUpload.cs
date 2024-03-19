@@ -22,6 +22,7 @@
                 server.Logger.Log(LogLevel.Info, "Asset upload packet received");
                 if (this.Sender.IsAdmin)
                 {
+                    this.Meta.UploadTime = DateTime.Now;
                     AssetDirectory ad = server.AssetManager.GetDirAt(this.Path);
                     Guid id = Guid.NewGuid();
                     string path = System.IO.Path.Combine(server.AssetManager.GetFSPath(ad), id + ".ab");

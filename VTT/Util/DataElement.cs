@@ -604,5 +604,18 @@
             int i = self.Get(name, dVal);
             return (T)Enum.ToObject(typeof(T), i);
         }
+
+        public static DateTime GetDateTime(this DataElement self, string name, DateTime defaultVal = default)
+        {
+            long dVal = (long)(defaultVal.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
+            long l = self.Get<long>(name, dVal);
+            return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(l);
+        }
+
+        public static void SetDateTime(this DataElement self, string name, DateTime val)
+        {
+            long dVal = (long)(val.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
+            self.Set<long>(name, dVal);
+        }
     }
 }

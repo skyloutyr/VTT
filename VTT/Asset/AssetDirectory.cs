@@ -105,6 +105,12 @@
             set => this.Meta.Type = value;
         }
 
+        public DateTime UploadTime
+        {
+            get => this.Meta.UploadTime;
+            set => this.Meta.UploadTime = value;
+        }
+
         public AssetMetadata Meta { get; set; }
 
         public bool IsServer { get; set; }

@@ -110,10 +110,17 @@
             this.GameHandle.MouseMove += this.Instance_MouseMove;
             this.GameHandle.FileDrop += this.Instance_FileDrop;
             this.GameHandle.KeyDown += this.Instance_KeyDown;
+            this.GameHandle.KeyRepeat += this.Instance_KeyRepeat;
             this.GameHandle.KeyUp += this.Instance_KeyUp;
             this.GameHandle.MouseDown += this.Instance_MouseDown;
             this.GameHandle.MouseUp += this.Instance_MouseUp;
             this.GameHandle.FocusedChanged += this.Instance_Focus;
+        }
+
+        private void Instance_KeyRepeat(KeyEventData obj)
+        {
+            //ImGui creates key repeats by its own, no need to pass key repeat there
+            this.Renderer?.MapRenderer?.HandleKeys(obj);
         }
 
         private unsafe GLFWimage[] LoadIcon(string postfix)

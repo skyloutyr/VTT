@@ -767,7 +767,7 @@
 
                         case 2:
                         {
-                            assetEnumeration = this.CurrentFolder.Refs.OrderBy(x => x.UploadTime).ThenBy(x => x.Name);
+                            assetEnumeration = this.CurrentFolder.Refs.OrderByDescending(x => x.UploadTime).ThenBy(x => x.Name);
                             break;
                         }
 

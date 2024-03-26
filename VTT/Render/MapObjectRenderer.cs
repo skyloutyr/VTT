@@ -1021,6 +1021,7 @@
                 shader["cursor_position"].Set(Vector3.Zero);
                 shader["dv_data"].Set(Vector4.Zero);
                 shader["frame_delta"].Set(0f);
+                shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
             }
             else
             {
@@ -1042,6 +1043,7 @@
                     this.FrameUBOManager.memory->grid_size = 1.0f;
                     this.FrameUBOManager.memory->cursor_position = Vector4.Zero;
                     this.FrameUBOManager.memory->dv_data = Vector4.Zero;
+                    this.FrameUBOManager.memory->viewport_size = new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
                     this.FrameUBOManager.memory->frame_delta = 0f;
                 }
 
@@ -1075,6 +1077,8 @@
                     this.FrameUBOManager.memory->cursor_position = new Vector4(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero, 1.0f);
                     this.FrameUBOManager.memory->dv_data = Vector4.Zero;
                     this.FrameUBOManager.memory->frame_delta = (float)delta;
+                    this.FrameUBOManager.memory->viewport_size = new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
+
                     if (m.EnableDarkvision)
                     {
                         if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
@@ -1118,6 +1122,7 @@
                 shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
                 shader["dv_data"].Set(Vector4.Zero);
                 shader["frame_delta"].Set((float)delta);
+                shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                 if (m.EnableDarkvision)
                 {
                     if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
@@ -1215,7 +1220,7 @@
         Draw
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 420, Pack = 0)]
+    [StructLayout(LayoutKind.Explicit, Size = 428, Pack = 0)]
     public unsafe struct FrameUBO
     {
         [FieldOffset(0)] public Matrix4x4 view;
@@ -1235,7 +1240,8 @@
         [FieldOffset(404)] public uint update;
         [FieldOffset(408)] public float grid_size;
         [FieldOffset(412)] public float frame_delta;
-        [FieldOffset(416)] public int _padding;
+        [FieldOffset(416)] public Vector2 viewport_size;
+        [FieldOffset(424)] public int _padding;
     }
 
     public unsafe class FrameUBOManager
@@ -1249,7 +1255,7 @@
             this.memory = (FrameUBO*)Marshal.AllocHGlobal(sizeof(FrameUBO));
             this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
             this._ubo.Bind();
-            this._ubo.SetData(IntPtr.Zero, 420);
+            this._ubo.SetData(IntPtr.Zero, 428);
             GL.BindBuffer(BufferTarget.Uniform, 0);
             GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 1, this._ubo);
         }
@@ -1263,7 +1269,7 @@
         public unsafe void Upload()
         {
             this._ubo.Bind();
-            this._ubo.SetSubData((IntPtr)this.memory, 420, 0);
+            this._ubo.SetSubData((IntPtr)this.memory, 428, 0);
             GL.BindBuffer(BufferTarget.Uniform, 0);
         }
     }

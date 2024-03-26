@@ -29,6 +29,7 @@ layout (std140) uniform FrameData {
 	uint update;
 	float grid_size;
     float frame_delta;
+    vec2 viewport_size;
 };
 
 const float alpha = 1.0;

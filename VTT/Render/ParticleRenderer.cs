@@ -106,6 +106,7 @@
                 shader["do_fow"].Set(false);
                 shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
                 shader["cursor_position"].Set(new Vector3(0, 0, 0));
+                shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                 shader["dataBuffer"].Set(14);
                 Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
                 GL.ActiveTexture(3);
@@ -232,6 +233,7 @@
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
             shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
             shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+            shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
             shader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
             GL.ActiveTexture(3);
@@ -302,6 +304,7 @@
                         shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
                         shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
                         shader["cursor_position"].Set(blank ? Vector3.Zero : Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                        shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                         shader["dataBuffer"].Set(14);
                         if (blank)
                         {

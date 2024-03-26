@@ -35,6 +35,7 @@ uniform sampler2D m_texture_emissive;
 uniform vec3 cursor_position;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec2 viewport_size;
 
 // extra textures for custom shaders
 uniform sampler2DArray unifiedTexture;

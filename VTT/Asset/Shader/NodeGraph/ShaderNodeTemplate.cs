@@ -2633,7 +2633,8 @@ $OUTPUT@1$ = update;",
                 new NodeOutput() { Name = "Geometry Bitangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Geometry Normal", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Geometry Position", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Screen Position", SelfType = NodeValueType.Vec3 }
+                new NodeOutput() { Name = "Screen Position", SelfType = NodeValueType.Vec3 },
+                new NodeOutput() { Name = "Screen Size", SelfType = NodeValueType.Vec2 }
             },
 @"$OUTPUT@0$ = f_tbn[0];
 $OUTPUT@1$ = f_tbn[1];
@@ -2643,7 +2644,8 @@ $OUTPUT@4$ = f_tangent;
 $OUTPUT@5$ = f_bitangent;
 $OUTPUT@6$ = f_normal;
 $OUTPUT@7$ = f_position;
-$OUTPUT@8$ = gl_FragCoord.xyz;",
+$OUTPUT@8$ = gl_FragCoord.xyz;
+$OUTPUT@9$ = viewport_size;",
 (matrix, outIndex) => outIndex switch {
     0 => new NodeSimulationMatrix(new Vector3(1, 0, 0)),
     1 => new NodeSimulationMatrix(new Vector3(0, 1, 0)),
@@ -2654,6 +2656,7 @@ $OUTPUT@8$ = gl_FragCoord.xyz;",
     6 => new NodeSimulationMatrix(new Vector3(0, 0, 1)),
     7 => new NodeSimulationMatrix(new Vector3(0, 0, 0)),
     8 => NodeSimulationMatrix.SimulateScreenPositionMatrix(),
+    9 => new NodeSimulationMatrix(new Vector2(32, 32)),
     _ => new NodeSimulationMatrix(new Vector3(0, 0, 0))
 });
 

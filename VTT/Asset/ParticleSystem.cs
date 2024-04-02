@@ -632,7 +632,7 @@
                                     vZ *= this._rand.NextSingle();
                                 }
 
-                                float rngRad = this._rand.NextSingle() * MathF.PI;
+                                float rngRad = this._rand.NextSingle() * MathF.PI * 2;
                                 if (vX > 0 && vY > 0)
                                 {
                                     baseOffset += new Vector3(MathF.Cos(rngRad) * vX, MathF.Sin(rngRad) * vY, 0);

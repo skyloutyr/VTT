@@ -754,11 +754,6 @@
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }
 
-                                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Texture, out Asset la) != AssetStatus.Return || la == null || !(la.Texture?.glReady ?? false))
-                                {
-                                    goto case ParticleSystem.EmissionMode.Point;
-                                }
-
                                 if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Template.MaskID, AssetType.Texture, out Asset a) != AssetStatus.Return || a == null || !(a.Texture?.glReady ?? false))
                                 {
                                     goto case ParticleSystem.EmissionMode.Point;

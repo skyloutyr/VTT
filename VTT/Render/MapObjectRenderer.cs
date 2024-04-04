@@ -821,7 +821,7 @@
             this._crossedOutObjects.Clear();
             for (int i = -2; i <= 0; ++i)
             {
-                foreach (MapObject mo in m.IterateObjects(i))
+                foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                     bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
@@ -905,7 +905,7 @@
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader["alpha"].Set(this._passthroughData.Alpha);
                 shader["grid_alpha"].Set(this._passthroughData.GridAlpha);
-                foreach (MapObject mo in m.IterateObjects(i))
+                foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                     bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
@@ -1206,6 +1206,18 @@
             GL.Enable(Capability.Multisample);
 
             this.CPUTimerAuras.Stop();
+        }
+
+        private float GetCameraDistanceTo(MapObject mo, Camera cam)
+        {
+            if (mo.Container.Is2D)
+            {
+                return mo.Container.Camera2DHeight - mo.Position.Z;
+            }
+            else
+            {
+                return Vector3.Distance(mo.Position, cam.Position);
+            }
         }
     }
 

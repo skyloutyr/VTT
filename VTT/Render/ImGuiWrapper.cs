@@ -65,6 +65,7 @@ void main()
             ImGui.GetIO().ConfigDockingWithShift = true;
             ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2(1, 1);
             this.SetupGl();
+            ImGui.LoadIniSettingsFromDisk(Path.Combine(IOVTT.AppDir, "imgui.ini"));
         }
 
         public void ChangeSkin(ClientSettings.UISkin skin) => this._skinChangeTo = skin;

@@ -1166,6 +1166,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.multithread_texture_compression.tt"));
                     }
 
+                    bool offscreenParticles = Client.Instance.Settings.OffscreenParticleUpdates;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.offscreen_particle_updates") + "###OffscreenParticleUpdates", ref offscreenParticles))
+                    {
+                        Client.Instance.Settings.OffscreenParticleUpdates = offscreenParticles;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.offscreen_particle_updates.tt"));
+                    }
+
                     if (!bDebug)
                     {
                         ImGui.EndDisabled();

@@ -686,3 +686,5 @@ ui.asset.sort_by=Фильтр
 ui.asset.sort.name=Название
 ui.asset.sort.type=Тип
 ui.asset.sort.upload_date=Дата
+menu.settings.offscreen_particle_updates=Параллельные Частицы
+menu.settings.offscreen_particle_updates.tt=Требует перезапуска!\nУправляет многопоточностью симуляции частиц.\nЕсли включено, частицы будут симулированы отдельно от остальных процессов.

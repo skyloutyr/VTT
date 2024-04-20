@@ -28,6 +28,8 @@
 
         public Thread SecondaryWorker { get; private set; }
 
+        public bool OffscreenParticleUpdate { get; set; } = true;
+
         public Stopwatch CPUTimer { get; set; }
 
         public void Create()
@@ -64,8 +66,11 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
 
-            this.SecondaryWorker = new Thread(this.UpdateOffscreen) { Priority = ThreadPriority.BelowNormal, IsBackground = true };
-            this.SecondaryWorker.Start();
+            if (this.OffscreenParticleUpdate)
+            {
+                this.SecondaryWorker = new Thread(this.UpdateOffscreen) { Priority = ThreadPriority.BelowNormal, IsBackground = true };
+                this.SecondaryWorker.Start();
+            }
 
             this.CPUTimer = new Stopwatch();
         }
@@ -129,7 +134,15 @@
         private readonly List<Map> _disposeQueue = new List<Map>();
         public void Update()
         {
-            particleSecondaryMutex.WaitOne();
+            if (this.OffscreenParticleUpdate)
+            {
+                particleSecondaryMutex.WaitOne();
+            }
+            else
+            {
+                this.UpdateForward();
+            }
+
             if (Client.Instance.Settings.ParticlesEnabled)
             {
                 Map m = Client.Instance.CurrentMap;
@@ -173,7 +186,10 @@
 
             }
 
-            particleMutex.Set();
+            if (this.OffscreenParticleUpdate)
+            {
+                particleMutex.Set();
+            }
         }
 
         public void UpdateOffscreen()
@@ -192,6 +208,19 @@
                 }
 
                 particleSecondaryMutex.Set();
+            }
+        }
+
+        public void UpdateForward()
+        {
+            if (Client.Instance.Settings.ParticlesEnabled)
+            {
+                foreach (ParticleContainer pc in containers)
+                {
+                    pc.Update();
+                }
+
+                containers.Clear();
             }
         }
 

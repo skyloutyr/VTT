@@ -53,7 +53,7 @@
             this.RulerRenderer.Create();
             this.PingRenderer = new PingRenderer();
             this.PingRenderer.Create();
-            this.ParticleRenderer = new ParticleRenderer();
+            this.ParticleRenderer = new ParticleRenderer() { OffscreenParticleUpdate = Client.Instance.Settings.OffscreenParticleUpdates };
             this.ParticleRenderer.Create();
             this.Pipeline = new UniversalPipeline();
             this.Pipeline.Create();

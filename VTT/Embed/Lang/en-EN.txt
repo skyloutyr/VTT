@@ -686,3 +686,5 @@ ui.asset.sort_by=Sort By
 ui.asset.sort.name=Name
 ui.asset.sort.type=Type
 ui.asset.sort.upload_date=Time
+menu.settings.offscreen_particle_updates=Parallel Particle Updates
+menu.settings.offscreen_particle_updates.tt=Requires restart!\nControls whether particles are updated concurrently.\nIf disabled particles will update on the main thread.

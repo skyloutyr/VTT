@@ -1229,7 +1229,8 @@
         Scale,
         FOW,
         Measure,
-        Draw
+        Draw,
+        FX
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 428, Pack = 0)]

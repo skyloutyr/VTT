@@ -104,8 +104,11 @@
 
         public Texture CameraMove { get; set; }
         public Texture CameraRotate { get; set; }
+        public Texture FXIcon { get; set; }
 
         public Texture Search { get; set; }
+
+        public Texture MagicFX { get; set; }
 
         public int LoadingSpinnerFrames { get; set; }
         #endregion
@@ -283,7 +286,9 @@
 
             this.Search = OpenGLUtil.LoadUIImage("icons8-search-40");
 
-            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush };
+            this.MagicFX = OpenGLUtil.LoadUIImage("icons8-magic-40");
+
+            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
@@ -351,6 +356,7 @@
             this.RenderCameraControls(mor, lang, window_flags);
             this.RenderMeasureControls(mor, lang, window_flags);
             this.RenderDrawControls(mor, lang, window_flags);
+            this.RenderFXControls(mor, lang, window_flags, this.FrameState);
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);
             this.RenderObjectProperties(lang, this.FrameState, time);

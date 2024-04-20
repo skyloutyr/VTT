@@ -130,6 +130,29 @@
         private static readonly EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
         private static readonly EventWaitHandle particleSecondaryMutex = new EventWaitHandle(true, EventResetMode.AutoReset);
         private static readonly List<ParticleContainer> containers = new List<ParticleContainer>();
+        private readonly object fxLock = new object();
+        private readonly List<ParticleContainer> fxContainers = new List<ParticleContainer>();
+        private bool clearFx;
+
+        public void AddFXEmitter(Guid systemID, Vector3 position, int particlesToEmit)
+        {
+            ParticleContainer pc = new ParticleContainer(null) { 
+                ID = Guid.NewGuid(),
+                AttachmentPoint = string.Empty,
+                ContainerPositionOffset = position,
+                IsActive = true,
+                IsFXEmitter = true,
+                ParticlesToEmit = particlesToEmit,
+                RotateVelocityByOrientation = false,
+                SystemID = systemID,
+                UseContainerOrientation = false
+            };
+
+            lock (this.fxLock)
+            {
+                this.fxContainers.Add(pc);
+            }
+        }
 
         private readonly List<Map> _disposeQueue = new List<Map>();
         public void Update()
@@ -160,6 +183,32 @@
                         }
                     }
                 }
+
+                lock (this.fxLock)
+                {
+                    for (int i = this.fxContainers.Count - 1; i >= 0; i--)
+                    {
+                        ParticleContainer pc = this.fxContainers[i];
+                        if (this.clearFx)
+                        {
+                            pc.IsActive = false;
+                            pc.DisposeInternal();
+                            this.fxContainers.RemoveAt(i);
+                            continue;
+                        }
+
+                        pc.UpdateBufferState();
+                        if (pc.ParticlesToEmit == -1)
+                        {
+                            pc.IsActive = false;
+                            pc.DisposeInternal();
+                            this.fxContainers.RemoveAt(i);
+                        }
+                    }
+
+                    this.clearFx = false;
+                }
+
 
                 if (this._disposeQueue.Count > 0)
                 {
@@ -205,7 +254,17 @@
                     }
 
                     containers.Clear();
+
+                    lock (this.fxLock)
+                    {
+                        for (int i = this.fxContainers.Count - 1; i >= 0; i--)
+                        {
+                            ParticleContainer pc = this.fxContainers[i];
+                            pc.Update();
+                        }
+                    }
                 }
+
 
                 particleSecondaryMutex.Set();
             }
@@ -221,11 +280,27 @@
                 }
 
                 containers.Clear();
+
+                lock (this.fxLock)
+                {
+                    for (int i = this.fxContainers.Count - 1; i >= 0; i--)
+                    {
+                        ParticleContainer pc = this.fxContainers[i];
+                        pc.Update();
+                    }
+                }
             }
         }
 
         // Only call this method when changing maps, descyncs internal state for client objects!
-        public void ClearParticles(Map m) => this._disposeQueue.Add(m);
+        public void ClearParticles(Map m)
+        {
+            this._disposeQueue.Add(m);
+            lock (this.fxLock)
+            {
+                this.clearFx = true;
+            }
+        }
 
         public void RenderAll()
         {
@@ -284,6 +359,18 @@
                                 pc.Render(shader, cam);
                             }
                         }
+                    }
+                }
+            }
+
+            lock (this.fxLock)
+            {
+                foreach (ParticleContainer pc in this.fxContainers)
+                {
+                    if (pc.IsActive)
+                    {
+                        this.HandleCustomShader(pc.CustomShaderID, cam, true, false, out shader);
+                        pc.Render(shader, cam);
                     }
                 }
             }

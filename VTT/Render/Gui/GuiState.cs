@@ -48,6 +48,7 @@
         public Map clientMap = null;
         public Map mapAmbianceHovered = null;
         public bool movingAssetOverMusicPlayerAddPoint = false;
+        public bool movingParticleAssetOverFXRecepticle = false;
         public ConcurrentQueue<string> dropEventsReceiver = new ConcurrentQueue<string>();
         public List<string> dropEvents = new List<string>();
 
@@ -92,6 +93,7 @@
             editModelPopup = false;
             mapAmbianceHovered = null;
             movingAssetOverMusicPlayerAddPoint = false;
+            movingParticleAssetOverFXRecepticle = false;
             dropEvents.Clear();
             while (!dropEventsReceiver.IsEmpty)
             {

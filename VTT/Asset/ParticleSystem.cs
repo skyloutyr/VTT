@@ -403,6 +403,7 @@
         private GLParticleData* _buffer;
 
         private int _numParticles;
+        private int _nLastActiveParticles;
         private bool _glInit;
         private uint _glBufferTexture;
         private uint _glTextureBuffer;
@@ -422,6 +423,8 @@
             this._rand = new Random();
             this.Resize();
         }
+
+        public int NumActiveParticles => this._nLastActiveParticles;
 
         public void Resize()
         {
@@ -496,6 +499,7 @@
                 }
             }
 
+            this._nLastActiveParticles = nActive;
             if (this._emissionCd-- <= 0 && (this.Template.EmissionChance >= 1.0f - float.Epsilon || this._rand.NextDouble() <= this.Template.EmissionChance))
             {
                 this._emissionCd = this.Template.EmissionCooldown.Value(this._rand.NextSingle());
@@ -503,6 +507,19 @@
                 Vector3 emissionPoint = default;
                 for (int i = 0; i < nNew; ++i)
                 {
+                    if (this.Container != null && this.Container.IsFXEmitter)
+                    {
+                        if (this.Container.ParticlesToEmit <= 0)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            ++this._nLastActiveParticles;
+                            --this.Container.ParticlesToEmit;
+                        }
+                    }
+
                     Particle* p = this.FindFirstDeactivatedParticle();
                     p->active = 1;
                     p->age = 0;
@@ -511,6 +528,8 @@
                     p->scaleMod = this.Template.ScaleVariation.Value(this._rand.NextSingle());
                     p->scale = this.Template.ScaleOverLifetime.Interpolate(0, GradientInterpolators.Lerp);
                     p->spriteIndex = 0;
+
+
                     if (this.Template.IsSpriteSheet)
                     {
                         switch (this.Template.SpriteData.Selection)
@@ -555,11 +574,11 @@
                     else
                     {
                         Vector4 bo4 = new Vector4(this.Container.ContainerPositionOffset, 1.0f);
-                        Quaternion q = this.Container.UseContainerOrientation ? this.Container.Container.Rotation : Quaternion.Identity;
+                        Quaternion q = this.Container.IsFXEmitter ? Quaternion.Identity : this.Container.UseContainerOrientation ? this.Container.Container.Rotation : Quaternion.Identity;
                         bo4 = Vector4.Transform(bo4, q);
                         baseOffset = bo4.Xyz() / bo4.W;
-                        baseOffset *= this.Container.Container.Scale;
-                        baseOffset += this.Container.Container.Position;
+                        baseOffset *= this.Container.IsFXEmitter ? Vector3.One : this.Container.Container.Scale;
+                        baseOffset += this.Container.IsFXEmitter ? Vector3.Zero : this.Container.Container.Position;
                     }
 
                     if (!this.Template.ClusterEmission || i == 0)
@@ -804,8 +823,8 @@
 
                                 if (this.Container.UseContainerOrientation)
                                 {
-                                    rPt = Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
-                                    rPt *= this.Container.Container.Scale;
+                                    rPt = this.Container.IsFXEmitter ? rPt : Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
+                                    rPt *= this.Container.IsFXEmitter ? Vector3.One : this.Container.Container.Scale;
                                 }
 
                                 baseOffset += rPt;
@@ -822,6 +841,11 @@
                                 }
 
                                 if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !(a?.Model?.GLMdl?.GlReady ?? false))
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (this.Container.IsFXEmitter)
                                 {
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }
@@ -931,7 +955,7 @@
 
                     if (!this.IsFake)
                     {
-                        if (this.Container.RotateVelocityByOrientation && this.Container?.Container != null)
+                        if (this.Container.RotateVelocityByOrientation && !this.Container.IsFXEmitter && this.Container?.Container != null)
                         {
                             Quaternion cRot = this.Container.Container.Rotation;
                             Vector4 v = Vector4.Transform(new Vector4(p->velocity, 1.0f), cRot);

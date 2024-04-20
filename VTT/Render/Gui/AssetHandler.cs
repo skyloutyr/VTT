@@ -1133,6 +1133,12 @@
                         haveResult = true;
                     }
 
+                    if (!haveResult && state.movingParticleAssetOverFXRecepticle && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.ParticleSystem)
+                    {
+                        this._fxToEmitParticleSystemID = this._draggedRef.AssetID;
+                        haveResult = true;
+                    }
+
                     if (!haveResult && state.shaderGraphExtraTexturesHovered != null && Client.Instance.IsAdmin)
                     {
                         if (state.shaderGraphExtraTexturesHoveredIndex == -1)

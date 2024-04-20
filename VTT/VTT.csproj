@@ -94,6 +94,7 @@
     <None Remove="Embed\icons8-lips-40.png" />
     <None Remove="Embed\icons8-loading-circle.gif" />
     <None Remove="Embed\icons8-loading-circle.png" />
+    <None Remove="Embed\icons8-magic-40.png" />
     <None Remove="Embed\icons8-magic-64.png" />
     <None Remove="Embed\icons8-money-bag-40.png" />
     <None Remove="Embed\icons8-move-all-arrow-40.png" />
@@ -224,6 +225,7 @@
     <EmbeddedResource Include="Embed\icon-beta_smallest-hw.png" />
     <EmbeddedResource Include="Embed\icon-beta_smallest-ny.png" />
     <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
+    <EmbeddedResource Include="Embed\icons8-magic-40.png" />
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
     <EmbeddedResource Include="Embed\icons8-search-40.png" />

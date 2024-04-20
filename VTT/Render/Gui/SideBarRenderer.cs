@@ -4,6 +4,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Numerics;
+    using VTT.Asset;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
@@ -21,9 +22,9 @@
             ImGui.SetNextWindowPos(Vector2.Zero);
             if (ImGui.Begin("Mode Controls", window_flags))
             {
-                for (int i = 0; i < 7; ++i)
+                for (int i = 0; i < 8; ++i)
                 {
-                    if (!Client.Instance.IsAdmin && i == (int)EditMode.FOW)
+                    if (!Client.Instance.IsAdmin && (i == (int)EditMode.FOW || i == (int)EditMode.FX))
                     {
                         continue;
                     }
@@ -54,7 +55,7 @@
 
                     ImGui.PopStyleColor();
                     ImGui.PopStyleVar();
-                    if (i != 6)
+                    if (i != 7)
                     {
                         ImGui.NewLine();
                     }
@@ -599,6 +600,88 @@
 
                     ImGui.PopItemWidth();
                     ImGui.TreePop();
+                }
+
+                ImGui.PopStyleColor();
+                ImGui.PopStyleVar();
+                ImGui.End();
+            }
+        }
+
+        private Guid _fxToEmitParticleSystemID;
+        private int _fxNumToEmit = 32;
+
+        public Guid FXToEmitParticleSystemID => this._fxToEmitParticleSystemID;
+        public int FXNumToEmit => this._fxNumToEmit;
+
+        private unsafe void RenderFXControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
+        {
+            if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
+            if (mor.EditMode == EditMode.FX)
+            {
+                ImGui.SetNextWindowBgAlpha(0.35f);
+                ImGui.SetNextWindowPos(Vec56x70);
+                ImGui.Begin("##FXControls", window_flags);
+
+                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+
+                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                var imScreenPos = ImGui.GetCursorScreenPos();
+                var rectEnd = imScreenPos + new Vector2(320, 24);
+                bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+                uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+                drawList.AddRect(imScreenPos, rectEnd, bClr);
+                drawList.AddImage(this.AssetParticleIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+                string mdlTxt = "";
+                int mdlTxtOffset = 0;
+                if (Client.Instance.AssetManager.Refs.ContainsKey(this._fxToEmitParticleSystemID))
+                {
+                    AssetRef aRef = Client.Instance.AssetManager.Refs[this._fxToEmitParticleSystemID];
+                    mdlTxt += aRef.Name;
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(this._fxToEmitParticleSystemID, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                    {
+                        GL.Texture tex = ap.GetGLTexture();
+                        if (tex != null)
+                        {
+                            drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
+                            mdlTxtOffset += 20;
+                        }
+                    }
+                }
+
+                if (Guid.Equals(Guid.Empty, this._fxToEmitParticleSystemID))
+                {
+                    mdlTxt = lang.Translate("generic.none");
+                }
+                else
+                {
+                    mdlTxt += " (" + this._fxToEmitParticleSystemID.ToString() + ")\0";
+                }
+
+                drawList.PushClipRect(imScreenPos, rectEnd);
+                drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                drawList.PopClipRect();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                if (mouseOver)
+                {
+                    state.movingParticleAssetOverFXRecepticle = true;
+                    ImGui.SetTooltip(lang.Translate("ui.fx.particle.tt"));
+                }
+
+                int iFxToEmit = this._fxNumToEmit;
+                if (ImGui.DragInt(lang.Translate("ui.fx.num_emit") + "###NumParticlesToEmit", ref iFxToEmit))
+                {
+                    this._fxNumToEmit = iFxToEmit;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.fx.num_emit.tt"));
                 }
 
                 ImGui.PopStyleColor();

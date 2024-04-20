@@ -74,9 +74,9 @@
                 }
             }
 
-            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
+            bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw or EditMode.FX) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
-                bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
                 if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
                     this._lbmDown = true;
@@ -478,6 +478,24 @@
                 this.BoxSelectCandidates.Clear();
             }
 
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.FX && !imGuiWantsMouse)
+            {
+                if (!this._fxHandlerLmbDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
+                {
+                    this._fxHandlerLmbDown = true;
+                    if (!Guid.Equals(Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID, Guid.Empty))
+                    {
+                        Vector3? cursorLoc = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Client.Instance.Frontend.Renderer.ObjectRenderer.MouseHitWorld;
+                        new PacketAddFXParticle() { Location = cursorLoc.Value, NumParticles = Client.Instance.Frontend.Renderer.GuiRenderer.FXNumToEmit, SystemID = Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID }.Send();
+                    }
+                }
+
+                if (this._fxHandlerLmbDown && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
+                {
+                    this._fxHandlerLmbDown = false;
+                }
+            }
+
             if (this._deleteDown && !Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Delete))
             {
                 this._deleteDown = false;
@@ -486,6 +504,8 @@
             this._lastLmbX = (int)Client.Instance.Frontend.MouseX;
             this._lastLmbY = (int)Client.Instance.Frontend.MouseY;
         }
+
+        private bool _fxHandlerLmbDown;
 
         private static readonly List<Vector3> hits = new List<Vector3>();
 

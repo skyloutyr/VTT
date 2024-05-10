@@ -1152,7 +1152,7 @@
             }
 
             glTFLoader.Schema.Texture tex = g.Textures[tIndex.Value];
-            Image<TPixel> img = this.LoadBinaryImage<TPixel>(g, bin, tex.Source.Value);
+            Image<TPixel> img = this.LoadBinaryImage<TPixel>(g, bin, tIndex.Value);
             processor?.Invoke(img);
             Sampler s = tex.Sampler.HasValue
                 ? g.Samplers[tex.Sampler.Value]
@@ -1163,7 +1163,7 @@
 
         private Image<TPixel> LoadBinaryImage<TPixel>(Gltf g, byte[] bin, int id) where TPixel : unmanaged, IPixel<TPixel>
         {
-            glTFLoader.Schema.Image refImg = g.Images[id];
+            glTFLoader.Schema.Image refImg = g.Images[g.Textures[id].Source.Value];
             if (refImg.BufferView == null)
             {
                 throw new Exception("Image specified that is not embedded, that is not allowed!");

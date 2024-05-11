@@ -30,6 +30,7 @@
         public ShaderProgram HighlightShader { get; set; }
         public ShaderProgram OverlayShader { get; set; }
         public MapObject ObjectMouseOver { get; set; }
+        public MapObject ObjectListObjectMouseOver { get; set; }
         public Vector3 MouseHitWorld { get; set; }
 
         public EditMode EditMode { get; set; } = EditMode.Select;
@@ -314,6 +315,12 @@
 
                     this.MouseHitWorld = rr.Hit;
                 }
+            }
+
+            if (this.ObjectMouseOver == null && this.ObjectListObjectMouseOver != null)
+            {
+                this.ObjectMouseOver = this.ObjectListObjectMouseOver;
+                this.ObjectListObjectMouseOver = null;
             }
         }
 

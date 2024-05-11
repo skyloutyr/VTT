@@ -888,14 +888,14 @@
                 Vector2 wC = ImGui.GetWindowSize();
                 if (state.clientMap != null)
                 {
-                    foreach (MapObject mo in state.clientMap.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
+                    void RenderObjectInfo(MapObject mo, bool isCurrentLayer)
                     {
                         bool selected = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Contains(mo);
                         bool boxSelect = Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Contains(mo);
                         bool mouseOver = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver == mo;
                         if (!Client.Instance.IsAdmin && !mo.CanEdit(Client.Instance.ID) && !Client.Instance.IsObserver)
                         {
-                            continue;
+                            return;
                         }
 
                         bool changedColor = selected || boxSelect || mouseOver;
@@ -937,9 +937,40 @@
                         ImGui.SameLine();
                         ImGui.TextUnformatted((mo.Name ?? lang.Translate("ui.objects.unnamed")) + "(" + mo.ID + ")");
                         ImGui.EndChild();
+                        bool mOver = ImGui.IsItemHovered();
+                        if (mOver)
+                        {
+                            Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectListObjectMouseOver = mo;
+                        }
+
                         if (changedColor)
                         {
                             ImGui.PopStyleColor();
+                        }
+                    }
+
+                    int currentLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                    ImGui.TextUnformatted(lang.Translate("ui.object_layer." + currentLayer));
+                    ImGui.PopStyleColor();
+                    foreach (MapObject mo in state.clientMap.IterateObjects(currentLayer).OrderBy(x => x.Name))
+                    {
+                        RenderObjectInfo(mo, true);
+                    }
+
+                    for (int i = -2; i <= 2; ++i)
+                    {
+                        if (i == currentLayer)
+                        {
+                            continue;
+                        }
+
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                        ImGui.TextUnformatted(lang.Translate("ui.object_layer." + i));
+                        ImGui.PopStyleColor();
+                        foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
+                        {
+                            RenderObjectInfo(mo, false);
                         }
                     }
                 }
@@ -954,6 +985,10 @@
             if (!ImGui.GetIO().WantCaptureMouse)
             {
                 objectsSelected = objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver }).Distinct();
+            }
+            else
+            {
+                objectsSelected = objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectListObjectMouseOver }).Distinct();
             }
 
             void RenderStatusEffects(MapObject mo, Vector3 screen, float tX = float.MaxValue)

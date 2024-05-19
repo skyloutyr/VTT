@@ -958,19 +958,22 @@
                         RenderObjectInfo(mo, true);
                     }
 
-                    for (int i = -2; i <= 2; ++i)
+                    if (Client.Instance.IsAdmin)
                     {
-                        if (i == currentLayer)
+                        for (int i = -2; i <= 2; ++i)
                         {
-                            continue;
-                        }
+                            if (i == currentLayer)
+                            {
+                                continue;
+                            }
 
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-                        ImGui.TextUnformatted(lang.Translate("ui.object_layer." + i));
-                        ImGui.PopStyleColor();
-                        foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
-                        {
-                            RenderObjectInfo(mo, false);
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                            ImGui.TextUnformatted(lang.Translate("ui.object_layer." + i));
+                            ImGui.PopStyleColor();
+                            foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
+                            {
+                                RenderObjectInfo(mo, false);
+                            }
                         }
                     }
                 }

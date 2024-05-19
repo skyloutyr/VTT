@@ -15,7 +15,7 @@
         {
         }
 
-        public override void Cache(out float width, out float height)
+        public override void Cache(Vector2 windowSize, out float width, out float height)
         {
             width = 340;
             bool hasRolls = this.Container.Blocks.Count == 11 && !string.IsNullOrEmpty(this.Container.Blocks[4].Text);

@@ -134,14 +134,14 @@
                 }
 
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cwSize.Y - 82);
+                ImGui.SetCursorPosY(cwSize.Y - 86);
                 if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
                 {
                     state.rollPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cwSize.Y - 36);
+                ImGui.SetCursorPosY(cwSize.Y - 44);
                 sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f));
                 ImGui.SetCursorPosY(cwB.Y);
                 Vector4 darkGray = ((Vector4)Color.DimGray);
@@ -163,7 +163,7 @@
                                 cl.InvalidateCache();
                             }
 
-                            if (cl.ImRender(cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
+                            if (cl.ImRender(new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
                             {
                                 ImGui.Separator();
                                 ++clRendered;

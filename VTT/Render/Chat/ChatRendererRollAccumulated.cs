@@ -3,6 +3,7 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
@@ -12,7 +13,7 @@
         {
         }
 
-        public override void Cache(out float width, out float height)
+        public override void Cache(Vector2 windowSize, out float width, out float height)
         {
             width = 100;
             height = 32;

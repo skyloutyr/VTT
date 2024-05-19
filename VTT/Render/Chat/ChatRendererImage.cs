@@ -18,7 +18,7 @@
         {
         }
 
-        public override void Cache(out float width, out float height)
+        public override void Cache(Vector2 windowSize, out float width, out float height)
         {
             try
             {

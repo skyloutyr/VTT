@@ -83,11 +83,11 @@
 
         public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : Extensions.FromAbgr(0), Text = text, Tooltip = tt, Type = type };
 
-        public bool ImRender(float h, int idx, SimpleLanguage lang)
+        public bool ImRender(Vector2 winSize, float h, int idx, SimpleLanguage lang)
         {
             if (!this._cached)
             {
-                this.BuildCache();
+                this.BuildCache(winSize);
             }
 
             if (Client.Instance.IsAdmin || this.CanSee(Client.Instance.ID))
@@ -254,7 +254,7 @@
             this.Renderer?.ClearCache();
         }
 
-        public void BuildCache()
+        public void BuildCache(Vector2 windowSize)
         {
             if (this.Renderer == null)
             {
@@ -274,7 +274,7 @@
                 };
             }
 
-            this.Renderer.Cache(out _, out this._cachedHeight);
+            this.Renderer.Cache(windowSize, out _, out this._cachedHeight);
             this._cached = true;
         }
 

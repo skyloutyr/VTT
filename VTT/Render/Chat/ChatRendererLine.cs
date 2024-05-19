@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using System.Text;
     using VTT.Control;
     using VTT.Util;
@@ -14,21 +15,23 @@
         internal ImCachedLine[] _cachedLines;
         private float _spacebarWidth;
         private float _spacebarHeight;
+        private float _w;
+        private float _h;
 
         public ChatRendererLine(ChatLine container) : base(container)
         {
         }
 
-        public override void Cache(out float width, out float height)
+        public override void Cache(Vector2 windowSize, out float width, out float height)
         {
-            float maxX = ImGui.GetContentRegionMax().X;
+            float maxX = windowSize.X - 24;
             // float startX = ImGui.GetCursorPosX();
             StringBuilder sb = new StringBuilder();
             List<ImCachedWord> words = new List<ImCachedWord>();
             List<ImCachedLine> lines = new List<ImCachedLine>();
             float wMax = 0;
             float cW = 0;
-            System.Numerics.Vector2 ssize = ImGuiHelper.CalcTextSize(" ");
+            Vector2 ssize = ImGuiHelper.CalcTextSize(" ");
             this._spacebarWidth = ssize.X;
             this._spacebarHeight = ssize.Y;
 
@@ -36,7 +39,7 @@
             {
                 bool addedWord = false;
                 ImCachedWord icw = new ImCachedWord(cb, text);
-                cW += icw.Width + this._spacebarWidth;
+                cW += icw.Width;
                 if (cW > maxX)
                 {
                     if (words.Count == 0) // uh-oh
@@ -48,7 +51,7 @@
                     ImCachedLine icl = new ImCachedLine(words.ToArray());
                     lines.Add(icl);
                     words.Clear();
-                    cW = 0;
+                    cW = icw.Width;
                 }
                 else
                 {
@@ -58,6 +61,7 @@
                 if (!addedWord)
                 {
                     words.Add(icw);
+                    cW += _spacebarWidth;
                 }
             }
 
@@ -109,8 +113,8 @@
             }
 
             this._cachedLines = lines.ToArray();
-            height = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
-            width = wMax;
+            height = this._h = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
+            width = this._w = wMax;
         }
 
         public override void ClearCache() => this._cachedLines = null;
@@ -142,6 +146,7 @@
             uint cell = Extensions.FromHex("202020").Abgr();
             uint cellOutline;
             float ipX = ImGui.GetCursorPosX();
+
             if (this._cachedLines.Length == 0)
             {
                 ImGui.SetCursorPos(new(ipX, ImGui.GetCursorPosY() + this._spacebarHeight));
@@ -155,7 +160,7 @@
                     for (int i = 0; i < icl.Words.Length; i++)
                     {
                         ImCachedWord icw = icl.Words[i];
-                        System.Numerics.Vector2 vBase = ImGui.GetCursorScreenPos();
+                        Vector2 vBase = ImGui.GetCursorScreenPos();
                         if (icw.IsExpression)
                         {
                             ImGui.SetCursorPosX(pX + 4);
@@ -187,7 +192,7 @@
                         ImGui.PopStyleColor();
                         pX += icw.Width + (i == icl.Words.Length - 1 ? 0 : this._spacebarWidth);
                         ImGui.SetCursorPos(new(pX, pY));
-                        System.Numerics.Vector2 vEnd = ImGui.GetCursorScreenPos() + new System.Numerics.Vector2(0, icl.Height);
+                        Vector2 vEnd = ImGui.GetCursorScreenPos() + new Vector2(0, icl.Height);
                         if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
                         {
                             ImGui.BeginTooltip();

@@ -29,7 +29,7 @@
         private unsafe void RenderChat(SimpleLanguage lang, GuiState state)
         {
             ImGui.SetNextWindowBgAlpha(0.0f);
-            ImGui.DockSpaceOverViewport(ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+            ImGui.DockSpaceOverViewport(ImGui.GetID("ChatDockID"), ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
 
             Vector2 cSize = Vector2.Zero;
             bool chatChanged = false;

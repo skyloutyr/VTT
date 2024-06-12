@@ -478,7 +478,7 @@
             ResizeTex(this.NormalTex, w, h, Client.Instance.Settings.UseHalfPrecision ? SizedInternalFormat.RgbaHalf : SizedInternalFormat.RgbaFloat, PixelDataFormat.Rgba, PixelDataType.Float);
             ResizeTex(this.MRAOGTex, w, h, SizedInternalFormat.Rgba8, PixelDataFormat.Rgba, PixelDataType.Byte);
             ResizeTex(this.DepthTex, w, h, SizedInternalFormat.DepthComponent32Float, PixelDataFormat.DepthComponent, PixelDataType.Float);
-            ResizeTex(this.ColorOutputTex, w, h, SizedInternalFormat.Rgba8, PixelDataFormat.Rgba, PixelDataType.Byte);
+            ResizeTex(this.ColorOutputTex, w, h, SizedInternalFormat.RgbaFloat, PixelDataFormat.Rgba, PixelDataType.Float);
 
             this.FramebufferCompound = UseFBO(this.FramebufferCompound);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Depth, TextureTarget.Texture2D, this.DepthTex, 0);

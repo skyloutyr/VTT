@@ -33,7 +33,7 @@
                     return;
                 }
 
-                if (!mo.CanEdit(this.Sender.ID))
+                if (!mo.CanEdit(this.Sender.ID) && !this.Sender.IsAdmin)
                 {
                     l.Log(LogLevel.Warn, "Client asked to change animation data for an object without permissions!");
                     return;

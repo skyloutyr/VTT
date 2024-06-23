@@ -313,7 +313,7 @@
 
         public void Update() // Client-only
         {
-            if (this.ClientRenderedThisFrame)
+            if (this.ClientRenderedThisFrame) // TODO test if the animatio needs to be updated regardless of object's render visibility
             {
                 this.AnimationContainer.Update(this.LastRenderModel);
             }

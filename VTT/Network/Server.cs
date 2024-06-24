@@ -171,7 +171,8 @@
             this.Logger.OnLog += Logger.Console;
             this.Logger.OnLog += Logger.Debug;
             Logger.FileLogListener fll = this._fll = new Logger.FileLogListener(IOVTT.OpenLogFile(true));
-            this.Logger.OnLog += fll.WriteLine; this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH’:’mm’:’ss ‘GMT’"));
+            this.Logger.OnLog += fll.WriteLine;
+            this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH:mm:ss GMT"));
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;
             this.Settings = ServerSettings.Load();
             this.AssetManager.Load();

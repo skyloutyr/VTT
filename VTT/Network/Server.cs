@@ -773,6 +773,7 @@
         public ClientInfo Info { get; set; }
         public long LastPingResponseTime { get; set; }
         public ActionMemory ActionMemory { get; set; }
+        public bool IsAuthorized { get; set; }
 
         public Guid ID
         {
@@ -830,6 +831,7 @@
             this.Container = (Server)server;
             this.LocalNetManager = new PacketNetworkManager() { IsServer = true };
             this.ActionMemory = new ActionMemory(this);
+            this.IsAuthorized = false;
         }
 
         public void SetClientInfo(ClientInfo info)
@@ -886,8 +888,21 @@
             base.OnReceived(buffer, offset, size);
             foreach (PacketBase packet in this.LocalNetManager.Receive(buffer, offset, size))
             {
+                if (!this.IsAuthorized && packet is not PacketHandshake)
+                {
+                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this);
+                    this.Disconnect();
+                    return;
+                }
+
                 packet.Sender = this;
                 packet.Act(this.Id, (Server)this.Server, null, true);
+            }
+
+            if (this.LocalNetManager.IsInvalidProtocol) // Do not notify the client of disconnection, since protocol is invalid
+            {
+                this.Disconnect();
+                return;
             }
         }
 

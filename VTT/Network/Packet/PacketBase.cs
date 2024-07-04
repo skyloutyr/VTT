@@ -66,28 +66,7 @@
 
             this.Session = client.Id;
             this.IsServer = false;
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter bw = new BinaryWriter(ms);
-            bw.Write((int)0);
-            bw.Write(IDByPacketType[this.GetType()]);
-            bw.Write((byte)(this.Compressed ? 1 : 0));
-            if (this.Compressed)
-            {
-                using MemoryStream ms2 = new MemoryStream();
-                using DeflateStream ds = new DeflateStream(ms2, System.IO.Compression.CompressionMode.Compress);
-                using BinaryWriter bw2 = new BinaryWriter(ds);
-                this.Encode(bw2);
-                ds.Close();
-                bw.Write(ms2.ToArray());
-            }
-            else
-            {
-                this.Encode(bw);
-            }
-
-            byte[] arr = ms.ToArray();
-            Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
-            client.SendAsync(arr);
+            client.SendAsync(this.EncodeDataToBuffer());
         }
 
         public void Broadcast(Predicate<ServerClient> predicate = null)
@@ -104,11 +83,17 @@
 
         public void Send(ServerClient sc)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter bw = new BinaryWriter(ms);
             this.Session = sc.Id;
             this.IsServer = true;
-            bw.Write((int)0);
+            sc.SendAsync(this.EncodeDataToBuffer());
+        }
+
+        private byte[] EncodeDataToBuffer()
+        {
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter bw = new BinaryWriter(ms);
+            bw.Write(PacketNetworkManager.HeaderMagic);
+            bw.Write((int)0); // Irrelevant cast is for clarity
             bw.Write(IDByPacketType[this.GetType()]);
             bw.Write((byte)(this.Compressed ? 1 : 0));
             if (this.Compressed)
@@ -126,8 +111,8 @@
             }
 
             byte[] arr = ms.ToArray();
-            Array.Copy(BitConverter.GetBytes(arr.Length - 4), 0, arr, 0, 4);
-            sc.SendAsync(arr);
+            Array.Copy(BitConverter.GetBytes(arr.Length - 8), 0, arr, 4, 4);
+            return arr;
         }
 
         public Logger GetContextLogger() => this.IsServer ? Server.Instance.Logger : Client.Instance.Logger;

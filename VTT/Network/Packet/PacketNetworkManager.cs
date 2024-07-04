@@ -7,7 +7,11 @@
 
     public class PacketNetworkManager
     {
+        private const int HeaderSize = 8;
+        public const int HeaderMagic = 0x56545450;
+
         public bool IsServer { get; set; }
+        public bool IsInvalidProtocol { get; set; }
 
         private int packet_size = 0; // FULL SIZE
         private long packet_read = 0; // READ
@@ -18,18 +22,23 @@
 
         public IEnumerable<PacketBase> Receive(byte[] buffer, long offset, long size)
         {
+            if (this.IsInvalidProtocol)
+            {
+                yield break;
+            }
+
             while (offset < size)
             {
-                if (packet_header_read != 4 && !hasPacket)
+                if (packet_header_read != HeaderSize && !hasPacket)
                 {
                     if (packet_header == null)
                     {
-                        packet_header = new byte[4];
+                        packet_header = new byte[HeaderSize];
                     }
 
-                    if (4 > packet_header_read && size > offset && packet_header != null)
+                    if (HeaderSize > packet_header_read && size > offset && packet_header != null)
                     {
-                        long open = 4 - packet_header_read;
+                        long open = HeaderSize - packet_header_read;
                         // Not full header in packet
                         if (offset + open > size)
                         {
@@ -42,7 +51,14 @@
                         {
                             Buffer.BlockCopy(buffer, (int)offset, packet_header, (int)packet_header_read, (int)open);
                             offset += open;
-                            packet_size = BitConverter.ToInt32(packet_header, 0);
+                            packet_size = BitConverter.ToInt32(packet_header, 4);
+                            int packetMagic = BitConverter.ToInt32(packet_header, 0);
+                            if (packetMagic != HeaderMagic)
+                            {
+                                this.IsInvalidProtocol = true;
+                                yield break;
+                            }
+
                             packet_read = 0;
                             hasPacket = true;
                             if (packet_size > packet.Length)
@@ -80,7 +96,7 @@
                         pb.IsServer = this.IsServer;
                         if ((compressedFlag & 1) == 1)
                         {
-                            using MemoryStream ms2 = new MemoryStream(packet, 3, packet.Length - 3);
+                            using MemoryStream ms2 = new MemoryStream(packet, 3, packet.Length - 3); // 3 is packet ID (2 bytes) + compressed flag (1 byte)
                             using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Decompress);
                             using BinaryReader br2 = new BinaryReader(ds);
                             pb.Decode(br2);

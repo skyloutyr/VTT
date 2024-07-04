@@ -89,6 +89,7 @@
                     ci.Secret = this.ClientSecret; // Save happens later, may as well just set the data
                 }
 
+                sc.IsAuthorized = true;
                 server.ClientInfos[ci.ID] = ci;
                 if (sc.IsAdmin)
                 {

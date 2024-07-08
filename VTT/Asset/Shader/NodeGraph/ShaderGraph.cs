@@ -816,17 +816,17 @@
 
                         case NodeValueType.Vec2:
                         {
-                            return $"vec2(float{ptr})";
+                            return $"vec2(float({ptr}))";
                         }
 
                         case NodeValueType.Vec3:
                         {
-                            return $"vec3(float{ptr})";
+                            return $"vec3(float({ptr}))";
                         }
 
                         case NodeValueType.Vec4:
                         {
-                            return $"vec4(float{ptr})";
+                            return $"vec4(float({ptr}))";
                         }
 
                         default:
@@ -857,17 +857,17 @@
 
                         case NodeValueType.Vec2:
                         {
-                            return $"vec2(float{ptr})";
+                            return $"vec2(float({ptr}))";
                         }
 
                         case NodeValueType.Vec3:
                         {
-                            return $"vec3(float{ptr})";
+                            return $"vec3(float({ptr}))";
                         }
 
                         case NodeValueType.Vec4:
                         {
-                            return $"vec4(float{ptr})";
+                            return $"vec4(float({ptr}))";
                         }
 
                         default:
@@ -898,17 +898,17 @@
 
                         case NodeValueType.Vec2:
                         {
-                            return $"vec2(float{ptr})";
+                            return $"vec2(float({ptr}))";
                         }
 
                         case NodeValueType.Vec3:
                         {
-                            return $"vec3(float{ptr})";
+                            return $"vec3(float({ptr}))";
                         }
 
                         case NodeValueType.Vec4:
                         {
-                            return $"vec4(float{ptr})";
+                            return $"vec4(float({ptr}))";
                         }
 
                         default:

@@ -890,6 +890,7 @@
             {
                 if (!this.IsAuthorized && packet is not PacketHandshake)
                 {
+                    this.Container?.Logger.Log(LogLevel.Error, $"Client tried sending a packet before handshake, disconnecting!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this);
                     this.Disconnect();
                     return;
@@ -901,6 +902,7 @@
 
             if (this.LocalNetManager.IsInvalidProtocol) // Do not notify the client of disconnection, since protocol is invalid
             {
+                this.Container?.Logger.Log(LogLevel.Error, $"Client did not follow VTT's network protocol, disconnecting!");
                 this.Disconnect();
                 return;
             }

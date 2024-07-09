@@ -698,3 +698,4 @@ ui.object_layer.0=Слой Объектов (0)
 ui.object_layer.1=Слой Мастера (1)
 ui.object_layer.2=Экстра Слой Мастера (2)
 ui.popup.change_name_color=Изменить Цвет Имени
+ui.assets.duplicate_shader=Создать Копию

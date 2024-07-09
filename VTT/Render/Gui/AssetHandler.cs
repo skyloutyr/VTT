@@ -986,6 +986,26 @@
                                         state.editShaderPopup = true;
                                         this._editedShaderId = aRef.AssetID;
                                     }
+
+                                    if (ImGui.MenuItem(lang.Translate("ui.assets.duplicate_shader") + "###Duplicate Shader"))
+                                    {
+                                        Client.Instance.AssetManager.ClientAssetLibrary.PerformClientAssetAction(aRef.AssetID, AssetType.Shader, (status, a) =>
+                                        {
+                                            if (status == AssetStatus.Return && a != null && a.Type == AssetType.Shader)
+                                            {
+                                                ShaderGraph graph = a.Shader.NodeGraph.FullCopy();
+                                                AssetMetadata metadata = new AssetMetadata() { Name = aRef.Name + " (copy)", Type = AssetType.Shader, Version = aRef.Meta.Version };
+                                                using MemoryStream ms = new MemoryStream();
+                                                using BinaryWriter bw = new BinaryWriter(ms);
+                                                graph.Serialize().Write(bw);
+                                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                                using MemoryStream imgMs = new MemoryStream();
+                                                img.SaveAsPng(imgMs);
+                                                PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                                                pau.Send(Client.Instance.NetClient);
+                                            }
+                                        });
+                                    }
                                 }
 
                                 if (ImGui.MenuItem(lang.Translate("ui.assets.delete") + "###Delete"))

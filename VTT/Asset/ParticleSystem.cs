@@ -998,7 +998,7 @@
                 apts.Add(pts);
             }
 
-            ParticleSystem.ImageEmissionLocations[this.Template.AssetID] = apts;
+            ParticleSystem.ImageEmissionLocations[this.Template.MaskID] = apts;
             return apts;
         }
 

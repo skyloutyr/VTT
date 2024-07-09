@@ -438,7 +438,7 @@
 
                         // Load custom texture
                         GL.ActiveTexture(12);
-                        if (a.Shader.NodeGraph.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
+                        if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
                         {
                             t.Bind();
                             for (int i = 0; i < sz.Length; ++i)

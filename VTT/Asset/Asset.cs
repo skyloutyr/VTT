@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Text;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Sound;
@@ -27,6 +28,7 @@
         public ModelData Model { get; set; }
         public SoundData Sound { get; set; }
         public ParticleSystem ParticleSystem { get; set; }
+        public GlslFragmentData GlslFragment { get; set; }
 
         public void Dispose()
         {
@@ -34,6 +36,7 @@
             this.Shader?.Dispose();
             this.Model?.Dispose();
             this.Sound?.Dispose();
+            this.GlslFragment?.Dispose();
             this.ParticleSystem = null;
         }
 
@@ -54,13 +57,29 @@
         Model,
         Shader,
         Sound,
-        ParticleSystem
+        ParticleSystem,
+        GlslFragmentShader
     }
 
     public interface IAssetData
     {
         void Accept(byte[] binary);
         void Dispose();
+    }
+
+    public class GlslFragmentData : IAssetData
+    {
+        public string Data { get; set; }
+
+        public void Accept(byte[] binary)
+        {
+            this.Data = Encoding.UTF8.GetString(binary);
+        }
+
+        public void Dispose()
+        {
+            // NOOP
+        }
     }
 
     public class ModelData : IAssetData

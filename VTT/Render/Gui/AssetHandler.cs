@@ -11,6 +11,7 @@
     using System.IO;
     using System.Linq;
     using System.Numerics;
+    using System.Text;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
@@ -78,6 +79,49 @@
                             // NOOP
                         }
 
+                        return false;
+                    }
+                }
+
+                if (ext.EndsWith(".fsh") || ext.EndsWith(".frag")) // Glsl fragment shader
+                {
+                    try
+                    {
+                        static bool IsSmallChar(char c) => c is ',' or ' ' or '.' or '\'' or '"' or ':' or ';' or '^' or '*' or '-' or '_' or '+' or '=';
+
+                        string data = File.ReadAllText(s);
+                        string[] contents = data.Split('\n');
+                        Image<Rgba32> previewImg = new Image<Rgba32>(256, 256);
+                        for (int i = 0; i < 256 && i < contents.Length; ++i)
+                        {
+                            string line = contents[i];
+                            for (int x = 0; x < 256 && x < line.Length; ++x)
+                            {
+                                char c = line[x];
+                                Rgba32 col = IsSmallChar(c) ? new Rgba32(0xff1f1f1f) : new Rgba32(0xfffafafa);
+                                previewImg[x, i] = col;
+                            }
+                        }
+
+                        using MemoryStream ms = new MemoryStream();
+                        previewImg.SaveAsPng(ms);
+                        previewImg.Dispose();
+                        Asset a = new Asset()
+                        {
+                            ID = Guid.NewGuid(),
+                            GlslFragment = new GlslFragmentData() { Data = data },
+                            Type = AssetType.GlslFragmentShader
+                        };
+
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.GlslFragmentShader };
+                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                        new PacketAssetUpload() { AssetBinary = a.ToBinary(Encoding.UTF8.GetBytes(data)), AssetPreview = ms.ToArray(), Meta = metadata, Path = this.CurrentFolder.GetPath() }.Send();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Client.Instance.Logger.Log(LogLevel.Error, "Could not load gltf shader - " + ex.Message);
+                        Client.Instance.Logger.Exception(LogLevel.Error, ex);
                         return false;
                     }
                 }
@@ -832,6 +876,7 @@
                                 AssetType.Shader => this.AssetShaderIcon,
                                 AssetType.ParticleSystem => this.AssetParticleIcon,
                                 AssetType.Sound => aRef.Meta?.SoundInfo?.IsFullData ?? false ? this.AssetSoundIcon : aRef.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon : this.AssetMusicIcon,
+                                AssetType.GlslFragmentShader => this.AssetShaderIcon,
                                 _ => this.ErrorIcon
                             },
 
@@ -1089,7 +1134,7 @@
                         haveResult = true;
                     }
 
-                    if (!haveResult && state.objectCustomShaderHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
+                    if (!haveResult && state.objectCustomShaderHovered != null && Client.Instance.IsAdmin && this._draggedRef != null && this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader)
                     {
                         new PacketMapObjectGenericData { ChangeType = PacketMapObjectGenericData.DataType.ShaderID, Data = SelectedToPacket3(os, this._draggedRef.AssetID) }.Send();
                         haveResult = true;
@@ -1143,11 +1188,11 @@
                     {
                         if (state.shaderGraphExtraTexturesHoveredIndex == -1)
                         {
-                            state.shaderGraphExtraTexturesHovered.ExtraTexturesAttachments.Add(this._draggedRef.AssetID);
+                            state.shaderGraphExtraTexturesHovered.ExtraTextures.AddAttachment(this._draggedRef.AssetID);
                         }
                         else
                         {
-                            state.shaderGraphExtraTexturesHovered.ExtraTexturesAttachments[state.shaderGraphExtraTexturesHoveredIndex] = this._draggedRef.AssetID;
+                            state.shaderGraphExtraTexturesHovered.ExtraTextures.ExtraTexturesAttachments[state.shaderGraphExtraTexturesHoveredIndex] = this._draggedRef.AssetID;
                         }
                     }
                 }

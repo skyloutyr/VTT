@@ -298,8 +298,8 @@
                                 ImGui.SetTooltip(lang.Translate("ui.properties.custom_nameplate.tt"));
                             }
 
-                            mouseOver = DrawObjectAssetRecepticle(mo, mo.ShaderID, () => this._draggedRef.Type == AssetType.Shader, this.AssetShaderIcon);
-                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.Shader)
+                            mouseOver = DrawObjectAssetRecepticle(mo, mo.ShaderID, () => this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader, this.AssetShaderIcon);
+                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader)
                             {
                                 state.objectCustomShaderHovered = mo;
                             }

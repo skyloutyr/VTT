@@ -729,7 +729,7 @@
             var imScreenPos = ImGui.GetCursorScreenPos();
             var rectEnd = imScreenPos + new Vector2(320, 24);
             bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-            bool acceptShader = type == 0 && draggedRef != null && draggedRef.Type == AssetType.Shader;
+            bool acceptShader = type == 0 && draggedRef != null && draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader;
             bool acceptModel = type == 1 && draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture);
             bool acceptMask = type == 2 && draggedRef != null && draggedRef.Type == AssetType.Texture;
             uint bClr = mouseOver ? draggedRef != null && (acceptShader || acceptModel || acceptMask) ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);

@@ -19,37 +19,47 @@
                 return false;
             }
 
-            if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+            if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return)
             {
-                shader = a.Shader.NodeGraph.GetGLShader(false);
-                if (shader != null)
+                if (a.Type == Asset.AssetType.Shader && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                 {
-                    if (!ShaderProgram.IsLastShaderSame(shader))
+                    shader = a.Shader.NodeGraph.GetGLShader(false);
+                    if (shader != null)
                     {
-                        shader.Bind();
-                        Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
-                    }
-
-                    shader["tint_color"].Set(passthroughData.TintColor);
-                    shader["alpha"].Set(passthroughData.Alpha);
-                    shader["grid_alpha"].Set(passthroughData.GridAlpha);
-                    GL.ActiveTexture(12);
-                    if (a.Shader.NodeGraph.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
-                    {
-                        t.Bind();
-                        for (int i = 0; i < sz.Length; ++i)
+                        if (!ShaderProgram.IsLastShaderSame(shader))
                         {
-                            shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                            shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                            shader.Bind();
+                            Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
                         }
-                    }
-                    else
-                    {
-                        Client.Instance.Frontend.Renderer.White.Bind();
-                    }
 
-                    GL.ActiveTexture(0);
-                    return true;
+                        shader["tint_color"].Set(passthroughData.TintColor);
+                        shader["alpha"].Set(passthroughData.Alpha);
+                        shader["grid_alpha"].Set(passthroughData.GridAlpha);
+                        GL.ActiveTexture(12);
+                        if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
+                        {
+                            t.Bind();
+                            for (int i = 0; i < sz.Length; ++i)
+                            {
+                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                            }
+                        }
+                        else
+                        {
+                            Client.Instance.Frontend.Renderer.White.Bind();
+                        }
+
+                        GL.ActiveTexture(0);
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (a.Type == Asset.AssetType.GlslFragmentShader && a.GlslFragment != null && !string.IsNullOrEmpty(a.GlslFragment.Data))
+                    {
+
+                    }
                 }
             }
 

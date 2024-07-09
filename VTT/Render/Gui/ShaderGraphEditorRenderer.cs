@@ -90,7 +90,7 @@
                                     float oY = 0;
                                     int i = 0;
                                     int dIndex = -1;
-                                    foreach (Guid tid in this.EditedGraph.ExtraTexturesAttachments)
+                                    foreach (Guid tid in this.EditedGraph.ExtraTextures.ExtraTexturesAttachments)
                                     {
                                         ImGui.TextUnformatted($"{i}: ");
                                         ImGui.SameLine();
@@ -124,7 +124,7 @@
 
                                     if (dIndex != -1)
                                     {
-                                        this.EditedGraph.ExtraTexturesAttachments.RemoveAt(dIndex);
+                                        this.EditedGraph.ExtraTextures.ExtraTexturesAttachments.RemoveAt(dIndex);
                                     }
                                 }
 

@@ -81,7 +81,7 @@
                             OwnerName = Client.Instance.Settings.Name,
                             Tooltip = this.CurrentTooltip,
                             Color = Extensions.FromVec4(this.CurrentColor),
-                            Start = this.GetCursorWorldNow(),
+                            Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(this.GetCursorWorldNow(), m.GridSize) : this.GetCursorWorldNow(),
                             End = this.GetCursorWorldNow(),
                             ExtraInfo = this.CurrentExtraValue,
                             IsDead = false,

@@ -116,7 +116,7 @@
                         if (status == AssetStatus.Return && a != null && a.Model != null && a.Model.GLMdl != null)
                         {
                             Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                            a.Model.GLMdl.Render(this.SunShader, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time));
+                            a.Model.GLMdl.Render(this.SunShader, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time), mo.AnimationContainer);
                         }
                     }
                 }

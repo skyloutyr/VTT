@@ -400,7 +400,22 @@
         }
     }
 
-    public class AnimationContainer : ISerializable
+    public interface IAnimationStorage
+    {
+        public class BoneData
+        {
+            public int Index { get; set; }
+            public Matrix4x4 Transform { get; set; }
+
+            public void CopyFrom(GlbBone bone) => this.Transform = bone.Transform;
+        }
+
+        public bool CheckAnimation(GlbAnimation anim, GlbArmature arm);
+        public void LoadBonesFromAnimation(GlbArmature arm);
+        public IEnumerable<BoneData> ProvideBones();
+    }
+
+    public class AnimationContainer : ISerializable, IAnimationStorage
     {
         private float _time;
 
@@ -410,6 +425,9 @@
 
         public GlbAnimation CurrentAnimation { get; set; }
 
+        private GlbAnimation _lastStorageAnimation;
+        public readonly object animationStorageLock = new object();
+        public List<IAnimationStorage.BoneData> StoredBoneData { get; } = new List<IAnimationStorage.BoneData>();
 
         const float TimeScale = 1f / 60.0f;
         public float GetTime(double delta) => this.Paused ? this._time : this._time - (TimeScale * this.AnimationPlayRate) + ((float)delta * (TimeScale * this.AnimationPlayRate));
@@ -500,6 +518,50 @@
             this.LoopingAnimationName = e.Get("Default", string.Empty);
             this.Paused = e.Get("Paused", false);
             this.AnimationPlayRate = e.Get("PlayRate", 1.0f);
+        }
+
+        public bool CheckAnimation(GlbAnimation anim, GlbArmature arm)
+        {
+            if (anim != this._lastStorageAnimation)
+            {
+                this._lastStorageAnimation = anim;
+                lock (this.animationStorageLock)
+                {
+                    this.StoredBoneData.Clear();
+                    foreach (GlbBone bone in arm.UnsortedBones)
+                    {
+                        IAnimationStorage.BoneData bd = new IAnimationStorage.BoneData()
+                        {
+                            Index = bone.ModelIndex,
+                            Transform = bone.Transform
+                        };
+
+                        this.StoredBoneData.Add(bd);
+                    }
+
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        public void LoadBonesFromAnimation(GlbArmature arm)
+        {
+            lock (this.animationStorageLock)
+            {
+                for (int i = 0; i < this.StoredBoneData.Count; i++)
+                {
+                    IAnimationStorage.BoneData bd = this.StoredBoneData[i];
+                    bd.Transform = arm.UnsortedBones[i].Transform;
+                }
+            }
+        }
+
+        public IEnumerable<IAnimationStorage.BoneData> ProvideBones()
+        {
+            return this.StoredBoneData;
         }
     }
 }

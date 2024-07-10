@@ -865,7 +865,7 @@
                         shader["tint_color"].Set(mo.TintColor.Vec4());
                         GL.ActiveTexture(0);
                         mo.LastRenderModel = a.Model.GLMdl;
-                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
+                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                     }
                     else
                     {
@@ -960,7 +960,7 @@
 
                         GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
                         mo.LastRenderModel = mdl;
-                        mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
+                        mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                         if (hadCustomRenderShader)
                         {
                             forwardShader.Bind();
@@ -1312,11 +1312,24 @@
             }
         }
 
+        public unsafe void LoadAll(IAnimationStorage armature)
+        {
+            this._ubo.Bind();
+            IEnumerable<IAnimationStorage.BoneData> bones = armature.ProvideBones();
+            int i = 0;
+            foreach (IAnimationStorage.BoneData bone in bones)
+            {
+                this._matrixArray[i++] = bone.Transform;
+            }
+
+            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4x4) * i, 0);
+        }
+
         public unsafe void LoadAll(GlbArmature armature)
         {
             this._ubo.Bind();
-
-            for (int i = 0; i < armature.UnsortedBones.Count; i++)
+            
+            for (int i = 0; i < armature.UnsortedBones.Count; ++i)
             {
                 GlbBone bone = armature.UnsortedBones[i];
                 this._matrixArray[i] = bone.Transform;

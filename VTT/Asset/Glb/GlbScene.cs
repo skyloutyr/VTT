@@ -10,6 +10,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Numerics;
+    using VTT.Control;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
@@ -1177,7 +1178,7 @@
         }
 
         private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
-        public void Render(ShaderProgram shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             if (!this.GlReady)
             {
@@ -1187,7 +1188,7 @@
             this._modelStack.Push(baseMatrix);
             foreach (GlbObject o in this.RootObjects)
             {
-                o.Render(shader, this._modelStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
+                o.Render(shader, this._modelStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }
 
             this._modelStack.Pop();
@@ -1260,7 +1261,7 @@
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
             GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
 
-            this.Render(shader, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0);
+            this.Render(shader, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0, null);
 
             GL.ActiveTexture(0);
             tex.Bind();

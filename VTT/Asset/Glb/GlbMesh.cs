@@ -2,6 +2,7 @@
 {
     using System;
     using System.Numerics;
+    using VTT.Control;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
@@ -53,7 +54,7 @@
             this.IndexBuffer = null;
         }
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
             Matrix4x4 cm = matrixStack.Current;
@@ -61,8 +62,16 @@
             shader["mvp"].Set(cm * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
-                this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime);
-                Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
+                this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);
+                if (animationStorage != null)
+                {
+                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(animationStorage);
+                }
+                else
+                {
+                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
+                }
+
                 shader["is_animated"].Set(true);
             }
             else

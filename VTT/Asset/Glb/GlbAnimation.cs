@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Numerics;
+    using VTT.Control;
     using VTT.Util;
 
     public class GlbAnimation
@@ -160,7 +161,7 @@
         public List<GlbBone> Root { get; } = new List<GlbBone>();
         public Dictionary<int, GlbBone> BonesByModelIndex { get; } = new Dictionary<int, GlbBone>();
 
-        public void CalculateAllTransforms(GlbAnimation animation, float time)
+        public void CalculateAllTransforms(GlbAnimation animation, float time, IAnimationStorage storage)
         {
             static void UpdateBone(GlbBone bone)
             {
@@ -189,24 +190,10 @@
                 bone.Transform = bone.CalculateGlobalTransform();
             }
 
-            /*
-            foreach (GlbBone bone in this.Root)
+            if (storage != null)
             {
-                UpdateBone(bone);
-            }
-
-            foreach (GlbBone bone in this.SortedBones)
-            {
-                bone.Transform = bone.CalculateGlobalTransform();
-            }
-            */
-        }
-
-        public void ResetAllBones()
-        {
-            foreach (GlbBone b in this.UnsortedBones)
-            {
-                b.ResetTransforms();
+                storage.CheckAnimation(animation, this);
+                storage.LoadBonesFromAnimation(this);
             }
         }
     }

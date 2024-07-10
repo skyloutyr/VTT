@@ -4,6 +4,7 @@
     using System;
     using System.Collections.Generic;
     using System.Numerics;
+    using VTT.Control;
     using VTT.GL;
     using VTT.Util;
     using Camera = glTFLoader.Schema.Camera;
@@ -63,7 +64,7 @@
 
         public GlbObject(Node node) => this._node = node;
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             matrixStack.Push(this._matCached);
 
@@ -71,13 +72,13 @@
             {
                 foreach (GlbMesh mesh in this.Meshes)
                 {
-                    mesh.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
+                    mesh.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
                 }
             }
 
             foreach (GlbObject child in this.Children)
             {
-                child.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, renderer);
+                child.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }
 
             matrixStack.Pop();

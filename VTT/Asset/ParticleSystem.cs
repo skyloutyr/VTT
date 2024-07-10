@@ -470,7 +470,7 @@
             GL.ActiveTexture(14);
             GL.BindTexture(TextureTarget.Buffer, this._glBufferTexture);
             GL.ActiveTexture(0);
-            a.Model.GLMdl.Render(particleShader, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
+            a.Model.GLMdl.Render(particleShader, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, null, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
@@ -906,12 +906,19 @@
                                                 float inf2 = r1 * (1 - r2);
                                                 float inf3 = r2 * r1;
                                                 GlbMesh.BoneData transformData = inf1 > inf2 && inf1 > inf3 ? bd1 : inf2 > inf3 && inf2 > inf1 ? bd2 : bd3;
-                                                Matrix4x4 m0 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index0].Transform * transformData.weight1;
-                                                Matrix4x4 m1 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index1].Transform * transformData.weight2;
-                                                Matrix4x4 m2 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index2].Transform * transformData.weight3;
-                                                Matrix4x4 m3 = sMesh.AnimationArmature.UnsortedBones[(int)transformData.index3].Transform * transformData.weight4;
-                                                Matrix4x4 mf = m0 + m1 + m2 + m3;
-                                                rPt = Vector4.Transform(new Vector4(rPt, 1.0f), mf).Xyz();
+                                                lock (this.Container.Container.AnimationContainer.animationStorageLock)
+                                                {
+                                                    uint mx = Math.Max(transformData.index0, Math.Max(transformData.index1, Math.Max(transformData.index2, transformData.index3)));
+                                                    if (mx < this.Container.Container.AnimationContainer.StoredBoneData.Count)
+                                                    {
+                                                        Matrix4x4 m0 = this.Container.Container.AnimationContainer.StoredBoneData[(int)transformData.index0].Transform * transformData.weight1;
+                                                        Matrix4x4 m1 = this.Container.Container.AnimationContainer.StoredBoneData[(int)transformData.index1].Transform * transformData.weight2;
+                                                        Matrix4x4 m2 = this.Container.Container.AnimationContainer.StoredBoneData[(int)transformData.index2].Transform * transformData.weight3;
+                                                        Matrix4x4 m3 = this.Container.Container.AnimationContainer.StoredBoneData[(int)transformData.index3].Transform * transformData.weight4;
+                                                        Matrix4x4 mf = m0 + m1 + m2 + m3;
+                                                        rPt = Vector4.Transform(new Vector4(rPt, 1.0f), mf).Xyz();
+                                                    }
+                                                }
                                             }
                                         }
 

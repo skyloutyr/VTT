@@ -276,7 +276,7 @@
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {
                                     Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                                    a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta));
+                                    a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                                 }
                             }
                         }

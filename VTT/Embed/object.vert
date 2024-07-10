@@ -49,19 +49,6 @@ out vec4 f_color;
 out vec2 f_texture;
 out vec4 f_sun_coord;
 
-vec3 boneTransformPos(vec4 vec, uint i1, uint i2, uint i3, uint i4)
-{
-	ivec4 indices = ivec4(i1, i2, i3, i4);
-	vec3 result = vec3(0.0);
-	for (int i = 0; i < 4; ++i)
-	{
-		mat4 boneMat = bones[indices[i]];
-		result += (v_weights[i] * boneMat * vec).xyz;
-	}
-
-	return result;
-}
-
 void main()
 {
 	vec3 t_tan = v_tangent;
@@ -71,19 +58,24 @@ void main()
 
 	if (is_animated)
 	{
-		mat4 fullBoneMat = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+		mat4 fullBoneMat = mat4(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 		uint indices12 = floatBitsToUint(v_bones.x);
 		uint indices34 = floatBitsToUint(v_bones.y);
-
 		uint index1 = indices12 >> 16;
 		uint index2 = indices12 & 0xffffu;
 		uint index3 = indices34 >> 16;
 		uint index4 = indices34 & 0xffffu;
+		ivec4 indices = ivec4(index1, index2, index3, index4);
+		for (int i = 0; i < 4; ++i)
+		{
+			fullBoneMat += (v_weights[i] * bones[indices[i]]);
+		}
 
-		t_pos = boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4);
-		t_tan = normalize(boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4));
-		t_bitan = normalize(boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4));
-		t_normal = normalize(boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4));
+		mat4 tInvNMat = transpose(inverse(fullBoneMat));
+		t_pos = (fullBoneMat * vec4(t_pos, 1.0)).xyz;
+		t_tan = (tInvNMat * vec4(t_tan, 1.0)).xyz;
+		t_bitan = (tInvNMat * vec4(t_bitan, 1.0)).xyz;
+		t_normal = (tInvNMat * vec4(t_normal, 1.0)).xyz;
 	}
 
 	vec3 world_tan = normalize(vec3(model * vec4(t_tan, 0.0)));

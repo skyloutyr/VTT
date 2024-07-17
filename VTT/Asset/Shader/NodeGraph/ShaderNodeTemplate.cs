@@ -562,6 +562,51 @@ r = $INPUT@6$;
 (matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => new Vector3(MathF.Pow(((Vector3)x[0]).X, 2.2f), MathF.Pow(((Vector3)x[0]).Y, 2.2f), MathF.Pow(((Vector3)x[0]).Z, 2.2f)))
 );
 
+        public static ShaderNodeTemplate Vec3Rgb2Hsv { get; } = new ShaderNodeTemplate(Guid.Parse("7ae9b861-7a4b-4144-823e-1b5e142f055d"), ShaderTemplateCategory.MathVec3, "RGB to HSV", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "RGB",
+                    SelfType = NodeValueType.Vec3,
+                    CurrentValue = Vector3.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "HSV",
+                    SelfType = NodeValueType.Vec3
+                }
+            },
+@"$OUTPUT@0$ = rgb2hsv($INPUT@0$);",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => {
+    Color clr = new Color(new Rgba32((Vector3)x[0]));
+    HSVColor hsv = (HSVColor)clr;
+    return new Vector3(hsv.Hue / 360.0f, hsv.Saturation, hsv.Value);
+}));
+
+        public static ShaderNodeTemplate Vec3Hsv2Rgb { get; } = new ShaderNodeTemplate(Guid.Parse("4dd8f6cd-52f0-4f80-93c7-edb08657f434"), ShaderTemplateCategory.MathVec3, "HSV to RGB", true, new NodeInput[] {
+                new NodeInput()
+                {
+                    Name = "HSV",
+                    SelfType = NodeValueType.Vec3,
+                    CurrentValue = Vector3.Zero
+                }
+            },
+
+            new NodeOutput[] {
+                new NodeOutput() {
+                    Name = "RGB",
+                    SelfType = NodeValueType.Vec3
+                }
+            },
+@"$OUTPUT@0$ = hsv2rgb($INPUT@0$);",
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => {
+    Vector3 v = (Vector3)x[0];
+    HSVColor hsv = new HSVColor(v.X * 360.0f, v.Y, v.Z);
+    Color clr = (Color)hsv;
+    return new Vector3(clr.Red(), clr.Green(), clr.Blue());
+}));
+
         #endregion
 
         #region Math - Vec2

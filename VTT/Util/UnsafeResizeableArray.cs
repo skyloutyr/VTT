@@ -37,7 +37,7 @@
 
         public UnsafeResizeableArray(IList<T> managed)
         {
-            this._index = managed.Count - 1;
+            this._index = managed.Count;
             this._count = managed.Count;
             this._ptr = (T*)Marshal.AllocHGlobal((int)managed.Count * sizeof(T));
             for (int i = managed.Count - 1; i >= 0; --i)

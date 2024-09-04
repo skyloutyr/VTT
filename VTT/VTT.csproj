@@ -386,7 +386,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreCLR-NCalc" Version="3.1.251" />
+    <PackageReference Include="CoreCLR-NCalc" Version="3.1.253" />
     <PackageReference Include="FFmpeg.AutoGen" Version="5.1.1" />
     <PackageReference Include="glTF2Loader" Version="1.1.4-alpha" />
     <PackageReference Include="ImGui.NET" Version="1.90.8.1" />
@@ -395,7 +395,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLayer" Version="1.15.0" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
     <PackageReference Include="Ultz.Native.GLFW" Version="3.4.0" />
   </ItemGroup>
 

@@ -370,6 +370,8 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             this.OverlayShader.Bind();
             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+            this.OverlayShader["view"].Set(cam.View);
+            this.OverlayShader["projection"].Set(cam.Projection);
             GL.Disable(Capability.DepthTest);
             foreach (MapObject mo in this._crossedOutObjects)
             {

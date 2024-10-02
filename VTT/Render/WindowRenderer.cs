@@ -70,9 +70,9 @@
         public void Update()
         {
             Map m = Client.Instance.CurrentMap;
+            this.MapRenderer?.Update(m);
             this.ObjectRenderer?.Update(m);
             this.SelectionManager?.Update();
-            this.MapRenderer?.Update(m);
             this.RulerRenderer?.Update();
             this.GuiRenderer?.MainMenuRenderer?.Update();
             this.ParticleRenderer?.CurrentlyEditedSystemInstance?.Update(new Vector3(5, 5, 5));

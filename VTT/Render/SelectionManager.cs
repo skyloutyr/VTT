@@ -485,8 +485,8 @@
                     this._fxHandlerLmbDown = true;
                     if (!Guid.Equals(Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID, Guid.Empty))
                     {
-                        Vector3? cursorLoc = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Client.Instance.Frontend.Renderer.ObjectRenderer.MouseHitWorld;
-                        new PacketAddFXParticle() { Location = cursorLoc.Value, NumParticles = Client.Instance.Frontend.Renderer.GuiRenderer.FXNumToEmit, SystemID = Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID }.Send();
+                        Vector3 cursorLoc = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
+                        new PacketAddFXParticle() { Location = cursorLoc, NumParticles = Client.Instance.Frontend.Renderer.GuiRenderer.FXNumToEmit, SystemID = Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID }.Send();
                     }
                 }
 
@@ -548,7 +548,7 @@
             if (this._blockSelection && this._lbmDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate && this.SelectedObjects.Count > 0)
             {
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
                 Vector2 pCurrent;
                 bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space);
                 bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);

@@ -112,7 +112,7 @@
                     ImGui.TextUnformatted($"Frame: {((double)pm.LastTickAvg / TimeSpan.TicksPerMillisecond):0.000}ms, {pm.LastNumFrames} frames");
                     ImGui.Text("Cursor: " + Client.Instance.Frontend.MouseX + ", " + Client.Instance.Frontend.MouseY);
 
-                    Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                    Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                     ImGui.Text("World: " + (cw.HasValue ? cw.Value.ToString() : "null"));
                 }
 

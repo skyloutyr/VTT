@@ -1335,9 +1335,9 @@
                     accumList.Add(mo);
                 }
 
-                if (Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit.HasValue || Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld.HasValue)
+                if (Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit.HasValue)
                 {
-                    Vector3 vNewCenter = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld.Value;
+                    Vector3 vNewCenter = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit.Value;
                     if (state.clientMap.Is2D)
                     {
                         vNewCenter += new Vector3(0, 0, 0.01f);

@@ -1079,7 +1079,7 @@
                 {
                     if (this._draggedRef.Type is AssetType.Model or AssetType.Texture)
                     {
-                        Vector3? worldVec = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                        Vector3? worldVec = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                         if (!worldVec.HasValue)
                         {
                             Ray ray = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();

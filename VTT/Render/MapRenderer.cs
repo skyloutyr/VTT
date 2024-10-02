@@ -19,7 +19,10 @@
         public FOWRenderer FOWRenderer { get; set; }
         public DrawingRenderer DrawingRenderer { get; set; }
 
-        public Vector3? CursorWorld { get; set; }
+        public Vector3? GroundHitscanResult { get; set; }
+        public Vector3? TerrainRaycastResult { get; set; }
+
+        public Vector3? TerrainHit => this.TerrainRaycastResult ?? this.GroundHitscanResult;
 
         public int CurrentLayer { get; set; }
         public float ZoomOrtho => this.camera2dzoom;
@@ -27,7 +30,17 @@
 
         public void Update(Map m)
         {
+            if (m == null)
+            {
+                return;
+            }
+
             this.HandleCamera();
+
+            Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
+            RaycastResut rr = RaycastResut.Raycast(r, m, o => o.MapLayer <= 0);
+            this.TerrainRaycastResult = rr.Result ? rr.Hit : null;
+
             this.DrawingRenderer?.Update(m);
         }
 
@@ -35,7 +48,7 @@
         {
             if (m != null)
             {
-                this.CursorWorld = TryHitscanGround(this.ClientCamera, out Vector3 cw) ? cw : null;
+                this.GroundHitscanResult = TryHitscanGround(this.ClientCamera, out Vector3 cw) ? cw : null;
                 this.GridRenderer.Render(time, this.ClientCamera, m);
             }
         }
@@ -55,6 +68,18 @@
         {
             Map m = Client.Instance.CurrentMap;
             return m?.Camera2DHeight * 2 ?? 10;
+        }
+
+        public Vector3 GetTerrainCursorOrPointAlongsideView()
+        {
+            Vector3? v = this.TerrainHit;
+            if (v.HasValue)
+            {
+                return v.Value;
+            }
+
+            Ray r = this.RayFromCursor();
+            return r.Origin + (r.Direction * 5.0f);
         }
 
         public void Resize(int w, int h)

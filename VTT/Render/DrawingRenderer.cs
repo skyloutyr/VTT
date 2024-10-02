@@ -120,13 +120,18 @@
                 return true;
             }
 
+            if (m == null)
+            {
+                return;
+            }
+
             bool gLmbDown = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left);
             if (!this._lmbDown && gLmbDown)
             {
                 this._lmbDown = true;
                 if (this.IsDrawing && !ImGui.GetIO().WantCaptureMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Draw && m.EnableDrawing)
                 {
-                    Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                    Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                     if (cw.HasValue)
                     {
                         this._lastCursorWorld = cw.Value;
@@ -144,7 +149,7 @@
                 {
                     if (this._editedDPC != null)
                     {
-                        Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                        Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                         if (cw.HasValue)
                         {
                             float cDelta = (this._lastCursorWorld - cw.Value).Length();
@@ -180,7 +185,7 @@
                     {
                         if (!this.IsDrawing && !ImGui.GetIO().WantCaptureMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Draw)
                         {
-                            Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                            Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                             if (cw.HasValue)
                             {
                                 Vector3 rVec = new Vector3(this.CurrentRadius, this.CurrentRadius, this.CurrentRadius) * 0.5f;
@@ -294,7 +299,7 @@
 
             if (!this.IsDrawing && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Draw)
             {
-                Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                 if (tHit.HasValue)
                 {
                     Matrix4x4 model = Matrix4x4.CreateScale(this.CurrentRadius) * Matrix4x4.CreateTranslation(tHit.Value);

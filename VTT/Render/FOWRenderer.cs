@@ -362,7 +362,7 @@
                 this._lmbPressed = true;
                 if (this.PaintMode == SelectionMode.Box)
                 {
-                    Vector3? v = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                    Vector3? v = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                     if (v.HasValue)
                     {
                         this._initialWorldXYZ = v.Value;
@@ -392,7 +392,7 @@
                             this.FowSelectionPoints.Clear();
                         }
 
-                        Vector3? v = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                        Vector3? v = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                         if (v.HasValue)
                         {
                             this.FowSelectionPoints.Add(v.Value);
@@ -416,7 +416,7 @@
 
             if (this._isDrawingBox && this._lmbPressed)
             {
-                Vector3? v = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector3? v = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                 if (v.HasValue)
                 {
                     Vector3 tl = this._initialWorldXYZ;
@@ -491,7 +491,7 @@
 
             if (this.PaintMode == SelectionMode.Brush)
             {
-                Vector3? v = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector3? v = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                 if (v.HasValue)
                 {
                     this.UploadData(this._brushRenderData, this._brushRenderIndices);
@@ -519,7 +519,7 @@
 
             if (this._lmbPressed && this.PaintMode == SelectionMode.Brush)
             {
-                Vector3? v = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+                Vector3? v = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                 if (v.HasValue)
                 {
                     Vector2 now = new Vector2(v.Value.X, v.Value.Y);

@@ -44,7 +44,6 @@
 
         private int _updateTicksCtr;
 
-        public Vector3? TerrainHit { get; set; }
 
         private readonly List<(MapObject, Color)> _highlightedObjects = new List<(MapObject, Color)>();
 
@@ -58,14 +57,11 @@
                 return;
             }
 
+            Vector3 tHitOrPt = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
             if (this.CurrentColor.Equals(default))
             {
                 this.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
             }
-
-            Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
-            RaycastResut rr = RaycastResut.Raycast(r, m, o => o.MapLayer <= 0);
-            this.TerrainHit = rr.Result ? rr.Hit : null;
 
             bool imMouse = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
             if (!imMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
@@ -81,8 +77,8 @@
                             OwnerName = Client.Instance.Settings.Name,
                             Tooltip = this.CurrentTooltip,
                             Color = Extensions.FromVec4(this.CurrentColor),
-                            Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(this.GetCursorWorldNow(), m.GridSize) : this.GetCursorWorldNow(),
-                            End = this.GetCursorWorldNow(),
+                            Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(tHitOrPt, m.GridSize) : tHitOrPt,
+                            End = tHitOrPt,
                             ExtraInfo = this.CurrentExtraValue,
                             IsDead = false,
                             NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500,
@@ -96,20 +92,16 @@
                     }
                     else
                     {
-                        Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
-                        if (tHit.HasValue)
+                        for (int i = this.ActiveInfos.Count - 1; i >= 0; i--)
                         {
-                            for (int i = this.ActiveInfos.Count - 1; i >= 0; i--)
+                            RulerInfo ri = this.ActiveInfos[i];
+                            if (ri.KeepAlive && (ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHitOrPt).Length() <= this.CurrentExtraValue) : (ri.Start - tHitOrPt).Length() <= this.CurrentExtraValue))
                             {
-                                RulerInfo ri = this.ActiveInfos[i];
-                                if (ri.KeepAlive && (ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length() <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length() <= this.CurrentExtraValue))
+                                if (this.CanErase(ri))
                                 {
-                                    if (this.CanErase(ri))
-                                    {
-                                        ri.IsDead = true;
-                                        ri.KeepAlive = false;
-                                        new PacketRulerInfo() { Info = ri }.Send();
-                                    }
+                                    ri.IsDead = true;
+                                    ri.KeepAlive = false;
+                                    new PacketRulerInfo() { Info = ri }.Send();
                                 }
                             }
                         }
@@ -119,12 +111,12 @@
 
                 if (this._lmbDown && this.CurrentInfo != null && !this.CurrentInfo.IsDead)
                 {
-                    Vector3 now = this.GetCursorWorldNow();
+                    Vector3 now = tHitOrPt;
 
                     if (Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
                     {
                         Plane p = new Plane(-Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction, 0f);
-                        r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
+                        Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
                         Vector3? v = p.Intersect(r, this.CurrentInfo.Start);
                         if (v.HasValue)
                         {
@@ -174,7 +166,7 @@
                     }
                     else
                     {
-                        Vector3 now = this.GetCursorWorldNow();
+                        Vector3 now = tHitOrPt;
                         for (int i = this.ActiveInfos.Count - 1; i >= 0; i--)
                         {
                             RulerInfo ri = this.ActiveInfos[i];
@@ -441,7 +433,7 @@
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
             Matrix4x4 model;
-            Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+            Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
 
             foreach (RulerInfo ri in this.ActiveInfos)
             {
@@ -1002,21 +994,7 @@
             this._ebo.SetData(this._indexData.ToArray());
         }
 
-        public Vector3 GetCursorWorldNow()
-        {
-            if (this.TerrainHit.HasValue)
-            {
-                return this.TerrainHit.Value;
-            }
-
-            if (Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld.HasValue)
-            {
-                return Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld.Value;
-            }
-
-            Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
-            return r.Origin + (r.Direction * 5.0f);
-        }
+        
 
         private static bool IsInCircle(BBBox box, Vector3 offset, Vector3 point, float rSq)
         {

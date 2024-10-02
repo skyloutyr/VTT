@@ -154,7 +154,7 @@
             this._shader["g_color"].Set(m.GridColor.Vec4());
             this._shader["g_alpha"].Set(1f);
             this._shader["g_size"].Set(m.GridSize);
-            Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld;
+            Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
             GL.Disable(Capability.DepthTest);

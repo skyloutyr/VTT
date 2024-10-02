@@ -159,7 +159,7 @@
         {
             this._pingUI = true;
             this._emojiUI = emoji;
-            this._pingUIAnchor = Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? (Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position + (Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction * 5));
+            this._pingUIAnchor = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
         }
 
         public void EndPingUI()

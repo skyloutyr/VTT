@@ -55,7 +55,7 @@
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
             }
 
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferCompound.Value);
@@ -104,7 +104,7 @@
                 shader["sky_color"].Set(cachedSkyColor);
                 shader["grid_color"].Set(m.GridColor.Vec4());
                 shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
                 shader["dv_data"].Set(Vector4.Zero);
                 shader["frame_delta"].Set((float)delta);
                 if (m.EnableDarkvision)

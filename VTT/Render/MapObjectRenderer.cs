@@ -1083,7 +1083,7 @@
                     this.FrameUBOManager.memory->sky_color = this._cachedSkyColor.Vec4();
                     this.FrameUBOManager.memory->grid_color = m.GridColor.Vec4();
                     this.FrameUBOManager.memory->grid_size = m.GridSize;
-                    this.FrameUBOManager.memory->cursor_position = new Vector4(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero, 1.0f);
+                    this.FrameUBOManager.memory->cursor_position = new Vector4(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero, 1.0f);
                     this.FrameUBOManager.memory->dv_data = Vector4.Zero;
                     this.FrameUBOManager.memory->frame_delta = (float)delta;
                     this.FrameUBOManager.memory->viewport_size = new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
@@ -1128,7 +1128,7 @@
                 shader["sky_color"].Set(this._cachedSkyColor.Vec3());
                 shader["grid_color"].Set(m.GridColor.Vec4());
                 shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.RulerRenderer.TerrainHit ?? Client.Instance.Frontend.Renderer.MapRenderer.CursorWorld ?? Vector3.Zero);
+                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
                 shader["dv_data"].Set(Vector4.Zero);
                 shader["frame_delta"].Set((float)delta);
                 shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));

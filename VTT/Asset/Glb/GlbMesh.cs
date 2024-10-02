@@ -18,6 +18,7 @@
         public UnsafeResizeableArray<BoneData> boneData;
         public UnsafeResizeableArray<float> areaSums;
 
+        public BoundingVolumeHierarchy BoundingVolumeHierarchy { get; set; }
         public int AmountToRender { get; set; }
         public float[] VertexBuffer { get; set; }
         public uint[] IndexBuffer { get; set; }
@@ -125,6 +126,8 @@
             GL.DeleteVertexArray(this._vao);
             GL.DeleteBuffer(this._vbo);
             GL.DeleteBuffer(this._ebo);
+            this.BoundingVolumeHierarchy?.Free();
+            this.BoundingVolumeHierarchy = null;
         }
 
         public struct BoneData

@@ -98,26 +98,33 @@
                         nDir = Vector3.Normalize(nDir);
                         int l = mesh.simplifiedTriangles.Length;
                         Vector3* ptr = mesh.simplifiedTriangles.GetPointer();
-                        if (l < nMaxVertsForMultithreading)
+                        if (mesh.BoundingVolumeHierarchy != null)
                         {
-                            for (int i = 0; i < l; i += 3)
-                            {
-                                IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints);
-                            }
+                            mesh.BoundingVolumeHierarchy.IntersectTriangles(ptr, omat, nOri, nDir, hitPoints);
                         }
                         else
                         {
-                            try
+                            if (l < nMaxVertsForMultithreading)
                             {
-                                iterStoredFixedPtr = ptr;
-                                iterStoredMat = omat;
-                                iterStoredRayOrigin = nOri;
-                                iterStoredRayDirection = nDir;
-                                Parallel.For(0, mesh.simplifiedTriangles.Length / 3, ParallelIterationDelegate);
+                                for (int i = 0; i < l; i += 3)
+                                {
+                                    IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints);
+                                }
                             }
-                            finally
+                            else
                             {
-                                iterStoredFixedPtr = null; // Remove ptr ref in case
+                                try
+                                {
+                                    iterStoredFixedPtr = ptr;
+                                    iterStoredMat = omat;
+                                    iterStoredRayOrigin = nOri;
+                                    iterStoredRayDirection = nDir;
+                                    Parallel.For(0, mesh.simplifiedTriangles.Length / 3, ParallelIterationDelegate);
+                                }
+                                finally
+                                {
+                                    iterStoredFixedPtr = null; // Remove ptr ref in case
+                                }
                             }
                         }
                     }

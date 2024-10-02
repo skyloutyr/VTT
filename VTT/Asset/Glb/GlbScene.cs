@@ -654,6 +654,8 @@
                         }
 
                         glbm.simplifiedTriangles = new(simplifiedTriangles);
+                        glbm.BoundingVolumeHierarchy = new BoundingVolumeHierarchy();
+                        glbm.BoundingVolumeHierarchy.Build(glbm.simplifiedTriangles);
                         glbm.boneData = new(simplifiedBones);
                         glbm.areaSums = new(areaSums);
                         glbm.Bounds = new AABox(posMin, posMax); // Bounds generated from transformed positions

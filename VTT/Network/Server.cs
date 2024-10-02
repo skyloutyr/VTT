@@ -54,6 +54,8 @@
 
         public long TimeoutInterval { get; set; } = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
+        public bool NonPersistent { get; set; } = false;
+
         public Server(IPAddress address, int port) : base(address, port)
         {
             Instance = this;
@@ -166,6 +168,11 @@
                 }
             }
 
+            if (ArgsManager.TryGetValue("serverpersistance", out bool b))
+            {
+                this.NonPersistent = !b;
+            }
+
             AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Server", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
@@ -263,49 +270,62 @@
                             if (m.NeedsSave)
                             {
                                 m.NeedsSave = false;
-                                Directory.CreateDirectory(mapsLoc);
-                                string fPath = Path.Combine(mapsLoc, m.ID.ToString() + ".ued");
-                                string jPath = Path.Combine(mapsLoc, m.ID.ToString() + ".json");
-                                if (File.Exists(fPath))
+                                if (!this.NonPersistent)
                                 {
-                                    File.Move(fPath, fPath + ".bak", true);
-                                }
+                                    Directory.CreateDirectory(mapsLoc);
+                                    string fPath = Path.Combine(mapsLoc, m.ID.ToString() + ".ued");
+                                    string jPath = Path.Combine(mapsLoc, m.ID.ToString() + ".json");
+                                    if (File.Exists(fPath))
+                                    {
+                                        File.Move(fPath, fPath + ".bak", true);
+                                    }
 
-                                m.Save(fPath);
-                                smp.MapName = m.Name;
-                                smp.MapFolder = m.Folder;
-                                File.WriteAllText(jPath, JsonConvert.SerializeObject(smp));
+                                    m.Save(fPath);
+                                    smp.MapName = m.Name;
+                                    smp.MapFolder = m.Folder;
+                                    File.WriteAllText(jPath, JsonConvert.SerializeObject(smp));
+                                }
                             }
 
                             if (m.FOW != null && (m.FOW.NeedsSave || m.FOW.IsDeleted))
                             {
                                 if (m.FOW.NeedsSave)
                                 {
-                                    Directory.CreateDirectory(mapsLoc);
-                                    string name = m.ID.ToString() + "_fow.png";
-                                    if (File.Exists(name))
+                                    if (!this.NonPersistent)
                                     {
-                                        File.Move(name, name + ".bak", true);
+                                        Directory.CreateDirectory(mapsLoc);
+                                        string name = m.ID.ToString() + "_fow.png";
+                                        if (File.Exists(name))
+                                        {
+                                            File.Move(name, name + ".bak", true);
+                                        }
+
+                                        m.FOW.Write(Path.Combine(mapsLoc, name));
                                     }
 
-                                    m.FOW.Write(Path.Combine(mapsLoc, name));
+                                    m.FOW.NeedsSave = false;
                                 }
 
-                                if (m.FOW.IsDeleted)
+                                if (m.FOW.IsDeleted && !m.FOW.WasErasedFromDisk)
                                 {
-                                    string name = m.ID.ToString() + "_fow.png";
-                                    name = Path.Combine(mapsLoc, name);
-                                    if (File.Exists(name))
+                                    if (!this.NonPersistent)
                                     {
-                                        File.Delete(name);
+                                        string name = m.ID.ToString() + "_fow.png";
+                                        name = Path.Combine(mapsLoc, name);
+                                        if (File.Exists(name))
+                                        {
+                                            File.Delete(name);
+                                        }
+
+                                        if (File.Exists(name + ".bak"))
+                                        {
+                                            File.Delete(name + ".bak");
+                                        }
                                     }
 
-                                    if (File.Exists(name + ".bak"))
-                                    {
-                                        File.Delete(name + ".bak");
-                                    }
-
-                                    m.FOW = null;
+                                    m.FOW.WasErasedFromDisk = true;
+                                    // Do not set FOW to null due to race condition concerns
+                                    // m.FOW = null;
                                 }
                             }
                         }
@@ -314,27 +334,37 @@
 
                 if (!this.AppendedChat.IsEmpty)
                 {
-                    this.SaveChat();
+                    if (!this.NonPersistent)
+                    {
+                        this.SaveChat();
+                    }
                 }
 
                 foreach (TextJournal tj in this.Journals.Values)
                 {
                     if (tj.NeedsSave)
                     {
-                        string loc = Path.Combine(IOVTT.ServerDir, "Journals");
-                        Directory.CreateDirectory(loc);
-                        tj.Serialize().Write(Path.Combine(loc, tj.SelfID + ".ued"));
+                        if (!this.NonPersistent)
+                        {
+                            string loc = Path.Combine(IOVTT.ServerDir, "Journals");
+                            Directory.CreateDirectory(loc);
+                            tj.Serialize().Write(Path.Combine(loc, tj.SelfID + ".ued"));
+                        }
+                        
                         tj.NeedsSave = false;
                     }
 
                     if (tj.NeedsDeletion)
                     {
-                        string loc = Path.Combine(IOVTT.ServerDir, "Journals");
-                        Directory.CreateDirectory(loc);
-                        loc = Path.Combine(loc, tj.SelfID + ".ued");
-                        if (File.Exists(loc))
+                        if (!this.NonPersistent)
                         {
-                            File.Delete(loc);
+                            string loc = Path.Combine(IOVTT.ServerDir, "Journals");
+                            Directory.CreateDirectory(loc);
+                            loc = Path.Combine(loc, tj.SelfID + ".ued");
+                            if (File.Exists(loc))
+                            {
+                                File.Delete(loc);
+                            }
                         }
 
                         this._deletions.Push(tj);
@@ -373,7 +403,11 @@
 
                 if (this.MusicPlayer.NeedsSave)
                 {
-                    this.MusicPlayer.Serialize().Write(Path.Combine(IOVTT.ServerDir, "music_player.ued"));
+                    if (!this.NonPersistent)
+                    {
+                        this.MusicPlayer.Serialize().Write(Path.Combine(IOVTT.ServerDir, "music_player.ued"));
+                    }
+
                     this.MusicPlayer.NeedsSave = false;
                 }
 

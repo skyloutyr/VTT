@@ -166,32 +166,32 @@
         public void Deserialize(DataElement e)
         {
             this.ID = e.GetGuid("ID");
-            this.Name = e.Get<string>("Name");
-            this.Folder = e.Get("Folder", string.Empty);
-            this.GridEnabled = e.Get<bool>("GridEnabled");
-            this.GridDrawn = e.Get<bool>("GridDrawn");
-            this.GridSize = e.Get<float>("GridSize");
-            this.GridUnit = e.Get("GridUnit", 5.0f);
+            this.Name = e.GetString("Name");
+            this.Folder = e.GetString("Folder", string.Empty);
+            this.GridEnabled = e.GetBool("GridEnabled");
+            this.GridDrawn = e.GetBool("GridDrawn");
+            this.GridSize = e.GetSingle("GridSize");
+            this.GridUnit = e.GetSingle("GridUnit", 5.0f);
             this.GridColor = e.GetColor("GridColor");
             this.BackgroundColor = e.GetColor("BackgroundColor");
             this.SunColor = e.GetColor("SunColor", new Color(new Rgba32(0.2f, 0.2f, 0.2f, 1.0f)));
             this.AmbientColor = e.GetColor("AmbientColor", new Color(new Rgba32(0.03f, 0.03f, 0.03f, 0.03f)));
-            this.SunEnabled = e.Get("SunEnabled", true);
-            this.SunYaw = e.Get<float>("SunYaw");
-            this.SunPitch = e.Get<float>("SunPitch");
-            this.SunIntensity = e.Get<float>("SunIntensity");
-            this.AmbietIntensity = e.Get("AmbietIntensity", 1.0f);
-            this.TurnTracker.Deserialize(e.Get("TurnTracker", new DataElement()));
-            this.EnableShadows = e.Get<bool>("EnableShadows");
-            this.EnableDirectionalShadows = e.Get<bool>("EnableDirectionalShadows");
-            this.EnableDarkvision = e.Get<bool>("EnableDarkvision");
+            this.SunEnabled = e.GetBool("SunEnabled", true);
+            this.SunYaw = e.GetSingle("SunYaw");
+            this.SunPitch = e.GetSingle("SunPitch");
+            this.SunIntensity = e.GetSingle("SunIntensity");
+            this.AmbietIntensity = e.GetSingle("AmbietIntensity", 1.0f);
+            this.TurnTracker.Deserialize(e.GetMap("TurnTracker", new DataElement()));
+            this.EnableShadows = e.GetBool("EnableShadows");
+            this.EnableDirectionalShadows = e.GetBool("EnableDirectionalShadows");
+            this.EnableDarkvision = e.GetBool("EnableDarkvision");
             this.DefaultCameraPosition = e.GetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             this.DefaultCameraRotation = e.GetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
-            this.EnableDrawing = e.Get("EnableDrawing", true);
+            this.EnableDrawing = e.GetBool("EnableDrawing", true);
             (Guid, Guid, float)[] dvData = e.GetArray("DarkvisionData", (n, c) =>
             {
-                DataElement de = c.Get<DataElement>(n);
-                return (de.GetGuid("k"), de.GetGuid("o"), de.Get<float>("v"));
+                DataElement de = c.GetMap(n);
+                return (de.GetGuid("k"), de.GetGuid("o"), de.GetSingle("v"));
             }, Array.Empty<(Guid, Guid, float)>());
             this.DarkvisionData.Clear();
             foreach ((Guid, Guid, float) kv in dvData)
@@ -202,7 +202,7 @@
             this.PermanentMarks.Clear();
             this.PermanentMarks.AddRange(e.GetArray("PermanentMarks", (n, c) =>
             {
-                DataElement de = c.Get<DataElement>(n);
+                DataElement de = c.GetMap(n);
                 RulerInfo ri = new RulerInfo();
                 ri.Deserialize(de);
                 return ri;
@@ -211,22 +211,22 @@
             this.Drawings.Clear();
             this.Drawings.AddRange(e.GetArray("Drawings", (n, c) =>
             {
-                DataElement de = c.Get<DataElement>(n);
+                DataElement de = c.GetMap(n);
                 DrawingPointContainer dpc = new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, Vector4.Zero);
                 dpc.Deserialize(de);
                 return dpc;
             }, Array.Empty<DrawingPointContainer>()));
 
-            this.Is2D = e.Get("Is2D", false);
-            this.Camera2DHeight = e.Get("Camera2DHeight", 5.0f);
+            this.Is2D = e.GetBool("Is2D", false);
+            this.Camera2DHeight = e.GetSingle("Camera2DHeight", 5.0f);
             this.AmbientSoundID = e.GetGuid("AmbientSoundID", Guid.Empty);
-            this.AmbientSoundVolume = e.Get("AmbientVolume", 1.0f);
+            this.AmbientSoundVolume = e.GetSingle("AmbientVolume", 1.0f);
             if (this.IsServer)
             {
                 this.Objects.AddRange(e.GetArray("Objects", (name, elem) =>
                 {
                     MapObject r = new MapObject() { Container = this };
-                    r.Deserialize(elem.Get<DataElement>(name));
+                    r.Deserialize(elem.GetMap(name));
                     return r;
                 }, Array.Empty<MapObject>()));
 
@@ -245,7 +245,7 @@
                 ret.SetArray("Objects", this.Objects.ToArray(), (name, container, obj) =>
                 {
                     DataElement e = obj.Serialize();
-                    container.Set(name, e);
+                    container.SetMap(name, e);
                 });
             }
 
@@ -256,43 +256,43 @@
         {
             DataElement ret = new DataElement();
             ret.SetGuid("ID", this.ID);
-            ret.Set("Name", this.Name);
-            ret.Set("Folder", this.Folder);
-            ret.Set("GridEnabled", this.GridEnabled);
-            ret.Set("GridDrawn", this.GridDrawn);
-            ret.Set("GridSize", this.GridSize);
-            ret.Set("GridUnit", this.GridUnit);
+            ret.SetString("Name", this.Name);
+            ret.SetString("Folder", this.Folder);
+            ret.SetBool("GridEnabled", this.GridEnabled);
+            ret.SetBool("GridDrawn", this.GridDrawn);
+            ret.SetSingle("GridSize", this.GridSize);
+            ret.SetSingle("GridUnit", this.GridUnit);
             ret.SetColor("GridColor", this.GridColor);
             ret.SetColor("BackgroundColor", this.BackgroundColor);
             ret.SetColor("AmbientColor", this.AmbientColor);
             ret.SetColor("SunColor", this.SunColor);
-            ret.Set("SunEnabled", this.SunEnabled);
-            ret.Set("SunYaw", this.SunYaw);
-            ret.Set("SunPitch", this.SunPitch);
-            ret.Set("SunIntensity", this.SunIntensity);
-            ret.Set("AmbietIntensity", this.AmbietIntensity);
-            ret.Set("TurnTracker", this.TurnTracker.Serialize());
-            ret.Set("EnableShadows", this.EnableShadows);
-            ret.Set("EnableDirectionalShadows", this.EnableDirectionalShadows);
-            ret.Set("EnableDarkvision", this.EnableDarkvision);
+            ret.SetBool("SunEnabled", this.SunEnabled);
+            ret.SetSingle("SunYaw", this.SunYaw);
+            ret.SetSingle("SunPitch", this.SunPitch);
+            ret.SetSingle("SunIntensity", this.SunIntensity);
+            ret.SetSingle("AmbietIntensity", this.AmbietIntensity);
+            ret.SetMap("TurnTracker", this.TurnTracker.Serialize());
+            ret.SetBool("EnableShadows", this.EnableShadows);
+            ret.SetBool("EnableDirectionalShadows", this.EnableDirectionalShadows);
+            ret.SetBool("EnableDarkvision", this.EnableDarkvision);
             ret.SetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
-            ret.Set("EnableDrawing", this.EnableDrawing);
+            ret.SetBool("EnableDrawing", this.EnableDrawing);
             ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) =>
             {
                 DataElement d = new DataElement();
                 d.SetGuid("k", e.Key);
                 d.SetGuid("o", e.Item2);
-                d.Set("v", e.Item3);
-                c.Set(n, d);
+                d.SetSingle("v", e.Item3);
+                c.SetMap(n, d);
             });
 
-            ret.SetArray("PermanentMarks", this.PermanentMarks.ToArray(), (n, c, e) => c.Set(n, e.Serialize()));
-            ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.Set(n, e.Serialize()));
-            ret.Set("Is2D", this.Is2D);
-            ret.Set("Camera2DHeight", this.Camera2DHeight);
+            ret.SetArray("PermanentMarks", this.PermanentMarks.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
+            ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
+            ret.SetBool("Is2D", this.Is2D);
+            ret.SetSingle("Camera2DHeight", this.Camera2DHeight);
             ret.SetGuid("AmbientSoundID", this.AmbientSoundID);
-            ret.Set("AmbientVolume", this.AmbientSoundVolume);
+            ret.SetSingle("AmbientVolume", this.AmbientSoundVolume);
             return ret;
         }
 

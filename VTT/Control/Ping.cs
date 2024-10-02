@@ -19,22 +19,22 @@
         public void Deserialize(DataElement e)
         {
             this.OwnerID = e.GetGuid("OwnerID");
-            this.DeathTime = e.Get<long>("DeathTime");
-            this.OwnerName = e.Get<string>("OwnerName");
+            this.DeathTime = e.GetLong("DeathTime");
+            this.OwnerName = e.GetString("OwnerName");
             this.OwnerColor = e.GetColor("OwnerColor");
             this.Position = e.GetVec3("Position");
-            this.Type = (PingType)e.Get<byte>("Type");
+            this.Type = (PingType)e.GetByte("Type");
         }
 
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
             ret.SetGuid("OwnerID", this.OwnerID);
-            ret.Set("DeathTime", this.DeathTime);
-            ret.Set("OwnerName", this.OwnerName);
+            ret.SetLong("DeathTime", this.DeathTime);
+            ret.SetString("OwnerName", this.OwnerName);
             ret.SetColor("OwnerColor", this.OwnerColor);
             ret.SetVec3("Position", this.Position);
-            ret.Set("Type", (byte)this.Type);
+            ret.SetByte("Type", (byte)this.Type);
             return ret;
         }
 

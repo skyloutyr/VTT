@@ -133,12 +133,12 @@
             DataElement ret = new DataElement();
             ret.SetGuid("SelfID", this.SelfID);
             ret.SetGuid("OwnerID", this.OwnerID);
-            ret.Set("OwnerName", this.OwnerName);
-            ret.Set("Tooltip", this.Tooltip);
+            ret.SetString("OwnerName", this.OwnerName);
+            ret.SetString("Tooltip", this.Tooltip);
             ret.SetColor("Color", this.Color);
             ret.SetEnum("Type", this.Type);
-            ret.Set("ExtraInfo", this.ExtraInfo);
-            ret.Set("DisplayInfo", this.DisplayInfo);
+            ret.SetSingle("ExtraInfo", this.ExtraInfo);
+            ret.SetBool("DisplayInfo", this.DisplayInfo);
             ret.SetArray("Points", this.Points, (n, c, v) => c.SetVec3(n, v));
             return ret;
         }
@@ -149,14 +149,14 @@
             this.KeepAlive = true;
             this.SelfID = e.GetGuid("SelfID");
             this.OwnerID = e.GetGuid("OwnerID");
-            this.OwnerName = e.Get<string>("OwnerName");
-            this.Tooltip = e.Get<string>("Tooltip");
+            this.OwnerName = e.GetString("OwnerName");
+            this.Tooltip = e.GetString("Tooltip");
             this.Color = e.GetColor("Color");
             this.Type = e.GetEnum<RulerType>("Type");
             this.Start = e.GetVec3("Start");
             this.End = e.GetVec3("End");
-            this.ExtraInfo = e.Get<float>("ExtraInfo");
-            this.DisplayInfo = e.Get("DisplayInfo", true);
+            this.ExtraInfo = e.GetSingle("ExtraInfo");
+            this.DisplayInfo = e.GetBool("DisplayInfo", true);
             if (e.Has("Start", DataType.Map))
             {
                 this.Points = new Vector3[2];

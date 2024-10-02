@@ -138,52 +138,52 @@
         {
             DataElement ret = new();
             ret.SetGuid("ID", this.ID);
-            ret.Set("Name", this.Name);
-            ret.Set("IsNameVisible", this.IsNameVisible);
-            ret.Set("IsCrossedOut", this.IsCrossedOut);
-            ret.Set("Desc", this.Description);
-            ret.Set("Notes", this.Notes);
+            ret.SetString("Name", this.Name);
+            ret.SetBool("IsNameVisible", this.IsNameVisible);
+            ret.SetBool("IsCrossedOut", this.IsCrossedOut);
+            ret.SetString("Desc", this.Description);
+            ret.SetString("Notes", this.Notes);
             ret.SetGuid("AssetID", this.AssetID);
             ret.SetGuid("ShaderID", this.ShaderID);
             ret.SetGuid("OwnerID", this.OwnerID);
             ret.SetGuid("MapID", this.MapID);
-            ret.Set("MapLayer", this.MapLayer);
+            ret.SetInt("MapLayer", this.MapLayer);
             ret.SetVec3("Position", this.Position);
             ret.SetQuaternion("Rotation", this.Rotation);
             ret.SetVec3("Scale", this.Scale);
-            ret.Set("LightsEnabled", this.LightsEnabled);
-            ret.Set("LightsCastShadows", this.LightsCastShadows);
-            ret.Set("SelfCastsShadow", this.LightsSelfCastsShadow);
-            ret.Set("CastsShadow", this.CastsShadow);
-            ret.Set("NoDraw", this.DoNotRender);
+            ret.SetBool("LightsEnabled", this.LightsEnabled);
+            ret.SetBool("LightsCastShadows", this.LightsCastShadows);
+            ret.SetBool("SelfCastsShadow", this.LightsSelfCastsShadow);
+            ret.SetBool("CastsShadow", this.CastsShadow);
+            ret.SetBool("NoDraw", this.DoNotRender);
             ret.SetColor("TintColor", this.TintColor);
             ret.SetColor("NameColor", this.NameColor);
-            ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
+            ret.SetArray("Bars", this.Bars.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             ret.SetArray("Auras", this.Auras.ToArray(), (n, c, v) =>
             {
                 DataElement e = new DataElement();
-                e.Set("r", v.Item1);
+                e.SetSingle("r", v.Item1);
                 e.SetColor("c", v.Item2);
-                c.Set(n, e);
+                c.SetMap(n, e);
             });
 
-            ret.SetArray("FastLights", this.FastLights.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
+            ret.SetArray("FastLights", this.FastLights.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             ret.SetArray("Statuses", this.StatusEffects.ToArray(), (n, c, v) =>
             {
                 DataElement e = new DataElement();
-                e.Set("n", v.Key);
-                e.Set("s", v.Value.Item1);
-                e.Set("t", v.Value.Item2);
-                c.Set(n, e);
+                e.SetString("n", v.Key);
+                e.SetSingle("s", v.Value.Item1);
+                e.SetSingle("t", v.Value.Item2);
+                c.SetMap(n, e);
             });
 
-            ret.SetArray("Particles", this.ParticleContainers.Values.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
-            ret.Set("HasCustomNameplate", this.HasCustomNameplate);
+            ret.SetArray("Particles", this.ParticleContainers.Values.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+            ret.SetBool("HasCustomNameplate", this.HasCustomNameplate);
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
-            ret.Set("IsInfoObject", this.IsInfoObject);
-            ret.Set("Props", this.CustomProperties);
-            ret.Set("AnimationData", this.AnimationContainer.Serialize());
-            ret.Set("DescMarkdown", this.UseMarkdownForDescription);
+            ret.SetBool("IsInfoObject", this.IsInfoObject);
+            ret.SetMap("Props", this.CustomProperties);
+            ret.SetMap("AnimationData", this.AnimationContainer.Serialize());
+            ret.SetBool("DescMarkdown", this.UseMarkdownForDescription);
             return ret;
         }
 
@@ -191,42 +191,42 @@
         public void Deserialize(DataElement e)
         {
             this.ID = e.GetGuid("ID");
-            this.Name = e.Get<string>("Name");
-            this.IsNameVisible = e.Get<bool>("IsNameVisible");
-            this.IsCrossedOut = e.Get<bool>("IsCrossedOut");
-            this.Description = e.Get<string>("Desc");
-            this.Notes = e.Get<string>("Notes");
+            this.Name = e.GetString("Name");
+            this.IsNameVisible = e.GetBool("IsNameVisible");
+            this.IsCrossedOut = e.GetBool("IsCrossedOut");
+            this.Description = e.GetString("Desc");
+            this.Notes = e.GetString("Notes");
             this.AssetID = e.GetGuid("AssetID");
             this.ShaderID = e.GetGuid("ShaderID");
             this.OwnerID = e.GetGuid("OwnerID");
             this.MapID = e.GetGuid("MapID");
-            this.MapLayer = e.Get<int>("MapLayer");
+            this.MapLayer = e.GetInt("MapLayer");
             this.Position = e.GetVec3("Position", Vector3.Zero);
             this.Rotation = e.GetQuaternion("Rotation", Quaternion.Identity);
             this.Scale = e.GetVec3("Scale", Vector3.One);
-            this.LightsEnabled = e.Get<bool>("LightsEnabled");
-            this.LightsCastShadows = e.Get<bool>("LightsCastShadows");
-            this.LightsSelfCastsShadow = e.Get<bool>("SelfCastsShadow");
-            this.CastsShadow = e.Get("CastsShadow", true);
-            this.DoNotRender = e.Get("NoDraw", false);
+            this.LightsEnabled = e.GetBool("LightsEnabled");
+            this.LightsCastShadows = e.GetBool("LightsCastShadows");
+            this.LightsSelfCastsShadow = e.GetBool("SelfCastsShadow");
+            this.CastsShadow = e.GetBool("CastsShadow", true);
+            this.DoNotRender = e.GetBool("NoDraw", false);
             this.TintColor = e.GetColor("TintColor", Color.White);
             this.NameColor = e.GetColor("NameColor", Color.Transparent);
             this.Bars.Clear();
-            this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.Get<DataElement>(n)), Array.Empty<DisplayBar>()));
+            this.Bars.AddRange(e.GetArray("Bars", (n, e) => DisplayBar.FromData(e.GetMap(n)), Array.Empty<DisplayBar>()));
             this.FastLights.Clear();
-            this.FastLights.AddRange(e.GetArray("FastLights", (n, e) => FastLight.FromData(e.Get<DataElement>(n)), Array.Empty<FastLight>()));
+            this.FastLights.AddRange(e.GetArray("FastLights", (n, e) => FastLight.FromData(e.GetMap(n)), Array.Empty<FastLight>()));
             this.Auras.Clear();
             this.Auras.AddRange(e.GetArray("Auras", (n, e) =>
             {
-                DataElement d = e.Get<DataElement>(n);
-                return (d.Get<float>("r"), d.GetColor("c"));
+                DataElement d = e.GetMap(n);
+                return (d.GetSingle("r"), d.GetColor("c"));
             }, Array.Empty<(float, Color)>()));
 
             this.StatusEffects.Clear();
             (string, float, float)[] stats = e.GetArray("Statuses", (n, e) =>
             {
-                DataElement d = e.Get<DataElement>(n);
-                return (d.Get<string>("n"), d.Get<float>("s"), d.Get<float>("t"));
+                DataElement d = e.GetMap(n);
+                return (d.GetString("n"), d.GetSingle("s"), d.GetSingle("t"));
             }, Array.Empty<(string, float, float)>());
 
             foreach ((string, float, float) s in stats)
@@ -237,7 +237,7 @@
             this.ParticleContainers.Clear();
             ParticleContainer[] containers = e.GetArray("Particles", (n, e) =>
             {
-                DataElement d = e.Get<DataElement>(n);
+                DataElement d = e.GetMap(n);
                 ParticleContainer ret = new ParticleContainer(this);
                 ret.Deserialize(d);
                 return ret;
@@ -248,12 +248,12 @@
                 this.ParticleContainers[c.ID] = c;
             }
 
-            this.HasCustomNameplate = e.Get<bool>("HasCustomNameplate", false);
+            this.HasCustomNameplate = e.GetBool("HasCustomNameplate", false);
             this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
-            this.IsInfoObject = e.Get<bool>("IsInfoObject");
-            this.CustomProperties = e.Get<DataElement>("Props");
-            this.AnimationContainer.Deserialize(e.Get("AnimationData", new DataElement()));
-            this.UseMarkdownForDescription = e.Get("DescMarkdown", false);
+            this.IsInfoObject = e.GetBool("IsInfoObject");
+            this.CustomProperties = e.GetMap("Props");
+            this.AnimationContainer.Deserialize(e.GetMap("AnimationData", new DataElement()));
+            this.UseMarkdownForDescription = e.GetBool("DescMarkdown", false);
         }
 
         public MapObject Clone()
@@ -365,19 +365,19 @@
 
         public void Deserialize(DataElement e)
         {
-            this.CurrentValue = e.Get<float>("Value");
-            this.MaxValue = e.Get<float>("Max");
+            this.CurrentValue = e.GetSingle("Value");
+            this.MaxValue = e.GetSingle("Max");
             this.DrawColor = e.GetColor("Color");
-            this.Compact = e.Get<bool>("Compact");
+            this.Compact = e.GetBool("Compact");
         }
 
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set("Value", this.CurrentValue);
-            ret.Set("Max", this.MaxValue);
+            ret.SetSingle("Value", this.CurrentValue);
+            ret.SetSingle("Max", this.MaxValue);
             ret.SetColor("Color", this.DrawColor);
-            ret.Set("Compact", this.Compact);
+            ret.SetBool("Compact", this.Compact);
             return ret;
         }
 
@@ -507,17 +507,17 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set("Default", this.LoopingAnimationName);
-            ret.Set("Paused", this.Paused);
-            ret.Set("PlayRate", this.AnimationPlayRate);
+            ret.SetString("Default", this.LoopingAnimationName);
+            ret.SetBool("Paused", this.Paused);
+            ret.SetSingle("PlayRate", this.AnimationPlayRate);
             return ret;
         }
 
         public void Deserialize(DataElement e)
         {
-            this.LoopingAnimationName = e.Get("Default", string.Empty);
-            this.Paused = e.Get("Paused", false);
-            this.AnimationPlayRate = e.Get("PlayRate", 1.0f);
+            this.LoopingAnimationName = e.GetString("Default", string.Empty);
+            this.Paused = e.GetBool("Paused", false);
+            this.AnimationPlayRate = e.GetSingle("PlayRate", 1.0f);
         }
 
         public bool CheckAnimation(GlbAnimation anim, GlbArmature arm)

@@ -1172,7 +1172,7 @@
                 ShaderNode[] nodes = e.GetArray("Nodes", (n, c) =>
                 {
                     ShaderNode ret = new ShaderNode();
-                    ret.Deserialize(c.Get<DataElement>(n));
+                    ret.Deserialize(c.GetMap(n));
                     return ret;
                 }, Array.Empty<ShaderNode>());
 
@@ -1315,7 +1315,7 @@
             ret.SetArray("Nodes", this.Nodes.ToArray(), (n, c, v) =>
             {
                 DataElement d = v.Serialize();
-                c.Set(n, d);
+                c.SetMap(n, d);
             });
 
             this.ExtraTextures.SerializeCompatibility(ret);

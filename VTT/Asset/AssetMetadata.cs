@@ -43,24 +43,24 @@
         public void Deserialize(DataElement e)
         {
             this.Type = e.GetEnum<AssetType>("Type");
-            this.Name = e.Get<string>("Name");
-            this.Version = e.Get<int>("Version", 1);
+            this.Name = e.GetString("Name");
+            this.Version = e.GetInt("Version", 1);
             if (e.Has("TextureInfo", DataType.Map))
             {
                 this.TextureInfo = new TextureData.Metadata();
-                this.TextureInfo.Deserialize(e.Get<DataElement>("TextureInfo"));
+                this.TextureInfo.Deserialize(e.GetMap("TextureInfo"));
             }
 
             if (e.Has("ModelInfo", DataType.Map))
             {
                 this.ModelInfo = new ModelData.Metadata();
-                this.ModelInfo.Deserialize(e.Get<DataElement>("ModelInfo"));
+                this.ModelInfo.Deserialize(e.GetMap("ModelInfo"));
             }
 
             if (e.Has("SoundInfo", DataType.Map))
             {
                 this.SoundInfo = new SoundData.Metadata();
-                this.SoundInfo.Deserialize(e.Get<DataElement>("SoundInfo"));
+                this.SoundInfo.Deserialize(e.GetMap("SoundInfo"));
             }
 
             this.UploadTime = e.GetDateTime("UploadTime", DateTime.UnixEpoch);
@@ -69,22 +69,22 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set("Name", this.Name);
+            ret.SetString("Name", this.Name);
             ret.SetEnum("Type", this.Type);
-            ret.Set("Version", this.Version);
+            ret.SetInt("Version", this.Version);
             if (this.TextureInfo != null)
             {
-                ret.Set("TextureInfo", this.TextureInfo.Serialize());
+                ret.SetMap("TextureInfo", this.TextureInfo.Serialize());
             }
 
             if (this.ModelInfo != null)
             {
-                ret.Set("ModelInfo", this.ModelInfo.Serialize());
+                ret.SetMap("ModelInfo", this.ModelInfo.Serialize());
             }
 
             if (this.SoundInfo != null)
             {
-                ret.Set("SoundInfo", this.SoundInfo.Serialize());
+                ret.SetMap("SoundInfo", this.SoundInfo.Serialize());
             }
 
             ret.SetDateTime("UploadTime", this.UploadTime);

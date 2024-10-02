@@ -115,21 +115,21 @@
 
             public void Deserialize(DataElement e)
             {
-                this.CompressAlbedo = e.Get<bool>("CompressA");
-                this.CompressAOMR = e.Get<bool>("CompressC");
-                this.CompressNormal = e.Get<bool>("CompressN");
-                this.CompressEmissive = e.Get<bool>("CompressE");
-                this.FullRangeNormals = e.Get<bool>("FRN", false);
+                this.CompressAlbedo = e.GetBool("CompressA");
+                this.CompressAOMR = e.GetBool("CompressC");
+                this.CompressNormal = e.GetBool("CompressN");
+                this.CompressEmissive = e.GetBool("CompressE");
+                this.FullRangeNormals = e.GetBool("FRN", false);
             }
 
             public DataElement Serialize()
             {
                 DataElement ret = new DataElement();
-                ret.Set("CompressA", this.CompressAlbedo);
-                ret.Set("CompressC", this.CompressAOMR);
-                ret.Set("CompressN", this.CompressNormal);
-                ret.Set("CompressE", this.CompressEmissive);
-                ret.Set("FRN", this.FullRangeNormals);
+                ret.SetBool("CompressA", this.CompressAlbedo);
+                ret.SetBool("CompressC", this.CompressAOMR);
+                ret.SetBool("CompressN", this.CompressNormal);
+                ret.SetBool("CompressE", this.CompressEmissive);
+                ret.SetBool("FRN", this.FullRangeNormals);
                 return ret;
             }
         }
@@ -184,26 +184,26 @@
             public void Deserialize(DataElement e)
             {
                 this.SoundType = e.GetEnum<StorageType>("Storage");
-                this.IsFullData = e.Get<bool>("FullData");
-                this.TotalChunks = e.Get<int>("NumChunks");
-                this.SampleRate = e.Get<int>("Frequency");
-                this.NumChannels = e.Get<int>("Channels");
-                this.TotalDuration = e.Get("Duration", double.NaN);
-                this.CompressedChunkOffsets = e.GetArray("Offsets", (n, c) => c.Get<long>(n), Array.Empty<long>());
-                this.SoundAssetName = e.Get("Name", " ");
+                this.IsFullData = e.GetBool("FullData");
+                this.TotalChunks = e.GetInt("NumChunks");
+                this.SampleRate = e.GetInt("Frequency");
+                this.NumChannels = e.GetInt("Channels");
+                this.TotalDuration = e.GetDouble("Duration", double.NaN);
+                this.CompressedChunkOffsets = e.GetArray("Offsets", (n, c) => c.GetLong(n), Array.Empty<long>());
+                this.SoundAssetName = e.GetString("Name", " ");
             }
 
             public DataElement Serialize()
             {
                 DataElement ret = new DataElement();
                 ret.SetEnum("Storage", this.SoundType);
-                ret.Set("FullData", this.IsFullData);
-                ret.Set("NumChunks", this.TotalChunks);
-                ret.Set("Frequency", this.SampleRate);
-                ret.Set("Channels", this.NumChannels);
-                ret.Set("Duration", this.TotalDuration);
-                ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.Set(n, v));
-                ret.Set("Name", " ");
+                ret.SetBool("FullData", this.IsFullData);
+                ret.SetInt("NumChunks", this.TotalChunks);
+                ret.SetInt("Frequency", this.SampleRate);
+                ret.SetInt("Channels", this.NumChannels);
+                ret.SetDouble("Duration", this.TotalDuration);
+                ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.SetLong(n, v));
+                ret.SetString("Name", " ");
                 return ret;
             }
 

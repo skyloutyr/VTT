@@ -19,10 +19,10 @@
         {
             this.SelfID = e.GetGuid("SelfID");
             this.OwnerID = e.GetGuid("OwnerID");
-            this.IsPublic = e.Get<bool>("IsPublic");
-            this.IsEditable = e.Get<bool>("IsEditable");
-            this.Title = e.Get<string>("Title");
-            this.Text = e.Get<string>("Text");
+            this.IsPublic = e.GetBool("IsPublic");
+            this.IsEditable = e.GetBool("IsEditable");
+            this.Title = e.GetString("Title");
+            this.Text = e.GetString("Text");
         }
 
         public DataElement Serialize()
@@ -30,10 +30,10 @@
             DataElement ret = new DataElement();
             ret.SetGuid("SelfID", this.SelfID);
             ret.SetGuid("OwnerID", this.OwnerID);
-            ret.Set("IsPublic", this.IsPublic);
-            ret.Set("IsEditable", this.IsEditable);
-            ret.Set("Title", this.Title);
-            ret.Set("Text", this.Text);
+            ret.SetBool("IsPublic", this.IsPublic);
+            ret.SetBool("IsEditable", this.IsEditable);
+            ret.SetString("Title", this.Title);
+            ret.SetString("Text", this.Text);
             return ret;
         }
     }

@@ -32,7 +32,7 @@
         public void Deserialize(DataElement e)
         {
             this.ID = e.GetGuid("ID");
-            this.Name = e.Get<string>("Name");
+            this.Name = e.GetString("Name");
             this.SelfType = e.GetEnum<NodeValueType>("Type");
         }
 
@@ -40,7 +40,7 @@
         {
             DataElement ret = new DataElement();
             ret.SetGuid("ID", this.ID);
-            ret.Set("Name", this.Name);
+            ret.SetString("Name", this.Name);
             ret.SetEnum("Type", this.SelfType);
             return ret;
         }

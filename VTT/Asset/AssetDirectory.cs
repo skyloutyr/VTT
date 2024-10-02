@@ -49,18 +49,18 @@
         {
             this.Refs.Clear();
             this.Directories.Clear();
-            this.Name = e.Get<string>("Name");
+            this.Name = e.GetString("Name");
             this.Refs.AddRange(e.GetArray("Refs", (n, e) =>
             {
                 AssetRef assetRef = new AssetRef();
-                assetRef.Deserialize(e.Get<DataElement>(n));
+                assetRef.Deserialize(e.GetMap(n));
                 return assetRef;
             }));
 
             this.Directories.AddRange(e.GetArray("Sub", (n, e) =>
             {
                 AssetDirectory d = new AssetDirectory();
-                d.Deserialize(e.Get<DataElement>(n));
+                d.Deserialize(e.GetMap(n));
                 d.Parent = this;
                 return d;
             }));
@@ -69,9 +69,9 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set("Name", this.Name);
-            ret.SetArray("Refs", this.Refs.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
-            ret.SetArray("Sub", this.Directories.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
+            ret.SetString("Name", this.Name);
+            ret.SetArray("Refs", this.Refs.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+            ret.SetArray("Sub", this.Directories.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             return ret;
         }
 
@@ -125,7 +125,7 @@
             this.AssetID = e.GetGuid("ID");
             this.AssetPreviewID = e.GetGuid("Preview");
             this.Meta = new AssetMetadata();
-            this.Meta.Deserialize(e.Get<DataElement>("Meta"));
+            this.Meta.Deserialize(e.GetMap("Meta"));
         }
 
         public DataElement Serialize()
@@ -133,7 +133,7 @@
             DataElement ret = new DataElement();
             ret.SetGuid("ID", this.AssetID);
             ret.SetGuid("Preview", this.AssetPreviewID);
-            ret.Set("Meta", this.Meta.Serialize());
+            ret.SetMap("Meta", this.Meta.Serialize());
             return ret;
         }
     }

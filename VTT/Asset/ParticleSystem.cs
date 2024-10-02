@@ -94,45 +94,45 @@
         {
             DataElement ret = new DataElement();
             ret.SetEnum("EmissionType", this.EmissionType);
-            ret.Set("EmissionRadius", this.EmissionRadius);
+            ret.SetSingle("EmissionRadius", this.EmissionRadius);
             ret.SetVec3("EmissionVolume", this.EmissionVolume);
-            ret.Set("EmissionChance", this.EmissionChance);
-            ret.Set("EmissionAmountLo", this.EmissionAmount.Min);
-            ret.Set("EmissionAmountHi", this.EmissionAmount.Max);
-            ret.Set("EmissionCooldownLo", this.EmissionCooldown.Min);
-            ret.Set("EmissionCooldownHi", this.EmissionCooldown.Max);
-            ret.Set("LifetimeLo", this.Lifetime.Min);
-            ret.Set("LifetimeHi", this.Lifetime.Max);
-            ret.Set("ScaleVariationLo", this.ScaleVariation.Min);
-            ret.Set("ScaleVariationHi", this.ScaleVariation.Max);
-            ret.Set("MaxParticles", this.MaxParticles);
+            ret.SetSingle("EmissionChance", this.EmissionChance);
+            ret.SetInt("EmissionAmountLo", this.EmissionAmount.Min);
+            ret.SetInt("EmissionAmountHi", this.EmissionAmount.Max);
+            ret.SetInt("EmissionCooldownLo", this.EmissionCooldown.Min);
+            ret.SetInt("EmissionCooldownHi", this.EmissionCooldown.Max);
+            ret.SetInt("LifetimeLo", this.Lifetime.Min);
+            ret.SetInt("LifetimeHi", this.Lifetime.Max);
+            ret.SetSingle("ScaleVariationLo", this.ScaleVariation.Min);
+            ret.SetSingle("ScaleVariationHi", this.ScaleVariation.Max);
+            ret.SetInt("MaxParticles", this.MaxParticles);
             ret.SetVec3("InitialVelocityLo", this.InitialVelocity.Min);
             ret.SetVec3("InitialVelocityHi", this.InitialVelocity.Max);
-            ret.Set("InitialVelocityRandomAngle", this.InitialVelocityRandomAngle);
+            ret.SetSingle("InitialVelocityRandomAngle", this.InitialVelocityRandomAngle);
             ret.SetVec3("Gravity", this.Gravity);
-            ret.Set("VelocityDampenFactor", this.VelocityDampenFactor);
+            ret.SetSingle("VelocityDampenFactor", this.VelocityDampenFactor);
             ret.SetArray("ColorOverLifetime", this.ColorOverLifetime.Select(x =>
             {
                 DataElement ret = new DataElement();
-                ret.Set("k", x.Key);
+                ret.SetSingle("k", x.Key);
                 ret.SetVec4("v", x.Value);
                 return ret;
-            }).ToArray(), (n, c, e) => c.Set(n, e));
+            }).ToArray(), (n, c, e) => c.SetMap(n, e));
 
             ret.SetArray("ScaleOverLifetime", this.ScaleOverLifetime.Select(x =>
             {
                 DataElement ret = new DataElement();
-                ret.Set("k", x.Key);
-                ret.Set("v", x.Value);
+                ret.SetSingle("k", x.Key);
+                ret.SetSingle("v", x.Value);
                 return ret;
-            }).ToArray(), (n, c, e) => c.Set(n, e));
+            }).ToArray(), (n, c, e) => c.SetMap(n, e));
 
             ret.SetGuid("AssetID", this.AssetID);
-            ret.Set("DoBillboard", this.DoBillboard);
-            ret.Set("ClusterEmission", this.ClusterEmission);
-            ret.Set("DoFow", this.DoFow);
-            ret.Set("IsSpriteSheet", this.IsSpriteSheet);
-            ret.Set("SpriteSheetData", this.SpriteData.Serialize());
+            ret.SetBool("DoBillboard", this.DoBillboard);
+            ret.SetBool("ClusterEmission", this.ClusterEmission);
+            ret.SetBool("DoFow", this.DoFow);
+            ret.SetBool("IsSpriteSheet", this.IsSpriteSheet);
+            ret.SetMap("SpriteSheetData", this.SpriteData.Serialize());
             ret.SetGuid("CustomShaderID", this.CustomShaderID);
             ret.SetGuid("MaskID", this.MaskID);
             ret.Write(bw);
@@ -142,40 +142,40 @@
         {
             DataElement de = new DataElement(br);
             this.EmissionType = de.GetEnum<EmissionMode>("EmissionType");
-            this.EmissionRadius = de.Get<float>("EmissionRadius");
+            this.EmissionRadius = de.GetSingle("EmissionRadius");
             this.EmissionVolume = de.GetVec3("EmissionVolume");
-            this.EmissionChance = de.Get<float>("EmissionChance");
-            this.EmissionAmount = new RangeInt(de.Get<int>("EmissionAmountLo"), de.Get<int>("EmissionAmountHi"));
-            this.EmissionCooldown = new RangeInt(de.Get<int>("EmissionCooldownLo"), de.Get<int>("EmissionCooldownHi"));
-            this.Lifetime = new RangeInt(de.Get<int>("LifetimeLo"), de.Get<int>("LifetimeHi"));
-            this.ScaleVariation = new RangeSingle(de.Get<float>("ScaleVariationLo"), de.Get<float>("ScaleVariationHi"));
-            this.MaxParticles = de.Get<int>("MaxParticles");
+            this.EmissionChance = de.GetSingle("EmissionChance");
+            this.EmissionAmount = new RangeInt(de.GetInt("EmissionAmountLo"), de.GetInt("EmissionAmountHi"));
+            this.EmissionCooldown = new RangeInt(de.GetInt("EmissionCooldownLo"), de.GetInt("EmissionCooldownHi"));
+            this.Lifetime = new RangeInt(de.GetInt("LifetimeLo"), de.GetInt("LifetimeHi"));
+            this.ScaleVariation = new RangeSingle(de.GetSingle("ScaleVariationLo"), de.GetSingle("ScaleVariationHi"));
+            this.MaxParticles = de.GetInt("MaxParticles");
             this.InitialVelocity = new RangeVector3(de.GetVec3("InitialVelocityLo"), de.GetVec3("InitialVelocityHi"));
-            this.InitialVelocityRandomAngle = de.Get<float>("InitialVelocityRandomAngle");
+            this.InitialVelocityRandomAngle = de.GetSingle("InitialVelocityRandomAngle");
             this.Gravity = de.GetVec3("Gravity");
-            this.VelocityDampenFactor = de.Get<float>("VelocityDampenFactor");
-            DataElement[] col = de.GetArray("ColorOverLifetime", (n, c) => c.Get<DataElement>(n), Array.Empty<DataElement>());
+            this.VelocityDampenFactor = de.GetSingle("VelocityDampenFactor");
+            DataElement[] col = de.GetArray("ColorOverLifetime", (n, c) => c.GetMap(n), Array.Empty<DataElement>());
             this.ColorOverLifetime.Clear();
             foreach (DataElement e in col)
             {
-                this.ColorOverLifetime[e.Get<float>("k")] = e.GetVec4("v");
+                this.ColorOverLifetime[e.GetSingle("k")] = e.GetVec4("v");
             }
 
-            col = de.GetArray("ScaleOverLifetime", (n, c) => c.Get<DataElement>(n), Array.Empty<DataElement>());
+            col = de.GetArray("ScaleOverLifetime", (n, c) => c.GetMap(n), Array.Empty<DataElement>());
             this.ScaleOverLifetime.Clear();
             foreach (DataElement e in col)
             {
-                this.ScaleOverLifetime[e.Get<float>("k")] = e.Get<float>("v");
+                this.ScaleOverLifetime[e.GetSingle("k")] = e.GetSingle("v");
             }
 
             this.AssetID = de.GetGuid("AssetID");
-            this.DoBillboard = de.Get("DoBillboard", true);
-            this.ClusterEmission = de.Get("ClusterEmission", false);
-            this.DoFow = de.Get("DoFow", false);
-            this.IsSpriteSheet = de.Get("IsSpriteSheet", false);
-            if (de.Has("SpriteSheetData", Util.DataType.Map))
+            this.DoBillboard = de.GetBool("DoBillboard", true);
+            this.ClusterEmission = de.GetBool("ClusterEmission", false);
+            this.DoFow = de.GetBool("DoFow", false);
+            this.IsSpriteSheet = de.GetBool("IsSpriteSheet", false);
+            if (de.Has("SpriteSheetData", DataType.Map))
             {
-                this.SpriteData.Deserialize(de.Get<DataElement>("SpriteSheetData"));
+                this.SpriteData.Deserialize(de.GetMap("SpriteSheetData"));
             }
 
             this.CustomShaderID = de.GetGuid("CustomShaderID", Guid.Empty);
@@ -330,21 +330,21 @@
             public DataElement Serialize()
             {
                 DataElement ret = new DataElement();
-                ret.Set("nC", this.NumColumns);
-                ret.Set("nR", this.NumRows);
-                ret.Set("nS", this.NumSprites);
+                ret.SetInt("nC", this.NumColumns);
+                ret.SetInt("nR", this.NumRows);
+                ret.SetInt("nS", this.NumSprites);
                 ret.SetEnum("sM", this.Selection);
-                ret.SetArray("sC", this.SelectionWeights, (n, c, v) => c.Set(n, v));
+                ret.SetArray("sC", this.SelectionWeights, (n, c, v) => c.SetInt(n, v));
                 return ret;
             }
 
             public void Deserialize(DataElement e)
             {
-                this.NumColumns = e.Get<int>("nC");
-                this.NumRows = e.Get<int>("nR");
-                this.NumSprites = e.Get<int>("nS");
+                this.NumColumns = e.GetInt("nC");
+                this.NumRows = e.GetInt("nR");
+                this.NumSprites = e.GetInt("nS");
                 this.Selection = e.GetEnum<SelectionMode>("sM");
-                this.SelectionWeights = e.GetArray("sC", (n, c) => c.Get(n, 0), Array.Empty<int>());
+                this.SelectionWeights = e.GetArray("sC", (n, c) => c.GetInt(n, 0), Array.Empty<int>());
                 this.SelectionWeightsList.Clear();
                 for (int i = 0; i < this.SelectionWeights.Length; ++i)
                 {

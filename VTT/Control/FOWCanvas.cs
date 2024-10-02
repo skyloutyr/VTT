@@ -19,6 +19,7 @@
         public Image<Rgba64> Canvas => this._img;
 
         public bool IsDeleted { get; set; }
+        public bool WasErasedFromDisk { get; set; }
         public bool NeedsSave { get; set; }
 
         private FOWCell[] _cells;

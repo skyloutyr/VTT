@@ -46,20 +46,20 @@ namespace VTT.Control
         public void Deserialize(DataElement e)
         {
             this.Offset = e.GetVec4("Offset");
-            this.UseObjectTransform = e.Get<bool>("UCO");
+            this.UseObjectTransform = e.GetBool("UCO");
             this.Color = e.GetVec4("Color");
-            this.Enabled = e.Get<bool>("Enabled");
-            this.Intensity = e.Get("Intensity", 1.0f);
+            this.Enabled = e.GetBool("Enabled");
+            this.Intensity = e.GetSingle("Intensity", 1.0f);
         }
 
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
             ret.SetVec4("Offset", this.Offset);
-            ret.Set("UCO", this.UseObjectTransform);
+            ret.SetBool("UCO", this.UseObjectTransform);
             ret.SetVec4("Color", this.Color);
-            ret.Set("Enabled", this.Enabled);
-            ret.Set("Intensity", this.Intensity);
+            ret.SetBool("Enabled", this.Enabled);
+            ret.SetSingle("Intensity", this.Intensity);
             return ret;
         }
 

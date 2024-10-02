@@ -87,12 +87,12 @@
             ret.SetGuid("ID", this.ID);
             ret.SetGuid("SystemID", this.SystemID);
             ret.SetVec3("Pos", this.ContainerPositionOffset);
-            ret.Set("UseOrientation", this.UseContainerOrientation);
-            ret.Set("Active", this.IsActive);
-            ret.Set("Attach", this.AttachmentPoint);
-            ret.Set("DoVRot", this.RotateVelocityByOrientation);
-            ret.Set("PLeft", this.ParticlesToEmit);
-            ret.Set("IsFX", this.IsFXEmitter);
+            ret.SetBool("UseOrientation", this.UseContainerOrientation);
+            ret.SetBool("Active", this.IsActive);
+            ret.SetString("Attach", this.AttachmentPoint);
+            ret.SetBool("DoVRot", this.RotateVelocityByOrientation);
+            ret.SetInt("PLeft", this.ParticlesToEmit);
+            ret.SetBool("IsFX", this.IsFXEmitter);
             return ret;
         }
 
@@ -106,12 +106,12 @@
             }
 
             this.ContainerPositionOffset = e.GetVec3("Pos");
-            this.UseContainerOrientation = e.Get<bool>("UseOrientation");
-            this.IsActive = e.Get<bool>("Active");
-            this.AttachmentPoint = e.Get<string>("Attach");
-            this.RotateVelocityByOrientation = e.Get("DoVRot", false);
-            this.ParticlesToEmit = e.Get("PLeft", 0);
-            this.IsFXEmitter = e.Get("IsFX", false);
+            this.UseContainerOrientation = e.GetBool("UseOrientation");
+            this.IsActive = e.GetBool("Active");
+            this.AttachmentPoint = e.GetString("Attach");
+            this.RotateVelocityByOrientation = e.GetBool("DoVRot", false);
+            this.ParticlesToEmit = e.GetInt("PLeft", 0);
+            this.IsFXEmitter = e.GetBool("IsFX", false);
         }
     }
 }

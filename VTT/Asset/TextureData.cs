@@ -628,10 +628,10 @@
                 this.WrapT = e.GetEnum<WrapParam>("WrapT");
                 this.FilterMin = e.GetEnum<FilterParam>("FilterMin");
                 this.FilterMag = e.GetEnum<FilterParam>("FilterMag");
-                this.EnableBlending = e.Get<bool>("Blend");
-                this.Compress = e.Get<bool>("Compress");
-                this.GammaCorrect = e.Get<bool>("Gamma");
-                this.AlbedoIsEmissive = e.Get("A2E", false);
+                this.EnableBlending = e.GetBool("Blend");
+                this.Compress = e.GetBool("Compress");
+                this.GammaCorrect = e.GetBool("Gamma");
+                this.AlbedoIsEmissive = e.GetBool("A2E", false);
             }
 
             public DataElement Serialize()
@@ -641,10 +641,10 @@
                 ret.SetEnum("WrapT", this.WrapT);
                 ret.SetEnum("FilterMin", this.FilterMin);
                 ret.SetEnum("FilterMag", this.FilterMag);
-                ret.Set("Blend", this.EnableBlending);
-                ret.Set("Compress", this.Compress);
-                ret.Set("Gamma", this.GammaCorrect);
-                ret.Set("A2E", this.AlbedoIsEmissive);
+                ret.SetBool("Blend", this.EnableBlending);
+                ret.SetBool("Compress", this.Compress);
+                ret.SetBool("Gamma", this.GammaCorrect);
+                ret.SetBool("A2E", this.AlbedoIsEmissive);
                 return ret;
             }
         }

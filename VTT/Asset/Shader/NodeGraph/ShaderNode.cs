@@ -24,26 +24,26 @@
         public void Deserialize(DataElement e)
         {
             this.NodeID = e.GetGuid("ID");
-            this.Name = e.Get<string>("Name");
+            this.Name = e.GetString("Name");
             this.Location = e.GetVec2("Location");
             this.Size = e.GetVec2("Size");
-            this.Deletable = e.Get<bool>("Deletable");
+            this.Deletable = e.GetBool("Deletable");
             this.TemplateID = e.GetGuid("Template");
-            this.Inputs = new List<NodeInput>(e.GetArray("Ins", (n, c) => { NodeInput i = new NodeInput(); i.Deserialize(c.Get<DataElement>(n)); return i; }, Array.Empty<NodeInput>()));
-            this.Outputs = new List<NodeOutput>(e.GetArray("Outs", (n, c) => { NodeOutput i = new NodeOutput(); i.Deserialize(c.Get<DataElement>(n)); return i; }, Array.Empty<NodeOutput>()));
+            this.Inputs = new List<NodeInput>(e.GetArray("Ins", (n, c) => { NodeInput i = new NodeInput(); i.Deserialize(c.GetMap(n)); return i; }, Array.Empty<NodeInput>()));
+            this.Outputs = new List<NodeOutput>(e.GetArray("Outs", (n, c) => { NodeOutput i = new NodeOutput(); i.Deserialize(c.GetMap(n)); return i; }, Array.Empty<NodeOutput>()));
         }
 
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
             ret.SetGuid("ID", this.NodeID);
-            ret.Set("Name", this.Name);
+            ret.SetString("Name", this.Name);
             ret.SetVec2("Location", this.Location);
             ret.SetVec2("Size", this.Size);
-            ret.Set("Deletable", this.Deletable);
+            ret.SetBool("Deletable", this.Deletable);
             ret.SetGuid("Template", this.TemplateID);
-            ret.SetArray("Ins", this.Inputs.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
-            ret.SetArray("Outs", this.Outputs.ToArray(), (n, c, v) => c.Set(n, v.Serialize()));
+            ret.SetArray("Ins", this.Inputs.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+            ret.SetArray("Outs", this.Outputs.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             return ret;
         }
 

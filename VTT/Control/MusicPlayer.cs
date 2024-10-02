@@ -138,12 +138,12 @@
                 {
                     DataElement m = new DataElement();
                     m.SetGuid("id", v.Item1);
-                    m.Set("v", v.Item2);
-                    c.Set(n, m);
+                    m.SetSingle("v", v.Item2);
+                    c.SetMap(n, m);
                 });
 
                 ret.SetEnum("LoopMode", this.RepeatState);
-                ret.Set("Volume", this.Volume);
+                ret.SetSingle("Volume", this.Volume);
             }
 
             return ret;
@@ -155,14 +155,14 @@
                 this.Tracks.Clear();
                 this.Tracks.AddRange(e.GetArray("Tracks", (n, c) =>
                 {
-                    DataElement m = c.Get<DataElement>(n, null);
-                    return m != null ? (m.GetGuid("id"), m.Get<float>("v")) : ((Guid, float))(Guid.Empty, 0);
+                    DataElement m = c.GetMap(n, null);
+                    return m != null ? (m.GetGuid("id"), m.GetSingle("v")) : ((Guid, float))(Guid.Empty, 0);
 
                 }, Array.Empty<(Guid, float)>()));
 
                 this.Tracks.RemoveAll(x => x.Item1.Equals(Guid.Empty));
                 this.RepeatState = e.GetEnum<LoopMode>("LoopMode");
-                this.Volume = e.Get("Volume", 1f);
+                this.Volume = e.GetSingle("Volume", 1f);
             }
         }
 

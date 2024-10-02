@@ -169,7 +169,7 @@
             DataElement ret = new DataElement();
             ret.SetGuid("id", this.ID);
             ret.SetGuid("oid", this.OwnerID);
-            ret.Set("r", this.Radius);
+            ret.SetSingle("r", this.Radius);
             ret.SetVec4("c", this.Color);
             ret.SetArray("pts", this.Points.ToArray(), (n, c, v) => c.SetVec3(n, new Vector3(v.x, v.y, v.z)));
             return ret;
@@ -179,7 +179,7 @@
         {
             this.ID = e.GetGuid("id");
             this.OwnerID = e.GetGuid("oid");
-            this.Radius = e.Get<float>("r");
+            this.Radius = e.GetSingle("r");
             this.Color = e.GetVec4("c");
             this.Points.Clear();
             this.Points.AddRange(e.GetArray("pts", (n, c) => new DrawingPoint(c.GetVec3(n)), Array.Empty<DrawingPoint>()));

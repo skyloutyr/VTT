@@ -116,32 +116,32 @@
         public void Deserialize(DataElement e)
         {
             this.ID = e.GetGuid("ID");
-            this.Name = e.Get<string>("Name");
+            this.Name = e.GetString("Name");
             this.SelfType = e.GetEnum<NodeValueType>("Type");
             this.ConnectedOutput = e.GetGuid("Connected");
             switch (this.SelfType)
             {
                 case NodeValueType.Int:
                 {
-                    this.CurrentValue = e.Get<int>("Value");
+                    this.CurrentValue = e.GetInt("Value");
                     break;
                 }
 
                 case NodeValueType.UInt:
                 {
-                    this.CurrentValue = e.Get<uint>("Value");
+                    this.CurrentValue = e.GetUnsignedInt("Value");
                     break;
                 }
 
                 case NodeValueType.Float:
                 {
-                    this.CurrentValue = e.Get<float>("Value");
+                    this.CurrentValue = e.GetSingle("Value");
                     break;
                 }
 
                 case NodeValueType.Bool:
                 {
-                    this.CurrentValue = e.Get<bool>("Value");
+                    this.CurrentValue = e.GetBool("Value");
                     break;
                 }
 
@@ -169,32 +169,32 @@
         {
             DataElement ret = new DataElement();
             ret.SetGuid("ID", this.ID);
-            ret.Set("Name", this.Name);
+            ret.SetString("Name", this.Name);
             ret.SetEnum("Type", this.SelfType);
             ret.SetGuid("Connected", this.ConnectedOutput);
             switch (this.SelfType)
             {
                 case NodeValueType.Int:
                 {
-                    ret.Set("Value", (int)this.CurrentValue);
+                    ret.SetInt("Value", (int)this.CurrentValue);
                     break;
                 }
 
                 case NodeValueType.UInt:
                 {
-                    ret.Set("Value", (uint)this.CurrentValue);
+                    ret.SetUnsignedInt("Value", (uint)this.CurrentValue);
                     break;
                 }
 
                 case NodeValueType.Float:
                 {
-                    ret.Set("Value", (float)this.CurrentValue);
+                    ret.SetSingle("Value", (float)this.CurrentValue);
                     break;
                 }
 
                 case NodeValueType.Bool:
                 {
-                    ret.Set("Value", (bool)this.CurrentValue);
+                    ret.SetBool("Value", (bool)this.CurrentValue);
                     break;
                 }
 

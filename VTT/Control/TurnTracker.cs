@@ -230,18 +230,18 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.Set("Index", this.EntryIndex);
-            ret.Set("Visible", this.Visible);
+            ret.SetInt("Index", this.EntryIndex);
+            ret.SetBool("Visible", this.Visible);
             ret.SetArray("Entries", this.Entries.ToArray(), (n, c, v) =>
             {
                 DataElement d = v.Serialize();
-                c.Set(n, d);
+                c.SetMap(n, d);
             });
 
             ret.SetArray("Teams", this.Teams.ToArray(), (n, c, v) =>
             {
                 DataElement d = v.Serialize();
-                c.Set(n, d);
+                c.SetMap(n, d);
             });
 
             return ret;
@@ -251,11 +251,11 @@
         {
             this.Teams.Clear();
             this.Entries.Clear();
-            this.EntryIndex = e.Get<int>("Index");
-            this.Visible = e.Get<bool>("Visible");
+            this.EntryIndex = e.GetInt("Index");
+            this.Visible = e.GetBool("Visible");
             this.Teams.AddRange(e.GetArray("Teams", (n, c) =>
             {
-                DataElement d = c.Get<DataElement>(n);
+                DataElement d = c.GetMap(n);
                 Team t = new Team();
                 t.Deserialize(d);
                 return t;
@@ -263,7 +263,7 @@
 
             this.Entries.AddRange(e.GetArray("Entries", (n, c) =>
             {
-                DataElement d = c.Get<DataElement>(n);
+                DataElement d = c.GetMap(n);
                 Entry e = new Entry();
                 e.Deserialize(d);
                 e.Team = this.Teams.Find(p => p.Name.Equals(e.readTeamName)) ?? this.Teams[0];
@@ -291,16 +291,16 @@
             public void Deserialize(DataElement e)
             {
                 this.ObjectID = e.GetGuid("ID");
-                this.NumericValue = e.Get<float>("Value");
-                this.readTeamName = e.Get<string>("Team");
+                this.NumericValue = e.GetSingle("Value");
+                this.readTeamName = e.GetString("Team");
             }
 
             public DataElement Serialize()
             {
                 DataElement ret = new DataElement();
                 ret.SetGuid("ID", this.ObjectID);
-                ret.Set("Value", this.NumericValue);
-                ret.Set("Team", this.Team.Name);
+                ret.SetSingle("Value", this.NumericValue);
+                ret.SetString("Team", this.Team.Name);
                 return ret;
             }
 
@@ -328,14 +328,14 @@
 
             public void Deserialize(DataElement e)
             {
-                this.Name = e.Get<string>("Name");
+                this.Name = e.GetString("Name");
                 this.Color = e.GetColor("Color");
             }
 
             public DataElement Serialize()
             {
                 DataElement ret = new DataElement();
-                ret.Set("Name", this.Name);
+                ret.SetString("Name", this.Name);
                 ret.SetColor("Color", this.Color);
                 return ret;
             }

@@ -44,6 +44,7 @@
         public Gradient<float> ScaleOverLifetime { get; set; } = new Gradient<float>() { [0] = 1f, [1] = 1f };
         public bool IsSpriteSheet { get; set; } = false;
         public SpriteSheetData SpriteData { get; set; } = new SpriteSheetData();
+        public bool SpriteSheetIsAnimation { get; set; } = false;
 
         /// <summary>
         /// Note - NOT OWN ID! This is the ID of the asset the particles use for rendering.
@@ -135,6 +136,7 @@
             ret.SetMap("SpriteSheetData", this.SpriteData.Serialize());
             ret.SetGuid("CustomShaderID", this.CustomShaderID);
             ret.SetGuid("MaskID", this.MaskID);
+            ret.SetBool("SpriteSheetIsAnimation", this.SpriteSheetIsAnimation);
             ret.Write(bw);
         }
 
@@ -180,6 +182,7 @@
 
             this.CustomShaderID = de.GetGuid("CustomShaderID", Guid.Empty);
             this.MaskID = de.GetGuid("MaskID", Guid.Empty);
+            this.SpriteSheetIsAnimation = de.GetBool("SpriteSheetIsAnimation", false);
         }
 
         public void ReadV1(BinaryReader br)
@@ -241,7 +244,8 @@
             DoFow = this.DoFow,
             ClusterEmission = this.ClusterEmission,
             IsSpriteSheet = this.IsSpriteSheet,
-            SpriteData = this.SpriteData.Clone()
+            SpriteData = this.SpriteData.Clone(),
+            SpriteSheetIsAnimation = this.SpriteSheetIsAnimation
         };
 
         public class RangeInt
@@ -372,7 +376,8 @@
             {
                 Progressive,
                 Regressive,
-                Random
+                Random,
+                First
             }
         }
 
@@ -561,6 +566,12 @@
                             case ParticleSystem.SpriteSheetData.SelectionMode.Random:
                             {
                                 p->spriteIndex = WeightedRandom.GetWeightedItem(this.Template.SpriteData.SelectionWeightsList, this._rand).Item;
+                                break;
+                            }
+
+                            case ParticleSystem.SpriteSheetData.SelectionMode.First:
+                            {
+                                p->spriteIndex = 0;
                                 break;
                             }
                         }
@@ -1149,6 +1160,10 @@
 
             this.color = instance.Template.ColorOverLifetime.Interpolate(a, GradientInterpolators.LerpVec4);
             this.scale = instance.Template.ScaleOverLifetime.Interpolate(a, GradientInterpolators.Lerp) * this.scaleMod;
+            if (instance.Template.SpriteSheetIsAnimation)
+            {
+                this.spriteIndex = (int)MathF.Floor(a * instance.Template.SpriteData.NumSprites);
+            }
         }
     }
 }

@@ -699,3 +699,6 @@ ui.object_layer.1=GM Layer (1)
 ui.object_layer.2=Extra GM Layer (2)
 ui.popup.change_name_color=Change Name Colour
 ui.assets.duplicate_shader=Duplicate
+ui.particle.sprite_selection_mode.first=First
+ui.particle.sprite_sheet_is_animation=Treat as Animation
+ui.particle.sprite_sheet_is_animation.tt=Controls whether the spritesheet is treated as an animation.\nAnimations will progress from start to end linearly based on the particle's lifetime.

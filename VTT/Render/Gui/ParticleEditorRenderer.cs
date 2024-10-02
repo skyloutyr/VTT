@@ -357,9 +357,9 @@
                                 }
 
                                 int cM = (int)pr.CurrentlyEditedSystem.SpriteData.Selection;
-                                string[] modeNames = new string[] { lang.Translate("ui.particle.sprite_selection_mode.progressive"), lang.Translate("ui.particle.sprite_selection_mode.regressive"), lang.Translate("ui.particle.sprite_selection_mode.random") };
+                                string[] modeNames = new string[] { lang.Translate("ui.particle.sprite_selection_mode.progressive"), lang.Translate("ui.particle.sprite_selection_mode.regressive"), lang.Translate("ui.particle.sprite_selection_mode.random"), lang.Translate("ui.particle.sprite_selection_mode.first") };
                                 ImGui.Text(lang.Translate("ui.particle.sprite_selection_mode"));
-                                if (ImGui.Combo("##SpriteSelectionMode", ref cM, modeNames, 3))
+                                if (ImGui.Combo("##SpriteSelectionMode", ref cM, modeNames, 4))
                                 {
                                     pr.CurrentlyEditedSystem.SpriteData.Selection = (ParticleSystem.SpriteSheetData.SelectionMode)cM;
                                 }
@@ -381,6 +381,17 @@
                                             pr.CurrentlyEditedSystem.SpriteData.SelectionWeightsList[i] = new WeightedItem<int>(i, vF);
                                         }
                                     }
+                                }
+
+                                bool issA = pr.CurrentlyEditedSystem.SpriteSheetIsAnimation;
+                                if (ImGui.Checkbox(lang.Translate("ui.particle.sprite_sheet_is_animation") + "###SpriteSheetIsAnimation", ref issA))
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteSheetIsAnimation = issA;
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.particle.sprite_sheet_is_animation.tt"));
                                 }
 
                                 ImGui.TreePop();

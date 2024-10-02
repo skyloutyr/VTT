@@ -699,3 +699,6 @@ ui.object_layer.1=Слой Мастера (1)
 ui.object_layer.2=Экстра Слой Мастера (2)
 ui.popup.change_name_color=Изменить Цвет Имени
 ui.assets.duplicate_shader=Создать Копию
+ui.particle.sprite_selection_mode.first=Первый
+ui.particle.sprite_sheet_is_animation=Анимация
+ui.particle.sprite_sheet_is_animation.tt=Устанавливает лист спрайтов как анимацию.\nАнимация будет воспроизведена с первого по последний спрайт в период существования частицы.

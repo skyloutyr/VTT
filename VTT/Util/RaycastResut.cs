@@ -106,9 +106,10 @@
                         {
                             if (l < nMaxVertsForMultithreading)
                             {
+                                Vector3 discard = new Vector3();
                                 for (int i = 0; i < l; i += 3)
                                 {
-                                    IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints);
+                                    IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints, ref discard);
                                 }
                             }
                             else
@@ -119,7 +120,7 @@
                                     iterStoredMat = omat;
                                     iterStoredRayOrigin = nOri;
                                     iterStoredRayDirection = nDir;
-                                    Parallel.For(0, mesh.simplifiedTriangles.Length / 3, ParallelIterationDelegate);
+                                    Parallel.For(0, mesh.simplifiedTriangles.Length / 3, () => new Vector3(), ParallelIterationDelegate, v => { });
                                 }
                                 finally
                                 {
@@ -186,9 +187,13 @@
         private static Matrix4x4 iterStoredMat;
         private static Vector3 iterStoredRayOrigin;
         private static Vector3 iterStoredRayDirection;
-        private static unsafe void ParallelIterationDelegate(int i) => IterateTriangles(iterStoredFixedPtr, iterStoredMat, iterStoredRayOrigin, iterStoredRayDirection, i * 3, hitPoints);
+        private static unsafe Vector3 ParallelIterationDelegate(int i, ParallelLoopState state, Vector3 tLocal)
+        {
+            IterateTriangles(iterStoredFixedPtr, iterStoredMat, iterStoredRayOrigin, iterStoredRayDirection, i * 3, hitPoints, ref tLocal);
+            return tLocal;
+        }
 
-        public static unsafe void IterateTriangles(Vector3* arrayPtr, Matrix4x4 mat, Vector3 rOrigin, Vector3 rDirection, int index, List<Vector3> hitPoints)
+        public static unsafe bool IterateTriangles(Vector3* arrayPtr, Matrix4x4 mat, Vector3 rOrigin, Vector3 rDirection, int index, List<Vector3> hitPoints, ref Vector3 untransformedHit)
         {
             Vector3 t0 = arrayPtr[index + 0];
             Vector3 t1 = arrayPtr[index + 1];
@@ -219,10 +224,14 @@
                 float v = ((dot00 * dot12) - (dot01 * dot02)) * invDenom;
                 if ((u >= 0) && (v >= 0) && (u + v < 1))
                 {
+                    untransformedHit = hit;
                     Vector4 hit4 = Vector4.Transform(new Vector4(hit.X, hit.Y, hit.Z, 1.0f), mat);
                     hitPoints.Add(hit4.Xyz() / hit4.W);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private static IEnumerable<GlbMesh> IterateGlbModel(MatrixStack stack, GlbObject o, GlbObjectType typeSeeked)

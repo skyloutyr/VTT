@@ -127,22 +127,33 @@
                 return tmax >= tmin && tmax > 0;
             }
 
-            public unsafe void Intersect(Ray r, BoundingVolumeHierarchy bvh, Vector3* arrayPtr, Matrix4x4 mat, Vector3 rOrigin, Vector3 rDirection, List<Vector3> hitPoints)
+            public unsafe void Intersect(BoundingVolumeHierarchy bvh, ref TriangleIterationState tis, Vector3* arrayPtr)
             {
-                if (TestAABBRayIntersectFast(r, this.Bounds))
+                Ray r = tis.r;
+                Vector3? intersectionResult = this.Bounds.Intersects(r);
+                if (intersectionResult.HasValue)
                 {
-                    if (this.IsLeafNode)
+                    float dist = (r.Origin - intersectionResult.Value).Length();
+                    if (dist <= tis.smallestDistance)
                     {
-                        for (int i = 0; i < this.TriangleSliceLength; ++i)
+                        if (this.IsLeafNode)
                         {
-                            int index = bvh.TriangleIndices[this.TriangleSliceStart + i] * 3;
-                            RaycastResut.IterateTriangles(arrayPtr, mat, rOrigin, rDirection, index, hitPoints);
+                            for (int i = 0; i < this.TriangleSliceLength; ++i)
+                            {
+                                int index = bvh.TriangleIndices[this.TriangleSliceStart + i] * 3;
+                                Vector3 hitVec = new Vector3();
+                                if (RaycastResut.IterateTriangles(arrayPtr, tis.mat, r.Origin, r.Direction, index, tis.hitPoints, ref hitVec))
+                                {
+                                    dist = (r.Origin - hitVec).Length();
+                                    tis.smallestDistance = MathF.Min(dist, tis.smallestDistance);
+                                }
+                            }
                         }
-                    }
-                    else
-                    {
-                        this.ChildA.Intersect(r, bvh, arrayPtr, mat, rOrigin, rDirection, hitPoints);
-                        this.ChildB.Intersect(r, bvh, arrayPtr, mat, rOrigin, rDirection, hitPoints);
+                        else
+                        {
+                            this.ChildA.Intersect(bvh, ref tis, arrayPtr);
+                            this.ChildB.Intersect(bvh, ref tis, arrayPtr);
+                        }
                     }
                 }
             }
@@ -183,12 +194,29 @@
         // hit points is our result list reference
         public unsafe void IntersectTriangles(Vector3* arrayPtr, Matrix4x4 mat, Vector3 rOrigin, Vector3 rDirection, List<Vector3> hitPoints)
         {
-            this.RootNode.Intersect(new Ray(rOrigin, rDirection), this, arrayPtr, mat, rOrigin, rDirection, hitPoints);
+            TriangleIterationState state = new TriangleIterationState(new Ray(rOrigin, rDirection), mat, hitPoints, float.MaxValue);
+            this.RootNode.Intersect(this, ref state, arrayPtr);
         }
 
         public void Free()
         {
             this.TriangleIndices.Free();
+        }
+
+        public struct TriangleIterationState
+        {
+            public Ray r;
+            public Matrix4x4 mat;
+            public List<Vector3> hitPoints;
+            public float smallestDistance;
+
+            public TriangleIterationState(Ray r, Matrix4x4 mat, List<Vector3> hitPoints, float smallestDistance)
+            {
+                this.r = r;
+                this.mat = mat;
+                this.hitPoints = hitPoints;
+                this.smallestDistance = smallestDistance;
+            }
         }
     }
 }

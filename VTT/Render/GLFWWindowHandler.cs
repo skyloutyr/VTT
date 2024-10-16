@@ -448,6 +448,7 @@
             this._lastTickMin = this._tickMin;
             this._tickMax = 0;
             this._tickMin = ulong.MaxValue;
+            this._lastTicksAvg = 0;
             for (int i = 0; i < this._ticksActive.Count; ++i)
             {
                 this._lastTicksAvg += this._ticksActive[i];

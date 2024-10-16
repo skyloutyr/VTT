@@ -10,6 +10,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Numerics;
+    using System.Runtime.CompilerServices;
     using VTT.Control;
     using VTT.GL;
     using VTT.GL.Bindings;
@@ -532,6 +533,15 @@
                                         f * ((-deltaUV2.X * edge1.Z) + (deltaUV1.X * edge2.Z)), 1.0f
                                     ).Normalized();
 
+                                // If we have NaNs on our tangent then we have no correct UV coordinates
+                                // Thus normal mapping is impossible either way
+                                // So we create an arbitrary vector on the plane and construct a bitan against that vector
+                                if (float.IsNaN(tan.X) || float.IsNaN(tan.Y) || float.IsNaN(tan.Z))
+                                {
+                                    tan = new Vector4(nor1.ArbitraryOrthogonal(), 1.0f);
+                                    bitan = new Vector4(Vector3.Cross(nor1, tan.Xyz()), 1.0f);
+                                }
+
                                 tangentArray[i1] = tan;
                                 tangentArray[i2] = tan;
                                 tangentArray[i3] = tan;
@@ -998,7 +1008,7 @@
                 glmat.AlphaMode = mat.AlphaMode;
                 this.HasTransparency |= mat.AlphaMode != Material.AlphaModeEnum.OPAQUE;
                 glmat.BaseColorFactor = new Vector4(mat.PbrMetallicRoughness.BaseColorFactor[0], mat.PbrMetallicRoughness.BaseColorFactor[1], mat.PbrMetallicRoughness.BaseColorFactor[2], mat.PbrMetallicRoughness.BaseColorFactor[3]);
-                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressAlbedo ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.Srgb8Alpha8);
+                glmat.BaseColorTexture = this.LoadIndependentTextureFromBinary(g, mat.PbrMetallicRoughness.BaseColorTexture?.Index, bin, new Rgba32(1, 1, 1, 1f), this._meta.CompressAlbedo ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.Srgb8Alpha8);
                 glmat.BaseColorAnimation = new TextureAnimation(null);
                 glmat.CullFace = !mat.DoubleSided;
                 glmat.EmissionTexture = this.LoadIndependentTextureFromBinary(g, mat.EmissiveTexture?.Index, bin, new Rgba32(0, 0, 0, 1f), this._meta.CompressEmissive ? SizedInternalFormat.CompressedSrgbAlphaBPTC : SizedInternalFormat.Srgb8Alpha8);
@@ -1018,7 +1028,7 @@
             }
 
             this.DefaultMaterial = new GlbMaterial();
-            this.DefaultMaterial.BaseColorTexture = this.LoadBaseTexture(new Rgba32(0, 0, 0, 1f));
+            this.DefaultMaterial.BaseColorTexture = this.LoadBaseTexture(new Rgba32(1, 1, 1, 1f));
             this.DefaultMaterial.BaseColorAnimation = new TextureAnimation(null);
             this.DefaultMaterial.NormalTexture = this.LoadBaseTexture(new Rgba32(0, 1, 0, 1f));
             this.DefaultMaterial.NormalAnimation = new TextureAnimation(null);
@@ -1037,17 +1047,72 @@
             return tex;
         }
 
+        private static bool IsMatrixIdentity(Matrix4x4 mat, float epsilon = 1e-5f)
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            bool Eq(float f, float f1) => MathF.Abs(f - f1) <= epsilon;
+
+            return Eq(mat.M11 + mat.M22 + mat.M33 + mat.M44, 4) &&
+                Eq(mat.M12 + mat.M13 + mat.M14 + mat.M21 + mat.M23 + mat.M24 + mat.M31 + mat.M32 + mat.M34 + mat.M41 + mat.M42 + mat.M43, 0);
+        }
+
         private void PopulateGlbObjects(Gltf g, List<GlbObject> objs)
         {
             for (int i = 0; i < g.Nodes.Length; i++)
             {
                 Node n = g.Nodes[i];
+                Vector3 t;
+                Quaternion r;
+                Vector3 s;
+                if (n.Matrix != null && n.Matrix.Length > 0) // Maybe have a tsr matrix?
+                {
+                    Matrix4x4 tsr = new Matrix4x4(
+                        n.Matrix[0], n.Matrix[1], n.Matrix[2], n.Matrix[3],
+                        n.Matrix[4], n.Matrix[5], n.Matrix[6], n.Matrix[7],
+                        n.Matrix[8], n.Matrix[9], n.Matrix[10], n.Matrix[11],
+                        n.Matrix[12], n.Matrix[13], n.Matrix[14], n.Matrix[15]
+                    );
+
+                    if (IsMatrixIdentity(tsr))
+                    {
+                        t = n.Translation != null && n.Translation.Length > 0
+                            ? new Vector3(n.Translation[0], n.Translation[1], n.Translation[2])
+                            : Vector3.Zero;
+
+                        r = n.Rotation != null && n.Rotation.Length > 0
+                            ? new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])
+                            : Quaternion.Identity;
+
+                        s = n.Scale != null && n.Scale.Length > 0
+                            ? new Vector3(n.Scale[0], n.Scale[1], n.Scale[2])
+                            : Vector3.One;
+                    }
+                    else
+                    {
+                        Matrix4x4.Decompose(tsr, out s, out r, out t);
+                    }
+                }
+                else
+                {
+                    t = n.Translation != null && n.Translation.Length > 0
+                            ? new Vector3(n.Translation[0], n.Translation[1], n.Translation[2])
+                            : Vector3.Zero;
+
+                    r = n.Rotation != null && n.Rotation.Length > 0
+                        ? new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])
+                        : Quaternion.Identity;
+
+                    s = n.Scale != null && n.Scale.Length > 0
+                        ? new Vector3(n.Scale[0], n.Scale[1], n.Scale[2])
+                        : Vector3.One;
+                }
+
                 GlbObject glbO = new GlbObject(n)
                 {
                     Name = n.Name,
-                    Position = new Vector3(n.Translation[0], n.Translation[1], n.Translation[2]),
-                    Rotation = new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3]),
-                    Scale = new Vector3(n.Scale[0], n.Scale[1], n.Scale[2])
+                    Position = t,
+                    Rotation = r,
+                    Scale = s
                 };
 
                 objs.Add(glbO);
@@ -1201,14 +1266,26 @@
             // TODO update preview creation code to account for async texture loading
 
             // Create camera
-            glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera.Camera) : this.Camera.Camera;
-            GlbObject cameraObject = portrait ? (this.PortraitCamera ?? this.Camera) : this.Camera;
-            Matrix4x4 mat = this.LookupChildMatrix(cameraObject);
-            Matrix4x4.Decompose(mat, out Vector3 scale, out Quaternion q, out Vector3 camPos);
-            Vector3 camLook = (Vector4.Transform(new Vector4(0, 0, -1, 1), q)).Xyz().Normalized();
-            Util.Camera camera = new VectorCamera(camPos, camLook);
-            camera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(sceneCamera.Perspective.Yfov, (float)width / height, sceneCamera.Perspective.Znear, 100f);
-            camera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+            Util.Camera camera;
+            Matrix4x4 mat = Matrix4x4.Identity;
+            Quaternion q;
+            glTFLoader.Schema.Camera sceneCamera = portrait ? (this.PortraitCamera?.Camera ?? this.Camera?.Camera) : this.Camera?.Camera;
+            if (sceneCamera == null)
+            {
+                camera = new VectorCamera(new Vector3(3, 3, 3), new Vector3(-1, -1, -1).Normalized());
+                camera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(60 * MathF.PI / 180.0f, (float)width / height, 0.01f, 100f);
+                camera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+            }
+            else
+            {
+                GlbObject cameraObject = portrait ? (this.PortraitCamera ?? this.Camera) : this.Camera;
+                mat = this.LookupChildMatrix(cameraObject);
+                Matrix4x4.Decompose(mat, out Vector3 scale, out q, out Vector3 camPos);
+                Vector3 camLook = (Vector4.Transform(new Vector4(0, 0, -1, 1), q)).Xyz().Normalized();
+                camera = new VectorCamera(camPos, camLook);
+                camera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(sceneCamera.Perspective.Yfov, (float)width / height, sceneCamera.Perspective.Znear, 100f);
+                camera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+            }
 
             // Create sun
             DirectionalLight sun;

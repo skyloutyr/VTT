@@ -1268,7 +1268,8 @@
             ShaderNode materialData = ShaderNodeTemplate.MaterialData.CreateNode();
             ShaderNode uniformAlpha = ShaderNodeTemplate.MaterialAlpha.CreateNode();
             ShaderNode uniformTint = ShaderNodeTemplate.MaterialTintColor.CreateNode();
-            ShaderNode mulAlbedo = ShaderNodeTemplate.Vec3Multiply.CreateNode();
+            ShaderNode mulAlbedo0 = ShaderNodeTemplate.Vec3Multiply.CreateNode();
+            ShaderNode mulAlbedo1 = ShaderNodeTemplate.Vec3Multiply.CreateNode();
             ShaderNode mulA0 = ShaderNodeTemplate.FloatMultiply.CreateNode();
             ShaderNode mulA1 = ShaderNodeTemplate.FloatMultiply.CreateNode();
             ShaderNode matOut = ShaderNodeTemplate.MaterialPBR.CreateNode();
@@ -1277,10 +1278,12 @@
             mulA0.ConnectInput(1, uniformTint, 1);
             mulA1.ConnectInput(1, mulA0, 0);
             mulA1.ConnectInput(0, materialData, 1);
-            mulAlbedo.ConnectInput(0, materialData, 0);
-            mulAlbedo.ConnectInput(1, uniformTint, 0);
+            mulAlbedo0.ConnectInput(0, materialData, 0);
+            mulAlbedo0.ConnectInput(1, materialData, 7);
+            mulAlbedo1.ConnectInput(0, mulAlbedo0, 0);
+            mulAlbedo1.ConnectInput(1, uniformTint, 0);
 
-            matOut.ConnectInput(0, mulAlbedo, 0);
+            matOut.ConnectInput(0, mulAlbedo1, 0);
             matOut.ConnectInput(1, materialData, 2);
             matOut.ConnectInput(2, materialData, 3);
             matOut.ConnectInput(3, mulA1, 0);
@@ -1294,7 +1297,8 @@
             uniformAlpha.Location = new Vector2(0, 300);
             uniformTint.Location = new Vector2(0, 400);
 
-            mulAlbedo.Location = new Vector2(wLayer1, 0);
+            mulAlbedo0.Location = new Vector2(wLayer1, 0);
+            mulAlbedo1.Location = new Vector2(wLayer2, 0);
             mulA0.Location = new Vector2(wLayer1, 400);
             mulA1.Location = new Vector2(wLayer2, 400);
 
@@ -1303,7 +1307,8 @@
             this.Nodes.Add(materialData);
             this.Nodes.Add(uniformAlpha);
             this.Nodes.Add(uniformTint);
-            this.Nodes.Add(mulAlbedo);
+            this.Nodes.Add(mulAlbedo0);
+            this.Nodes.Add(mulAlbedo1);
             this.Nodes.Add(mulA0);
             this.Nodes.Add(mulA1);
             this.Nodes.Add(matOut);

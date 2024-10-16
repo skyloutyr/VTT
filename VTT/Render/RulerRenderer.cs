@@ -643,14 +643,6 @@
 
         private readonly List<Vector2> _groundQuadGenTempList = new List<Vector2>();
 
-        private static Vector3 ArbitraryOrthogonal(Vector3 vec)
-        {
-            bool b0 = (vec.X < vec.Y) && (vec.X < vec.Z);
-            bool b1 = (vec.Y <= vec.X) && (vec.Y < vec.Z);
-            bool b2 = (vec.Z <= vec.X) && (vec.Z <= vec.Y);
-            return Vector3.Cross(vec, new Vector3(b0 ? 1 : 0, b1 ? 1 : 0, b2 ? 1 : 0));
-        }
-
         public void CreateCone(Vector3 start, Vector3 end, float radius)
         {
             Vector3 planeNormal = (end - start).Normalized();
@@ -659,7 +651,7 @@
                 return;
             }
 
-            Vector4 planePerpendicular = new Vector4(ArbitraryOrthogonal(planeNormal), 1.0f);
+            Vector4 planePerpendicular = new Vector4(planeNormal.ArbitraryOrthogonal(), 1.0f);
             this._vertexData.Add(start.X);
             this._vertexData.Add(start.Y);
             this._vertexData.Add(start.Z);

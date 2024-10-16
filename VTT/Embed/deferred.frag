@@ -131,7 +131,7 @@ void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float 
 {
 #ifndef NODEGRAPH
     vec4 albedo_tex = sampleMap(m_texture_diffuse, m_diffuse_frame);
-    albedo = albedo_tex.rgb * tint_color.rgb;
+    albedo = albedo_tex.rgb * m_diffuse_color.rgb * tint_color.rgb;
     normal = getNormalFromMap();
     vec3 aomr = sampleMap(m_texture_aomr, m_aomr_frame).rgb;
     emissive = sampleMap(m_texture_emissive, m_emissive_frame).rgb;

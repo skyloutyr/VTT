@@ -13,6 +13,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render;
     using VTT.Util;
     using GL = GL.Bindings.GL;
 
@@ -455,7 +456,7 @@
             }
         }
 
-        public void Render(ShaderProgram particleShader, Vector3 cameraPosition, Camera cam)
+        public void Render(FastAccessShader particleShader, Vector3 cameraPosition, Camera cam)
         {
             if (!this._glInit || this.Template.AssetID.Equals(Guid.Empty))
             {

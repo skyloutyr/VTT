@@ -18,7 +18,7 @@
         private Texture _sunDepthTexture;
         private Texture _fakeDepthTexture;
 
-        public ShaderProgram SunShader { get; set; }
+        public FastAccessShader SunShader { get; set; }
 
         public Matrix4x4 SunView { get; set; } = Matrix4x4.Identity;
         public Matrix4x4 SunProjection { get; set; } = Matrix4x4.Identity;
@@ -68,7 +68,7 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
 
-            this.SunShader = OpenGLUtil.LoadShader("object_shadow", ShaderType.Vertex, ShaderType.Fragment);
+            this.SunShader = new FastAccessShader(OpenGLUtil.LoadShader("object_shadow", ShaderType.Vertex, ShaderType.Fragment));
             this.SunView = Matrix4x4.CreateLookAt(new Vector3(0, -0.1f, 49.5f), Vector3.Zero, new Vector3(0, 1, 0));
             this.SunProjection = Matrix4x4.CreateOrthographic(48, 48, 0.1f, 100f);
 
@@ -97,7 +97,7 @@
                 GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
                 GL.Clear(ClearBufferMask.Depth);
 
-                this.SunShader.Bind();
+                this.SunShader.Program.Bind();
                 this.SunShader["view"].Set(this.SunView);
                 this.SunShader["projection"].Set(this.SunProjection);
 

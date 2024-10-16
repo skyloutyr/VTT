@@ -825,7 +825,7 @@
             this.RenderLights(m, delta);
             GL.ActiveTexture(0);
 
-            ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
+            FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
             this._crossedOutObjects.Clear();
             for (int i = -2; i <= 0; ++i)
@@ -881,7 +881,7 @@
             this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
 
-            ShaderProgram forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
+            FastAccessShader forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             GL.Enable(Capability.Blend);
@@ -900,7 +900,7 @@
             for (int i = -2; i <= maxLayer; ++i)
             {
                 shader = forwardShader;
-                shader.Bind();
+                shader.Program.Bind();
                 if (i <= 0)
                 {
                     Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
@@ -948,7 +948,7 @@
                         shader = forwardShader;
                         this._passthroughData.TintColor = mo.TintColor.Vec4();
                         shader["tint_color"].Set(this._passthroughData.TintColor);
-                        bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out ShaderProgram customShader);
+                        bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out FastAccessShader customShader);
                         if (hadCustomRenderShader)
                         {
                             if (i <= 0)
@@ -966,7 +966,7 @@
                         mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                         if (hadCustomRenderShader)
                         {
-                            forwardShader.Bind();
+                            forwardShader.Program.Bind();
                         }
                     }
 

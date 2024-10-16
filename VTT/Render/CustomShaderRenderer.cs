@@ -11,7 +11,7 @@
 
     public static class CustomShaderRenderer
     {
-        public static bool Render(Guid shaderAssetID, Map m, ShaderContainerLocalPassthroughData passthroughData, double textureAnimationIndex, double delta, out ShaderProgram shader)
+        public static bool Render(Guid shaderAssetID, Map m, ShaderContainerLocalPassthroughData passthroughData, double textureAnimationIndex, double delta, out FastAccessShader shader)
         {
             shader = null;
             if (!Client.Instance.Settings.EnableCustomShaders)
@@ -28,7 +28,7 @@
                     {
                         if (!ShaderProgram.IsLastShaderSame(shader))
                         {
-                            shader.Bind();
+                            shader.Program.Bind();
                             Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
                         }
 

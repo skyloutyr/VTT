@@ -7,6 +7,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render;
     using VTT.Render.LightShadow;
 
     public class GlbMaterial
@@ -46,7 +47,7 @@
                 (this.OcclusionMetallicRoughnessTexture?.IsAsyncReady ?? true);
         }
 
-        public void Uniform(ShaderProgram shader, double textureAnimationFrameIndex)
+        public void Uniform(FastAccessShader shader, double textureAnimationFrameIndex)
         {
             if (SunShadowRenderer.ShadowPass)
             {
@@ -67,17 +68,17 @@
              */
 
             // Objects are aligned in memory by their AssetID.
-            if (lastProgram != shader || lastMaterial != this)
+            if (lastProgram != shader.Program || lastMaterial != this)
             {
-                shader["m_diffuse_color"].Set(this.BaseColorFactor);
-                shader["m_metal_factor"].Set(this.MetallicFactor);
-                shader["m_roughness_factor"].Set(this.RoughnessFactor);
-                shader["m_alpha_cutoff"].Set(this.AlphaCutoff);
-                shader["m_diffuse_frame"].Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader["m_normal_frame"].Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader["m_emissive_frame"].Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader["m_aomr_frame"].Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                lastProgram = shader;
+                shader.Material.DiffuseColor.Set(this.BaseColorFactor);
+                shader.Material.MetallicFactor.Set(this.MetallicFactor);
+                shader.Material.RoughnessFactor.Set(this.RoughnessFactor);
+                shader.Material.AlphaCutoff.Set(this.AlphaCutoff);
+                shader.Material.DiffuseFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                shader.Material.NormalFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                shader.Material.EmissiveFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                lastProgram = shader.Program;
                 lastMaterial = this;
             }
             else
@@ -85,14 +86,14 @@
                 if (textureAnimationFrameIndex != lastAnimationFrameIndex)
                 {
                     lastAnimationFrameIndex = textureAnimationFrameIndex;
-                    shader["m_diffuse_frame"].Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader["m_normal_frame"].Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader["m_emissive_frame"].Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader["m_aomr_frame"].Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    shader.Material.DiffuseFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    shader.Material.NormalFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    shader.Material.EmissiveFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                 }
             }
 
-            shader["material_index"].Set(this.Index);
+            shader.Material.MaterialIndex.Set(this.Index);
 
             GL.ActiveTexture(0);
             this.BaseColorTexture.Bind();

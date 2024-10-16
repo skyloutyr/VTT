@@ -6,6 +6,7 @@
     using System.Numerics;
     using VTT.Control;
     using VTT.GL;
+    using VTT.Render;
     using VTT.Util;
     using Camera = glTFLoader.Schema.Camera;
 
@@ -66,7 +67,7 @@
 
         public GlbObject(Node node) => this._node = node;
 
-        public void Render(ShaderProgram shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(FastAccessShader shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             if (this.Type == GlbObjectType.Mesh)
             {

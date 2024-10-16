@@ -24,9 +24,9 @@
         public Texture DepthTex { get; set; }
         public Texture ColorOutputTex { get; set; }
 
-        public ShaderProgram DeferredPrePass { get; set; }
+        public FastAccessShader DeferredPrePass { get; set; }
         public ShaderProgram DeferredFinal { get; set; }
-        public ShaderProgram Forward { get; set; }
+        public FastAccessShader Forward { get; set; }
         public ShaderProgram FinalPass { get; set; }
 
 
@@ -40,13 +40,13 @@
             this.RecompileShaders(Client.Instance.Settings.EnableDirectionalShadows, Client.Instance.Settings.EnableSunShadows);
         }
 
-        public ShaderProgram BeginDeferred(Map m)
+        public FastAccessShader BeginDeferred(Map m)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            ShaderProgram shader = this.DeferredPrePass;
+            FastAccessShader shader = this.DeferredPrePass;
             bool useUBO = Client.Instance.Settings.UseUBO;
 
-            shader.Bind();
+            shader.Program.Bind();
             if (!useUBO)
             {
                 shader["view"].Set(cam.View);
@@ -74,7 +74,7 @@
 
             return shader;
         }
-        public ShaderProgram BeginForward(Map m, double delta)
+        public FastAccessShader BeginForward(Map m, double delta)
         {
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferCompound.Value);
 
@@ -86,8 +86,8 @@
             Vector3 cachedAmbientColor = Client.Instance.Frontend.Renderer.ObjectRenderer.CachedAmbientColor;
             Vector3 cachedSkyColor = Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor;
 
-            ShaderProgram shader = this.Forward;
-            shader.Bind();
+            FastAccessShader shader = this.Forward;
+            shader.Program.Bind();
             if (!Client.Instance.Settings.UseUBO)
             {
                 shader["view"].Set(cam.View);
@@ -359,15 +359,15 @@
         }
         public void RecompileShaders(bool havePointShadows, bool haveSunShadows)
         {
-            this.DeferredPrePass?.Dispose();
+            this.DeferredPrePass?.Program.Dispose();
             this.DeferredFinal?.Dispose();
-            this.Forward?.Dispose();
+            this.Forward?.Program.Dispose();
             this.FinalPass?.Dispose();
 
-            this.DeferredPrePass = this.CompileShader("deferred", haveSunShadows, havePointShadows);
-            this.DeferredPrePass.Bind();
-            this.DeferredPrePass.BindUniformBlock("FrameData", 1);
-            this.DeferredPrePass.BindUniformBlock("BoneData", 2);
+            this.DeferredPrePass = new FastAccessShader(this.CompileShader("deferred", haveSunShadows, havePointShadows));
+            this.DeferredPrePass.Program.Bind();
+            this.DeferredPrePass.Program.BindUniformBlock("FrameData", 1);
+            this.DeferredPrePass.Program.BindUniformBlock("BoneData", 2);
             this.DeferredPrePass["m_texture_diffuse"].Set(0);
             this.DeferredPrePass["m_texture_normal"].Set(1);
             this.DeferredPrePass["m_texture_emissive"].Set(2);
@@ -385,10 +385,10 @@
             this.DeferredFinal["dl_shadow_map"].Set(14);
             this.DeferredFinal["pl_shadow_maps"].Set(13);
 
-            this.Forward = this.CompileShader("object", haveSunShadows, havePointShadows);
-            this.Forward.Bind();
-            this.Forward.BindUniformBlock("FrameData", 1);
-            this.Forward.BindUniformBlock("BoneData", 2);
+            this.Forward = new FastAccessShader(this.CompileShader("object", haveSunShadows, havePointShadows));
+            this.Forward.Program.Bind();
+            this.Forward.Program.BindUniformBlock("FrameData", 1);
+            this.Forward.Program.BindUniformBlock("BoneData", 2);
             this.Forward["m_texture_diffuse"].Set(0);
             this.Forward["m_texture_normal"].Set(1);
             this.Forward["m_texture_emissive"].Set(2);

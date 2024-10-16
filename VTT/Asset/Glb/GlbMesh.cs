@@ -6,6 +6,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render;
     using VTT.Util;
 
     public unsafe class GlbMesh
@@ -55,7 +56,7 @@
             this.IndexBuffer = null;
         }
 
-        public void Render(ShaderProgram shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(FastAccessShader shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
             shader["model"].Set(model);

@@ -36,7 +36,7 @@
 
         public Texture DepthMap { get; set; }
         public uint FBO { get; set; }
-        public ShaderProgram Shader { get; set; }
+        public FastAccessShader Shader { get; set; }
 
         public void Clear()
         {
@@ -97,7 +97,7 @@
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
-            this.Shader = OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry);
+            this.Shader = new FastAccessShader(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
         }
 
         public void ResizeShadowMaps(int resolution)
@@ -229,7 +229,7 @@
 
             if (doDraw && m != null)
             {
-                this.Shader.Bind();
+                this.Shader.Program.Bind();
                 SunShadowRenderer.ShadowPass = true;
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {

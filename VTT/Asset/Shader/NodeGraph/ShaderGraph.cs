@@ -8,6 +8,7 @@
     using System.Numerics;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Render;
     using VTT.Util;
 
     public class ShaderGraph : ISerializable
@@ -21,7 +22,7 @@
 
         public LinkedTextureContainer ExtraTextures { get; set; } = new LinkedTextureContainer();
 
-        private ShaderProgram _glData { get; set; }
+        private FastAccessShader _glData { get; set; }
         private bool _glValid { get; set; }
         private bool _glGen { get; set; }
 
@@ -159,7 +160,7 @@
             return ret;
         }
 
-        public ShaderProgram GetGLShader(bool isParticleShader)
+        public FastAccessShader GetGLShader(bool isParticleShader)
         {
             if (!this.IsLoaded)
             {
@@ -239,7 +240,7 @@
                                 sp["dl_shadow_map"].Set(14);
                             }
 
-                            this._glData = sp;
+                            this._glData = new FastAccessShader(sp);
                             this._glValid = true;
                         }
                     }

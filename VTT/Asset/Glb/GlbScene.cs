@@ -15,6 +15,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render;
     using VTT.Render.LightShadow;
     using VTT.Util;
 
@@ -1250,7 +1251,7 @@
             return img;
         }
 
-        public void Render(ShaderProgram shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(FastAccessShader shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             if (!this.GlReady)
             {
@@ -1311,8 +1312,8 @@
             GL.ActiveTexture(0);
 
             ReadOnlySpan<int> data = GL.GetInteger(GLPropertyName.Viewport);
-            ShaderProgram shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
-            shader.Bind();
+            FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
+            shader.Program.Bind();
             Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader);
             shader["ambient_intensity"].Set(0.03f);
             shader["gamma_correct"].Set(true);

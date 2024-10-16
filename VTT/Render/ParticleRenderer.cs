@@ -15,7 +15,7 @@
 
     public class ParticleRenderer
     {
-        public ShaderProgram ParticleShader { get; set; }
+        public FastAccessShader ParticleShader { get; set; }
         public ParticleSystem CurrentlyEditedSystem { get; set; }
         public ParticleSystemInstance CurrentlyEditedSystemInstance { get; set; }
 
@@ -34,8 +34,8 @@
 
         public void Create()
         {
-            this.ParticleShader = OpenGLUtil.LoadShader("particle", ShaderType.Vertex, ShaderType.Fragment);
-            this.ParticleShader.Bind();
+            this.ParticleShader = new FastAccessShader(OpenGLUtil.LoadShader("particle", ShaderType.Vertex, ShaderType.Fragment));
+            this.ParticleShader.Program.Bind();
             this.ParticleShader["m_texture_diffuse"].Set(0);
             this.ParticleShader["m_texture_normal"].Set(1);
             this.ParticleShader["m_texture_emissive"].Set(2);
@@ -97,11 +97,11 @@
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            ShaderProgram shader;
+            FastAccessShader shader;
             if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out shader))
             {
                 shader = this.ParticleShader;
-                shader.Bind();
+                shader.Program.Bind();
                 shader["view"].Set(this._cam.View);
                 shader["projection"].Set(this._cam.Projection);
                 shader["model"].Set(Matrix4x4.Identity);
@@ -326,8 +326,8 @@
             }
 
             this._programsPopulated.Clear();
-            ShaderProgram shader = this.ParticleShader;
-            shader.Bind();
+            FastAccessShader shader = this.ParticleShader;
+            shader.Program.Bind();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
@@ -387,14 +387,14 @@
         }
 
         private List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
-        private bool HandleCustomShader(Guid shaderID, Camera cam, bool enableMemory, bool blank, out ShaderProgram shader)
+        private bool HandleCustomShader(Guid shaderID, Camera cam, bool enableMemory, bool blank, out FastAccessShader shader)
         {
             if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)
             {
                 shader = this.ParticleShader;
-                if (!ShaderProgram.IsLastShaderSame(shader))
+                if (!ShaderProgram.IsLastShaderSame(shader.Program))
                 {
-                    shader.Bind();
+                    shader.Program.Bind();
                 }
 
                 return false;
@@ -407,7 +407,7 @@
                     shader = a.Shader.NodeGraph.GetGLShader(true);
                     if (!ShaderProgram.IsLastShaderSame(shader))
                     {
-                        shader.Bind();
+                        shader.Program.Bind();
                     }
 
                     if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
@@ -466,7 +466,7 @@
                     shader = this.ParticleShader;
                     if (!ShaderProgram.IsLastShaderSame(shader))
                     {
-                        shader.Bind();
+                        shader.Program.Bind();
                     }
 
                     return false;

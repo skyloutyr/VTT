@@ -6,6 +6,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using VTT.Render;
 
     public class ParticleContainer : ISerializable
     {
@@ -67,7 +68,7 @@
             }
         }
 
-        public void Render(ShaderProgram shader, Camera cam)
+        public void Render(FastAccessShader shader, Camera cam)
         {
             if (this.IsActive && !Guid.Empty.Equals(this.SystemID))
             {

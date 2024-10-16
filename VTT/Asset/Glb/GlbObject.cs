@@ -60,25 +60,35 @@
         private Quaternion _rotation;
         private Vector3 _scale;
 
-        public Matrix4x4 CachedMatrix => this._matCached;
+        public Matrix4x4 LocalCachedTransform => this._matCached;
+
+        public Matrix4x4 GlobalTransform { get; set; }
 
         public GlbObject(Node node) => this._node = node;
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
-            matrixStack.Push(this._matCached);
-
             if (this.Type == GlbObjectType.Mesh)
             {
                 foreach (GlbMesh mesh in this.Meshes)
                 {
-                    mesh.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+                    mesh.Render(shader, this.GlobalTransform * model, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
                 }
             }
 
             foreach (GlbObject child in this.Children)
             {
-                child.Render(shader, matrixStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+                child.Render(shader, model, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+            }
+        }
+
+        public void PopulateGlobalTransform(MatrixStack matrixStack)
+        {
+            matrixStack.Push(this._matCached);
+            this.GlobalTransform = matrixStack.Current;
+            foreach (GlbObject child in this.Children)
+            {
+                child.PopulateGlobalTransform(matrixStack);
             }
 
             matrixStack.Pop();

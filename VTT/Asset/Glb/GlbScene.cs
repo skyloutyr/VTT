@@ -729,6 +729,12 @@
                 this.CombinedBounds = this.CombinedBounds.Union(objs[i].Bounds);
             }
 
+            MatrixStack ms = new MatrixStack() { Reversed = true };
+            foreach (GlbObject o in this.RootObjects)
+            {
+                o.PopulateGlobalTransform(ms);
+            }
+
             this.RaycastBounds = this.SimplifiedRaycastMesh?.Bounds ?? this.CombinedBounds;
 
             this._checkGlRequests = true;
@@ -1244,7 +1250,6 @@
             return img;
         }
 
-        private readonly MatrixStack _modelStack = new MatrixStack() { Reversed = true };
         public void Render(ShaderProgram shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             if (!this.GlReady)
@@ -1252,13 +1257,10 @@
                 return;
             }
 
-            this._modelStack.Push(baseMatrix);
             foreach (GlbObject o in this.RootObjects)
             {
-                o.Render(shader, this._modelStack, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+                o.Render(shader, baseMatrix, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }
-
-            this._modelStack.Pop();
         }
 
         public Image<Rgba32> CreatePreview(int width, int height, Vector4 clearColor, bool portrait = false)

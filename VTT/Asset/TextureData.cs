@@ -181,6 +181,7 @@
             mesh.Position = Vector3.Zero;
             mesh.Rotation = Quaternion.Identity;
             mesh.Scale = Vector3.One;
+            mesh.GlobalTransform = Matrix4x4.Identity;
             mesh.Bounds = glbm.Bounds;
             mesh.Meshes.Add(glbm);
             mesh.Name = "generated_mesh";

@@ -55,12 +55,11 @@
             this.IndexBuffer = null;
         }
 
-        public void Render(ShaderProgram shader, MatrixStack matrixStack, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(ShaderProgram shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
-            Matrix4x4 cm = matrixStack.Current;
-            shader["model"].Set(cm);
-            shader["mvp"].Set(cm * view * projection);
+            shader["model"].Set(model);
+            shader["mvp"].Set(model * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);

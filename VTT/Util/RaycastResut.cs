@@ -236,7 +236,7 @@
 
         private static IEnumerable<GlbMesh> IterateGlbModel(MatrixStack stack, GlbObject o, GlbObjectType typeSeeked)
         {
-            stack.Push(o.CachedMatrix);
+            stack.Push(o.LocalCachedTransform);
             if (o.Type == typeSeeked)
             {
                 foreach (GlbMesh m in o.Meshes)

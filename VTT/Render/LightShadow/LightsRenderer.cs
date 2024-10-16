@@ -181,7 +181,7 @@
 
         private void ProcessGlbObjectRecursively(GlbObject o, MapObject owner)
         {
-            this._ms.Push(o.CachedMatrix);
+            this._ms.Push(o.LocalCachedTransform);
             if (o.Type == GlbObjectType.Light && o.Light.LightType == KhrLight.LightTypeEnum.Point)
             {
                 PointLight pl = new PointLight(this._ms, o.Light, this.NumLights, owner);

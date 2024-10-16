@@ -436,7 +436,6 @@ void main()
 
     g_position = vec4(f_world_position, 1.0);
     g_normal = vec4(normal, 1.0);
-    g_albedo = vec4(albedo, 1.0);
     g_aomrg = vec4(ao, m, r, grid.a);
     g_emission = vec4(emissive, 1.0);
 
@@ -456,6 +455,7 @@ void main()
     }
 
     float a = l_a;
+    g_albedo = vec4(albedo, a);
     if (a <= eff_epsilon)
     {
         discard;

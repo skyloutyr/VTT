@@ -885,9 +885,10 @@
 
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             GL.Enable(Capability.Blend);
+            GL.EnableIndexed(IndexedCapability.Blend, 0);
             GL.DisableIndexed(IndexedCapability.Blend, 1);
             GL.DisableIndexed(IndexedCapability.Blend, 2);
-            GL.DisableIndexed(IndexedCapability.Blend, 3);
+            GL.EnableIndexed(IndexedCapability.Blend, 3);
             GL.DisableIndexed(IndexedCapability.Blend, 4);
             GL.DisableIndexed(IndexedCapability.Blend, 5);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);

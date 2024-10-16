@@ -1,26 +1,28 @@
-﻿using Antlr4.Runtime.Tree;
-using System.Runtime.Intrinsics.X86;
-using System;
-using VTT.GL;
-using System.Collections;
-using System.Globalization;
-using System.Reflection;
-using System.Text.RegularExpressions;
-
-namespace VTT.Util
+﻿namespace VTT.Util
 {
-    using Antlr4.Runtime.Tree;
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.Linq;
     using System.Numerics;
-    using System.Reflection.Metadata;
-    using System.Runtime.Intrinsics.X86;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
 
+    /**
+ *  Copyright (C) 2011 by Morten S. Mikkelsen
+ *
+ *  This software is provided 'as-is', without any express or implied
+ *  warranty.  In no event will the authors be held liable for any damages
+ *  arising from the use of this software.
+ *
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software
+ *     in a product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ *  3. This notice may not be removed or altered from any source distribution.
+ */
     public static class MikkTSpace
     {
         private struct Context
@@ -52,17 +54,9 @@ namespace VTT.Util
         public static bool GenTangentSpace(uint[] indices, List<Vector3> positions, List<Vector2> uvs, List<Vector3> normals, out TangentData[] result, float angularThreshold = 180.0f)
         {
             Context ctx = new Context() { indices = indices, positions = positions, uvs = uvs, normals = normals };
-            int[] triListIn = null;
-            int[] groupTrianglesBuffer = null;
-            Triangle[] triInfos = null;
-            Group[] groups = null;
-            TSpace[] tspace = null;
-            int nrTSPaces = 0, totTris = 0, degenTriangles = 0, nrMaxGroups = 0;
-            int nrActiveGroups = 0, index = 0;
             int nrFaces = indices.Length / 3;
-            int nrTrianglesIn = nrFaces, f = 0, t = 0, i = 0;
-            bool bRes = false;
-            float fThresCos = MathF.Cos((angularThreshold * MathF.PI) / 180.0f);
+            int nrTrianglesIn = nrFaces;
+            float fThresCos = MathF.Cos(angularThreshold * MathF.PI / 180.0f);
 
             if (nrTrianglesIn <= 0)
             {
@@ -71,8 +65,8 @@ namespace VTT.Util
             }
 
             // allocate memory for an index list
-            triListIn = new int[nrTrianglesIn * 3];
-            triInfos = new Triangle[nrTrianglesIn];
+            int[] triListIn = new int[nrTrianglesIn * 3];
+            Triangle[] triInfos = new Triangle[nrTrianglesIn];
             for (int i1 = 0; i1 < triInfos.Length; i1++)
             {
                 Triangle tri = new Triangle();
@@ -83,7 +77,7 @@ namespace VTT.Util
             }
 
             // make an initial triangle --> face index list
-            nrTSPaces = GenerateInitialVerticesIndexList(triInfos, triListIn, ctx, nrTrianglesIn);
+            int nrTSPaces = GenerateInitialVerticesIndexList(triInfos, triListIn, ctx, nrTrianglesIn);
 
             // make a welded index list of identical positions and attributes (pos, norm, texc)
             //printf("gen welded index list begin\n");
@@ -91,17 +85,17 @@ namespace VTT.Util
             //printf("gen welded index list end\n");
 
             // Mark all degenerate triangles
-            totTris = nrTrianglesIn;
-            degenTriangles = 0;
-            for (t = 0; t < totTris; t++)
+            int totTris = nrTrianglesIn;
+            int degenTriangles = 0;
+            for (int t = 0; t < totTris; t++)
             {
-                int i0 = triListIn[t * 3 + 0];
-                int i1 = triListIn[t * 3 + 1];
-                int i2 = triListIn[t * 3 + 2];
+                int i0 = triListIn[(t * 3) + 0];
+                int i1 = triListIn[(t * 3) + 1];
+                int i2 = triListIn[(t * 3) + 2];
                 Vector3 p0 = ctx.positions[i0];
                 Vector3 p1 = ctx.positions[i1];
                 Vector3 p2 = ctx.positions[i2];
-                if (Vector3.Equals(p0, p1) || Vector3.Equals(p0, p2) || Vector3.Equals(p1, p2))  // degenerate
+                if (Equals(p0, p1) || Equals(p0, p2) || Equals(p1, p2))  // degenerate
                 {
                     triInfos[t].flag |= AlgorithmFlags.MarkDegenerate;
                     ++degenTriangles;
@@ -125,23 +119,23 @@ namespace VTT.Util
 
 
             // based on the 4 rules, identify groups based on connectivity
-            nrMaxGroups = nrTrianglesIn * 3;
-            groups = new Group[nrMaxGroups];
+            int nrMaxGroups = nrTrianglesIn * 3;
+            Group[] groups = new Group[nrMaxGroups];
             for (int j = 0; j < nrMaxGroups; ++j)
             {
                 groups[j] = new Group();
             }
 
-            groupTrianglesBuffer =  new int[nrTrianglesIn * 3];
+            int[] groupTrianglesBuffer =  new int[nrTrianglesIn * 3];
             //printf("gen 4rule groups begin\n");
-            nrActiveGroups = Build4RuleGroups(triInfos, groups, groupTrianglesBuffer, triListIn, nrTrianglesIn);
+            int nrActiveGroups = Build4RuleGroups(triInfos, groups, groupTrianglesBuffer, triListIn, nrTrianglesIn);
             //printf("gen 4rule groups end\n");
 
             //
 
-            tspace = new TSpace[nrTSPaces];
+            TSpace[] tspace = new TSpace[nrTSPaces];
 
-            for (t = 0; t < nrTSPaces; t++)
+            for (int t = 0; t < nrTSPaces; t++)
             {
                 tspace[t] = new TSpace()
                 {
@@ -156,7 +150,7 @@ namespace VTT.Util
             // based on fAngularThreshold. Finally a tangent space is made for
             // every resulting subgroup
             //printf("gen tspaces begin\n");
-            bRes = GenerateTSpaces(tspace, triInfos, groups, nrActiveGroups, triListIn, fThresCos, ctx);
+            GenerateTSpaces(tspace, triInfos, groups, nrActiveGroups, triListIn, fThresCos, ctx);
             //printf("gen tspaces end\n");
 
             // degenerate quads with one good triangle will be fixed by copying a space from
@@ -166,9 +160,9 @@ namespace VTT.Util
             DegenEpilogue(tspace, triInfos, triListIn, ctx, nrTrianglesIn, totTris);
 
 
-            index = 0;
+            int index = 0;
             result = new TangentData[nrFaces * 3];
-            for (f = 0; f < nrFaces; f++)
+            for (int f = 0; f < nrFaces; f++)
             {
 
                 // I've decided to let degenerate triangles and group-with-anythings
@@ -193,7 +187,7 @@ namespace VTT.Util
                 }*/
 
                 // set data
-                for (i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
                 {
                     TSpace pTSpace = tspace[index];
                     Vector3 tan = pTSpace.os;
@@ -217,63 +211,60 @@ namespace VTT.Util
         private static bool NotZero(Vector3 v) => NotZero(v.X) && NotZero(v.Y) && NotZero(v.Z);
 
         private static int MakeIndex(int face, int vert) => (face << 2) | (vert & 3);
-        private static void IndexToData(ref int face, ref int vert, int indexIn)
-        {
-            vert = indexIn & 3;
-            face = indexIn >> 2;
-        }
 
         private static TSpace AvgTSpace(TSpace ts0, TSpace ts1)
         {
-            TSpace ts_res = new TSpace();
+            TSpace ret = new TSpace();
 
             if (ts0.magS == ts1.magS && ts0.magT == ts1.magT &&
-               Vector3.Equals(ts0.os, ts1.os) && Vector3.Equals(ts0.ot, ts1.ot))
+               Equals(ts0.os, ts1.os) && Equals(ts0.ot, ts1.ot))
             {
-                ts_res.magS = ts0.magS;
-                ts_res.magT = ts0.magT;
-                ts_res.os = ts0.os;
-                ts_res.ot = ts0.ot;
+                ret.magS = ts0.magS;
+                ret.magT = ts0.magT;
+                ret.os = ts0.os;
+                ret.ot = ts0.ot;
             }
             else
             {
-                ts_res.magS = 0.5f * (ts0.magS + ts1.magS);
-                ts_res.magT = 0.5f * (ts0.magT + ts1.magT);
-                ts_res.os = Vector3.Add(ts0.os, ts1.os);
-                ts_res.ot = Vector3.Add(ts0.ot, ts1.ot);
-                if (NotZero(ts_res.os))
+                ret.magS = 0.5f * (ts0.magS + ts1.magS);
+                ret.magT = 0.5f * (ts0.magT + ts1.magT);
+                ret.os = Vector3.Add(ts0.os, ts1.os);
+                ret.ot = Vector3.Add(ts0.ot, ts1.ot);
+                if (NotZero(ret.os))
                 {
-                    ts_res.os = Vector3.Normalize(ts_res.os);
+                    ret.os = Vector3.Normalize(ret.os);
                 }
 
-                if (NotZero(ts_res.ot))
+                if (NotZero(ret.ot))
                 {
-                    ts_res.ot = Vector3.Normalize(ts_res.ot);
+                    ret.ot = Vector3.Normalize(ret.ot);
                 }
             }
 
-            return ts_res;
+            return ret;
         }
 
-        private static int GenerateInitialVerticesIndexList(Triangle[] triangles, int[] triList, Context pContext, int numTrianglesIn)
+        private static int GenerateInitialVerticesIndexList(Triangle[] triangles, int[] triangleIndicesList, Context ctx, int numTriangles)
         {
-            int tSpacesOffs = 0, f = 0, t = 0;
+            int tSpacesOffs = 0;
             int dstTriIndex = 0;
-	        for (f = 0; f < pContext.indices.Length / 3; f++)
+	        for (int f = 0; f < ctx.indices.Length / 3; f++)
 	        {
 		        triangles[dstTriIndex].orgFaceNumber = f;
 		        triangles[dstTriIndex].tSpacesOffset = tSpacesOffs;
 			    int[] pVerts = triangles[dstTriIndex].vertexNum;
-                pVerts[0]=0; pVerts[1]=1; pVerts[2]=2;
+                pVerts[0] = 0; 
+                pVerts[1] = 1; 
+                pVerts[2] = 2;
                 int x = f * 3;
-			    triList[dstTriIndex * 3 + 0] = (int)pContext.indices[x + 0];
-                triList[dstTriIndex * 3 + 1] = (int)pContext.indices[x + 1];
-                triList[dstTriIndex * 3 + 2] = (int)pContext.indices[x + 2];
+                triangleIndicesList[(dstTriIndex * 3) + 0] = (int)ctx.indices[x + 0];
+                triangleIndicesList[(dstTriIndex * 3) + 1] = (int)ctx.indices[x + 1];
+                triangleIndicesList[(dstTriIndex * 3) + 2] = (int)ctx.indices[x + 2];
 			    ++dstTriIndex;	// next
 		        tSpacesOffs += 3;
 	        }
 
-            for (t = 0; t < numTrianglesIn; t++)
+            for (int t = 0; t < numTriangles; t++)
             {
                 triangles[t].flag = 0;
             }
@@ -281,23 +272,14 @@ namespace VTT.Util
             return tSpacesOffs;
         }
 
-        private static void GenerateSharedVerticesIndexList(int[] piTriList_in_and_out, Context pContext, int iNrTrianglesIn)
+        private static void GenerateSharedVerticesIndexList(int[] triangleIndicesList, Context ctx, int numTriangles)
         {
-
-            // Generate bounding box
-            int[] piHashTable = null;
-            int[] piHashCount = null;
-            int[] piHashOffsets = null;
-            int[] piHashCount2 = null;
-	        TempVert[] pTmpVert = null;
-            int i = 0, iChannel = 0, k = 0, e = 0;
-            int iMaxCount = 0;
-            Vector3 vMin = pContext.positions[0], vMax = vMin, vDim;
+            Vector3 vMin = ctx.positions[0], vMax = vMin, vDim;
             float fMin, fMax;
-            for (i = 1; i < (iNrTrianglesIn * 3); i++)
+            for (int i = 1; i < (numTriangles * 3); i++)
 	        {
-		        int index = piTriList_in_and_out[i];
-                Vector3 vP = pContext.positions[index];
+		        int index = triangleIndicesList[i];
+                Vector3 vP = ctx.positions[index];
                 if (vMin.X > vP.X)
                 {
                     vMin.X = vP.X;
@@ -327,140 +309,138 @@ namespace VTT.Util
             }
 
             vDim = Vector3.Subtract(vMax, vMin);
-            iChannel = 0;
-	        fMin = vMin.X; fMax=vMax.X;
+            int channel = 0;
+            fMin = vMin.X; 
+            fMax = vMax.X;
             if (vDim.Y > vDim.X && vDim.Y > vDim.Z)
 	        {
-		        iChannel=1;
+                channel = 1;
 		        fMin = vMin.Y;
 		        fMax = vMax.Y;
 	        }
 
             else if (vDim.Z > vDim.X)
             {
-                iChannel = 2;
+                channel = 2;
                 fMin = vMin.Z;
                 fMax = vMax.Z;
             }
 
             // make allocations
-            piHashTable = new int[iNrTrianglesIn * 3];
-            piHashCount = new int[2048];
-            piHashOffsets = new int[2048];
-            piHashCount2 = new int[2048];
+            int[] hashTable = new int[numTriangles * 3];
+            int[] hashCount = new int[2048];
+            int[] hashOffsets = new int[2048];
+            int[] hashCount2 = new int[2048];
 
             // count amount of elements in each cell unit
-            for (i = 0; i < (iNrTrianglesIn * 3); i++)
+            for (int i = 0; i < (numTriangles * 3); i++)
             {
-                int index = piTriList_in_and_out[i];
-                Vector3 vP = pContext.positions[index];
-                float fVal = iChannel == 0 ? vP.X : (iChannel == 1 ? vP.Y : vP.Z);
-                int iCell = FindGridCell(fMin, fMax, fVal);
-                ++piHashCount[iCell];
+                int index = triangleIndicesList[i];
+                Vector3 vP = ctx.positions[index];
+                float fVal = channel == 0 ? vP.X : (channel == 1 ? vP.Y : vP.Z);
+                int cell = FindGridCell(fMin, fMax, fVal);
+                ++hashCount[cell];
             }
 
             // evaluate start index of each cell.
-            piHashOffsets[0] = 0;
-            for (k = 1; k < 2048; k++)
+            hashOffsets[0] = 0;
+            for (int k = 1; k < 2048; k++)
             {
-                piHashOffsets[k] = piHashOffsets[k - 1] + piHashCount[k - 1];
+                hashOffsets[k] = hashOffsets[k - 1] + hashCount[k - 1];
             }
 
             // insert vertices
-            for (i = 0; i < (iNrTrianglesIn * 3); i++)
+            for (int i = 0; i < (numTriangles * 3); i++)
             {
-                int index = piTriList_in_and_out[i];
-                Vector3 vP = pContext.positions[index];
-                float fVal = iChannel == 0 ? vP.X : (iChannel == 1 ? vP.Y : vP.Z);
-                int iCell = FindGridCell(fMin, fMax, fVal);
-                piHashTable[piHashOffsets[iCell]] = i;
-                ++piHashCount2[iCell];
+                int index = triangleIndicesList[i];
+                Vector3 vP = ctx.positions[index];
+                float fVal = channel == 0 ? vP.X : (channel == 1 ? vP.Y : vP.Z);
+                int cell = FindGridCell(fMin, fMax, fVal);
+                hashTable[hashOffsets[cell]] = i;
+                ++hashCount2[cell];
             }
 
             // find maximum amount of entries in any hash entry
-            iMaxCount = piHashCount[0];
-            for (k = 1; k < 2048; k++)
+            int maxCount = hashCount[0];
+            for (int k = 1; k < 2048; k++)
             {
-                if (iMaxCount < piHashCount[k])
+                if (maxCount < hashCount[k])
                 {
-                    iMaxCount = piHashCount[k];
+                    maxCount = hashCount[k];
                 }
             }
 
-            pTmpVert = new TempVert[iMaxCount];
-            for (int j = 0; j < iMaxCount; ++j)
+            TempVert[] tempVert = new TempVert[maxCount];
+            for (int j = 0; j < maxCount; ++j)
             {
-                pTmpVert[j] = new TempVert();
+                tempVert[j] = new TempVert();
             }
 
             // complete the merge
-            for (k = 0; k < 2048; k++)
+            for (int k = 0; k < 2048; k++)
             {
                 // extract table of cell k and amount of entries in it
-                ArrayPointerWrapper<int> pTable = new ArrayPointerWrapper<int>(piHashTable, piHashOffsets[k]);
-                int iEntries = piHashCount[k];
-                if (iEntries < 2)
+                ArrayPointerWrapper<int> table = new ArrayPointerWrapper<int>(hashTable, hashOffsets[k]);
+                int numEntries = hashCount[k];
+                if (numEntries < 2)
                 {
                     continue;
                 }
 
-                if (pTmpVert != null)
+                if (tempVert != null)
                 {
-                    for (e = 0; e < iEntries; e++)
+                    for (int e = 0; e < numEntries; e++)
                     {
-                        int j = pTable[e];
-                        Vector3 vP = pContext.positions[piTriList_in_and_out[j]];
-                        pTmpVert[e].vert.X = vP.X; 
-                        pTmpVert[e].vert.Y = vP.Y;
-                        pTmpVert[e].vert.Z = vP.Z; 
-                        pTmpVert[e].index = j;
+                        int j = table[e];
+                        Vector3 vP = ctx.positions[triangleIndicesList[j]];
+                        tempVert[e].vert.X = vP.X; 
+                        tempVert[e].vert.Y = vP.Y;
+                        tempVert[e].vert.Z = vP.Z; 
+                        tempVert[e].index = j;
                     }
 
-                    MergeVertsFast(piTriList_in_and_out, pTmpVert, pContext, 0, iEntries - 1);
+                    MergeVertsFast(triangleIndicesList, tempVert, ctx, 0, numEntries - 1);
                 }
                 else
                 {
-                    MergeVertsSlow(piTriList_in_and_out, pContext, pTable, iEntries);
+                    MergeVertsSlow(triangleIndicesList, ctx, table, numEntries);
                 }
             }
         }
 
-        private static void MergeVertsFast(int[] piTriList_in_and_out, TempVert[] pTmpVert, Context pContext, int iL_in, int iR_in)
+        private static void MergeVertsFast(int[] triangleIndicesList, TempVert[] tempVertices, Context ctx, int left, int right)
         {
-            // make bbox
-            int c = 0, l = 0, channel = 0;
-            float[] fvMin = new float[3], fvMax = new float[3];
-            float dx = 0, dy = 0, dz = 0, fSep = 0;
-            for (c = 0; c < 3; c++)
+            float[] min = new float[3], max = new float[3];
+            for (int c = 0; c < 3; c++)
             {
-                Vector3 vert = pTmpVert[iL_in].vert;
-                fvMin[c] = c == 0 ? vert.X : c == 1 ? vert.Y : vert.Z; 
-                fvMax[c] = fvMin[c]; 
+                Vector3 vert = tempVertices[left].vert;
+                min[c] = c == 0 ? vert.X : c == 1 ? vert.Y : vert.Z; 
+                max[c] = min[c]; 
             }
 
-            for (l = (iL_in + 1); l <= iR_in; l++)
+            for (int l = (left + 1); l <= right; l++)
             {
-                for (c = 0; c < 3; c++)
+                for (int c = 0; c < 3; c++)
                 {
-                    Vector3 vert = pTmpVert[l].vert;
+                    Vector3 vert = tempVertices[l].vert;
                     float fv = c == 0 ? vert.X : c == 1 ? vert.Y : vert.Z;
-                    if (fvMin[c] > fv)
+                    if (min[c] > fv)
                     {
-                        fvMin[c] = fv;
+                        min[c] = fv;
                     }
 
-                    if (fvMax[c] < fv)
+                    if (max[c] < fv)
                     {
-                        fvMax[c] = fv;
+                        max[c] = fv;
                     }
                 }
 	        }
 
-	        dx = fvMax[0] - fvMin[0];
-            dy = fvMax[1] - fvMin[1];
-            dz = fvMax[2] - fvMin[2];
+	        float dx = max[0] - min[0];
+            float dy = max[1] - min[1];
+            float dz = max[2] - min[2];
 
-            channel = 0;
+            int channel = 0;
             if (dy > dx && dy > dz)
             {
                 channel = 1;
@@ -470,44 +450,44 @@ namespace VTT.Util
                 channel = 2;
             }
 
-            fSep = 0.5f * (fvMax[channel] + fvMin[channel]);
+            float sep = 0.5f * (max[channel] + min[channel]);
 
             // stop if all vertices are NaNs
-            if (float.IsNaN(fSep))
+            if (float.IsNaN(sep))
             {
                 return;
             }
 
             // terminate recursion when the separation/average value
             // is no longer strictly between fMin and fMax values.
-            if (fSep >= fvMax[channel] || fSep <= fvMin[channel])
+            if (sep >= max[channel] || sep <= min[channel])
             {
                 // complete the weld
-                for (l = iL_in; l <= iR_in; l++)
+                for (int l = left; l <= right; l++)
                 {
-                    int i = pTmpVert[l].index;
-                    int index = piTriList_in_and_out[i];
-                    Vector3 vP = pContext.positions[index];
-                    Vector3 vN = pContext.normals[index];
-                    Vector2 vT = pContext.uvs[index];
+                    int i = tempVertices[l].index;
+                    int index = triangleIndicesList[i];
+                    Vector3 p = ctx.positions[index];
+                    Vector3 n = ctx.normals[index];
+                    Vector2 t = ctx.uvs[index];
 
-                    bool bNotFound = true;
-                    int l2 = iL_in, i2rec = -1;
-                    while (l2 < l && bNotFound)
+                    bool notFound = true;
+                    int l2 = left, i2rec = -1;
+                    while (l2 < l && notFound)
                     {
-                        int i2 = pTmpVert[l2].index;
-                        int index2 = piTriList_in_and_out[i2];
-                        Vector3 vP2 = pContext.positions[index2];
-                        Vector3 vN2 = pContext.normals[index2];
-                        Vector2 vT2 = pContext.uvs[index2];
+                        int i2 = tempVertices[l2].index;
+                        int index2 = triangleIndicesList[i2];
+                        Vector3 vP2 = ctx.positions[index2];
+                        Vector3 vN2 = ctx.normals[index2];
+                        Vector2 vT2 = ctx.uvs[index2];
                         i2rec = i2;
 
                         //if (vP==vP2 && vN==vN2 && vT==vT2)
-                        if (vP.X == vP2.X && vP.Y == vP2.Y && vP.Z == vP2.Z &&
-                            vN.X == vN2.X && vN.Y == vN2.Y && vN.Z == vN2.Z &&
-                            vT.X == vT2.X && vT.Y == vT2.Y)
+                        if (p.X == vP2.X && p.Y == vP2.Y && p.Z == vP2.Z &&
+                            n.X == vN2.X && n.Y == vN2.Y && n.Z == vN2.Z &&
+                            t.X == vT2.X && t.Y == vT2.Y)
                         {
-                            bNotFound = false;
+                            notFound = false;
                         }
                         else
                         {
@@ -516,100 +496,96 @@ namespace VTT.Util
                     }
 
                     // merge if previously found
-                    if (!bNotFound)
+                    if (!notFound)
                     {
-                        piTriList_in_and_out[i] = piTriList_in_and_out[i2rec];
+                        triangleIndicesList[i] = triangleIndicesList[i2rec];
                     }
                 }
             }
             else
             {
-                int iL = iL_in, iR = iR_in;
+                int l = left, r = right;
                 // separate (by fSep) all points between iL_in and iR_in in pTmpVert[]
-                while (iL < iR)
+                while (l < r)
                 {
-                    bool bReadyLeftSwap = false, bReadyRightSwap = false;
-                    while ((!bReadyLeftSwap) && iL < iR)
+                    bool readyLeftSwap = false, readyRightSwap = false;
+                    while ((!readyLeftSwap) && l < r)
                     {
-                        Vector3 vert = pTmpVert[iL].vert;
-                        bReadyLeftSwap = !((channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < fSep);
-                        if (!bReadyLeftSwap)
+                        Vector3 vert = tempVertices[l].vert;
+                        readyLeftSwap = !((channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < sep);
+                        if (!readyLeftSwap)
                         {
-                            ++iL;
+                            ++l;
                         }
                     }
-                    while ((!bReadyRightSwap) && iL < iR)
+                    while ((!readyRightSwap) && l < r)
                     {
-                        Vector3 vert = pTmpVert[iR].vert;
-                        bReadyRightSwap = (channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < fSep;
-                        if (!bReadyRightSwap)
+                        Vector3 vert = tempVertices[r].vert;
+                        readyRightSwap = (channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < sep;
+                        if (!readyRightSwap)
                         {
-                            --iR;
+                            --r;
                         }
                     }
 
-                    if (bReadyLeftSwap && bReadyRightSwap)
+                    if (readyLeftSwap && readyRightSwap)
                     {
-                        TempVert sTmp = pTmpVert[iL];
-                        pTmpVert[iL] = pTmpVert[iR];
-                        pTmpVert[iR] = sTmp;
-                        ++iL; --iR;
+                        (tempVertices[r], tempVertices[l]) = (tempVertices[l], tempVertices[r]);
+                        ++l; --r;
                     }
                 }
 
-                if (iL == iR)
+                if (l == r)
                 {
-                    Vector3 vert = pTmpVert[iR].vert;
-                    bool bReadyRightSwap = (channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < fSep;
-                    if (bReadyRightSwap)
+                    Vector3 vert = tempVertices[r].vert;
+                    bool readyRightSwap = (channel == 0 ? vert.X : channel == 1 ? vert.Y : vert.Z) < sep;
+                    if (readyRightSwap)
                     {
-                        ++iL;
+                        ++l;
                     }
                     else
                     {
-                        --iR;
+                        --r;
                     }
                 }
 
                 // only need to weld when there is more than 1 instance of the (x,y,z)
-                if (iL_in < iR)
+                if (left < r)
                 {
-                    MergeVertsFast(piTriList_in_and_out, pTmpVert, pContext, iL_in, iR);    // weld all left of fSep
+                    MergeVertsFast(triangleIndicesList, tempVertices, ctx, left, r);    // weld all left of fSep
                 }
 
-                if (iL < iR_in)
+                if (l < right)
                 {
-                    MergeVertsFast(piTriList_in_and_out, pTmpVert, pContext, iL, iR_in);    // weld all right of (or equal to) fSep
+                    MergeVertsFast(triangleIndicesList, tempVertices, ctx, l, right);    // weld all right of (or equal to) fSep
                 }
             }
         }
 
-        private static void MergeVertsSlow(int[] piTriList_in_and_out, Context pContext, ArrayPointerWrapper<int> pTable, int iEntries)
+        private static void MergeVertsSlow(int[] triangleIndicesList, Context ctx, ArrayPointerWrapper<int> table, int numEntries)
         {
             // this can be optimized further using a tree structure or more hashing.
-            int e = 0;
-            for (e = 0; e < iEntries; e++)
+            for (int e = 0; e < numEntries; e++)
 	        {
-		        int i = pTable[e];
-                int index = piTriList_in_and_out[i];
-                Vector3 vP = pContext.positions[index];
-                Vector3 vN = pContext.normals[index];
-                Vector2 vT = pContext.uvs[index];
+		        int i = table[e];
+                int index = triangleIndicesList[i];
+                Vector3 p = ctx.positions[index];
+                Vector3 n = ctx.normals[index];
+                Vector2 t = ctx.uvs[index];
 
-                bool bNotFound = true;
+                bool notFound = true;
                 int e2 = 0, i2rec = -1;
-                while (e2 < e && bNotFound)
+                while (e2 < e && notFound)
 		        {
-			        int i2 = pTable[e2];
-                    int index2 = piTriList_in_and_out[i2];
-                    Vector3 vP2 = pContext.positions[index2];
-                    Vector3 vN2 = pContext.normals[index2];
-                    Vector2 vT2 = pContext.uvs[index2];
+			        int i2 = table[e2];
+                    int index2 = triangleIndicesList[i2];
+                    Vector3 vP2 = ctx.positions[index2];
+                    Vector3 vN2 = ctx.normals[index2];
+                    Vector2 vT2 = ctx.uvs[index2];
                     i2rec = i2;
-
-                    if (Vector3.Equals(vP, vP2) && Vector3.Equals(vN, vN2) && Vector2.Equals(vT, vT2))
+                    if (Equals(p, vP2) && Equals(n, vN2) && Equals(t, vT2))
                     {
-                        bNotFound = false;
+                        notFound = false;
                     }
                     else
                     {
@@ -617,33 +593,31 @@ namespace VTT.Util
                     }
                 }
 
-                if (!bNotFound)
+                if (!notFound)
                 {
-                    piTriList_in_and_out[i] = piTriList_in_and_out[i2rec];
+                    triangleIndicesList[i] = triangleIndicesList[i2rec];
                 }
             }
         }
 
-        private static void DegenPrologue(Triangle[] pTriInfos, int[] piTriList_out, int iNrTrianglesIn, int iTotTris)
+        private static void DegenPrologue(Triangle[] triangles, int[] triangleIndicesList, int numTriangles, int numTotalTriangles)
         {
-
-            int iNextGoodTriangleSearchIndex = -1;
-            bool bStillFindingGoodOnes;
+            bool stillFindingGoodOnes;
 
             // locate quads with only one good triangle
             int t = 0;
-            while (t < (iTotTris - 1))
+            while (t < (numTotalTriangles - 1))
 	        {
-		        int iFO_a = pTriInfos[t].orgFaceNumber;
-                int iFO_b = pTriInfos[t + 1].orgFaceNumber;
-		        if (iFO_a==iFO_b)	// this is a quad
-		        {
-                    bool bIsDeg_a = (pTriInfos[t].flag & AlgorithmFlags.MarkDegenerate) != 0;
-                    bool bIsDeg_b = (pTriInfos[t + 1].flag & AlgorithmFlags.MarkDegenerate) != 0;
-			        if (bIsDeg_a != bIsDeg_b)
+		        int faceA = triangles[t].orgFaceNumber;
+                int faceB = triangles[t + 1].orgFaceNumber;
+                if (faceA == faceB) // this is a quad
+                {
+                    bool isDegenerateA = (triangles[t].flag & AlgorithmFlags.MarkDegenerate) != 0;
+                    bool isDegenerateB = (triangles[t + 1].flag & AlgorithmFlags.MarkDegenerate) != 0;
+			        if (isDegenerateA != isDegenerateB)
 			        {
-                        pTriInfos[t].flag |= AlgorithmFlags.QuadOneDegenTri;
-				        pTriInfos[t + 1].flag |= AlgorithmFlags.QuadOneDegenTri;
+                        triangles[t].flag |= AlgorithmFlags.QuadOneDegenTri;
+				        triangles[t + 1].flag |= AlgorithmFlags.QuadOneDegenTri;
 			        }
 
                     t += 2;
@@ -657,95 +631,89 @@ namespace VTT.Util
 
 	        // reorder list so all degen triangles are moved to the back
 	        // without reordering the good triangles
-	        iNextGoodTriangleSearchIndex = 1;
+	        int nextGoodTriangleSearchIndex = 1;
             t = 0;
-            bStillFindingGoodOnes = true;
-            while (t < iNrTrianglesIn && bStillFindingGoodOnes)
+            stillFindingGoodOnes = true;
+            while (t < numTriangles && stillFindingGoodOnes)
             {
-                bool bIsGood = (pTriInfos[t].flag & AlgorithmFlags.MarkDegenerate) == 0;
-                if (bIsGood)
+                bool isGood = (triangles[t].flag & AlgorithmFlags.MarkDegenerate) == 0;
+                if (isGood)
                 {
-                    if (iNextGoodTriangleSearchIndex < (t + 2))
+                    if (nextGoodTriangleSearchIndex < (t + 2))
                     {
-                        iNextGoodTriangleSearchIndex = t + 2;
+                        nextGoodTriangleSearchIndex = t + 2;
                     }
                 }
                 else
                 {
                     int t0, t1;
                     // search for the first good triangle.
-                    bool bJustADegenerate = true;
-                    while (bJustADegenerate && iNextGoodTriangleSearchIndex < iTotTris)
+                    bool justADegenerate = true;
+                    while (justADegenerate && nextGoodTriangleSearchIndex < numTotalTriangles)
                     {
-                        bool bIsGood1 = (pTriInfos[iNextGoodTriangleSearchIndex].flag & AlgorithmFlags.MarkDegenerate) == 0 ? true : false;
+                        bool bIsGood1 = (triangles[nextGoodTriangleSearchIndex].flag & AlgorithmFlags.MarkDegenerate) == 0;
                         if (bIsGood1)
                         {
-                            bJustADegenerate = false;
+                            justADegenerate = false;
                         }
                         else
                         {
-                            ++iNextGoodTriangleSearchIndex;
+                            ++nextGoodTriangleSearchIndex;
                         }
                     }
 
                     t0 = t;
-                    t1 = iNextGoodTriangleSearchIndex;
-                    ++iNextGoodTriangleSearchIndex;
+                    t1 = nextGoodTriangleSearchIndex;
+                    ++nextGoodTriangleSearchIndex;
 
                     // swap triangle t0 and t1
-                    if (!bJustADegenerate)
+                    if (!justADegenerate)
                     {
-                        int i = 0;
-                        for (i = 0; i < 3; i++)
+                        for (int i = 0; i < 3; i++)
                         {
-                            int index = piTriList_out[t0 * 3 + i];
-                            piTriList_out[t0 * 3 + i] = piTriList_out[t1 * 3 + i];
-                            piTriList_out[t1 * 3 + i] = index;
+                            (triangleIndicesList[(t1 * 3) + i], triangleIndicesList[(t0 * 3) + i]) = (triangleIndicesList[(t0 * 3) + i], triangleIndicesList[(t1 * 3) + i]);
                         }
 
-                        Triangle tri_info = pTriInfos[t0];
-                        pTriInfos[t0] = pTriInfos[t1];
-                        pTriInfos[t1] = tri_info;
+                        (triangles[t1], triangles[t0]) = (triangles[t0], triangles[t1]);
                     }
                     else
                     {
-                        bStillFindingGoodOnes = false; // this is not supposed to happen
+                        stillFindingGoodOnes = false; // this is not supposed to happen
                     }
                 }
 
-                if (bStillFindingGoodOnes)
+                if (stillFindingGoodOnes)
                 {
                     ++t;
                 }
             }
         }
 
-        private static void DegenEpilogue(TSpace[] psTspace, Triangle[] pTriInfos, int[] piTriListIn, Context pContext, int iNrTrianglesIn, int iTotTris)
+        private static void DegenEpilogue(TSpace[] tSpaces, Triangle[] triangles, int[] triangleIndicesList, Context ctx, int numTriangles, int numTotalTriangles)
         {
 
-            int t = 0, i = 0;
             // deal with degenerate triangles
             // punishment for degenerate triangles is O(N^2)
-            for (t = iNrTrianglesIn; t < iTotTris; t++)
+            for (int t = numTriangles; t < numTotalTriangles; t++)
 	        {
                 // degenerate triangles on a quad with one good triangle are skipped
                 // here but processed in the next loop
-                bool bSkip = (pTriInfos[t].flag & AlgorithmFlags.QuadOneDegenTri) != 0;
-		        if (!bSkip)
+                bool skip = (triangles[t].flag & AlgorithmFlags.QuadOneDegenTri) != 0;
+		        if (!skip)
 		        {
-                    for (i = 0; i < 3; i++)
+                    for (int i = 0; i < 3; i++)
 			        {
-				        int index1 = piTriListIn[t * 3 + i];
+                        int index1 = triangleIndicesList[(t * 3) + i];
                         // search through the good triangles
-                        bool bNotFound = true;
+                        bool notFound = true;
                         int j = 0;
-                        while (bNotFound && j < (3 * iNrTrianglesIn))
+                        while (notFound && j < (3 * numTriangles))
 				        {
 
-                            int index2 = piTriListIn[j];
+                            int index2 = triangleIndicesList[j];
                             if (index1 == index2)
                             {
-                                bNotFound = false;
+                                notFound = false;
                             }
                             else
                             {
@@ -753,61 +721,60 @@ namespace VTT.Util
                             }
                         }
 
-				        if (!bNotFound)
+				        if (!notFound)
 				        {
-					        int iTri = j / 3;
-                            int iVert = j % 3;
-                            int iSrcVert = pTriInfos[iTri].vertexNum[iVert];
-                            int iSrcOffs = pTriInfos[iTri].tSpacesOffset;
-                            int iDstVert = pTriInfos[t].vertexNum[i];
-                            int iDstOffs = pTriInfos[t].tSpacesOffset;
+					        int tri = j / 3;
+                            int vert = j % 3;
+                            int srcVert = triangles[tri].vertexNum[vert];
+                            int srcOffs = triangles[tri].tSpacesOffset;
+                            int dstVert = triangles[t].vertexNum[i];
+                            int dstOffs = triangles[t].tSpacesOffset;
 
                             // copy tspace
-                            psTspace[iDstOffs + iDstVert] = psTspace[iSrcOffs + iSrcVert];
+                            tSpaces[dstOffs + dstVert] = tSpaces[srcOffs + srcVert];
 				        }
 			        }
 		        }
 	        }
 
 	        // deal with degenerate quads with one good triangle
-	        for (t = 0; t < iNrTrianglesIn; t++)
+	        for (int t = 0; t < numTriangles; t++)
             {
                 // this triangle belongs to a quad where the
                 // other triangle is degenerate
-                if ((pTriInfos[t].flag & AlgorithmFlags.QuadOneDegenTri) != 0)
+                if ((triangles[t].flag & AlgorithmFlags.QuadOneDegenTri) != 0)
                 {
-                    Vector3 vDstP;
-                    int iOrgF = -1;
-                    bool bNotFound;
-                    int[] pV = pTriInfos[t].vertexNum;
-                    int iFlag = (1 << pV[0]) | (1 << pV[1]) | (1 << pV[2]);
-                    int iMissingIndex = 0;
-                    if ((iFlag & 2) == 0)
+                    Vector3 dstP;
+                    bool notFound;
+                    int[] vertexNumbers = triangles[t].vertexNum;
+                    int flag = (1 << vertexNumbers[0]) | (1 << vertexNumbers[1]) | (1 << vertexNumbers[2]);
+                    int missingIndex = 0;
+                    if ((flag & 2) == 0)
                     {
-                        iMissingIndex = 1;
+                        missingIndex = 1;
                     }
-                    else if ((iFlag & 4) == 0)
+                    else if ((flag & 4) == 0)
                     {
-                        iMissingIndex = 2;
+                        missingIndex = 2;
                     }
-                    else if ((iFlag & 8) == 0)
+                    else if ((flag & 8) == 0)
                     {
-                        iMissingIndex = 3;
+                        missingIndex = 3;
                     }
 
-                    iOrgF = pTriInfos[t].orgFaceNumber;
-                    vDstP = pContext.positions[MakeIndex(iOrgF, iMissingIndex)];
-                    bNotFound = true;
-                    i = 0;
-                    while (bNotFound && i < 3)
+                    int orgFace = triangles[t].orgFaceNumber;
+                    dstP = ctx.positions[MakeIndex(orgFace, missingIndex)];
+                    notFound = true;
+                    int i = 0;
+                    while (notFound && i < 3)
                     {
-                        int iVert = pV[i];
-                        Vector3 vSrcP = pContext.positions[MakeIndex(iOrgF, iVert)];
-                        if (Vector3.Equals(vSrcP, vDstP))
+                        int vertex = vertexNumbers[i];
+                        Vector3 vSrcP = ctx.positions[MakeIndex(orgFace, vertex)];
+                        if (Equals(vSrcP, dstP))
                         {
-                            int iOffs = pTriInfos[t].tSpacesOffset;
-                            psTspace[iOffs + iMissingIndex] = psTspace[iOffs + iVert];
-                            bNotFound = false;
+                            int offset = triangles[t].tSpacesOffset;
+                            tSpaces[offset + missingIndex] = tSpaces[offset + vertex];
+                            notFound = false;
                         }
                         else
                         {
@@ -818,57 +785,56 @@ namespace VTT.Util
             }
         }
 
-        private static float CalcTexArea(Context pContext, ArrayPointerWrapper<int> indices)
+        private static float CalcTexArea(Context ctx, ArrayPointerWrapper<int> indices)
         {
-            Vector2 t1 = pContext.uvs[indices[0]];
-            Vector2 t2 = pContext.uvs[indices[1]];
-            Vector2 t3 = pContext.uvs[indices[2]];
+            Vector2 t1 = ctx.uvs[indices[0]];
+            Vector2 t2 = ctx.uvs[indices[1]];
+            Vector2 t3 = ctx.uvs[indices[2]];
             float t21x = t2.X - t1.X;
             float t21y = t2.Y - t1.Y;
             float t31x = t3.X - t1.X;
             float t31y = t3.Y - t1.Y;
-            float fSignedAreaSTx2 = t21x * t31y - t21y * t31x;
-            return fSignedAreaSTx2 < 0 ? (-fSignedAreaSTx2) : fSignedAreaSTx2;
+            float signedAreaSTx2 = (t21x * t31y) - (t21y * t31x);
+            return signedAreaSTx2 < 0 ? (-signedAreaSTx2) : signedAreaSTx2;
         }
 
-        private static void InitTriInfo(Triangle[] pTriInfos, int[] piTriListIn, Context pContext, int iNrTrianglesIn)
+        private static void InitTriInfo(Triangle[] triangles, int[] triangleIndicesList, Context ctx, int numTriangles)
         {
 
-            int f = 0, i = 0, t = 0;
             // pTriInfos[f].iFlag is cleared in GenerateInitialVerticesIndexList() which is called before this function.
 
             // generate neighbor info list
-            for (f = 0; f < iNrTrianglesIn; f++)
+            for (int f = 0; f < numTriangles; f++)
             {
-                for (i=0; i<3; i++)
+                for (int i = 0; i < 3; i++)
 		        {
-			        pTriInfos[f].faceNeighbours[i] = -1;
-			        pTriInfos[f].assignedGroups[i] = null;
+			        triangles[f].faceNeighbours[i] = -1;
+			        triangles[f].assignedGroups[i] = null;
 
-			        pTriInfos[f].os.X=0.0f; 
-                    pTriInfos[f].os.Y=0.0f; 
-                    pTriInfos[f].os.Z=0.0f;
-			        pTriInfos[f].ot.X=0.0f; 
-                    pTriInfos[f].ot.Y=0.0f; 
-                    pTriInfos[f].ot.Z=0.0f;
-			        pTriInfos[f].magS = 0;
-			        pTriInfos[f].magT = 0;
+                    triangles[f].os.X = 0.0f;
+                    triangles[f].os.Y = 0.0f;
+                    triangles[f].os.Z = 0.0f;
+                    triangles[f].ot.X = 0.0f;
+                    triangles[f].ot.Y = 0.0f;
+                    triangles[f].ot.Z = 0.0f;
+			        triangles[f].magS = 0;
+			        triangles[f].magT = 0;
 
 			        // assumed bad
-			        pTriInfos[f].flag |= AlgorithmFlags.GroupWithAny;
+			        triangles[f].flag |= AlgorithmFlags.GroupWithAny;
 		        }
             }
 
             // evaluate first order derivatives
-            for (f = 0; f < iNrTrianglesIn; f++)
+            for (int f = 0; f < numTriangles; f++)
 	        {
 		        // initial values
-		        Vector3 v1 = pContext.positions[piTriListIn[f * 3 + 0]];
-                Vector3 v2 = pContext.positions[piTriListIn[f * 3 + 1]];
-                Vector3 v3 = pContext.positions[piTriListIn[f * 3 + 2]];
-                Vector2 t1 = pContext.uvs[piTriListIn[f * 3 + 0]];
-                Vector2 t2 = pContext.uvs[piTriListIn[f * 3 + 1]];
-                Vector2 t3 = pContext.uvs[piTriListIn[f * 3 + 2]];
+		        Vector3 v1 = ctx.positions[triangleIndicesList[(f * 3) + 0]];
+                Vector3 v2 = ctx.positions[triangleIndicesList[(f * 3) + 1]];
+                Vector3 v3 = ctx.positions[triangleIndicesList[(f * 3) + 2]];
+                Vector2 t1 = ctx.uvs[triangleIndicesList[(f * 3) + 0]];
+                Vector2 t2 = ctx.uvs[triangleIndicesList[(f * 3) + 1]];
+                Vector2 t3 = ctx.uvs[triangleIndicesList[(f * 3) + 2]];
 
                 float t21x = t2.X - t1.X;
                 float t21y = t2.Y - t1.Y;
@@ -877,77 +843,78 @@ namespace VTT.Util
                 Vector3 d1 = Vector3.Subtract(v2, v1);
                 Vector3 d2 = Vector3.Subtract(v3, v1);
 
-                float fSignedAreaSTx2 = t21x * t31y - t21y * t31x;
+                float signedAreaSTx2 = (t21x * t31y) - (t21y * t31x);
                 //assert(fSignedAreaSTx2!=0);
                 Vector3 vOs = Vector3.Subtract(Vector3.Multiply(t31y, d1), Vector3.Multiply(t21y, d2));   // eq 18
                 Vector3 vOt = Vector3.Add(Vector3.Multiply(-t31x, d1), Vector3.Multiply(t21x, d2)); // eq 19
 
-                pTriInfos[f].flag |= (fSignedAreaSTx2 > 0 ? AlgorithmFlags.OrientPreserving : 0);
+                triangles[f].flag |= (signedAreaSTx2 > 0 ? AlgorithmFlags.OrientPreserving : 0);
 
-		        if (NotZero(fSignedAreaSTx2))
+		        if (NotZero(signedAreaSTx2))
 		        {
-			        float fAbsArea = MathF.Abs(fSignedAreaSTx2);
-                    float fLenOs = vOs.Length();
-                    float fLenOt = vOt.Length();
-                    float fS = (pTriInfos[f].flag & AlgorithmFlags.OrientPreserving) == 0 ? (-1.0f) : 1.0f;
-                    if (NotZero(fLenOs))
+			        float absArea = MathF.Abs(signedAreaSTx2);
+                    float lenOs = vOs.Length();
+                    float lenOt = vOt.Length();
+                    float s = (triangles[f].flag & AlgorithmFlags.OrientPreserving) == 0 ? (-1.0f) : 1.0f;
+                    if (NotZero(lenOs))
                     {
-                        pTriInfos[f].os = Vector3.Multiply(fS / fLenOs, vOs);
+                        triangles[f].os = Vector3.Multiply(s / lenOs, vOs);
                     }
 
-                    if (NotZero(fLenOt))
+                    if (NotZero(lenOt))
                     {
-                        pTriInfos[f].ot = Vector3.Multiply(fS / fLenOt, vOt);
+                        triangles[f].ot = Vector3.Multiply(s / lenOt, vOt);
                     }
 
                     // evaluate magnitudes prior to normalization of vOs and vOt
-                    pTriInfos[f].magS = fLenOs / fAbsArea;
-			        pTriInfos[f].magT = fLenOt / fAbsArea;
+                    triangles[f].magS = lenOs / absArea;
+			        triangles[f].magT = lenOt / absArea;
 
                     // if this is a good triangle
-                    if (NotZero(pTriInfos[f].magS) && NotZero(pTriInfos[f].magT))
+                    if (NotZero(triangles[f].magS) && NotZero(triangles[f].magT))
                     {
-                        pTriInfos[f].flag &= (~AlgorithmFlags.GroupWithAny);
+                        triangles[f].flag &= (~AlgorithmFlags.GroupWithAny);
                     }
                 }
 	        }
 
-	        // force otherwise healthy quads to a fixed orientation
-	        while (t < (iNrTrianglesIn - 1))
+            // force otherwise healthy quads to a fixed orientation
+            int t = 0;
+	        while (t < (numTriangles - 1))
             {
-                int iFO_a = pTriInfos[t].orgFaceNumber;
-                int iFO_b = pTriInfos[t + 1].orgFaceNumber;
-                if (iFO_a == iFO_b) // this is a quad
+                int faceA = triangles[t].orgFaceNumber;
+                int faceB = triangles[t + 1].orgFaceNumber;
+                if (faceA == faceB) // this is a quad
                 {
-                    bool bIsDeg_a = (pTriInfos[t].flag & AlgorithmFlags.MarkDegenerate) != 0;
-                    bool bIsDeg_b = (pTriInfos[t + 1].flag & AlgorithmFlags.MarkDegenerate) != 0;
+                    bool isDegenerateA = (triangles[t].flag & AlgorithmFlags.MarkDegenerate) != 0;
+                    bool isDegenerateB = (triangles[t + 1].flag & AlgorithmFlags.MarkDegenerate) != 0;
 
                     // bad triangles should already have been removed by
                     // DegenPrologue(), but just in case check bIsDeg_a and bIsDeg_a are false
-                    if (!bIsDeg_a && !bIsDeg_b)
+                    if (!isDegenerateA && !isDegenerateB)
                     {
-                        bool bOrientA = (pTriInfos[t].flag & AlgorithmFlags.OrientPreserving) != 0;
-                        bool bOrientB = (pTriInfos[t + 1].flag & AlgorithmFlags.OrientPreserving) != 0;
+                        bool orientA = (triangles[t].flag & AlgorithmFlags.OrientPreserving) != 0;
+                        bool orientB = (triangles[t + 1].flag & AlgorithmFlags.OrientPreserving) != 0;
                         // if this happens the quad has extremely bad mapping!!
-                        if (bOrientA != bOrientB)
+                        if (orientA != orientB)
                         {
                             //printf("found quad with bad mapping\n");
-                            bool bChooseOrientFirstTri = false;
-                            if ((pTriInfos[t + 1].flag & AlgorithmFlags.GroupWithAny) != 0)
+                            bool chooseOrientFirstTri = false;
+                            if ((triangles[t + 1].flag & AlgorithmFlags.GroupWithAny) != 0)
                             {
-                                bChooseOrientFirstTri = true;
+                                chooseOrientFirstTri = true;
                             }
-                            else if (CalcTexArea(pContext, new ArrayPointerWrapper<int>(piTriListIn, t * 3 + 0)) >= CalcTexArea(pContext, new ArrayPointerWrapper<int>(piTriListIn, (t + 1) * 3 + 0)))
+                            else if (CalcTexArea(ctx, new ArrayPointerWrapper<int>(triangleIndicesList, (t * 3) + 0)) >= CalcTexArea(ctx, new ArrayPointerWrapper<int>(triangleIndicesList, ((t + 1) * 3) + 0)))
                             {
-                                bChooseOrientFirstTri = true;
+                                chooseOrientFirstTri = true;
                             }
 
                             // force match
                             {
-                                int t0 = bChooseOrientFirstTri ? t : (t + 1);
-                                int t1 = bChooseOrientFirstTri ? (t + 1) : t;
-                                pTriInfos[t1].flag &= (~AlgorithmFlags.OrientPreserving);    // clear first
-                                pTriInfos[t1].flag |= (pTriInfos[t0].flag & AlgorithmFlags.OrientPreserving);   // copy bit
+                                int t0 = chooseOrientFirstTri ? t : (t + 1);
+                                int t1 = chooseOrientFirstTri ? (t + 1) : t;
+                                triangles[t1].flag &= (~AlgorithmFlags.OrientPreserving);    // clear first
+                                triangles[t1].flag |= (triangles[t0].flag & AlgorithmFlags.OrientPreserving);   // copy bit
                             }
                         }
                     }
@@ -960,198 +927,192 @@ namespace VTT.Util
                 }
             }
 
-            Edge[] pEdges = new Edge[iNrTrianglesIn * 3];
+            Edge[] pEdges = new Edge[numTriangles * 3];
             for (int j = 0; j < pEdges.Length; ++j)
             {
                 pEdges[j] = new Edge();
             }
 
-            BuildNeighborsFast(pTriInfos, pEdges, piTriListIn, iNrTrianglesIn);
+            BuildNeighborsFast(triangles, pEdges, triangleIndicesList, numTriangles);
         }
 
-        private static void QuickSortEdges(Edge[] pSortBuffer, int iLeft, int iRight, int channel, uint uSeed)
+        private static void QuickSortEdges(Edge[] sortBuffer, int left, int right, int channel, uint seed)
         {
             uint t;
-            int iL, iR, n, index, iMid;
+            int l, r, n, index, mid;
 
             // early out
-            Edge sTmp;
-            int iElems = iRight - iLeft + 1;
-            if (iElems < 2)
+            Edge tmp;
+            int elems = right - left + 1;
+            if (elems < 2)
             {
                 return;
             }
-            else if (iElems == 2)
+            else if (elems == 2)
 	        {
-		        if (pSortBuffer[iLeft][channel] > pSortBuffer[iRight][channel])
+		        if (sortBuffer[left][channel] > sortBuffer[right][channel])
 		        {
-			        sTmp = pSortBuffer[iLeft];
-			        pSortBuffer[iLeft] = pSortBuffer[iRight];
-			        pSortBuffer[iRight] = sTmp;
+			        tmp = sortBuffer[left];
+			        sortBuffer[left] = sortBuffer[right];
+			        sortBuffer[right] = tmp;
 		        }
 
 		        return;
 	        }
 
             // Random
-            t = uSeed & 31;
-            t = (uSeed << (int)t) | (uSeed >> (32 - (int)t));
-            uSeed = uSeed + t + 3;
+            t = seed & 31;
+            t = (seed << (int)t) | (seed >> (32 - (int)t));
+            seed = seed + t + 3;
             // Random end
 
-            iL = iLeft;
-            iR = iRight;
-            n = (iR - iL) + 1;
-            index = (int)(uSeed % n);
+            l = left;
+            r = right;
+            n = r - l + 1;
+            index = (int)(seed % n);
 
-            iMid = pSortBuffer[index + iL][channel];
+            mid = sortBuffer[index + l][channel];
 
             do
             {
-                while (pSortBuffer[iL][channel] < iMid)
+                while (sortBuffer[l][channel] < mid)
                 {
-                    ++iL;
+                    ++l;
                 }
 
-                while (pSortBuffer[iR][channel] > iMid)
+                while (sortBuffer[r][channel] > mid)
                 {
-                    --iR;
+                    --r;
                 }
 
-                if (iL <= iR)
+                if (l <= r)
                 {
-                    sTmp = pSortBuffer[iL];
-                    pSortBuffer[iL] = pSortBuffer[iR];
-                    pSortBuffer[iR] = sTmp;
-                    ++iL; --iR;
+                    tmp = sortBuffer[l];
+                    sortBuffer[l] = sortBuffer[r];
+                    sortBuffer[r] = tmp;
+                    ++l; --r;
                 }
             }
-            while (iL <= iR);
+            while (l <= r);
 
-            if (iLeft < iR)
+            if (left < r)
             {
-                QuickSortEdges(pSortBuffer, iLeft, iR, channel, uSeed);
+                QuickSortEdges(sortBuffer, left, r, channel, seed);
             }
 
-            if (iL < iRight)
+            if (l < right)
             {
-                QuickSortEdges(pSortBuffer, iL, iRight, channel, uSeed);
+                QuickSortEdges(sortBuffer, l, right, channel, seed);
             }
         }
 
-        private static void GetEdge(ref int i0_out, ref int i1_out, ref int edgenum_out, ArrayPointerWrapper<int>indices, int i0_in, int i1_in)
+        private static void GetEdge(ref int index0, ref int index1, ref int edgenum, ArrayPointerWrapper<int> indices, int i0, int i1)
         {
-	        edgenum_out = -1;
             // test if first index is on the edge
-            if (indices[0] == i0_in || indices[0] == i1_in)
+            if (indices[0] == i0 || indices[0] == i1)
 	        {
                 // test if second index is on the edge
-                if (indices[1] == i0_in || indices[1] == i1_in)
+                if (indices[1] == i0 || indices[1] == i1)
 		        {
-                    edgenum_out = 0;    // first edge
-                    i0_out = indices[0];
-                    i1_out = indices[1];
+                    edgenum = 0;    // first edge
+                    index0 = indices[0];
+                    index1 = indices[1];
 		        }
 		        else
 		        {
-                    edgenum_out = 2;    // third edge
-                    i0_out = indices[2];
-                    i1_out = indices[0];
+                    edgenum = 2;    // third edge
+                    index0 = indices[2];
+                    index1 = indices[0];
 		        }
 	        }
-
             else
             {
                 // only second and third index is on the edge
-                edgenum_out = 1; // second edge
-                i0_out = indices[1];
-                i1_out = indices[2];
+                edgenum = 1; // second edge
+                index0 = indices[1];
+                index1 = indices[2];
             }
         }
 
-        private static void BuildNeighborsFast(Triangle[] pTriInfos, Edge[] pEdges, int[] piTriListIn, int iNrTrianglesIn)
+        private static void BuildNeighborsFast(Triangle[] triangles, Edge[] edges, int[] triangleIndicesList, int numTriangles)
         {
             // build array of edges
-            uint uSeed = 39871946;                // could replace with a random seed?
-            int iEntries = 0, iCurStartIndex = -1, f = 0, i = 0;
-            for (f = 0; f < iNrTrianglesIn; f++)
+            uint seed = 39871946;                // could replace with a random seed?
+            for (int f = 0; f < numTriangles; f++)
             {
-                for (i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
 		        {
-			        int i0 = piTriListIn[f * 3 + i];
-                    int i1 = piTriListIn[f * 3 + (i < 2 ? (i + 1) : 0)];
-                    pEdges[f * 3 + i].i0 = i0 < i1 ? i0 : i1;          // put minimum index in i0
-                    pEdges[f * 3 + i].i1 = !(i0 < i1) ? i0 : i1;        // put maximum index in i1
-                    pEdges[f * 3 + i].f = f;							// record face number
-		        }
+                    int i0 = triangleIndicesList[(f * 3) + i];
+                    int i1 = triangleIndicesList[(f * 3) + (i < 2 ? (i + 1) : 0)];
+                    edges[(f * 3) + i].i0 = i0 < i1 ? i0 : i1;          // put minimum index in i0
+                    edges[(f * 3) + i].i1 = !(i0 < i1) ? i0 : i1;        // put maximum index in i1
+                    edges[(f * 3) + i].f = f;                         // record face number
+                }
             }
 
             // sort over all edges by i0, this is the pricy one.
-            QuickSortEdges(pEdges, 0, iNrTrianglesIn*3-1, 0, uSeed);    // sort channel 0 which is i0
+            QuickSortEdges(edges, 0, (numTriangles * 3) - 1, 0, seed);    // sort channel 0 which is i0
 
             // sub sort over i1, should be fast.
             // could replace this with a 64 bit int sort over (i0,i1)
             // with i0 as msb in the quicksort call above.
-            iEntries = iNrTrianglesIn*3;
-	        iCurStartIndex = 0;
-	        for (i=1; i<iEntries; i++)
+            int entries = numTriangles*3;
+	        int curStartIndex = 0;
+            for (int i = 1; i < entries; i++)
 	        {
-		        if (pEdges[iCurStartIndex].i0 != pEdges[i].i0)
+		        if (edges[curStartIndex].i0 != edges[i].i0)
 		        {
-			        int iL = iCurStartIndex;
-                    int iR = i - 1;
+			        int l = curStartIndex;
+                    int r = i - 1;
                     //const int iElems = i-iL;
-                    iCurStartIndex = i;
-			        QuickSortEdges(pEdges, iL, iR, 1, uSeed);   // sort channel 1 which is i1
+                    curStartIndex = i;
+			        QuickSortEdges(edges, l, r, 1, seed);   // sort channel 1 which is i1
                 }
 	        }
 
 	        // sub sort over f, which should be fast.
 	        // this step is to remain compliant with BuildNeighborsSlow() when
 	        // more than 2 triangles use the same edge (such as a butterfly topology).
-	        iCurStartIndex = 0;
-            for (i = 1; i < iEntries; i++)
+	        curStartIndex = 0;
+            for (int i = 1; i < entries; i++)
             {
-                if (pEdges[iCurStartIndex].i0 != pEdges[i].i0 || pEdges[iCurStartIndex].i1 != pEdges[i].i1)
+                if (edges[curStartIndex].i0 != edges[i].i0 || edges[curStartIndex].i1 != edges[i].i1)
                 {
-                    int iL = iCurStartIndex;
-                    int iR = i - 1;
+                    int l = curStartIndex;
+                    int r = i - 1;
                     //const int iElems = i-iL;
-                    iCurStartIndex = i;
-                    QuickSortEdges(pEdges, iL, iR, 2, uSeed);   // sort channel 2 which is f
+                    curStartIndex = i;
+                    QuickSortEdges(edges, l, r, 2, seed);   // sort channel 2 which is f
                 }
             }
 
             // pair up, adjacent triangles
-            for (i = 0; i < iEntries; i++)
+            for (int i = 0; i < entries; i++)
             {
-                int i0 = pEdges[i].i0;
-                int i1 = pEdges[i].i1;
-                f = pEdges[i].f;
-                bool bUnassigned_A;
-
-                int i0_A = 0, i1_A = 0;
-                int edgenum_A = 0, edgenum_B = 0;   // 0,1 or 2
-                GetEdge(ref i0_A, ref i1_A, ref edgenum_A, new ArrayPointerWrapper<int>(piTriListIn, f * 3), i0, i1); // resolve index ordering and edge_num
-                bUnassigned_A = pTriInfos[f].faceNeighbours[edgenum_A] == -1;
-
-                if (bUnassigned_A)
+                int i0 = edges[i].i0;
+                int i1 = edges[i].i1;
+                int f = edges[i].f;
+                bool unassignedA;
+                int i0A = 0, i1A = 0;
+                int edgenumA = 0, edgenumB = 0;   // 0,1 or 2
+                GetEdge(ref i0A, ref i1A, ref edgenumA, new ArrayPointerWrapper<int>(triangleIndicesList, f * 3), i0, i1); // resolve index ordering and edge_num
+                unassignedA = triangles[f].faceNeighbours[edgenumA] == -1;
+                if (unassignedA)
                 {
                     // get true index ordering
                     int j = i + 1, t;
-                    bool bNotFound = true;
-                    while (j < iEntries && i0 == pEdges[j].i0 && i1 == pEdges[j].i1 && bNotFound)
+                    bool notFound = true;
+                    while (j < entries && i0 == edges[j].i0 && i1 == edges[j].i1 && notFound)
                     {
-                        bool bUnassigned_B;
-                        int i0_B = 0, i1_B = 0;
-                        t = pEdges[j].f;
+                        bool unassignedB;
+                        int i0B = 0, i1B = 0;
+                        t = edges[j].f;
                         // flip i0_B and i1_B
-                        GetEdge(ref i1_B, ref i0_B, ref edgenum_B, new ArrayPointerWrapper<int>(piTriListIn, t * 3), pEdges[j].i0, pEdges[j].i1); // resolve index ordering and edge_num
-                                                                                                            //assert(!(i0_A==i1_B && i1_A==i0_B));
-                        bUnassigned_B = pTriInfos[t].faceNeighbours[edgenum_B] == -1;
-                        if (i0_A == i0_B && i1_A == i1_B && bUnassigned_B)
+                        GetEdge(ref i1B, ref i0B, ref edgenumB, new ArrayPointerWrapper<int>(triangleIndicesList, t * 3), edges[j].i0, edges[j].i1); // resolve index ordering and edge_num                                                                        //assert(!(i0_A==i1_B && i1_A==i0_B));
+                        unassignedB = triangles[t].faceNeighbours[edgenumB] == -1;
+                        if (i0A == i0B && i1A == i1B && unassignedB)
                         {
-                            bNotFound = false;
+                            notFound = false;
                         }
                         else
                         {
@@ -1159,136 +1120,127 @@ namespace VTT.Util
                         }
                     }
 
-                    if (!bNotFound)
+                    if (!notFound)
                     {
-                        int t1 = pEdges[j].f;
-                        pTriInfos[f].faceNeighbours[edgenum_A] = t1;
-                        //assert(pTriInfos[t].FaceNeighbors[edgenum_B]==-1);
-                        pTriInfos[t1].faceNeighbours[edgenum_B] = f;
+                        int t1 = edges[j].f;
+                        triangles[f].faceNeighbours[edgenumA] = t1;
+                        triangles[t1].faceNeighbours[edgenumB] = f;
                     }
                 }
             }
         }
 
-        private static void AddTriToGroup(Group pGroup, int iTriIndex)
+        private static void AddTriToGroup(Group group, int triangleIndex)
         {
 
-            pGroup.faceIndices[pGroup.numFaces] = iTriIndex;
-	        ++pGroup.numFaces;
+            group.faceIndices[group.numFaces] = triangleIndex;
+	        ++group.numFaces;
         }
 
-        private static bool AssignRecur(int[] piTriListIn, Triangle[] psTriInfos, int iMyTriIndex, Group pGroup)
+        private static bool AssignRecur(int[] triangleIndicesList, Triangle[] triangles, int triangleIndex, Group group)
         {
-	        Triangle pMyTriInfo = psTriInfos[iMyTriIndex];
+	        Triangle triangle = triangles[triangleIndex];
 
             // track down vertex
-            int iVertRep = pGroup.vertexRepresentitive;
-            ArrayPointerWrapper<int> pVerts = new ArrayPointerWrapper<int>(piTriListIn, 3 * iMyTriIndex + 0);
+            int vertRep = group.vertexRepresentitive;
+            ArrayPointerWrapper<int> verts = new ArrayPointerWrapper<int>(triangleIndicesList, (3 * triangleIndex) + 0);
             int i = -1;
-            if (pVerts[0] == iVertRep)
+            if (verts[0] == vertRep)
             {
                 i = 0;
             }
-            else if (pVerts[1] == iVertRep)
+            else if (verts[1] == vertRep)
             {
                 i = 1;
             }
-            else if (pVerts[2] == iVertRep)
+            else if (verts[2] == vertRep)
             {
                 i = 2;
             }
 
             // early out
-            if (pMyTriInfo.assignedGroups[i] == pGroup)
+            if (triangle.assignedGroups[i] == group)
             {
                 return true;
             }
-            else if (pMyTriInfo.assignedGroups[i] != null)
+            else if (triangle.assignedGroups[i] != null)
             {
                 return false;
             }
 
-            if ((pMyTriInfo.flag & AlgorithmFlags.GroupWithAny) != 0)
+            if ((triangle.flag & AlgorithmFlags.GroupWithAny) != 0)
 	        {
 		        // first to group with a group-with-anything triangle
 		        // determines it's orientation.
 		        // This is the only existing order dependency in the code!!
-		        if (pMyTriInfo.assignedGroups[0] == null &&
-			        pMyTriInfo.assignedGroups[1] == null &&
-			        pMyTriInfo.assignedGroups[2] == null)
+		        if (triangle.assignedGroups[0] == null &&
+			        triangle.assignedGroups[1] == null &&
+			        triangle.assignedGroups[2] == null)
 		        {
-			        pMyTriInfo.flag &= (~AlgorithmFlags.OrientPreserving);
-                    pMyTriInfo.flag |= (pGroup.orientPreservering? AlgorithmFlags.OrientPreserving : 0);
+			        triangle.flag &= (~AlgorithmFlags.OrientPreserving);
+                    triangle.flag |= (group.orientPreservering? AlgorithmFlags.OrientPreserving : 0);
                 }
             }
 
-            bool bOrient = (pMyTriInfo.flag & AlgorithmFlags.OrientPreserving) != 0;
-            if (bOrient != pGroup.orientPreservering)
+            bool orient = (triangle.flag & AlgorithmFlags.OrientPreserving) != 0;
+            if (orient != group.orientPreservering)
             {
                 return false;
             }
 
-            AddTriToGroup(pGroup, iMyTriIndex);
-            pMyTriInfo.assignedGroups[i] = pGroup;
+            AddTriToGroup(group, triangleIndex);
+            triangle.assignedGroups[i] = group;
 
-            int neigh_indexL = pMyTriInfo.faceNeighbours[i];
-            int neigh_indexR = pMyTriInfo.faceNeighbours[i > 0 ? (i - 1) : 2];
-            if (neigh_indexL >= 0)
+            int neighbourIndexL = triangle.faceNeighbours[i];
+            int neighbourIndexR = triangle.faceNeighbours[i > 0 ? (i - 1) : 2];
+            if (neighbourIndexL >= 0)
             {
-                AssignRecur(piTriListIn, psTriInfos, neigh_indexL, pGroup);
+                AssignRecur(triangleIndicesList, triangles, neighbourIndexL, group);
             }
 
-            if (neigh_indexR >= 0)
+            if (neighbourIndexR >= 0)
             {
-                AssignRecur(piTriListIn, psTriInfos, neigh_indexR, pGroup);
+                AssignRecur(triangleIndicesList, triangles, neighbourIndexR, group);
             }
 
             return true;
         }
 
-        private static int Build4RuleGroups(Triangle[] pTriInfos, Group[] pGroups, int[] piGroupTrianglesBuffer, int[] piTriListIn, int iNrTrianglesIn)
+        private static int Build4RuleGroups(Triangle[] triangles, Group[] groups, int[] groupTrianglesBuffer, int[] triangleIndicesList, int numTriangles)
         {
-
-            int iNrMaxGroups = iNrTrianglesIn * 3;
-            int iNrActiveGroups = 0;
-            int iOffset = 0, f = 0, i = 0;
-            for (f = 0; f < iNrTrianglesIn; f++)
+            int numActiveGroups = 0;
+            int offset = 0;
+            for (int f = 0; f < numTriangles; f++)
 	        {
-                for (i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++)
 		        {
 			        // if not assigned to a group
-			        if ((pTriInfos[f].flag & AlgorithmFlags.GroupWithAny)==0 && pTriInfos[f].assignedGroups[i] == null)
+			        if ((triangles[f].flag & AlgorithmFlags.GroupWithAny)==0 && triangles[f].assignedGroups[i] == null)
 			        {
-				        bool bOrPre;
-                        int neigh_indexL, neigh_indexR;
-                        int vert_index = piTriListIn[f * 3 + i];
-                        pTriInfos[f].assignedGroups[i] = pGroups[iNrActiveGroups];
-				        pTriInfos[f].assignedGroups[i].vertexRepresentitive = vert_index;
-                        pTriInfos[f].assignedGroups[i].orientPreservering = (pTriInfos[f].flag & AlgorithmFlags.OrientPreserving) != 0;
-				        pTriInfos[f].assignedGroups[i].numFaces = 0;
-				        pTriInfos[f].assignedGroups[i].faceIndices = new ArrayPointerWrapper<int>(piGroupTrianglesBuffer, iOffset);
-				        ++iNrActiveGroups;
+                        int neighbourIndexL, neighbourindexR;
+                        int vertexIndex = triangleIndicesList[(f * 3) + i];
+                        triangles[f].assignedGroups[i] = groups[numActiveGroups];
+				        triangles[f].assignedGroups[i].vertexRepresentitive = vertexIndex;
+                        triangles[f].assignedGroups[i].orientPreservering = (triangles[f].flag & AlgorithmFlags.OrientPreserving) != 0;
+                        triangles[f].assignedGroups[i].numFaces = 0;
+				        triangles[f].assignedGroups[i].faceIndices = new ArrayPointerWrapper<int>(groupTrianglesBuffer, offset);
+				        ++numActiveGroups;
 
-				        AddTriToGroup(pTriInfos[f].assignedGroups[i], f);
-                        bOrPre = (pTriInfos[f].flag & AlgorithmFlags.OrientPreserving) != 0;
-				        neigh_indexL = pTriInfos[f].faceNeighbours[i];
-				        neigh_indexR = pTriInfos[f].faceNeighbours[i > 0 ? (i - 1) : 2];
-				        if (neigh_indexL>=0) // neighbor
-				        {
-					        bool bAnswer = AssignRecur(piTriListIn, pTriInfos, neigh_indexL, pTriInfos[f].assignedGroups[i]);
-                            bool bOrPre2 = (pTriInfos[neigh_indexL].flag & AlgorithmFlags.OrientPreserving) != 0;
-                            bool bDiff = bOrPre != bOrPre2;
+                        AddTriToGroup(triangles[f].assignedGroups[i], f);
+                        neighbourIndexL = triangles[f].faceNeighbours[i];
+                        neighbourindexR = triangles[f].faceNeighbours[i > 0 ? (i - 1) : 2];
+                        if (neighbourIndexL >= 0) // neighbor
+                        {
+					        AssignRecur(triangleIndicesList, triangles, neighbourIndexL, triangles[f].assignedGroups[i]);
 				        }
 
-				        if (neigh_indexR>=0) // neighbor
+				        if (neighbourindexR >= 0) // neighbor
 				        {
-					        bool bAnswer = AssignRecur(piTriListIn, pTriInfos, neigh_indexR, pTriInfos[f].assignedGroups[i]);
-                            bool bOrPre2 = (pTriInfos[neigh_indexR].flag & AlgorithmFlags.OrientPreserving) != 0;
-                            bool bDiff = bOrPre != bOrPre2;
+					        AssignRecur(triangleIndicesList, triangles, neighbourindexR, triangles[f].assignedGroups[i]);
 				        }
 
                         // update offset
-                        iOffset += pTriInfos[f].assignedGroups[i].numFaces;
+                        offset += triangles[f].assignedGroups[i].numFaces;
                         // since the groups are disjoint a triangle can never
                         // belong to more than 3 groups. Subsequently something
                         // is completely screwed if this assertion ever hits.
@@ -1296,7 +1248,7 @@ namespace VTT.Util
 		        }
 	        }
 
-	        return iNrActiveGroups;
+	        return numActiveGroups;
         }
 
         [Flags]
@@ -1316,7 +1268,7 @@ namespace VTT.Util
 
             public int this[int i]
             {
-                get => i == 0 ? this.i0 : i == 1 ? this.i1 : this.f;
+                readonly get => i == 0 ? this.i0 : i == 1 ? this.i1 : this.f;
                 set
                 {
                     switch (i)
@@ -1343,113 +1295,111 @@ namespace VTT.Util
             }
         }
 
-        private static void QuickSort(int[] pSortBuffer, int iLeft, int iRight, uint uSeed)
+        private static void QuickSort(int[] sortBuffer, int left, int right, uint seed)
         {
-            int iL, iR, n, index, iMid, iTmp;
+            int l, r, n, index, mid, temp;
 
             // Random
-            uint t = uSeed & 31;
-            t = (uSeed << (int)t) | (uSeed >> (32 - (int)t));
-            uSeed = uSeed + t + 3;
+            uint t = seed & 31;
+            t = (seed << (int)t) | (seed >> (32 - (int)t));
+            seed = seed + t + 3;
             // Random end
 
-            iL = iLeft; iR = iRight;
-            n = (iR - iL) + 1;
-            index = (int)(uSeed % n);
-            iMid = pSortBuffer[index + iL];
+            l = left; r = right;
+            n = r - l + 1;
+            index = (int)(seed % n);
+            mid = sortBuffer[index + l];
             do
             {
-                while (pSortBuffer[iL] < iMid)
+                while (sortBuffer[l] < mid)
                 {
-                    ++iL;
+                    ++l;
                 }
 
-                while (pSortBuffer[iR] > iMid)
+                while (sortBuffer[r] > mid)
                 {
-                    --iR;
+                    --r;
                 }
 
-                if (iL <= iR)
+                if (l <= r)
                 {
-                    iTmp = pSortBuffer[iL];
-                    pSortBuffer[iL] = pSortBuffer[iR];
-                    pSortBuffer[iR] = iTmp;
-                    ++iL; --iR;
+                    temp = sortBuffer[l];
+                    sortBuffer[l] = sortBuffer[r];
+                    sortBuffer[r] = temp;
+                    ++l; --r;
                 }
             }
-            while (iL <= iR);
+            while (l <= r);
 
-            if (iLeft < iR)
+            if (left < r)
             {
-                QuickSort(pSortBuffer, iLeft, iR, uSeed);
+                QuickSort(sortBuffer, left, r, seed);
             }
 
-            if (iL < iRight)
+            if (l < right)
             {
-                QuickSort(pSortBuffer, iL, iRight, uSeed);
+                QuickSort(sortBuffer, l, right, seed);
             }
         }
 
-        private static bool CompareSubGroups(SubGroup pg1, SubGroup pg2)
+        private static bool CompareSubGroups(SubGroup groupA, SubGroup groupB)
         {
-            bool bStillSame = true;
+            bool stillSame = true;
             int i = 0;
-            if (pg1.nrFaces != pg2.nrFaces)
+            if (groupA.numFaces != groupB.numFaces)
             {
                 return false;
             }
 
-            while (i < pg1.nrFaces && bStillSame)
+            while (i < groupA.numFaces && stillSame)
 	        {
-                bStillSame = pg1.triMembers[i] == pg2.triMembers[i];
-                if (bStillSame)
+                stillSame = groupA.triMembers[i] == groupB.triMembers[i];
+                if (stillSame)
                 {
                     ++i;
                 }
             }
 
-	        return bStillSame;
+	        return stillSame;
         }
 
-        private static TSpace EvalTspace(int[] face_indices, int iFaces, int[] piTriListIn, Triangle[] pTriInfos,
-                          Context pContext, int iVertexRepresentitive)
+        private static TSpace EvalTspace(int[] faceIndices, int numFaces, int[] triangleIndicesList, Triangle[] triangles,
+                          Context ctx, int vertexRepresentitive)
         {
 
             TSpace res = new TSpace();
             float fAngleSum = 0;
-            int face = 0;
             res.os = Vector3.Zero;
             res.ot = Vector3.Zero;
             res.magT = res.magS = 0;
-	        for (face=0; face<iFaces; face++)
+            for (int face = 0; face < numFaces; face++)
 	        {
-		        int f = face_indices[face];
+		        int f = faceIndices[face];
 
                 // only valid triangles get to add their contribution
-                if ((pTriInfos[f].flag & AlgorithmFlags.GroupWithAny) == 0)
+                if ((triangles[f].flag & AlgorithmFlags.GroupWithAny) == 0)
 		        {
-			        Vector3 n = Vector3.Zero, vOs = Vector3.Zero, vOt = Vector3.Zero, p0 = Vector3.Zero, p1 = Vector3.Zero, p2 = Vector3.Zero, v1 = Vector3.Zero, v2 = Vector3.Zero;
                     float fCos, fAngle, fMagS, fMagT;
-                    int i = -1, index = -1, i0 = -1, i1 = -1, i2 = -1;
-                    if (piTriListIn[(3 * f) + 0] == iVertexRepresentitive)
+                    int i = -1;
+                    if (triangleIndicesList[(3 * f) + 0] == vertexRepresentitive)
                     {
                         i = 0;
                     }
-                    else if (piTriListIn[3 * f + 1] == iVertexRepresentitive)
+                    else if (triangleIndicesList[(3 * f) + 1] == vertexRepresentitive)
                     {
                         i = 1;
                     }
-                    else if (piTriListIn[3 * f + 2] == iVertexRepresentitive)
+                    else if (triangleIndicesList[(3 * f) + 2] == vertexRepresentitive)
                     {
                         i = 2;
                     }
 
 
                     // project
-                    index = piTriListIn[3 * f + i];
-			        n = pContext.normals[index];
-                    vOs = Vector3.Subtract(pTriInfos[f].os, Vector3.Multiply(Vector3.Dot(n, pTriInfos[f].os), n));
-			        vOt = Vector3.Subtract(pTriInfos[f].ot, Vector3.Multiply(Vector3.Dot(n, pTriInfos[f].ot), n));
+                    int index = triangleIndicesList[(3 * f) + i];
+			        Vector3 n = ctx.normals[index];
+                    Vector3 vOs = Vector3.Subtract(triangles[f].os, Vector3.Multiply(Vector3.Dot(n, triangles[f].os), n));
+			        Vector3 vOt = Vector3.Subtract(triangles[f].ot, Vector3.Multiply(Vector3.Dot(n, triangles[f].ot), n));
                     if (NotZero(vOs))
                     {
                         vOs = Vector3.Normalize(vOs);
@@ -1460,15 +1410,15 @@ namespace VTT.Util
                         vOt = Vector3.Normalize(vOt);
                     }
 
-                    i2 = piTriListIn[3 * f + (i < 2 ? (i + 1) : 0)];
-			        i1 = piTriListIn[3 * f + i];
-			        i0 = piTriListIn[3 * f + (i > 0 ? (i - 1) : 2)];
+                    int i2 = triangleIndicesList[(3 * f) + (i < 2 ? (i + 1) : 0)];
+                    int i1 = triangleIndicesList[(3 * f) + i];
+                    int i0 = triangleIndicesList[(3 * f) + (i > 0 ? (i - 1) : 2)];
 
-			        p0 = pContext.positions[i0];
-                    p1 = pContext.positions[i1];
-                    p2 = pContext.positions[i2];
-                    v1 = Vector3.Subtract(p0, p1);
-                    v2 = Vector3.Subtract(p2, p1);
+			        Vector3 p0 = ctx.positions[i0];
+                    Vector3 p1 = ctx.positions[i1];
+                    Vector3 p2 = ctx.positions[i2];
+                    Vector3 v1 = Vector3.Subtract(p0, p1);
+                    Vector3 v2 = Vector3.Subtract(p2, p1);
 
                     // project
                     v1 = Vector3.Subtract(v1, Vector3.Multiply(Vector3.Dot(n, v1), n));
@@ -1488,8 +1438,8 @@ namespace VTT.Util
                     fCos = Vector3.Dot(v1, v2);
                     fCos = fCos > 1 ? 1 : (fCos < (-1) ? (-1) : fCos);
 			        fAngle = MathF.Acos(fCos);
-                    fMagS = pTriInfos[f].magS;
-			        fMagT = pTriInfos[f].magT;
+                    fMagS = triangles[f].magS;
+			        fMagT = triangles[f].magT;
 
                     res.os = Vector3.Add(res.os, Vector3.Multiply(fAngle, vOs));
                     res.ot = Vector3.Add(res.ot, Vector3.Multiply(fAngle, vOt));
@@ -1519,75 +1469,72 @@ namespace VTT.Util
             return res;
         }
 
-        private static bool GenerateTSpaces(TSpace[] psTspace, Triangle[] pTriInfos, Group[] pGroups,
-                             int iNrActiveGroups, int[] piTriListIn, float fThresCos,
-                             Context pContext)
+        private static bool GenerateTSpaces(TSpace[] tSpaces, Triangle[] triangles, Group[] groups,
+                             int numActiveGroups, int[] triangleIndicesList, float thresholdCos,
+                             Context ctx)
         {
 
-            TSpace[] pSubGroupTspace = null;
-            SubGroup[] pUniSubGroups = null;
-            int[] pTmpMembers = null;
-            int iMaxNrFaces = 0, iUniqueTspaces = 0, g = 0, i = 0;
-            for (g = 0; g < iNrActiveGroups; g++)
+            int maxFaces = 0;
+            for (int g = 0; g < numActiveGroups; g++)
             {
-                if (iMaxNrFaces < pGroups[g].numFaces)
+                if (maxFaces < groups[g].numFaces)
                 {
-                    iMaxNrFaces = pGroups[g].numFaces;
+                    maxFaces = groups[g].numFaces;
                 }
             }
 
-            if (iMaxNrFaces == 0)
+            if (maxFaces == 0)
             {
                 return true;
             }
 
             // make initial allocations
-            pSubGroupTspace = new TSpace[iMaxNrFaces];
-            for (int j = 0; j < iMaxNrFaces; ++j)
+            TSpace[] subGroupTspace = new TSpace[maxFaces];
+            for (int j = 0; j < maxFaces; ++j)
             {
-                pSubGroupTspace[j] = new TSpace();
+                subGroupTspace[j] = new TSpace();
             }
 
-            pUniSubGroups = new SubGroup[iMaxNrFaces];
-            for (int j = 0; j < iMaxNrFaces; ++j)
+            SubGroup[] uniSubGroups = new SubGroup[maxFaces];
+            for (int j = 0; j < maxFaces; ++j)
             {
-                pUniSubGroups[j] = new SubGroup();
+                uniSubGroups[j] = new SubGroup();
             }
 
-            pTmpMembers = new int[iMaxNrFaces];
-            iUniqueTspaces = 0;
-            for (g = 0; g < iNrActiveGroups; g++)
+            int[] tempMembers = new int[maxFaces];
+            int uniqueTspaces = 0;
+            for (int g = 0; g < numActiveGroups; g++)
 	        {
-		        Group pGroup = pGroups[g];
-                int iUniqueSubGroups = 0, s = 0;
-                for (i = 0; i < pGroup.numFaces; i++)  // triangles
+		        Group group = groups[g];
+                int uniqueSubGroups = 0;
+                for (int i = 0; i < group.numFaces; i++)  // triangles
                 {
-			        int f = pGroup.faceIndices[i];  // triangle number
-                    int index = -1, iVertIndex = -1, iOF_1 = -1, iMembers = 0, j = 0, l = 0;
-                    SubGroup tmp_group = new SubGroup();
-                    bool bFound;
+			        int f = group.faceIndices[i];  // triangle number
+                    int index = -1;
+                    SubGroup tempGroup = new SubGroup();
+                    bool found;
                     Vector3 n, vOs, vOt;
-                    if (pTriInfos[f].assignedGroups[0] == pGroup)
+                    if (triangles[f].assignedGroups[0] == group)
                     {
                         index = 0;
                     }
-                    else if (pTriInfos[f].assignedGroups[1] == pGroup)
+                    else if (triangles[f].assignedGroups[1] == group)
                     {
                         index = 1;
                     }
-                    else if (pTriInfos[f].assignedGroups[2] == pGroup)
+                    else if (triangles[f].assignedGroups[2] == group)
                     {
                         index = 2;
                     }
 
-                    iVertIndex = piTriListIn[f * 3 + index];
+                    int vertIndex = triangleIndicesList[(f * 3) + index];
 
                     // is normalized already
-                    n = pContext.normals[iVertIndex];
+                    n = ctx.normals[vertIndex];
 
                     // project
-                    vOs = Vector3.Subtract(pTriInfos[f].os, Vector3.Multiply(Vector3.Dot(n, pTriInfos[f].os), n));
-			        vOt = Vector3.Subtract(pTriInfos[f].ot, Vector3.Multiply(Vector3.Dot(n, pTriInfos[f].ot), n));
+                    vOs = Vector3.Subtract(triangles[f].os, Vector3.Multiply(Vector3.Dot(n, triangles[f].os), n));
+			        vOt = Vector3.Subtract(triangles[f].ot, Vector3.Multiply(Vector3.Dot(n, triangles[f].ot), n));
                     if (NotZero(vOs))
                     {
                         vOs = Vector3.Normalize(vOs);
@@ -1599,16 +1546,16 @@ namespace VTT.Util
                     }
 
                     // original face number
-                    iOF_1 = pTriInfos[f].orgFaceNumber;
-			        iMembers = 0;
-                    for (j = 0; j < pGroup.numFaces; j++)
+                    int face1 = triangles[f].orgFaceNumber;
+			        int members = 0;
+                    for (int j = 0; j < group.numFaces; j++)
 			        {
-				        int t = pGroup.faceIndices[j];  // triangle number
-                        int iOF_2 = pTriInfos[t].orgFaceNumber;
+				        int t = group.faceIndices[j];  // triangle number
+                        int face2 = triangles[t].orgFaceNumber;
 
                         // project
-                        Vector3 vOs2 = Vector3.Subtract(pTriInfos[t].os, Vector3.Multiply(Vector3.Dot(n, pTriInfos[t].os), n));
-                        Vector3 vOt2 = Vector3.Subtract(pTriInfos[t].ot, Vector3.Multiply(Vector3.Dot(n, pTriInfos[t].ot), n));
+                        Vector3 vOs2 = Vector3.Subtract(triangles[t].os, Vector3.Multiply(Vector3.Dot(n, triangles[t].os), n));
+                        Vector3 vOt2 = Vector3.Subtract(triangles[t].ot, Vector3.Multiply(Vector3.Dot(n, triangles[t].ot), n));
                         if (NotZero(vOs2))
                         {
                             vOs2 = Vector3.Normalize(vOs2);
@@ -1619,33 +1566,33 @@ namespace VTT.Util
                             vOt2 = Vector3.Normalize(vOt2);
                         }
 
-                        bool bAny = ((pTriInfos[f].flag | pTriInfos[t].flag) & AlgorithmFlags.GroupWithAny) != 0;
+                        bool any = ((triangles[f].flag | triangles[t].flag) & AlgorithmFlags.GroupWithAny) != 0;
                         // make sure triangles which belong to the same quad are joined.
-                        bool bSameOrgFace = iOF_1 == iOF_2;
-                        float fCosS = Vector3.Dot(vOs, vOs2);
-                        float fCosT = Vector3.Dot(vOt, vOt2);
-                        if (bAny || bSameOrgFace || (fCosS > fThresCos && fCosT > fThresCos))
+                        bool sameOrgFace = face1 == face2;
+                        float cosS = Vector3.Dot(vOs, vOs2);
+                        float cosT = Vector3.Dot(vOt, vOt2);
+                        if (any || sameOrgFace || (cosS > thresholdCos && cosT > thresholdCos))
                         {
-                            pTmpMembers[iMembers++] = t;
+                            tempMembers[members++] = t;
                         }
 			        }
 
 			        // sort pTmpMembers
-			        tmp_group.nrFaces = iMembers;
-                    tmp_group.triMembers = pTmpMembers;
-                    if (iMembers > 1)
+			        tempGroup.numFaces = members;
+                    tempGroup.triMembers = tempMembers;
+                    if (members > 1)
                     {
-                        uint uSeed = 39871946;    // could replace with a random seed?
-                        QuickSort(pTmpMembers, 0, iMembers - 1, uSeed);
+                        // could replace with a random seed?
+                        QuickSort(tempMembers, 0, members - 1, 39871946);
                     }
 
                     // look for an existing match
-                    bFound = false;
-                    l = 0;
-                    while (l < iUniqueSubGroups && !bFound)
+                    found = false;
+                    int l = 0;
+                    while (l < uniqueSubGroups && !found)
                     {
-                        bFound = CompareSubGroups(tmp_group, pUniSubGroups[l]);
-                        if (!bFound)
+                        found = CompareSubGroups(tempGroup, uniSubGroups[l]);
+                        if (!found)
                         {
                             ++l;
                         }
@@ -1655,47 +1602,47 @@ namespace VTT.Util
                     //piTempTangIndices[f*3+index] = iUniqueTspaces+l;
 
                     // if no match was found we allocate a new subgroup
-                    if (!bFound)
+                    if (!found)
                     {
                         // insert new subgroup
-                        int[] pIndices = new int[iMembers];
-                        pUniSubGroups[iUniqueSubGroups].nrFaces = iMembers;
-                        pUniSubGroups[iUniqueSubGroups].triMembers = pIndices;
-                        Array.Copy(tmp_group.triMembers, pIndices, iMembers);
-                        pSubGroupTspace[iUniqueSubGroups] =
-                        EvalTspace(tmp_group.triMembers, iMembers, piTriListIn, pTriInfos, pContext, pGroup.vertexRepresentitive);
-                        ++iUniqueSubGroups;
+                        int[] indices = new int[members];
+                        uniSubGroups[uniqueSubGroups].numFaces = members;
+                        uniSubGroups[uniqueSubGroups].triMembers = indices;
+                        Array.Copy(tempGroup.triMembers, indices, members);
+                        subGroupTspace[uniqueSubGroups] =
+                        EvalTspace(tempGroup.triMembers, members, triangleIndicesList, triangles, ctx, group.vertexRepresentitive);
+                        ++uniqueSubGroups;
                     }
 
                     // output tspace
-                    int iOffs = pTriInfos[f].tSpacesOffset;
-                    int iVert = pTriInfos[f].vertexNum[index];
-                    TSpace pTS_out = psTspace[iOffs + iVert];
-                    if (pTS_out.counter == 1)
+                    int offset = triangles[f].tSpacesOffset;
+                    int vertex = triangles[f].vertexNum[index];
+                    TSpace result = tSpaces[offset + vertex];
+                    if (result.counter == 1)
                     {
-                        pTS_out = AvgTSpace(pTS_out, pSubGroupTspace[l]);
-                        pTS_out.counter = 2;  // update counter
-                        pTS_out.orient = pGroup.orientPreservering;
+                        result = AvgTSpace(result, subGroupTspace[l]);
+                        result.counter = 2;  // update counter
+                        result.orient = group.orientPreservering;
                     }
                     else
                     {
-                        pTS_out = pSubGroupTspace[l];
-                        pTS_out.counter = 1;  // update counter
-                        pTS_out.orient = pGroup.orientPreservering;
+                        result = subGroupTspace[l];
+                        result.counter = 1;  // update counter
+                        result.orient = group.orientPreservering;
                     }
 		        }
 
 		        // clean up and offset iUniqueTspaces
-                iUniqueTspaces += iUniqueSubGroups;
+                uniqueTspaces += uniqueSubGroups;
 	        }
 
             return true;
         }
 
-        private struct ArrayPointerWrapper<T>
+        private readonly struct ArrayPointerWrapper<T>
         {
-            private T[] arr;
-            private int offset;
+            private readonly T[] arr;
+            private readonly int offset;
 
             public T this[int i]
             {
@@ -1712,7 +1659,7 @@ namespace VTT.Util
 
         private class SubGroup
         {
-            public int nrFaces;
+            public int numFaces;
             public int[] triMembers;
         }
 

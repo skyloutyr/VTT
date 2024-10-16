@@ -892,21 +892,24 @@
         {
             Network.Server.Instance.Logger.Log(LogLevel.Info, "Client disconnected");
             base.OnDisconnected();
-            Guid id = this.ID;
-            Network.Server.Instance.ClientsByID.TryRemove(id, out ServerClient sc);
-            if (sc != null)
+            if (this.Info != null)
             {
-                sc.Info.IsLoggedOn = false;
-            }
-            else
-            {
-                if (this.Info != null)
+                Guid id = this.ID;
+                Network.Server.Instance.ClientsByID.TryRemove(id, out ServerClient sc);
+                if (sc != null)
                 {
-                    this.Info.IsLoggedOn = false;
+                    sc.Info.IsLoggedOn = false;
                 }
-            }
+                else
+                {
+                    if (this.Info != null)
+                    {
+                        this.Info.IsLoggedOn = false;
+                    }
+                }
 
-            new PacketClientOnlineNotification() { ClientID = sc?.ID ?? id, Status = false }.Broadcast();
+                new PacketClientOnlineNotification() { ClientID = sc?.ID ?? id, Status = false }.Broadcast();
+            }
         }
 
         protected override void OnSent(long sent, long pending)

@@ -6,6 +6,7 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.GLFW;
+    using VTT.Network;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
 
@@ -238,7 +239,32 @@
             while (!Glfw.WindowShouldClose(this._nativeWindow))
             {
                 ulong now = (ulong)DateTime.Now.Ticks;
-                Glfw.MakeContextCurrent(this._nativeWindow);
+                switch (Client.Instance.Settings.ContextHandlingMode)
+                {
+                    case GLContextHandlingMode.Checked:
+                    {
+                        IntPtr ctx = Glfw.GetCurrentContext();
+                        if (ctx != this._nativeWindow)
+                        {
+                            Glfw.MakeContextCurrent(this._nativeWindow);
+                        }
+
+                        break;
+                    }
+
+                    case GLContextHandlingMode.Explicit:
+                    {
+                        Glfw.MakeContextCurrent(this._nativeWindow);
+                        break;
+                    }
+
+                    case GLContextHandlingMode.Implicit:
+                    default:
+                    {
+                        break;
+                    }
+                }
+                
 
                 if (this.MousePosition.ValueChanged)
                 {

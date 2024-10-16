@@ -59,6 +59,9 @@
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void glfwMakeContextCurrent(IntPtr window);
 
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr glfwGetCurrentContext();
+
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr glfwGetProcAddress([In][MarshalAs(UnmanagedType.LPStr)]string procName);
 

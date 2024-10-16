@@ -125,6 +125,8 @@
         }
 
         public static void MakeContextCurrent(IntPtr window) => glfwMakeContextCurrent(window);
+
+        public static IntPtr GetCurrentContext() => glfwGetCurrentContext();
         public static unsafe bool ExtensionSupported(string name)
         {
             byte* ptr = (byte*)Marshal.StringToHGlobalAnsi(name);

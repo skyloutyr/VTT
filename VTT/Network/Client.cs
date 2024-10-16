@@ -662,6 +662,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool OffscreenParticleUpdates { get; set; } = true;
 
+        [DefaultValue(GLContextHandlingMode.Checked)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public GLContextHandlingMode ContextHandlingMode { get; set; } = GLContextHandlingMode.Checked;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -721,7 +726,8 @@
                 HolidaySeasons = true,
                 AsyncTextureUploading = true,
                 MultithreadedTextureCompression = true,
-                OffscreenParticleUpdates = true
+                OffscreenParticleUpdates = true,
+                ContextHandlingMode = GLContextHandlingMode.Checked
             };
 
             ret.Save();
@@ -733,6 +739,13 @@
             Client.Instance.Logger.Log(LogLevel.Info, "Saved client settings");
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
             File.WriteAllText(expectedLocation, JsonConvert.SerializeObject(this));
+        }
+
+        public enum GLContextHandlingMode
+        {
+            Implicit,
+            Checked,
+            Explicit
         }
 
         public enum VSyncMode

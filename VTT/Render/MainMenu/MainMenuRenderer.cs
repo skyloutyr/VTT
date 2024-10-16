@@ -32,7 +32,7 @@
         public Texture BetaSwitchOff { get; set; }
         public Texture BetaWires { get; set; }
 
-        public int MenuMode { get; set; }
+        public MenuMode CurrentMenuMode { get; set; }
 
         private string _connectAddress = string.Empty;
         private string _connectPort = string.Empty;
@@ -136,27 +136,27 @@
                 ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
                 if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
                 {
-                    this.MenuMode = 1;
+                    this.CurrentMenuMode = MenuMode.Join;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.host") + "###Host", new Vector2(240, 32)))
                 {
-                    this.MenuMode = 2;
+                    this.CurrentMenuMode = MenuMode.Host;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.settings") + "###Settings", new Vector2(240, 32)))
                 {
-                    this.MenuMode = 3;
+                    this.CurrentMenuMode = MenuMode.Settings;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.credits") + "###Credits", new Vector2(240, 32)))
                 {
-                    this.MenuMode = 4;
+                    this.CurrentMenuMode = MenuMode.Credits;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.changelog") + "###Changelog", new Vector2(240, 32)))
                 {
-                    this.MenuMode = 5;
+                    this.CurrentMenuMode = MenuMode.Changelog;
                 }
 
                 if (ImGui.Button(lang.Translate("menu.quit") + "###Quit", new Vector2(240, 32)))
@@ -166,242 +166,257 @@
 
                 ImGui.EndChild();
 
-                if (this.MenuMode == 1)
+                switch (this.CurrentMenuMode)
                 {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
-                    if (ImGui.BeginChild("Main Menu Connect", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
+                    case MenuMode.Join:
                     {
-                        ImGui.InputText(lang.Translate("menu.connect.address") + "###Address", ref this._connectAddress, 15);
-                        if (ImGui.IsItemHovered())
+                        ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
+                        if (ImGui.BeginChild("Main Menu Connect", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                         {
-                            ImGui.SetTooltip(lang.Translate("menu.connect.address.tt"));
-                        }
-
-                        ImGui.InputText(lang.Translate("menu.connect.port") + "###Port", ref this._connectPort, 5);
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("menu.connect.port.tt"));
-                        }
-
-                        bool allCorrect = Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnecting;
-
-                        if (!IPAddress.TryParse(this._connectAddress, out IPAddress address))
-                        {
-                            allCorrect = false;
-                            ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.address"));
-                        }
-
-                        if (!ushort.TryParse(this._connectPort, out ushort cPort))
-                        {
-                            allCorrect = false;
-                            ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.port"));
-                        }
-
-                        ImGui.SetCursorPosY(150 - 32);
-                        if (!allCorrect)
-                        {
-                            ImGui.BeginDisabled();
-                        }
-
-                        if (ImGui.Button(lang.Translate("menu.connect.connect") + "###Connect", new Vector2(240, 32)))
-                        {
-                            Client.Instance.Settings.LastConnectIPAddress = this._connectAddress;
-                            Client.Instance.Settings.LastConnectPort = this._connectPort;
-                            Client.Instance.Settings.Save();
-                            Client.Instance.Connect(new IPEndPoint(address, cPort));
-                        }
-
-                        if (!allCorrect)
-                        {
-                            ImGui.EndDisabled();
-                        }
-                    }
-
-                    ImGui.EndChild();
-                }
-                if (this.MenuMode == 3)
-                {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 200, 532));
-                    DrawSettings(lang, state);
-
-                }
-                if (this.MenuMode == 2)
-                {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
-                    if (ImGui.BeginChild("Main Menu Host", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
-                    {
-                        ImGui.InputText(lang.Translate("menu.host.port") + "###Server Port", ref this._hostPort, 5);
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("menu.host.port.tt"));
-                        }
-
-                        bool allCorrect = Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnecting;
-                        allCorrect &= (Server.Instance == null || !Server.Instance.running);
-
-                        if (!ushort.TryParse(this._hostPort, out ushort cPort))
-                        {
-                            allCorrect = false;
-                            ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.port"));
-                        }
-
-                        ImGui.SetCursorPosY(150 - 32);
-                        if (!allCorrect)
-                        {
-                            ImGui.BeginDisabled();
-                        }
-
-                        if (ImGui.Button(lang.Translate("menu.host") + "###Host", new Vector2(240, 32)))
-                        {
-                            Server.Instance = new Server(IPAddress.Loopback, cPort);
-                            Server.Instance.LocalAdminID = Client.Instance.ID;
-                            Server.Instance.Create();
-                            Client.Instance.Connect(new IPEndPoint(IPAddress.Loopback, cPort));
-                        }
-
-                        if (!allCorrect)
-                        {
-                            ImGui.EndDisabled();
-                        }
-                    }
-
-                    ImGui.EndChild();
-                }
-
-                if (this.MenuMode == 5)
-                {
-                    if (Client.Instance.ClientVersion != null)
-                    {
-                        ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
-                        if (ImGui.BeginChild("Main Menu Changelog", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
-                        {
-                            foreach ((Version, string) kv in Client.Instance.ClientVersion.EnumerateChangelogData())
+                            ImGui.InputText(lang.Translate("menu.connect.address") + "###Address", ref this._connectAddress, 15);
+                            if (ImGui.IsItemHovered())
                             {
-                                ImGui.TextUnformatted(kv.Item1.ToString());
-                                ImGui.Spacing();
-                                foreach (string s in kv.Item2.Split('\n'))
-                                {
-                                    ImGui.Bullet();
-                                    ImGui.PushTextWrapPos();
-                                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-                                    ImGui.TextUnformatted(s);
-                                    ImGui.PopStyleColor();
-                                    ImGui.PopTextWrapPos();
-                                }
+                                ImGui.SetTooltip(lang.Translate("menu.connect.address.tt"));
+                            }
 
-                                ImGui.Spacing();
-                                ImGui.Spacing();
+                            ImGui.InputText(lang.Translate("menu.connect.port") + "###Port", ref this._connectPort, 5);
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("menu.connect.port.tt"));
+                            }
+
+                            bool allCorrect = Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnecting;
+
+                            if (!IPAddress.TryParse(this._connectAddress, out IPAddress address))
+                            {
+                                allCorrect = false;
+                                ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.address"));
+                            }
+
+                            if (!ushort.TryParse(this._connectPort, out ushort cPort))
+                            {
+                                allCorrect = false;
+                                ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.port"));
+                            }
+
+                            ImGui.SetCursorPosY(150 - 32);
+                            if (!allCorrect)
+                            {
+                                ImGui.BeginDisabled();
+                            }
+
+                            if (ImGui.Button(lang.Translate("menu.connect.connect") + "###Connect", new Vector2(240, 32)))
+                            {
+                                Client.Instance.Settings.LastConnectIPAddress = this._connectAddress;
+                                Client.Instance.Settings.LastConnectPort = this._connectPort;
+                                Client.Instance.Settings.Save();
+                                Client.Instance.Connect(new IPEndPoint(address, cPort));
+                            }
+
+                            if (!allCorrect)
+                            {
+                                ImGui.EndDisabled();
                             }
                         }
 
                         ImGui.EndChild();
+                        break;
                     }
-                }
 
-                if (this.MenuMode == 4)
-                {
-                    ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
-                    if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                    case MenuMode.Settings:
                     {
-                        string sp = "    ";
-                        ImGui.Text(lang.Translate("credits.dependencies"));
-                        ImGui.Text(sp + lang.Translate("credits.ncalc"));
-                        ImGui.Text(sp + lang.Translate("credits.ffmpeg"));
-                        ImGui.Text(sp + lang.Translate("credits.gltf"));
-                        ImGui.Text(sp + lang.Translate("credits.imgui"));
-                        ImGui.Text(sp + lang.Translate("credits.imgui.c"));
-                        ImGui.Text(sp + lang.Translate("credits.netcoreserver"));
-                        ImGui.Text(sp + lang.Translate("credits.json"));
-                        ImGui.Text(sp + lang.Translate("credits.opentk"));
-                        ImGui.Text(sp + lang.Translate("credits.imagesharp"));
-                        ImGui.Text(sp + lang.Translate("credits.net"));
-                        ImLink(lang.Translate("credits.imgui_markdown"), "https://github.com/juliettef/imgui_markdown");
-                        ImGui.NewLine();
-                        ImLink(lang.Translate("credits.icons8"), "https://icons8.com/");
-                        ImGui.Text("    3d");
-                        ImGui.Text("    abscissa");
-                        ImGui.Text("    accuracy");
-                        ImGui.Text("    block");
-                        ImGui.Text("    box-important");
-                        ImGui.Text("    closed-eye");
-                        ImGui.Text("    color-swatch");
-                        ImGui.Text("    cube");
-                        ImGui.Text("    cursor");
-                        ImGui.Text("    curved-arrow");
-                        ImGui.Text("    day-camera");
-                        ImGui.Text("    dice");
-                        ImGui.Text("    double-down");
-                        ImGui.Text("    double-right");
-                        ImGui.Text("    drag");
-                        ImGui.Text("    edit");
-                        ImGui.Text("    erase");
-                        ImGui.Text("    error");
-                        ImGui.Text("    eye");
-                        ImGui.Text("    folder");
-                        ImGui.Text("    help");
-                        ImGui.Text("    incoming-data");
-                        ImGui.Text("    length");
-                        ImGui.Text("    link-picture");
-                        ImGui.Text("    lips");
-                        ImGui.Text("    loading-circle");
-                        ImGui.Text("    magic");
-                        ImGui.Text("    money-bag");
-                        ImGui.Text("    move-all-arrow");
-                        ImGui.Text("    move-separate");
-                        ImGui.Text("    musical-notes");
-                        ImGui.Text("    music-library");
-                        ImGui.Text("    no-image");
-                        ImGui.Text("    outgoing-data");
-                        ImGui.Text("    paint");
-                        ImGui.Text("    paper-plane");
-                        ImGui.Text("    particle");
-                        ImGui.Text("    pause");
-                        ImGui.Text("    pentagram");
-                        ImGui.Text("    picture");
-                        ImGui.Text("    pipeline");
-                        ImGui.Text("    play");
-                        ImGui.Text("    plus-math");
-                        ImGui.Text("    polyline");
-                        ImGui.Text("    process");
-                        ImGui.Text("    radar-plot");
-                        ImGui.Text("    radius");
-                        ImGui.Text("    rectangle");
-                        ImGui.Text("    resize");
-                        ImGui.Text("    return");
-                        ImGui.Text("    search");
-                        ImGui.Text("    security-lock");
-                        ImGui.Text("    so-so");
-                        ImGui.Text("    sound");
-                        ImGui.Text("    sphere");
-                        ImGui.Text("    stop");
-                        ImGui.Text("    stopwatch");
-                        ImGui.Text("    surface");
-                        ImGui.Text("    sword");
-                        ImGui.Text("    swords");
-                        ImGui.Text("    thinking-male");
-                        ImGui.Text("    trash-can");
-                        ImGui.Text("    vertical-line");
-                        ImGui.Text("    visialy-impared");
-                        ImGui.Text("    video-camera");
-                        ImGui.NewLine();
-                        ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
-                        ImGui.NewLine();
-                        ImGui.Text(lang.Translate("credits.tools"));
-                        ImLink(sp + lang.Translate("credits.blender"), "https://www.blender.org/");
-                        ImLink(sp + lang.Translate("credits.gimp"), "https://www.gimp.org/");
-                        ImLink(sp + lang.Translate("credits.vs"), "https://visualstudio.microsoft.com/");
-                        ImLink(sp + lang.Translate("credits.emojidata"), "https://www.unicode.org");
-                        ImLink(sp + lang.Translate("credits.nsight"), "https://developer.nvidia.com/nsight-graphics");
-                        ImLink(sp + lang.Translate("credits.sfx"), "https://www.storyblocks.com/audio");
-                        ImGui.NewLine();
-                        ImGui.Text(lang.Translate("credits.special"));
-                        ImGui.Text(sp + lang.Translate("credits.stackoverflow"));
-                        ImGui.Text(sp + lang.Translate("credits.msspecial"));
-                        ImGui.Text(sp + lang.Translate("credits.khronos"));
-                        ImGui.Text(sp + lang.Translate("credits.you"));
+                        ImGui.SetCursorPos(new Vector2((width / 2) - 200, 532));
+                        DrawSettings(lang, state);
+                        break;
                     }
 
-                    ImGui.EndChild();
+                    case MenuMode.Host:
+                    {
+                        ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
+                        if (ImGui.BeginChild("Main Menu Host", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
+                        {
+                            ImGui.InputText(lang.Translate("menu.host.port") + "###Server Port", ref this._hostPort, 5);
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("menu.host.port.tt"));
+                            }
+
+                            bool allCorrect = Client.Instance.NetClient == null || !Client.Instance.NetClient.IsConnecting;
+                            allCorrect &= (Server.Instance == null || !Server.Instance.running);
+
+                            if (!ushort.TryParse(this._hostPort, out ushort cPort))
+                            {
+                                allCorrect = false;
+                                ImGui.TextColored(((Vector4)Color.Red), lang.Translate("menu.connect.error.port"));
+                            }
+
+                            ImGui.SetCursorPosY(150 - 32);
+                            if (!allCorrect)
+                            {
+                                ImGui.BeginDisabled();
+                            }
+
+                            if (ImGui.Button(lang.Translate("menu.host") + "###Host", new Vector2(240, 32)))
+                            {
+                                Server.Instance = new Server(IPAddress.Loopback, cPort);
+                                Server.Instance.LocalAdminID = Client.Instance.ID;
+                                Server.Instance.Create();
+                                Client.Instance.Connect(new IPEndPoint(IPAddress.Loopback, cPort));
+                            }
+
+                            if (!allCorrect)
+                            {
+                                ImGui.EndDisabled();
+                            }
+                        }
+
+                        ImGui.EndChild();
+                        break;
+                    }
+
+                    case MenuMode.Changelog:
+                    {
+                        if (Client.Instance.ClientVersion != null)
+                        {
+                            ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
+                            if (ImGui.BeginChild("Main Menu Changelog", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                            {
+                                foreach ((Version, string) kv in Client.Instance.ClientVersion.EnumerateChangelogData())
+                                {
+                                    ImGui.TextUnformatted(kv.Item1.ToString());
+                                    ImGui.Spacing();
+                                    foreach (string s in kv.Item2.Split('\n'))
+                                    {
+                                        ImGui.Bullet();
+                                        ImGui.PushTextWrapPos();
+                                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+                                        ImGui.TextUnformatted(s);
+                                        ImGui.PopStyleColor();
+                                        ImGui.PopTextWrapPos();
+                                    }
+
+                                    ImGui.Spacing();
+                                    ImGui.Spacing();
+                                }
+                            }
+
+                            ImGui.EndChild();
+                        }
+
+                        break;
+                    }
+
+                    case MenuMode.Credits:
+                    {
+                        ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
+                        if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                        {
+                            string sp = "    ";
+                            ImGui.Text(lang.Translate("credits.dependencies"));
+                            ImGui.Text(sp + lang.Translate("credits.ncalc"));
+                            ImGui.Text(sp + lang.Translate("credits.ffmpeg"));
+                            ImGui.Text(sp + lang.Translate("credits.gltf"));
+                            ImGui.Text(sp + lang.Translate("credits.imgui"));
+                            ImGui.Text(sp + lang.Translate("credits.imgui.c"));
+                            ImGui.Text(sp + lang.Translate("credits.netcoreserver"));
+                            ImGui.Text(sp + lang.Translate("credits.json"));
+                            ImGui.Text(sp + lang.Translate("credits.opentk"));
+                            ImGui.Text(sp + lang.Translate("credits.imagesharp"));
+                            ImGui.Text(sp + lang.Translate("credits.net"));
+                            ImLink(lang.Translate("credits.imgui_markdown"), "https://github.com/juliettef/imgui_markdown");
+                            ImGui.NewLine();
+                            ImLink(lang.Translate("credits.icons8"), "https://icons8.com/");
+                            ImGui.Text("    3d");
+                            ImGui.Text("    abscissa");
+                            ImGui.Text("    accuracy");
+                            ImGui.Text("    block");
+                            ImGui.Text("    box-important");
+                            ImGui.Text("    closed-eye");
+                            ImGui.Text("    color-swatch");
+                            ImGui.Text("    cube");
+                            ImGui.Text("    cursor");
+                            ImGui.Text("    curved-arrow");
+                            ImGui.Text("    day-camera");
+                            ImGui.Text("    dice");
+                            ImGui.Text("    double-down");
+                            ImGui.Text("    double-right");
+                            ImGui.Text("    drag");
+                            ImGui.Text("    edit");
+                            ImGui.Text("    erase");
+                            ImGui.Text("    error");
+                            ImGui.Text("    eye");
+                            ImGui.Text("    folder");
+                            ImGui.Text("    help");
+                            ImGui.Text("    incoming-data");
+                            ImGui.Text("    length");
+                            ImGui.Text("    link-picture");
+                            ImGui.Text("    lips");
+                            ImGui.Text("    loading-circle");
+                            ImGui.Text("    magic");
+                            ImGui.Text("    money-bag");
+                            ImGui.Text("    move-all-arrow");
+                            ImGui.Text("    move-separate");
+                            ImGui.Text("    musical-notes");
+                            ImGui.Text("    music-library");
+                            ImGui.Text("    no-image");
+                            ImGui.Text("    outgoing-data");
+                            ImGui.Text("    paint");
+                            ImGui.Text("    paper-plane");
+                            ImGui.Text("    particle");
+                            ImGui.Text("    pause");
+                            ImGui.Text("    pentagram");
+                            ImGui.Text("    picture");
+                            ImGui.Text("    pipeline");
+                            ImGui.Text("    play");
+                            ImGui.Text("    plus-math");
+                            ImGui.Text("    polyline");
+                            ImGui.Text("    process");
+                            ImGui.Text("    radar-plot");
+                            ImGui.Text("    radius");
+                            ImGui.Text("    rectangle");
+                            ImGui.Text("    resize");
+                            ImGui.Text("    return");
+                            ImGui.Text("    search");
+                            ImGui.Text("    security-lock");
+                            ImGui.Text("    so-so");
+                            ImGui.Text("    sound");
+                            ImGui.Text("    sphere");
+                            ImGui.Text("    stop");
+                            ImGui.Text("    stopwatch");
+                            ImGui.Text("    surface");
+                            ImGui.Text("    sword");
+                            ImGui.Text("    swords");
+                            ImGui.Text("    thinking-male");
+                            ImGui.Text("    trash-can");
+                            ImGui.Text("    vertical-line");
+                            ImGui.Text("    visialy-impared");
+                            ImGui.Text("    video-camera");
+                            ImGui.NewLine();
+                            ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
+                            ImGui.NewLine();
+                            ImGui.Text(lang.Translate("credits.tools"));
+                            ImLink(sp + lang.Translate("credits.blender"), "https://www.blender.org/");
+                            ImLink(sp + lang.Translate("credits.gimp"), "https://www.gimp.org/");
+                            ImLink(sp + lang.Translate("credits.vs"), "https://visualstudio.microsoft.com/");
+                            ImLink(sp + lang.Translate("credits.emojidata"), "https://www.unicode.org");
+                            ImLink(sp + lang.Translate("credits.nsight"), "https://developer.nvidia.com/nsight-graphics");
+                            ImLink(sp + lang.Translate("credits.sfx"), "https://www.storyblocks.com/audio");
+                            ImGui.NewLine();
+                            ImGui.Text(lang.Translate("credits.special"));
+                            ImGui.Text(sp + lang.Translate("credits.stackoverflow"));
+                            ImGui.Text(sp + lang.Translate("credits.msspecial"));
+                            ImGui.Text(sp + lang.Translate("credits.khronos"));
+                            ImGui.Text(sp + lang.Translate("credits.you"));
+                        }
+
+                        ImGui.EndChild();
+                        break;
+                    }
+
+                    default:
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -1178,6 +1193,20 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.offscreen_particle_updates.tt"));
                     }
 
+                    ImGui.Text(lang.Translate("menu.settings.gl_context_policy"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.gl_context_policy.tt"));
+                    }
+
+                    string[] glps = { lang.Translate("menu.settings.gl_context_policy.implicit"), lang.Translate("menu.settings.gl_context_policy.checked"), lang.Translate("menu.settings.gl_context_policy.explicit") };
+                    int glpv = (int)Client.Instance.Settings.ContextHandlingMode;
+                    if (ImGui.Combo("##GLContextPolicy", ref glpv, glps, 3))
+                    {
+                        Client.Instance.Settings.ContextHandlingMode = (ClientSettings.GLContextHandlingMode)glpv;
+                        Client.Instance.Settings.Save();
+                    }
+
                     if (!bDebug)
                     {
                         ImGui.EndDisabled();
@@ -1223,6 +1252,16 @@
 
         public void Update()
         {
+        }
+
+        public enum MenuMode
+        {
+            None,
+            Join,
+            Host,
+            Settings,
+            Credits,
+            Changelog
         }
     }
 }

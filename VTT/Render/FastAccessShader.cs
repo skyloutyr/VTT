@@ -6,6 +6,7 @@
     {
         public ShaderProgram Program { get; }
         public MaterialUniforms Material { get; }
+        public CommonUniforms Essentials { get; }
 
         public UniformWrapper this[string s] => this.Program[s];
 
@@ -13,9 +14,34 @@
         {
             this.Program = shader;
             this.Material = new MaterialUniforms(shader);
+            this.Essentials = new CommonUniforms(shader);
         }
 
         public static implicit operator ShaderProgram(FastAccessShader self) => self.Program;
+
+        public readonly struct CommonUniforms
+        {
+            public readonly UniformWrapper Transform { get; init; }
+            public readonly UniformWrapper MVP { get; init; }
+            public readonly UniformWrapper Projection { get; init; }
+            public readonly UniformWrapper View { get; init; }
+            public readonly UniformWrapper IsAnimated { get; init; }
+            public readonly UniformWrapper TintColor { get; init; }
+            public readonly UniformWrapper Alpha { get; init; }
+            public readonly UniformWrapper GridAlpha { get; init; }
+
+            public CommonUniforms(ShaderProgram prog)
+            {
+                this.Transform = prog["model"];
+                this.MVP = prog["mvp"];
+                this.Projection = prog["projection"];
+                this.View = prog["view"];
+                this.IsAnimated = prog["is_animated"];
+                this.TintColor = prog["tint_color"];
+                this.Alpha = prog["alpha"];
+                this.GridAlpha = prog["grid_alpha"];
+            }
+        }
 
         public readonly struct MaterialUniforms
         {

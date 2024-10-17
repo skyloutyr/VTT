@@ -102,9 +102,9 @@
             {
                 shader = this.ParticleShader;
                 shader.Program.Bind();
-                shader["view"].Set(this._cam.View);
-                shader["projection"].Set(this._cam.Projection);
-                shader["model"].Set(Matrix4x4.Identity);
+                shader.Essentials.View.Set(this._cam.View);
+                shader.Essentials.Projection.Set(this._cam.Projection);
+                shader.Essentials.Transform.Set(Matrix4x4.Identity);
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -329,9 +329,9 @@
             FastAccessShader shader = this.ParticleShader;
             shader.Program.Bind();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["model"].Set(Matrix4x4.Identity);
+            shader.Essentials.View.Set(cam.View);
+            shader.Essentials.Projection.Set(cam.Projection);
+            shader.Essentials.Transform.Set(Matrix4x4.Identity);
             shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
             shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
@@ -412,9 +412,9 @@
 
                     if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
                     {
-                        shader["view"].Set(cam.View);
-                        shader["projection"].Set(cam.Projection);
-                        shader["model"].Set(Matrix4x4.Identity);
+                        shader.Essentials.View.Set(cam.View);
+                        shader.Essentials.Projection.Set(cam.Projection);
+                        shader.Essentials.Transform.Set(Matrix4x4.Identity);
                         shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                         shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                         shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);

@@ -59,8 +59,8 @@
         public void Render(FastAccessShader shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
-            shader["model"].Set(model);
-            shader["mvp"].Set(model * view * projection);
+            shader.Essentials.Transform.Set(model);
+            shader.Essentials.MVP.Set(model * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);
@@ -73,11 +73,11 @@
                     Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
                 }
 
-                shader["is_animated"].Set(true);
+                shader.Essentials.IsAnimated.Set(true);
             }
             else
             {
-                shader["is_animated"].Set(false);
+                shader.Essentials.IsAnimated.Set(false);
             }
 
             this.Material.Uniform(shader, textureAnimationIndex);

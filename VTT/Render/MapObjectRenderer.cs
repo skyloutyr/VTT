@@ -863,8 +863,8 @@
 
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
-                        shader["grid_alpha"].Set(i == -2 && m.GridEnabled ? ga : 0.0f);
-                        shader["tint_color"].Set(mo.TintColor.Vec4());
+                        shader.Essentials.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
+                        shader.Essentials.TintColor.Set(mo.TintColor.Vec4());
                         GL.ActiveTexture(0);
                         mo.LastRenderModel = a.Model.GLMdl;
                         a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
@@ -913,8 +913,8 @@
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                 this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
-                shader["alpha"].Set(this._passthroughData.Alpha);
-                shader["grid_alpha"].Set(this._passthroughData.GridAlpha);
+                shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
+                shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
                 foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
@@ -947,7 +947,7 @@
 
                         shader = forwardShader;
                         this._passthroughData.TintColor = mo.TintColor.Vec4();
-                        shader["tint_color"].Set(this._passthroughData.TintColor);
+                        shader.Essentials.TintColor.Set(this._passthroughData.TintColor);
                         bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out FastAccessShader customShader);
                         if (hadCustomRenderShader)
                         {

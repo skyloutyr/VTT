@@ -49,8 +49,8 @@
             shader.Program.Bind();
             if (!useUBO)
             {
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
+                shader.Essentials.View.Set(cam.View);
+                shader.Essentials.Projection.Set(cam.Projection);
                 shader["camera_position"].Set(cam.Position);
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
@@ -90,8 +90,8 @@
             shader.Program.Bind();
             if (!Client.Instance.Settings.UseUBO)
             {
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
+                shader.Essentials.View.Set(cam.View);
+                shader.Essentials.Projection.Set(cam.Projection);
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader["camera_position"].Set(cam.Position);

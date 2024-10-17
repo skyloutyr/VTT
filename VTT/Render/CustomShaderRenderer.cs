@@ -32,9 +32,9 @@
                             Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
                         }
 
-                        shader["tint_color"].Set(passthroughData.TintColor);
-                        shader["alpha"].Set(passthroughData.Alpha);
-                        shader["grid_alpha"].Set(passthroughData.GridAlpha);
+                        shader.Essentials.TintColor.Set(passthroughData.TintColor);
+                        shader.Essentials.Alpha.Set(passthroughData.Alpha);
+                        shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
                         GL.ActiveTexture(12);
                         if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
                         {

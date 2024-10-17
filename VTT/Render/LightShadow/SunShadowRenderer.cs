@@ -98,8 +98,8 @@
                 GL.Clear(ClearBufferMask.Depth);
 
                 this.SunShader.Program.Bind();
-                this.SunShader["view"].Set(this.SunView);
-                this.SunShader["projection"].Set(this.SunProjection);
+                this.SunShader.Essentials.View.Set(this.SunView);
+                this.SunShader.Essentials.Projection.Set(this.SunProjection);
 
                 ShadowPass = true;
 

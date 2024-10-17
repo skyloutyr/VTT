@@ -231,6 +231,7 @@
             {
                 this.Shader.Program.Bind();
                 SunShadowRenderer.ShadowPass = true;
+                GL.Disable(Capability.CullFace);
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {
                     PointLight pl = this.Lights[i1];
@@ -284,6 +285,7 @@
                 }
 
                 SunShadowRenderer.ShadowPass = false;
+                GL.Enable(Capability.CullFace);
             }
 
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);

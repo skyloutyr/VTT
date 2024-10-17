@@ -51,7 +51,6 @@
         {
             if (SunShadowRenderer.ShadowPass)
             {
-                GL.Disable(Capability.CullFace);
                 return;
             }
             /* Material data:

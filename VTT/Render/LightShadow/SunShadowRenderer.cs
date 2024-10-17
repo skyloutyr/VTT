@@ -102,6 +102,7 @@
                 this.SunShader.Essentials.Projection.Set(this.SunProjection);
 
                 ShadowPass = true;
+                GL.Disable(Capability.CullFace);
 
                 for (int i = -2; i <= 0; ++i)
                 {
@@ -122,6 +123,7 @@
                 }
 
                 ShadowPass = false;
+                GL.Enable(Capability.CullFace);
                 GL.BindFramebuffer(FramebufferTarget.All, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);

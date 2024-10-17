@@ -3,10 +3,10 @@
     using System;
     using System.Numerics;
 
-    public struct AABox : IEquatable<AABox>
+    public readonly struct AABox : IEquatable<AABox>
     {
-        public Vector3 Start { get; set; }
-        public Vector3 End { get; set; }
+        public readonly Vector3 Start { get; }
+        public readonly Vector3 End { get; }
 
         public readonly Vector3 Center => this.Start + ((this.End - this.Start) * 0.5f);
         public readonly Vector3 Size => this.End - this.Start;
@@ -83,7 +83,7 @@
 
         public readonly Vector3? Intersects(Ray ray)
         {
-            Vector3 dirFract = new Vector3(1 / ray.Direction.X, 1 / ray.Direction.Y, 1 / ray.Direction.Z);
+            Vector3 dirFract = ray.InverseDirection;
             float t1 = (this.Start.X - ray.Origin.X) * dirFract.X;
             float t2 = (this.End.X - ray.Origin.X) * dirFract.X;
             float t3 = (this.Start.Y - ray.Origin.Y) * dirFract.Y;
@@ -103,8 +103,7 @@
                 return null;
             }
 
-            float t = tmin;
-            return ray.Origin + (ray.Direction * t);
+            return ray.Origin + (ray.Direction * tmin);
         }
 
         public readonly bool Contains(Vector3 point)

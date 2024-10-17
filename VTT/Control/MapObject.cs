@@ -308,7 +308,7 @@
         public void RecalculateModelMatrix()
         {
             this.ClientCachedModelMatrix = Matrix4x4.CreateScale(this.scale) * Matrix4x4.CreateFromQuaternion(this.rotation) * Matrix4x4.CreateTranslation(this.position);
-            this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).GetBounds();
+            this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).Bounds;
         }
 
         public void Update() // Client-only

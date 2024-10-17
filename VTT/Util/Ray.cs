@@ -3,15 +3,21 @@
     using System;
     using System.Numerics;
 
-    public struct Ray
+    public readonly struct Ray
     {
-        public Vector3 Origin { get; set; }
-        public Vector3 Direction { get; set; }
+        private readonly Vector3 _origin;
+        private readonly Vector3 _direction;
+        private readonly Vector3 _invDir;
+
+        public readonly Vector3 Origin => this._origin;
+        public readonly Vector3 Direction => this._direction;
+        public readonly Vector3 InverseDirection => this._invDir;
 
         public Ray(Vector3 origin, Vector3 direction)
         {
-            this.Origin = origin;
-            this.Direction = direction.Normalized();
+            this._origin = origin;
+            this._direction = direction.Normalized();
+            this._invDir = Vector3.One / this._direction;
         }
 
         public readonly Vector3? IntersectsSphere(Vector3 position, float radius)
@@ -68,6 +74,9 @@
             return discriminant <= 1e-7 ? this.Origin + (this.Direction * dist2) : this.Origin + (this.Direction * dist1);
         }
 
+        public readonly Ray Offset(Vector3 by) => new Ray(this.Origin + by, this.Direction);
+
+        public readonly Vector3? IntersectsAABB(AABox box) => box.Intersects(this);
 
         public override readonly string ToString() => this.Origin.ToString() + ", " + this.Direction.ToString();
     }

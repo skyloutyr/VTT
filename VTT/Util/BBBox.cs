@@ -5,21 +5,27 @@
     using System.Collections.Generic;
     using System.Numerics;
 
-    public struct BBBox : IEquatable<BBBox>, IEnumerable<Vector3>
+    public readonly struct BBBox : IEquatable<BBBox>, IEnumerable<Vector3>
     {
-        public Vector3 Start { get; set; }
-        public Vector3 End { get; set; }
-        public Quaternion Rotation { get; set; }
+        private readonly AABox _internalAABB;
+        private readonly Quaternion _rotation;
 
-        public BBBox(Vector3 start, Vector3 end, Quaternion quat) : this()
+        public readonly Vector3 Start => this._internalAABB.Start;
+        public readonly Vector3 End => this._internalAABB.End;
+        public readonly Quaternion Rotation => this._rotation;
+        public readonly AABox Bounds => this.GetBounds();
+        public readonly Vector3 Center => this.Start + ((this.End - this.Start) * 0.5f);
+        public readonly Vector3 Size => this.End - this.Start;
+
+
+        public BBBox(Vector3 start, Vector3 end, Quaternion quat) : this(new AABox(start, end), quat)
         {
-            this.Start = new Vector3(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y), Math.Min(start.Z, end.Z));
-            this.End = new Vector3(Math.Max(start.X, end.X), Math.Max(start.Y, end.Y), Math.Max(start.Z, end.Z));
-            this.Rotation = quat;
         }
 
-        public BBBox(AABox box, Quaternion quat) : this(box.Start, box.End, quat)
+        public BBBox(AABox box, Quaternion quat) : this()
         {
+            this._internalAABB = box;
+            this._rotation = quat;
         }
 
         public static BBBox FromPositionAndSize(Vector3 pos, Vector3 size) => new BBBox(pos, pos + size, Quaternion.Identity);
@@ -100,95 +106,90 @@
 
             float tMin = 0.0f;
             float tMax = 100000.0f;
-
             Vector3 worldSpace = new Vector3(modelMatrix.M41, modelMatrix.M42, modelMatrix.M43);
             Vector3 delta = worldSpace - ray.Origin;
-
+            Vector3 xaxis = new Vector3(modelMatrix.M11, modelMatrix.M12, modelMatrix.M13);
+            float e = Vector3.Dot(xaxis, delta);
+            float f = Vector3.Dot(ray.Direction, xaxis);
+            if (MathF.Abs(f) > 0.001f)
             {
-                Vector3 xaxis = new Vector3(modelMatrix.M11, modelMatrix.M12, modelMatrix.M13);
-                float e = Vector3.Dot(xaxis, delta);
-                float f = Vector3.Dot(ray.Direction, xaxis);
-
-                if (MathF.Abs(f) > 0.001f)
+                float t1 = (e + this.Start.X) / f;
+                float t2 = (e + this.End.X) / f;
+                if (t1 > t2)
                 {
-                    float t1 = (e + this.Start.X) / f;
-                    float t2 = (e + this.End.X) / f;
-
-                    if (t1 > t2)
-                    {
-                        (t2, t1) = (t1, t2);
-                    }
-
-                    if (t2 < tMax) tMax = t2;
-                    if (t1 > tMin) tMin = t1;
-                    if (tMin > tMax) return null;
-
+                    (t2, t1) = (t1, t2);
                 }
-                else
+
+                tMax = MathF.Min(t2, tMax);
+                tMin = MathF.Max(t1, tMin);
+                if (tMin > tMax)
                 {
-                    if (-e + this.Start.X > 0.0f || -e + this.End.X < 0.0f) return null;
+                    return null;
+                }
+            }
+            else
+            {
+                if (-e + this.Start.X > 0.0f || -e + this.End.X < 0.0f)
+                {
+                    return null;
                 }
             }
 
-
+            Vector3 yaxis = new Vector3(modelMatrix.M21, modelMatrix.M22, modelMatrix.M23);
+            e = Vector3.Dot(yaxis, delta);
+            f = Vector3.Dot(ray.Direction, yaxis);
+            if (MathF.Abs(f) > 0.001f)
             {
-                Vector3 yaxis = new Vector3(modelMatrix.M21, modelMatrix.M22, modelMatrix.M23);
-                float e = Vector3.Dot(yaxis, delta);
-                float f = Vector3.Dot(ray.Direction, yaxis);
-
-                if (MathF.Abs(f) > 0.001f)
+                float t1 = (e + this.Start.Y) / f;
+                float t2 = (e + this.End.Y) / f;
+                if (t1 > t2)
                 {
-
-                    float t1 = (e + this.Start.Y) / f;
-                    float t2 = (e + this.End.Y) / f;
-
-                    if (t1 > t2)
-                    {
-                        (t2, t1) = (t1, t2);
-                    }
-
-                    if (t2 < tMax) tMax = t2;
-                    if (t1 > tMin) tMin = t1;
-                    if (tMin > tMax) return null;
-
+                    (t2, t1) = (t1, t2);
                 }
-                else
+
+                tMax = MathF.Min(t2, tMax);
+                tMin = MathF.Max(t1, tMin);
+                if (tMin > tMax)
                 {
-                    if (-e + this.Start.Y > 0.0f || -e + this.End.Y < 0.0f) return null;
+                    return null;
+                }
+            }
+            else
+            {
+                if (-e + this.Start.Y > 0.0f || -e + this.End.Y < 0.0f)
+                {
+                    return null;
                 }
             }
 
-
+            Vector3 zaxis = new Vector3(modelMatrix.M31, modelMatrix.M32, modelMatrix.M33);
+            e = Vector3.Dot(zaxis, delta);
+            f = Vector3.Dot(ray.Direction, zaxis);
+            if (MathF.Abs(f) > 0.001f)
             {
-                Vector3 zaxis = new Vector3(modelMatrix.M31, modelMatrix.M32, modelMatrix.M33);
-                float e = Vector3.Dot(zaxis, delta);
-                float f = Vector3.Dot(ray.Direction, zaxis);
-
-                if (MathF.Abs(f) > 0.001f)
+                float t1 = (e + this.Start.Z) / f;
+                float t2 = (e + this.End.Z) / f;
+                if (t1 > t2)
                 {
-
-                    float t1 = (e + this.Start.Z) / f;
-                    float t2 = (e + this.End.Z) / f;
-
-                    if (t1 > t2)
-                    {
-                        (t2, t1) = (t1, t2);
-                    }
-
-                    if (t2 < tMax) tMax = t2;
-                    if (t1 > tMin) tMin = t1;
-                    if (tMin > tMax) return null;
-
+                    (t2, t1) = (t1, t2);
                 }
-                else
+
+                tMax = MathF.Min(t2, tMax);
+                tMin = MathF.Max(t1, tMin);
+                if (tMin > tMax)
                 {
-                    if (-e + this.Start.Z > 0.0f || -e + this.End.Z < 0.0f) return null;
+                    return null;
+                }
+            }
+            else
+            {
+                if (-e + this.Start.Z > 0.0f || -e + this.End.Z < 0.0f)
+                {
+                    return null;
                 }
             }
 
             return ray.Origin + (ray.Direction * tMin);
-
-            // return new AABox(this.Start, this.End).Intersects(new Ray(ori.Xyz, dir.Xyz));
         }
 
         public readonly bool Equals(BBBox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);

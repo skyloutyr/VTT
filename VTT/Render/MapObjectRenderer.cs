@@ -830,7 +830,7 @@
             this._crossedOutObjects.Clear();
             for (int i = -2; i <= 0; ++i)
             {
-                foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
+                foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
                     bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);

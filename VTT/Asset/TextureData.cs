@@ -187,6 +187,7 @@
             mesh.Name = "generated_mesh";
             mesh.Type = GlbObjectType.Mesh;
             ret.Meshes.Add(mesh);
+            ret.RenderedMeshes.Add(mesh);
             ret.RootObjects.Add(mesh);
 
             GlbLight sunlight = new GlbLight(Vector4.One, 10, KhrLight.LightTypeEnum.Directional);

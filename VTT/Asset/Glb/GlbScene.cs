@@ -30,6 +30,7 @@
         public GlbObject PortraitCamera { get; set; }
         public List<GlbObject> Lights { get; } = new List<GlbObject>();
         public List<GlbObject> Meshes { get; } = new List<GlbObject>();
+        public List<GlbObject> RenderedMeshes { get; } = new List<GlbObject>();
         public List<GlbArmature> Armatures { get; } = new List<GlbArmature>();
         public List<GlbAnimation> Animations { get; } = new List<GlbAnimation>();
 
@@ -686,6 +687,7 @@
                     else
                     {
                         o.Type = GlbObjectType.Mesh;
+                        this.RenderedMeshes.Add(o);
                     }
 
                     AABox box = o.Meshes[0].Bounds;
@@ -1258,7 +1260,7 @@
                 return;
             }
 
-            foreach (GlbObject o in this.RootObjects)
+            foreach (GlbObject o in this.RenderedMeshes)
             {
                 o.Render(shader, baseMatrix, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }

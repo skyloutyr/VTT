@@ -821,9 +821,7 @@
             GL.DepthFunction(ComparisonMode.LessOrEqual);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-            GL.ActiveTexture(0);
             this.RenderLights(m, delta);
-            GL.ActiveTexture(0);
 
             FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
@@ -865,7 +863,6 @@
                         float ga = m.GridColor.Vec4().W;
                         shader.Essentials.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
                         shader.Essentials.TintColor.Set(mo.TintColor.Vec4());
-                        GL.ActiveTexture(0);
                         mo.LastRenderModel = a.Model.GLMdl;
                         a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                     }
@@ -877,7 +874,6 @@
             }
 
             Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m);
-            GL.ActiveTexture(0);
             this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
 
@@ -988,7 +984,6 @@
             this.FastLightRenderer.Render(m);
             this.CPUTimerCompound.Restart();
             Client.Instance.Frontend.Renderer.Pipeline.FinishRender();
-            GL.ActiveTexture(0);
             this.CPUTimerCompound.Stop();
         }
 

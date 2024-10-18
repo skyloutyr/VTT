@@ -69,17 +69,9 @@
 
         public void Render(FastAccessShader shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
-            if (this.Type == GlbObjectType.Mesh)
+            foreach (GlbMesh mesh in this.Meshes)
             {
-                foreach (GlbMesh mesh in this.Meshes)
-                {
-                    mesh.Render(shader, this.GlobalTransform * model, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
-                }
-            }
-
-            foreach (GlbObject child in this.Children)
-            {
-                child.Render(shader, model, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+                mesh.Render(shader, this.GlobalTransform * model, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }
         }
 

@@ -468,15 +468,15 @@
                 return;
             }
 
-            particleShader["billboard"].Set(this.Template.DoBillboard);
-            particleShader["do_fow"].Set(this.Template.DoFow);
-            particleShader["is_sprite_sheet"].Set(this.Template.IsSpriteSheet);
-            particleShader["sprite_sheet_data"].Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
+            particleShader.Particle.DoBillboard.Set(this.Template.DoBillboard);
+            particleShader.Particle.DoFOW.Set(this.Template.DoFow);
+            particleShader.Particle.IsSpriteSheet.Set(this.Template.IsSpriteSheet);
+            particleShader.Particle.SpriteSheetData.Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
             GL.ActiveTexture(14);
             GL.BindTexture(TextureTarget.Buffer, this._glBufferTexture);
-            GL.ActiveTexture(0);
             a.Model.GLMdl.Render(particleShader, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, null, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
+            GL.ActiveTexture(0);
         }
 
         private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();

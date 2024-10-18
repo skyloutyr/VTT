@@ -253,6 +253,7 @@
 
             GL.DepthFunction(ComparisonMode.LessOrEqual);
             GL.Disable(Capability.CullFace);
+            GL.ActiveTexture(0);
         }
 
         public uint CreateDummyForwardFBO(Size s, out Texture pos, out Texture albedo, out Texture emission, out Texture normal, out Texture mraog, out Texture depth, out Texture colorOut)

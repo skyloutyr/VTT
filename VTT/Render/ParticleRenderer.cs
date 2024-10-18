@@ -108,7 +108,7 @@
                 shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
                 shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-                shader["do_fow"].Set(false);
+                shader.Particle.DoFOW.Set(false);
                 shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
                 shader["cursor_position"].Set(new Vector3(0, 0, 0));
                 shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));

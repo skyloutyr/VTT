@@ -90,9 +90,6 @@
             {
                 renderer(this);
             }
-
-            // Reset GL state
-            GL.ActiveTexture(0);
         }
 
         public int FindAreaSumIndex(float aSumValue)

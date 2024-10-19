@@ -171,6 +171,8 @@ All boxes can be moved, rotated or deleted with the respective tools. All boxes 
 
 There is no limit on how many boxes (illumination and blockers) can be present within a map, though there is a less than linear performance decrease as their number increases.
 
+---
+
 ## Setting up animated sprites and audio compression
 VTT supports webm animated sprites for 2D images (and technically 3D model textures). However before such sprite may be used 3rd party libraries must be installed.
 * Download full [FFmpeg](https://ffmpeg.org/) binaries. The ones that include both the .exe and .dll files are required (specifically, the following files must be present:)

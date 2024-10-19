@@ -338,6 +338,7 @@
                             ImGui.Text("    curved-arrow");
                             ImGui.Text("    day-camera");
                             ImGui.Text("    dice");
+                            ImGui.Text("    door");
                             ImGui.Text("    double-down");
                             ImGui.Text("    double-right");
                             ImGui.Text("    drag");
@@ -349,6 +350,7 @@
                             ImGui.Text("    help");
                             ImGui.Text("    incoming-data");
                             ImGui.Text("    length");
+                            ImGui.Text("    light");
                             ImGui.Text("    link-picture");
                             ImGui.Text("    lips");
                             ImGui.Text("    loading-circle");
@@ -391,6 +393,7 @@
                             ImGui.Text("    vertical-line");
                             ImGui.Text("    visialy-impared");
                             ImGui.Text("    video-camera");
+                            ImGui.Text("    wall");
                             ImGui.NewLine();
                             ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
                             ImGui.NewLine();
@@ -871,6 +874,39 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.performance.tt"));
                     }
 
+                    string[] shadow2dPrecisions = { lang.Translate("menu.settings.shadow2dprecision.low"), lang.Translate("menu.settings.shadow2dprecision.medium"), lang.Translate("menu.settings.shadow2dprecision.high"), lang.Translate("menu.settings.shadow2dprecision.full") };
+                    int s2dperfIndex = (int)Client.Instance.Settings.Shadow2DPrecision;
+                    ImGui.Text(lang.Translate("menu.settings.shadow2dprecision"));
+                    if (ImGui.Combo("##Shadow 2D Precision", ref s2dperfIndex, shadow2dPrecisions, 4))
+                    {
+                        Shadow2DResolution nVal = (Shadow2DResolution)s2dperfIndex;
+                        Client.Instance.Settings.Shadow2DPrecision = nVal;
+                        Client.Instance.Settings.Save();
+                        int w = nVal switch
+                        {
+                            Shadow2DResolution.Low => 256,
+                            Shadow2DResolution.Medium => 512,
+                            Shadow2DResolution.High => 1024,
+                            Shadow2DResolution.Full => Client.Instance.Frontend.Width,
+                            _ => 256
+                        };
+
+                        int h = nVal switch
+                        {
+                            Shadow2DResolution.Low => 256,
+                            Shadow2DResolution.Medium => 512,
+                            Shadow2DResolution.High => 1024,
+                            Shadow2DResolution.Full => Client.Instance.Frontend.Height,
+                            _ => 256
+                        };
+
+                        Client.Instance.Frontend.Renderer?.ObjectRenderer?.Shadow2DRenderer?.ResizeSimulation(w, h);
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.shadow2dprecision.tt"));
+                    }
 
                     ImGui.TreePop();
                 }

@@ -107,8 +107,9 @@
                 double cpuRulers = Client.Instance.Frontend.Renderer.RulerRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuFastLights = Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.CPUTimer?.ElapsedMillis() ?? 0;
                 double cpuDrawings = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer?.CPUTimer?.ElapsedMillis() ?? 0;
+                double cpuShadows2D = Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer?.CPUTimer?.ElapsedMillis() ?? 0;
 
-                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender + cpuFastLights + cpuDrawings;
+                double total = cpuRulers + cpuPings + cpuDeferred + cpuGrid + cpuGui + cpuMOAuras + cpuMOMain + cpuMOGizmos + cpuMOUBO + cpuMOLights + cpuSun + cpuGuiQueue + cpuParticles + cpuDeferred + cpuMOHighlights + cpuCompoundRender + cpuFastLights + cpuDrawings + cpuShadows2D;
                 double totalTarget = Math.Max(total, frameTarget);
 
                 double objectsTotal = cpuDeferred + cpuMOMain + cpuMOAuras + cpuMOUBO + cpuMOLights + cpuMOGizmos + cpuMOHighlights + cpuCompoundRender;
@@ -140,6 +141,7 @@
                     RenderSection(lang.Translate("ui.performance.frame_rulers"), cpuRulers, cpuRulers / total);
                     RenderSection(lang.Translate("ui.performance.frame_fast_lights"), cpuFastLights, cpuFastLights / total);
                     RenderSection(lang.Translate("ui.performance.frame_drawings"), cpuDrawings, cpuDrawings / total);
+                    RenderSection(lang.Translate("ui.performance.frame_shadows2d"), cpuShadows2D, cpuShadows2D / total);
                     ImGui.NewLine();
                     ImGui.TreePop();
                 }

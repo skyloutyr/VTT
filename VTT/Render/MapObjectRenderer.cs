@@ -53,6 +53,7 @@
 
         public SunShadowRenderer DirectionalLightRenderer { get; set; }
         public FastLightRenderer FastLightRenderer { get; set; }
+        public Shadow2DRenderer Shadow2DRenderer { get; set; }
 
         private Vector3 _cachedSunDir;
         private Color _cachedSunColor;
@@ -133,6 +134,8 @@
             this.DirectionalLightRenderer.Create();
             this.FastLightRenderer = new FastLightRenderer();
             this.FastLightRenderer.Create();
+            this.Shadow2DRenderer = new Shadow2DRenderer();
+            this.Shadow2DRenderer.Create();
 
             this.FrameUBOManager = new FrameUBOManager();
             this.BonesUBOManager = new BonesUBO();
@@ -361,6 +364,7 @@
                 this.RenderDeferred(m, delta);
                 this.RenderHighlights(m, delta);
                 this.RenderObjectMouseOver(m);
+                this.Shadow2DRenderer.RenderBoxesOverlay(m);
                 this.RenderDebug(m);
             }
         }
@@ -911,7 +915,7 @@
                 this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
-                shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
+                shader.Essentials.GridAlpha.SetWithLogging(this._passthroughData.GridAlpha);
                 foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
@@ -983,8 +987,9 @@
 
             this.CPUTimerMain.Stop();
             this.FastLightRenderer.Render(m);
+            this.Shadow2DRenderer.Render(m);
             this.CPUTimerCompound.Restart();
-            Client.Instance.Frontend.Renderer.Pipeline.FinishRender();
+            Client.Instance.Frontend.Renderer.Pipeline.FinishRender(m);
             this.CPUTimerCompound.Stop();
         }
 
@@ -1236,7 +1241,8 @@
         FOW,
         Measure,
         Draw,
-        FX
+        FX,
+        Shadows2D
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 428, Pack = 0)]

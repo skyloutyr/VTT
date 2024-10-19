@@ -43,6 +43,7 @@
 * Custom shaders for objects through a powerful node graph editor.
 * Good performance - both the networking and rendering parts of the application offer many optimizations and are built for older hardware, allowing the rendering of very complex scenes with millions upon millions of triangles, dynamic shadows, particles and high-resolution textures, that get delivered to the clients within seconds, all that with a consistently high framerate.
 * Audio assets support (.mp3, .wav and .ogg), with automatic compression if ffmpeg is installed that is streamed over network to clients, creating the ability to quickly and easily do music in your games. Supports ambient sounds for the map.
+* Dynamic real-time 2D light and shadow powered by ray-tracing.
 
 ---
 
@@ -72,7 +73,6 @@ There is no installation process, simply unpack the application into any directo
 ## GLB 3D models and importing them
 You can import any 3d model that is a .glb _embedded_ file format. However to display them properly a few things must be present in the model structure itself:
 * The model MUST be an embedded glTF 2.0 binary. All textures must be contained within the same file as the model itself.
-* At least 1 camera must be present in the scene, for preview and portrait generation. If you don't have a camera present your application will crash.
 * At least 1 light should be present, otherwise the preview and portrait will fail to properly render with lighting and will be pitch black.
 * The model _must use the Z axis as the upwards axis_. Many model editors will by default export .glb models with Y axis as the upwards one. Make sure you specify Z as upwards.
 * Multiple material slots per object are not supported. Please separate your objects into distinct ones, with 1 material per object.
@@ -129,6 +129,47 @@ If a wrong output type is connected to the input it will automatically convert. 
 Custom shaders are by their nature not friendly to performance. They will require the application to switch between shaders on the fly, which is costly. If UBOs are enabled in the setting (on by default) the switch is much cheaper than with them disabled. Try to avoid having many different custom shaders in a given scene.
 
 ---
+
+## 2D Ray-Traced Lights and Shadows
+VTT now supports 2D raytraced light and shadows!
+[![VTT2-DShadows-Preview.png](https://i.postimg.cc/sxF9gjzL/VTT2-DShadows-Preview.png)](https://postimg.cc/34BDLHdj)
+
+To use these a given map must have the "Enable 2D Shadows" box ticked. There must also be a background object of any kind present - shadows can't be cast over the void.
+These are only available for maps that have the 2D mode enabled. 3D maps do not support 2D lights and shadows.
+
+### Viewers
+All objects may be marked as either a "2D Shadow Viewer", "2D Light" or both. 
+
+An object marked as the viewer will be the central view point for all 2D lights and shadows on the map. If multiple objects are marked as viewers, one will be chosen by the following rules:
+* If the object is selected by the player, and they either own the object directly, or the object is owned by all, it will be used.
+* Otherwise, if no objects are selected, the object that the player **directly owns** closest to the cursor will be chosen.
+* Otherwise, if no objects are directly owned, the closest object owned by all will be used.
+Note, that if no objects match these rules, the player will not be able to see the map, as it will be considered shaded fully from their non-existing perspective!
+
+For administrators and observers the rules are slightly different:
+* If the object is directly selected, it will be the view point
+* Otherwise, the current cursor position will be the view position. 
+Additionally, for administrators and observers any 2D Light marked object also counts as a viewer.
+
+TL;DR; - an object marked as a "2D Shadow Viewer" will be used as the "eyes" for the purposes of shadow casting for the player that owns it. Administrators and observers can preview the player's vision by selecting such object.
+
+The viewer also specifies two distances - the maximum view distance and the "undimmed" distance. Everything located within the "undimmed" radius from the object will be brightly visible. Everything futher away and up to the maximum distance will become progressively dimmer the further away it is. Nothing is visible past the maximum view distance - but other light sources on the map may allow the player to see past their view distance.
+
+A player may also hold the Shift key and move their cursor to slightly adjust their view point - as if their character was slightly moving their head shile staying in one spot. The adjustment distance is based on the size of the object they are viewing from.
+
+An administrator or an observer may hold the Alt key to see the shadows as fully opaque - useful for previewing what your players see. The opaqueness of shadows can also be adjusted in the map parameters, and only applies to the administrators and observers - shadows are always fully opaque for players.
+
+### Lights
+If an object is marked as a "2D Light" it will allow all viewers to see past their maximum viewing distance, so long as that point is illuminated by at least one light.
+A light also specifies two distances - the maximum distance the light reaches, and the distance past which the light will become progressibely dimmer.
+There is an absolute limit of 64 lights per given map.
+
+### Management
+For all 2d maps the shadows tool will be visible in the tools panel. To add a blocker for vision/light use the "Add Blocker" tool. Simply draw a box that will block the light/vision. 
+In addition to blockers there are illumination boxes that can be added in the same way. All light viewers within any illumination box will have an effective maximum view distance of infinity, and nothing will be dimmed. Note that illumination boxes themselves do not currently provide any light - though that is subject to change in the future.
+All boxes can be moved, rotated or deleted with the respective tools. All boxes can also be toggled, which makes them no longer perform their functions, while still being present within the map itself - may be used to toggle doors, or change the outdoors to night, which does not provide illumination.
+
+There is no limit on how many boxes (illumination and blockers) can be present within a map, though there is a less than linear performance decrease as their number increases.
 
 ## Setting up animated sprites and audio compression
 VTT supports webm animated sprites for 2D images (and technically 3D model textures). However before such sprite may be used 3rd party libraries must be installed.

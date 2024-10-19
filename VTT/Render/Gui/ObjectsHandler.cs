@@ -759,6 +759,107 @@
                             {
                                 ImGui.EndDisabled();
                             }
+
+                            if (Client.Instance.IsAdmin)
+                            {
+                                if (ImGui.TreeNode(lang.Translate("ui.2dshadow") + "###2D Shadows and Light"))
+                                {
+                                    bool mis2DShadowViewpoint = mo.IsShadow2DViewpoint;
+                                    if (ImGui.Checkbox(lang.Translate("ui.object_is_2dshadow_viewport") + "###Is 2D Shadow Viewport", ref mis2DShadowViewpoint))
+                                    {
+                                        mo.IsShadow2DViewpoint = mis2DShadowViewpoint;
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsShadow2DViewport, Data = SelectedToPacket3(os, mis2DShadowViewpoint) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_is_2dshadow_viewport.tt"));
+                                    }
+
+                                    ImGui.TextUnformatted(lang.Translate("ui.object_2dshadow_data"));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dshadow_data.tt"));
+                                    }
+
+                                    float mLightDim = mo.Shadow2DViewpointData.X;
+                                    float mLightThreshold = mo.Shadow2DViewpointData.Y;
+                                    ImGui.SetNextItemWidth(100);
+                                    if (ImGui.SliderFloat("##Shadow2DRadiusDim", ref mLightDim, 0, mLightThreshold))
+                                    {
+                                        mo.Shadow2DViewpointData = new Vector2(mLightDim, mLightThreshold);
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Shadow2DViewportData, Data = SelectedToPacket3(os, mo.Shadow2DViewpointData) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dshadow_data.dim.tt"));
+                                    }
+
+                                    ImGui.SameLine();
+                                    ImGui.SetNextItemWidth(100);
+                                    if (ImGui.InputFloat("##Shadow2DRadiusMax", ref mLightThreshold))
+                                    {
+                                        mo.Shadow2DViewpointData = new Vector2(mLightDim, mLightThreshold);
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Shadow2DViewportData, Data = SelectedToPacket3(os, mo.Shadow2DViewpointData) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dshadow_data.max.tt"));
+                                    }
+
+                                    ImGui.NewLine();
+
+                                    bool mis2dShadowLightSource = mo.IsShadow2DLightSource;
+                                    if (ImGui.Checkbox(lang.Translate("ui.object_is_2dshadow_lightsource") + "###Is 2D Light", ref mis2dShadowLightSource))
+                                    {
+                                        mo.IsShadow2DLightSource = mis2dShadowLightSource;
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsShadow2DLightSource, Data = SelectedToPacket3(os, mis2dShadowLightSource) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_is_2dshadow_lightsource.tt"));
+                                    }
+
+                                    ImGui.TextUnformatted(lang.Translate("ui.object_2dlight_data"));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dlight_data.tt"));
+                                    }
+
+                                    float mLightsourceDim = mo.Shadow2DLightSourceData.X;
+                                    float mLightsourceThreshold = mo.Shadow2DLightSourceData.Y;
+                                    ImGui.SetNextItemWidth(100);
+                                    if (ImGui.SliderFloat("##Light2DRadiusDim", ref mLightsourceDim, 0, mLightsourceThreshold))
+                                    {
+                                        mo.Shadow2DLightSourceData = new Vector2(mLightsourceDim, mLightsourceThreshold);
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Shadow2DLightSourceData, Data = SelectedToPacket3(os, mo.Shadow2DLightSourceData) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dlight_data.dim.tt"));
+                                    }
+
+                                    ImGui.SameLine();
+                                    ImGui.SetNextItemWidth(100);
+                                    if (ImGui.InputFloat("##Light2DRadiusMax", ref mLightsourceThreshold))
+                                    {
+                                        mo.Shadow2DLightSourceData = new Vector2(mLightsourceDim, mLightsourceThreshold);
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Shadow2DLightSourceData, Data = SelectedToPacket3(os, mo.Shadow2DLightSourceData) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.object_2dlight_data.max.tt"));
+                                    }
+
+                                    ImGui.TreePop();
+                                }
+                            }
+
                         }
 
                         bool mIsDescMarkdown = mo.UseMarkdownForDescription;

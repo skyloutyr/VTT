@@ -91,6 +91,10 @@
         public bool DoNotRender { get; set; }
         public bool UseMarkdownForDescription { get; set; }
         public bool HideFromSelection { get; set; }
+        public bool IsShadow2DViewpoint { get; set; } = false;
+        public Vector2 Shadow2DViewpointData { get; set; } = new Vector2(6, 12);
+        public bool IsShadow2DLightSource { get; set; } = false;
+        public Vector2 Shadow2DLightSourceData { get; set; } = new Vector2(6, 12);
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -186,6 +190,10 @@
             ret.SetMap("AnimationData", this.AnimationContainer.Serialize());
             ret.SetBool("DescMarkdown", this.UseMarkdownForDescription);
             ret.SetBool("HideFromSelection", this.HideFromSelection);
+            ret.SetBool("IsShadow2DViewpoint", this.IsShadow2DViewpoint);
+            ret.SetVec2("Shadow2DViewpointData", this.Shadow2DViewpointData);
+            ret.SetBool("IsShadow2DLightSource", this.IsShadow2DLightSource);
+            ret.SetVec2("Shadow2DLightSourceData", this.Shadow2DLightSourceData);
             return ret;
         }
 
@@ -257,6 +265,10 @@
             this.AnimationContainer.Deserialize(e.GetMap("AnimationData", new DataElement()));
             this.UseMarkdownForDescription = e.GetBool("DescMarkdown", false);
             this.HideFromSelection = e.GetBool("HideFromSelection", false);
+            this.IsShadow2DViewpoint = e.GetBool("IsShadow2DViewpoint", false);
+            this.Shadow2DViewpointData = e.GetVec2("Shadow2DViewpointData", new Vector2(6, 12));
+            this.IsShadow2DLightSource = e.GetBool("IsShadow2DLightSource", false);
+            this.Shadow2DLightSourceData = e.GetVec2("Shadow2DLightSourceData", new Vector2(6, 12));
         }
 
         public MapObject Clone()
@@ -291,6 +303,10 @@
             ret.DoNotRender = this.DoNotRender;
             ret.UseMarkdownForDescription = this.UseMarkdownForDescription;
             ret.HideFromSelection = this.HideFromSelection;
+            ret.IsShadow2DViewpoint = this.IsShadow2DViewpoint;
+            ret.Shadow2DViewpointData = this.Shadow2DViewpointData;
+            ret.IsShadow2DLightSource = this.IsShadow2DLightSource;
+            ret.Shadow2DLightSourceData = this.Shadow2DLightSourceData;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

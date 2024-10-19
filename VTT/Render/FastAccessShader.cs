@@ -1,14 +1,16 @@
 ﻿namespace VTT.Render
 {
+    using System;
     using System.Numerics;
     using VTT.GL;
 
     public class FastAccessShader
     {
         public ShaderProgram Program { get; }
-        public MaterialUniforms Material { get; }
-        public CommonUniforms Essentials { get; }
-        public ParticleUniforms Particle { get; }
+
+        public MaterialUniforms Material { get; init; }
+        public CommonUniforms Essentials { get; init; }
+        public ParticleUniforms Particle { get; init; }
 
         public UniformWrapper this[string s] => this.Program[s];
 
@@ -22,16 +24,16 @@
 
         public static implicit operator ShaderProgram(FastAccessShader self) => self.Program;
 
-        public readonly struct CommonUniforms
+        public class CommonUniforms
         {
-            public readonly UniformWrapper Transform { get; init; }
-            public readonly UniformWrapper MVP { get; init; }
-            public readonly UniformWrapper Projection { get; init; }
-            public readonly UniformWrapper View { get; init; }
-            public readonly BooleanUniformWrapper IsAnimated { get; init; }
-            public readonly Vector4UniformWrapper TintColor { get; init; }
-            public readonly FloatUniformWrapper Alpha { get; init; }
-            public readonly FloatUniformWrapper GridAlpha { get; init; }
+            public UniformWrapper Transform { get; init; }
+            public UniformWrapper MVP { get; init; }
+            public UniformWrapper Projection { get; init; }
+            public UniformWrapper View { get; init; }
+            public BooleanUniformWrapper IsAnimated { get; init; }
+            public Vector4UniformWrapper TintColor { get; init; }
+            public FloatUniformWrapper Alpha { get; init; }
+            public FloatUniformWrapper GridAlpha { get; init; }
 
             public CommonUniforms(ShaderProgram prog)
             {
@@ -46,17 +48,17 @@
             }
         }
 
-        public readonly struct MaterialUniforms
+        public class MaterialUniforms
         {
-            public readonly Vector4UniformWrapper DiffuseColor { get; init; }
-            public readonly FloatUniformWrapper MetallicFactor { get; init; }
-            public readonly FloatUniformWrapper RoughnessFactor { get; init; }
-            public readonly FloatUniformWrapper AlphaCutoff { get; init; }
-            public readonly Vector4UniformWrapper DiffuseFrame { get; init; }
-            public readonly Vector4UniformWrapper NormalFrame { get; init; }
-            public readonly Vector4UniformWrapper EmissiveFrame { get; init; }
-            public readonly Vector4UniformWrapper AOMRFrame { get; init; }
-            public readonly UnsignedIntegerUniformWrapper MaterialIndex { get; init; }
+            public Vector4UniformWrapper DiffuseColor { get; init; }
+            public FloatUniformWrapper MetallicFactor { get; init; }
+            public FloatUniformWrapper RoughnessFactor { get; init; }
+            public FloatUniformWrapper AlphaCutoff { get; init; }
+            public Vector4UniformWrapper DiffuseFrame { get; init; }
+            public Vector4UniformWrapper NormalFrame { get; init; }
+            public Vector4UniformWrapper EmissiveFrame { get; init; }
+            public Vector4UniformWrapper AOMRFrame { get; init; }
+            public UnsignedIntegerUniformWrapper MaterialIndex { get; init; }
 
             public MaterialUniforms(ShaderProgram prog)
             {
@@ -72,14 +74,14 @@
             }
         }
 
-        public readonly struct ParticleUniforms
+        public class ParticleUniforms
         {
-            public readonly BooleanUniformWrapper DoBillboard { get; init; }
-            public readonly BooleanUniformWrapper DoFOW { get; init; }
-            public readonly BooleanUniformWrapper IsSpriteSheet { get; init; }
-            public readonly Vector2UniformWrapper SpriteSheetData { get; init; }
+            public BooleanUniformWrapper DoBillboard { get; init; }
+            public BooleanUniformWrapper DoFOW { get; init; }
+            public BooleanUniformWrapper IsSpriteSheet { get; init; }
+            public Vector2UniformWrapper SpriteSheetData { get; init; }
 
-            public ParticleUniforms(ShaderProgram prog) : this()
+            public ParticleUniforms(ShaderProgram prog)
             {
                 this.DoBillboard = new BooleanUniformWrapper(prog["billboard"]);
                 this.DoFOW = new BooleanUniformWrapper(prog["do_fow"]);
@@ -88,12 +90,12 @@
             }
         }
 
-        public struct BooleanUniformWrapper
+        public class BooleanUniformWrapper
         {
             private UniformWrapper _uniform;
             private bool _state;
 
-            public BooleanUniformWrapper(UniformWrapper uniform) : this()
+            public BooleanUniformWrapper(UniformWrapper uniform)
             {
                 this._uniform = uniform;
                 this._state = false;
@@ -109,12 +111,12 @@
             }
         }
 
-        public struct FloatUniformWrapper
+        public class FloatUniformWrapper
         {
             private UniformWrapper _uniform;
             private float _state;
 
-            public FloatUniformWrapper(UniformWrapper uniform) : this()
+            public FloatUniformWrapper(UniformWrapper uniform)
             {
                 this._uniform = uniform;
                 this._state = 0.0f;
@@ -128,14 +130,24 @@
                     this._uniform.Set(f);
                 }
             }
+
+            public void SetWithLogging(float f)
+            {
+                if (f != this._state)
+                {
+                    Console.WriteLine($"State changed from {this._state} to {f}.");
+                    this._state = f;
+                    this._uniform.Set(f);
+                }
+            }
         }
 
-        public struct Vector4UniformWrapper
+        public class Vector4UniformWrapper
         {
             private UniformWrapper _uniform;
             private Vector4 _state;
 
-            public Vector4UniformWrapper(UniformWrapper uniform) : this()
+            public Vector4UniformWrapper(UniformWrapper uniform)
             {
                 this._uniform = uniform;
                 this._state = Vector4.Zero;
@@ -151,12 +163,12 @@
             }
         }
 
-        public struct Vector2UniformWrapper
+        public class Vector2UniformWrapper
         {
             private UniformWrapper _uniform;
             private Vector2 _state;
 
-            public Vector2UniformWrapper(UniformWrapper uniform) : this()
+            public Vector2UniformWrapper(UniformWrapper uniform)
             {
                 this._uniform = uniform;
                 this._state = Vector2.Zero;
@@ -172,12 +184,12 @@
             }
         }
 
-        public struct UnsignedIntegerUniformWrapper
+        public class UnsignedIntegerUniformWrapper
         {
             private UniformWrapper _uniform;
             private uint _state;
 
-            public UnsignedIntegerUniformWrapper(UniformWrapper uniform) : this()
+            public UnsignedIntegerUniformWrapper(UniformWrapper uniform)
             {
                 this._uniform = uniform;
                 this._state = 0;

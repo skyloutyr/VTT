@@ -334,6 +334,8 @@
             this.DoTask(() => this.Frontend.Renderer.ParticleRenderer.ClearParticles(cMapRef));
             this.DoTask(() => this.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Clear());
             this.DoTask(() => this.Frontend.Renderer.SelectionManager.SelectedObjects.Clear());
+            this.DoTask(() => cMapRef?.ShadowLayer2D.Free());
+
             this.CurrentMap = map;
             if (map != null)
             {
@@ -479,17 +481,34 @@
 
     public class ClientSettings
     {
-        public bool IsFullscreen { get; set; }
+
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool IsFullscreen { get; set; } = false;
+
         public ClientSize Resolution { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public VSyncMode VSync { get; set; }
+        [DefaultValue(VSyncMode.On)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public VSyncMode VSync { get; set; } = VSyncMode.On;
 
         public string Name { get; set; }
         public uint Color { get; set; }
-        public bool EnableSunShadows { get; set; }
-        public bool EnableDirectionalShadows { get; set; }
-        public bool DisableShaderBranching { get; set; }
+
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableSunShadows { get; set; } = true;
+
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableDirectionalShadows { get; set; } = true;
+
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool DisableShaderBranching { get; set; } = false;
 
         [JsonConverter(typeof(StringEnumConverter))]
         [DefaultValue(FullscreenMode.Normal)]
@@ -506,8 +525,13 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public UISkin InterfaceSkin { get; set; } = UISkin.Dark;
 
-        public float FOWAdmin { get; set; }
-        public string Language { get; set; }
+        [DefaultValue(0.75f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float FOWAdmin { get; set; } = 0.75f;
+
+        [DefaultValue("en-EN")]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public string Language { get; set; } = "en-EN";
 
         [DefaultValue("")]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -522,10 +546,17 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public RaycastMultithreadingType RaycastMultithreading { get; set; } = RaycastMultithreadingType.Eager;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool DebugSettingsEnabled { get; set; } = false;
 
-        public float Sensitivity { get; set; }
-        public float ChatBackgroundBrightness { get; set; }
+        [DefaultValue(1.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float Sensitivity { get; set; } = 1.0f;
+
+        [DefaultValue(0.0f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float ChatBackgroundBrightness { get; set; } = 0.0f;
 
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -667,6 +698,15 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public GLContextHandlingMode ContextHandlingMode { get; set; } = GLContextHandlingMode.Checked;
 
+        [DefaultValue(0.75f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float Shadows2DAdmin { get; set; } = 0.75f;
+
+        [DefaultValue(Shadow2DResolution.Medium)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public Shadow2DResolution Shadow2DPrecision { get; set; } = Shadow2DResolution.Medium;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -690,7 +730,7 @@
                 EnableSunShadows = true,
                 EnableDirectionalShadows = true,
                 DisableShaderBranching = false,
-                FOWAdmin = 1.0f,
+                FOWAdmin = 0.75f,
                 Sensitivity = 1.0f,
                 ChatBackgroundBrightness = 0.0f,
                 Language = "en-EN",
@@ -727,7 +767,9 @@
                 AsyncTextureUploading = true,
                 MultithreadedTextureCompression = true,
                 OffscreenParticleUpdates = true,
-                ContextHandlingMode = GLContextHandlingMode.Checked
+                ContextHandlingMode = GLContextHandlingMode.Checked,
+                Shadows2DAdmin = 0.75f,
+                Shadow2DPrecision = Shadow2DResolution.Medium
             };
 
             ret.Save();
@@ -835,6 +877,14 @@
             Always,
             LargeFilesOnly,
             Never
+        }
+
+        public enum Shadow2DResolution
+        {
+            Low,
+            Medium,
+            High,
+            Full
         }
     }
 

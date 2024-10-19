@@ -4,6 +4,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
@@ -153,9 +154,33 @@
                             break;
                         }
 
+                        case DataType.IsShadow2DViewport:
+                        {
+                            d.Item2.IsShadow2DViewpoint = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.Shadow2DViewportData:
+                        {
+                            d.Item2.Shadow2DViewpointData = (Vector2)d.Item3;
+                            break;
+                        }
+
                         case DataType.HideSelection:
                         {
                             d.Item2.HideFromSelection = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.IsShadow2DLightSource:
+                        {
+                            d.Item2.IsShadow2DLightSource = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.Shadow2DLightSourceData:
+                        {
+                            d.Item2.Shadow2DLightSourceData = (Vector2)d.Item3;
                             break;
                         }
                     }
@@ -200,6 +225,8 @@
                     case DataType.DoNotDraw:
                     case DataType.DescriptionIsMarkdown:
                     case DataType.HideSelection:
+                    case DataType.IsShadow2DViewport:
+                    case DataType.IsShadow2DLightSource:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -231,6 +258,13 @@
                     case DataType.NameColor:
                     {
                         o = Extensions.FromArgb(br.ReadUInt32());
+                        break;
+                    }
+
+                    case DataType.Shadow2DViewportData:
+                    case DataType.Shadow2DLightSourceData:
+                    {
+                        o = br.ReadSysVec2();
                         break;
                     }
 
@@ -268,6 +302,8 @@
                     case DataType.DoNotDraw:
                     case DataType.DescriptionIsMarkdown:
                     case DataType.HideSelection:
+                    case DataType.IsShadow2DViewport:
+                    case DataType.IsShadow2DLightSource:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -306,6 +342,13 @@
                     {
                         DataElement de = (DataElement)d.Item3;
                         de.Write(bw);
+                        break;
+                    }
+
+                    case DataType.Shadow2DViewportData:
+                    case DataType.Shadow2DLightSourceData:
+                    {
+                        bw.Write((Vector2)d.Item3);
                         break;
                     }
                 }
@@ -379,7 +422,11 @@
             ShaderID,
             Notes,
             DescriptionIsMarkdown,
-            HideSelection
+            HideSelection,
+            IsShadow2DViewport,
+            Shadow2DViewportData,
+            IsShadow2DLightSource,
+            Shadow2DLightSourceData
         }
     }
 }

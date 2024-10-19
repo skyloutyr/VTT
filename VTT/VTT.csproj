@@ -79,6 +79,7 @@
     <None Remove="Embed\icons8-day-camera-40.png" />
     <None Remove="Embed\icons8-dice-40.png" />
     <None Remove="Embed\icons8-dice-60.png" />
+    <None Remove="Embed\icons8-door-40.png" />
     <None Remove="Embed\icons8-double-down-80.png" />
     <None Remove="Embed\icons8-double-right-40.png" />
     <None Remove="Embed\icons8-drag-40.png" />
@@ -101,6 +102,8 @@
     <None Remove="Embed\icons8-move-separate-40.png" />
     <None Remove="Embed\icons8-music-library-40.png" />
     <None Remove="Embed\icons8-musical-notes-40.png" />
+    <None Remove="Embed\icons8-newblocker-40.png" />
+    <None Remove="Embed\icons8-newillumination-40.png" />
     <None Remove="Embed\icons8-no-image-40.png" />
     <None Remove="Embed\icons8-outgoing-data-40.png" />
     <None Remove="Embed\icons8-paint-40.png" />
@@ -121,6 +124,7 @@
     <None Remove="Embed\icons8-return-40.png" />
     <None Remove="Embed\icons8-search-40.png" />
     <None Remove="Embed\icons8-security-lock-80.png" />
+    <None Remove="Embed\icons8-shadow2d-40.png" />
     <None Remove="Embed\icons8-so-so-40.png" />
     <None Remove="Embed\icons8-sound-40.png" />
     <None Remove="Embed\icons8-sphere-58.png" />
@@ -170,6 +174,8 @@
     <None Remove="Embed\pl.geom" />
     <None Remove="Embed\pl.vert" />
     <None Remove="Embed\pop-ding-notification-effect-2.wav" />
+    <None Remove="Embed\shadowcast.frag" />
+    <None Remove="Embed\shadowcast.vert" />
     <None Remove="Embed\simple-interface-tone.wav" />
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
@@ -224,11 +230,15 @@
     <EmbeddedResource Include="Embed\icon-beta_smaller-ny.png" />
     <EmbeddedResource Include="Embed\icon-beta_smallest-hw.png" />
     <EmbeddedResource Include="Embed\icon-beta_smallest-ny.png" />
+    <EmbeddedResource Include="Embed\icons8-door-40.png" />
     <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
     <EmbeddedResource Include="Embed\icons8-magic-40.png" />
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
+    <EmbeddedResource Include="Embed\icons8-newblocker-40.png" />
+    <EmbeddedResource Include="Embed\icons8-newillumination-40.png" />
     <EmbeddedResource Include="Embed\icons8-search-40.png" />
+    <EmbeddedResource Include="Embed\icons8-shadow2d-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
     <EmbeddedResource Include="Embed\pattern0.png" />
@@ -239,6 +249,8 @@
     <EmbeddedResource Include="Embed\pattern5.png" />
     <EmbeddedResource Include="Embed\pattern6.png" />
     <EmbeddedResource Include="Embed\pattern7.png" />
+    <EmbeddedResource Include="Embed\shadowcast.frag" />
+    <EmbeddedResource Include="Embed\shadowcast.vert" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

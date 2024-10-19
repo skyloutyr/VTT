@@ -456,6 +456,31 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.drawing.tt"));
                     }
 
+                    bool m2DShadows = state.clientMap.Has2DShadows;
+                    if (ImGui.Checkbox(lang.Translate("ui.maps.shadows_2d") + "###Enable 2D Shadows", ref m2DShadows))
+                    {
+                        state.clientMap.Has2DShadows = m2DShadows;
+                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = m2DShadows, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.Enable2DShadows };
+                        pcmd.Send();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.shadows_2d.tt"));
+                    }
+
+                    float mShadow2DMod = Client.Instance.Settings.Shadows2DAdmin;
+                    if (ImGui.SliderFloat(lang.Translate("ui.maps.shadows_2d_opacity") + "###2D Shadow Opacity", ref mShadow2DMod, 0.0f, 1.0f))
+                    {
+                        Client.Instance.Settings.Shadows2DAdmin = mShadow2DMod;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.shadows_2d_opacity.tt"));
+                    }
+
                     #region Ambiance
 
                     bool mouseOverAmbiance = DrawMapAssetRecepticle(state.clientMap, state.clientMap.AmbientSoundID, () => this._draggedRef?.Type == AssetType.Sound, this.AssetMusicIcon);

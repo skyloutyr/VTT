@@ -199,6 +199,12 @@
                         break;
                     }
 
+                    case DataType.Enable2DShadows:
+                    {
+                        m.Has2DShadows = (bool)this.Data;
+                        break;
+                    }
+
                     case DataType.AmbientSoundID:
                     {
                         m.AmbientSoundID = (Guid)this.Data;
@@ -256,6 +262,7 @@
                 case DataType.DarkvisionEnabled:
                 case DataType.Is2D:
                 case DataType.EnableDrawing:
+                case DataType.Enable2DShadows:
                 {
                     this.Data = br.ReadBoolean();
                     break;
@@ -320,6 +327,7 @@
                 case DataType.DarkvisionEnabled:
                 case DataType.Is2D:
                 case DataType.EnableDrawing:
+                case DataType.Enable2DShadows:
                 {
                     bw.Write((bool)this.Data);
                     break;
@@ -392,6 +400,7 @@
             Camera2DHeight,
             SunColor,
             EnableDrawing,
+            Enable2DShadows,
             AmbientSoundID,
             AmbientVolume
         }

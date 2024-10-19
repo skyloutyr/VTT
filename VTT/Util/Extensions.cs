@@ -287,12 +287,22 @@
             );
         }
 
-        public static Vector3 ArbitraryOrthogonal(this Vector3 vec)
+        public static SVec3 ArbitraryOrthogonal(this SVec3 vec)
         {
             bool b0 = (vec.X < vec.Y) && (vec.X < vec.Z);
             bool b1 = (vec.Y <= vec.X) && (vec.Y < vec.Z);
             bool b2 = (vec.Z <= vec.X) && (vec.Z <= vec.Y);
-            return Vector3.Cross(vec, new Vector3(b0 ? 1 : 0, b1 ? 1 : 0, b2 ? 1 : 0));
+            return SVec3.Cross(vec, new SVec3(b0 ? 1 : 0, b1 ? 1 : 0, b2 ? 1 : 0));
+        }
+
+        public static SVec2 Rotate(this SVec2 vec, float angleRad)
+        {
+            float cs = MathF.Cos(angleRad);
+            float sn = MathF.Sin(angleRad);
+            return new SVec2(
+                (vec.X * cs) - (vec.Y * sn),
+                (vec.X * sn) + (vec.Y * cs)
+            );
         }
 
         public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);

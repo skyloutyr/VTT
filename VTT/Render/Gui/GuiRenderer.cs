@@ -109,6 +109,10 @@
         public Texture Search { get; set; }
 
         public Texture MagicFX { get; set; }
+        public Texture Shadow2D { get; set; }
+        public Texture OpenDoor { get; set; }
+        public Texture Shadow2DAddBlocker { get; set; }
+        public Texture Shadow2DAddSunlight { get; set; }
 
         public int LoadingSpinnerFrames { get; set; }
         #endregion
@@ -287,9 +291,14 @@
             this.Search = OpenGLUtil.LoadUIImage("icons8-search-40");
 
             this.MagicFX = OpenGLUtil.LoadUIImage("icons8-magic-40");
+            this.Shadow2D = OpenGLUtil.LoadUIImage("icons8-shadow2d-40");
+            this.OpenDoor = OpenGLUtil.LoadUIImage("icons8-door-40");
+            this.Shadow2DAddBlocker = OpenGLUtil.LoadUIImage("icons8-newblocker-40");
+            this.Shadow2DAddSunlight = OpenGLUtil.LoadUIImage("icons8-newillumination-40");
 
-            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX };
+            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
+            this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddSunlight, this.DeleteIcon };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
             this.MainMenuRenderer = new MainMenuRenderer();
@@ -305,6 +314,7 @@
 
         private Texture[] _modeTextures;
         private Texture[] _rulerModeTextures;
+        public Texture[] Shadow2DControlModeTextures { get; private set; }
 
         private readonly List<string> _chat = new List<string>();
         private int _cChatIndex;
@@ -349,7 +359,7 @@
                 ImGui.ShowDemoWindow(ref this._showImGuiDemoWindow);
             }
 
-            this.RenderSidebar(lang, window_flags, mor);
+            this.RenderSidebar(cMap, lang, window_flags, mor);
             this.RenderDebugInfo(time, window_flags);
             this.RenderFOWControls(mor, lang, window_flags);
             this.RenderTranslationControls(mor, lang, window_flags);
@@ -357,6 +367,7 @@
             this.RenderMeasureControls(mor, lang, window_flags);
             this.RenderDrawControls(mor, lang, window_flags);
             this.RenderFXControls(mor, lang, window_flags, this.FrameState);
+            this.RenderShadows2DControls(mor.Shadow2DRenderer, lang, window_flags, this.FrameState);
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);
             this.RenderObjectProperties(lang, this.FrameState, time);

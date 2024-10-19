@@ -16,7 +16,7 @@
 
     public class SelectionManager
     {
-        private bool _lbmDown;
+        private bool _lmbDown;
         private int _initialLmbX;
         private int _lastLmbX;
         private int _initialLmbY;
@@ -75,11 +75,11 @@
             }
 
             bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
-            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw or EditMode.FX) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode is not (EditMode.FOW or EditMode.Measure or EditMode.Draw or EditMode.FX or EditMode.Shadows2D) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
-                if (!imGuiWantsMouse && !this._lbmDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
+                if (!imGuiWantsMouse && !this._lmbDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
-                    this._lbmDown = true;
+                    this._lmbDown = true;
                     this._isBoxSelect = false;
                     this._initialLmbX = (int)Client.Instance.Frontend.MouseX;
                     this._initialLmbY = (int)Client.Instance.Frontend.MouseY;
@@ -407,7 +407,7 @@
                 }
 
                 this.BoxSelectCandidates.Clear();
-                if (this._lbmDown && this._isBoxSelect)
+                if (this._lmbDown && this._isBoxSelect)
                 {
                     int minX = Math.Min(this._initialLmbX, (int)Client.Instance.Frontend.MouseX);
                     int maxX = Math.Max(this._initialLmbX, (int)Client.Instance.Frontend.MouseX);
@@ -434,9 +434,9 @@
                     }
                 }
 
-                if (this._lbmDown && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
+                if (this._lmbDown && !Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
-                    this._lbmDown = false;
+                    this._lmbDown = false;
                     if (!this._blockSelection)
                     {
                         this.ProcessSelection();
@@ -545,7 +545,7 @@
 
         private void HandleRotationGizmo(Map m)
         {
-            if (this._blockSelection && this._lbmDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate && this.SelectedObjects.Count > 0)
+            if (this._blockSelection && this._lmbDown && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Rotate && this.SelectedObjects.Count > 0)
             {
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                 Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
@@ -613,7 +613,7 @@
 
         private void HandleMovementGizmo()
         {
-            if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lbmDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
+            if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lmbDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
                 if (this._moveMode == 4)
                 {
@@ -960,7 +960,7 @@
         }
         public void Render(double delta)
         {
-            if (this._isBoxSelect && this._lbmDown)
+            if (this._isBoxSelect && this._lmbDown)
             {
                 int minX = Math.Min(this._initialLmbX, (int)Client.Instance.Frontend.MouseX);
                 int maxX = Math.Max(this._initialLmbX, (int)Client.Instance.Frontend.MouseX);

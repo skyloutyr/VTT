@@ -72,6 +72,7 @@
             Map m = Client.Instance.CurrentMap;
             this.MapRenderer?.Update(m);
             this.ObjectRenderer?.Update(m);
+            this.ObjectRenderer?.Shadow2DRenderer?.Update(m);
             this.SelectionManager?.Update();
             this.RulerRenderer?.Update();
             this.GuiRenderer?.MainMenuRenderer?.Update();
@@ -79,6 +80,7 @@
             this.ParticleRenderer?.CurrentlyEditedSystemInstance?.UpdateBufferState();
             if (m != null)
             {
+                m.ShadowLayer2D.Update(m);
                 if (++this._mapTrackerUpdateCounter >= 60)
                 {
                     this._mapTrackerUpdateCounter = 0;
@@ -157,6 +159,7 @@
         {
             GL.Viewport(0, 0, w, h);
             this.Pipeline?.Resize(w, h);
+            this.ObjectRenderer?.Shadow2DRenderer?.Resize(w, h);
             this.MapRenderer.Resize(w, h);
             this.ObjectRenderer?.Resize(w, h);
         }

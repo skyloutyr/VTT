@@ -37,6 +37,7 @@
         public bool EnableDirectionalShadows { get; set; } = false;
         public bool EnableDarkvision { get; set; }
         public bool EnableDrawing { get; set; } = true;
+        public bool Has2DShadows { get; set; } = false;
 
         public bool Is2D { get; set; }
         public float Camera2DHeight { get; set; } = 5.0f;
@@ -48,8 +49,9 @@
 
         // Server-only
         public FOWCanvas FOW { get; set; }
-        public TurnTracker TurnTracker { get; set; }
 
+        public TurnTracker TurnTracker { get; set; }
+        public Map2DShadowLayer ShadowLayer2D { get; } = new Map2DShadowLayer();
 
         public List<MapObject> Objects { get; } = new List<MapObject>();
         public List<RulerInfo> PermanentMarks { get; } = new List<RulerInfo>();
@@ -188,6 +190,7 @@
             this.DefaultCameraPosition = e.GetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             this.DefaultCameraRotation = e.GetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
             this.EnableDrawing = e.GetBool("EnableDrawing", true);
+            this.Has2DShadows = e.GetBool("Has2DShadows", false);
             (Guid, Guid, float)[] dvData = e.GetArray("DarkvisionData", (n, c) =>
             {
                 DataElement de = c.GetMap(n);
@@ -221,6 +224,7 @@
             this.Camera2DHeight = e.GetSingle("Camera2DHeight", 5.0f);
             this.AmbientSoundID = e.GetGuid("AmbientSoundID", Guid.Empty);
             this.AmbientSoundVolume = e.GetSingle("AmbientVolume", 1.0f);
+            this.ShadowLayer2D.Deserialize(e.GetMap("ShadowLayer2D", new DataElement()));
             if (this.IsServer)
             {
                 this.Objects.AddRange(e.GetArray("Objects", (name, elem) =>
@@ -278,6 +282,7 @@
             ret.SetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
             ret.SetBool("EnableDrawing", this.EnableDrawing);
+            ret.SetBool("Has2DShadows", this.Has2DShadows);
             ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) =>
             {
                 DataElement d = new DataElement();
@@ -293,6 +298,7 @@
             ret.SetSingle("Camera2DHeight", this.Camera2DHeight);
             ret.SetGuid("AmbientSoundID", this.AmbientSoundID);
             ret.SetSingle("AmbientVolume", this.AmbientSoundVolume);
+            ret.SetMap("ShadowLayer2D", this.ShadowLayer2D.Serialize());
             return ret;
         }
 

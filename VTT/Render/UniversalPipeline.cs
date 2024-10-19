@@ -230,7 +230,7 @@
             GL.ActiveTexture(0);
         }
 
-        public void FinishRender()
+        public void FinishRender(Map m)
         {
             GL.BindFramebuffer(FramebufferTarget.All, 0);
 
@@ -242,6 +242,15 @@
             this.DepthTex.Bind();
             GL.ActiveTexture(2);
             Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.TexColor.Bind();
+            GL.ActiveTexture(3);
+            if (m != null && m.Has2DShadows && m.Is2D)
+            {
+                Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.OutputTexture.Bind();
+            }
+            else
+            {
+                Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.WhiteSquare.Bind();
+            }
 
             GL.Enable(Capability.CullFace);
             GL.CullFace(PolygonFaceMode.Back);
@@ -402,6 +411,7 @@
             this.FinalPass["g_color"].Set(0);
             this.FinalPass["g_depth"].Set(1);
             this.FinalPass["g_fast_light"].Set(2);
+            this.FinalPass["g_shadows2d"].Set(3);
         }
         public ShaderProgram CompileShader(string sName, bool dirShadows, bool pointShadows)
         {

@@ -5,13 +5,15 @@
     using System;
     using System.Numerics;
     using VTT.Asset;
+    using VTT.Control;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using static Antlr4.Runtime.Atn.SemanticContext;
 
     public partial class GuiRenderer
     {
-        private unsafe void RenderSidebar(SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor)
+        private unsafe void RenderSidebar(Map m, SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -22,9 +24,14 @@
             ImGui.SetNextWindowPos(Vector2.Zero);
             if (ImGui.Begin("Mode Controls", window_flags))
             {
-                for (int i = 0; i < 8; ++i)
+                for (int i = 0; i < 9; ++i)
                 {
-                    if (!Client.Instance.IsAdmin && (i == (int)EditMode.FOW || i == (int)EditMode.FX))
+                    if (!Client.Instance.IsAdmin && (i == (int)EditMode.FOW || i == (int)EditMode.FX || i == (int)EditMode.Shadows2D))
+                    {
+                        continue;
+                    }
+
+                    if (i == (int)EditMode.Shadows2D && (m == null || !m.Is2D))
                     {
                         continue;
                     }
@@ -55,7 +62,7 @@
 
                     ImGui.PopStyleColor();
                     ImGui.PopStyleVar();
-                    if (i != 7)
+                    if (i != 8)
                     {
                         ImGui.NewLine();
                     }
@@ -682,6 +689,45 @@
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(lang.Translate("ui.fx.num_emit.tt"));
+                }
+
+                ImGui.PopStyleColor();
+                ImGui.PopStyleVar();
+                ImGui.End();
+            }
+        }
+
+        private unsafe void RenderShadows2DControls(Shadow2DRenderer renderer, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
+        {
+            if (renderer == null || this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
+            {
+                return;
+            }
+
+            if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Shadows2D)
+            {
+                ImGui.SetNextWindowBgAlpha(0.35f);
+                ImGui.SetNextWindowPos(Vec56x70);
+                ImGui.Begin("##Shadow2DControls", window_flags);
+
+                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+
+                Shadow2DControlMode currentMode = renderer.ControlMode;
+                for (int i = 0; i < 7; ++i)
+                {
+                    bool selected = (Shadow2DControlMode)i == currentMode;
+                    if (ImImageButton("##Shadow2DModeBtn_" + i, Client.Instance.Frontend.Renderer.GuiRenderer.Shadow2DControlModeTextures[i], Vec32x32, selected))
+                    {
+                        renderer.ControlMode = (Shadow2DControlMode)i;
+                    }
+
+                    ImGui.SameLine();
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.shadow2d.mode_" + Enum.GetName((Shadow2DControlMode)i).ToLower() + ".tt"));
+                    }
                 }
 
                 ImGui.PopStyleColor();

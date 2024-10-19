@@ -1245,7 +1245,7 @@
         Shadows2D
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 428, Pack = 0)]
+    [StructLayout(LayoutKind.Explicit, Size = 432, Pack = 0)]
     public unsafe struct FrameUBO
     {
         [FieldOffset(0)] public Matrix4x4 view;
@@ -1266,7 +1266,8 @@
         [FieldOffset(408)] public float grid_size;
         [FieldOffset(412)] public float frame_delta;
         [FieldOffset(416)] public Vector2 viewport_size;
-        [FieldOffset(424)] public int _padding;
+        [FieldOffset(424)] public int _paddingA;
+        [FieldOffset(428)] public int _paddingB;
     }
 
     public unsafe class FrameUBOManager
@@ -1280,7 +1281,7 @@
             this.memory = (FrameUBO*)Marshal.AllocHGlobal(sizeof(FrameUBO));
             this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
             this._ubo.Bind();
-            this._ubo.SetData(IntPtr.Zero, 428);
+            this._ubo.SetData(IntPtr.Zero, 432);
             GL.BindBuffer(BufferTarget.Uniform, 0);
             GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 1, this._ubo);
         }
@@ -1294,7 +1295,7 @@
         public unsafe void Upload()
         {
             this._ubo.Bind();
-            this._ubo.SetSubData((IntPtr)this.memory, 428, 0);
+            this._ubo.SetSubData((IntPtr)this.memory, 432, 0);
             GL.BindBuffer(BufferTarget.Uniform, 0);
         }
     }

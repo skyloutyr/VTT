@@ -707,3 +707,5 @@ menu.settings.gl_context_policy.tt=Controls the management of OpenGL context.\nO
 menu.settings.gl_context_policy.implicit=Implicit
 menu.settings.gl_context_policy.checked=Checked
 menu.settings.gl_context_policy.explicit=Explicit
+ui.properties.hide_selection=Hide from Selection
+ui.properties.hide_selection.tt=Controls whether a client may perform mouse-over actions\nsuch as Focus, and the visibility of the selection box even if they don't own the object.

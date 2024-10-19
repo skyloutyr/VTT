@@ -147,9 +147,15 @@
                             break;
                         }
 
-                        case DataType.DescriptionMarkdownFlag:
+                        case DataType.DescriptionIsMarkdown:
                         {
                             d.Item2.UseMarkdownForDescription = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.HideSelection:
+                        {
+                            d.Item2.HideFromSelection = (bool)d.Item3;
                             break;
                         }
                     }
@@ -192,7 +198,8 @@
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
                     case DataType.DoNotDraw:
-                    case DataType.DescriptionMarkdownFlag:
+                    case DataType.DescriptionIsMarkdown:
+                    case DataType.HideSelection:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -259,7 +266,8 @@
                     case DataType.CastsShadow:
                     case DataType.IsInfo:
                     case DataType.DoNotDraw:
-                    case DataType.DescriptionMarkdownFlag:
+                    case DataType.DescriptionIsMarkdown:
+                    case DataType.HideSelection:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -370,7 +378,8 @@
             Properties,
             ShaderID,
             Notes,
-            DescriptionMarkdownFlag
+            DescriptionIsMarkdown,
+            HideSelection
         }
     }
 }

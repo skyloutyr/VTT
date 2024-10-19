@@ -90,6 +90,7 @@
         public bool IsInfoObject { get; set; }
         public bool DoNotRender { get; set; }
         public bool UseMarkdownForDescription { get; set; }
+        public bool HideFromSelection { get; set; }
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -184,6 +185,7 @@
             ret.SetMap("Props", this.CustomProperties);
             ret.SetMap("AnimationData", this.AnimationContainer.Serialize());
             ret.SetBool("DescMarkdown", this.UseMarkdownForDescription);
+            ret.SetBool("HideFromSelection", this.HideFromSelection);
             return ret;
         }
 
@@ -254,6 +256,7 @@
             this.CustomProperties = e.GetMap("Props");
             this.AnimationContainer.Deserialize(e.GetMap("AnimationData", new DataElement()));
             this.UseMarkdownForDescription = e.GetBool("DescMarkdown", false);
+            this.HideFromSelection = e.GetBool("HideFromSelection", false);
         }
 
         public MapObject Clone()
@@ -287,6 +290,7 @@
             ret.IsInfoObject = this.IsInfoObject;
             ret.DoNotRender = this.DoNotRender;
             ret.UseMarkdownForDescription = this.UseMarkdownForDescription;
+            ret.HideFromSelection = this.HideFromSelection;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

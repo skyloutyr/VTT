@@ -241,6 +241,18 @@
                             ImGui.SetTooltip(lang.Translate("ui.properties.do_no_draw.tt"));
                         }
 
+                        bool mHideSelection = mo.HideFromSelection;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.hide_selection") + "###HideSelection", ref mHideSelection))
+                        {
+                            os.ForEach(x => x.HideFromSelection = mHideSelection);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.HideSelection, Data = SelectedToPacket3(os, mHideSelection) }.Send();
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.properties.hide_selection.tt"));
+                        }
+
                         if (!isAdmin)
                         {
                             ImGui.EndDisabled();
@@ -753,7 +765,7 @@
                         if (ImGui.Checkbox(lang.Translate("ui.properties.markdown") + "###IsMarkdown", ref mIsDescMarkdown))
                         {
                             os.ForEach(x => x.UseMarkdownForDescription = mIsDescMarkdown);
-                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DescriptionMarkdownFlag, Data = SelectedToPacket3(os, mIsDescMarkdown) }.Send();
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DescriptionIsMarkdown, Data = SelectedToPacket3(os, mIsDescMarkdown) }.Send();
                         }
 
                         if (ImGui.IsItemHovered())

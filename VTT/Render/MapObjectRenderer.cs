@@ -308,9 +308,10 @@
                         this._mouseOverInFow = false;
                     }
 
-                    if (fowTest || Client.Instance.IsAdmin || Client.Instance.IsObserver || (rr.ObjectHit?.CanEdit(Client.Instance.ID) ?? true))
+                    bool adminObserverOrOwner = Client.Instance.IsAdmin || Client.Instance.IsObserver || (rr.ObjectHit?.CanEdit(Client.Instance.ID) ?? true);
+                    if (fowTest || adminObserverOrOwner)
                     {
-                        this.ObjectMouseOver = rr.ObjectHit;
+                        this.ObjectMouseOver = rr.ObjectHit != null ? !rr.ObjectHit.HideFromSelection || adminObserverOrOwner ? rr.ObjectHit : null : rr.ObjectHit;
                     }
 
                     this.MouseHitWorld = rr.Hit;

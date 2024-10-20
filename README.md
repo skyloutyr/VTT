@@ -157,7 +157,7 @@ The viewer also specifies two distances - the maximum view distance and the "und
 
 A player may also hold the Shift key and move their cursor to slightly adjust their view point - as if their character was slightly moving their head shile staying in one spot. The adjustment distance is based on the size of the object they are viewing from.
 
-An administrator or an observer may hold the Alt key to see the shadows as fully opaque - useful for previewing what your players see. The opaqueness of shadows can also be adjusted in the map parameters, and only applies to the administrators and observers - shadows are always fully opaque for players.
+An administrator or an observer may hold the Control key to see the shadows as fully opaque - useful for previewing what your players see. The opaqueness of shadows can also be adjusted in the map parameters, and only applies to the administrators and observers - shadows are always fully opaque for players.
 
 ### Lights
 If an object is marked as a "2D Light" it will allow all viewers to see past their maximum viewing distance, so long as that point is illuminated by at least one light.

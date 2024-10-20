@@ -915,7 +915,7 @@
                 this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
-                shader.Essentials.GridAlpha.SetWithLogging(this._passthroughData.GridAlpha);
+                shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
                 foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);

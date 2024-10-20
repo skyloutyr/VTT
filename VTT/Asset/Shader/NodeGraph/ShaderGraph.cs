@@ -149,7 +149,7 @@
                     {
                         int x = i % 32;
                         int y = i / 32;
-                        Rgba32 rgba = x >= 16 && y < 16 || x < 16 && y >= 16 ? new Rgba32(255, 0, 255, 255) : new Rgba32(0, 0, 0, 255);
+                        Rgba32 rgba = (x >= 16 && y < 16) || (x < 16 && y >= 16) ? new Rgba32(255, 0, 255, 255) : new Rgba32(0, 0, 0, 255);
                         ret[x, y] = rgba;
                     }
 
@@ -383,14 +383,14 @@
                     string cTemp = "$TEMP@" + i + "$";
                     string cOut = "$OUTPUT@" + i + "$";
                     string cIn = "$INPUT@" + i + "$";
-                    if (code.IndexOf(cTemp) != -1)
+                    if (code.Contains(cTemp, StringComparison.OrdinalIgnoreCase))
                     {
                         string tV = "temp_" + nodeFrom.NodeID.ToString("N") + "_" + i;
                         code = code.Replace(cTemp, tV);
                         c++;
                     }
 
-                    if (code.IndexOf(cOut) != -1)
+                    if (code.Contains(cOut, StringComparison.OrdinalIgnoreCase))
                     {
                         NodeOutput no = nodeFrom.Outputs[i];
                         string tV = this.Prefix(no.SelfType) + " out_" + nodeFrom.Outputs[i].ID.ToString("N");
@@ -398,7 +398,7 @@
                         c++;
                     }
 
-                    if (code.IndexOf(cIn) != -1)
+                    if (code.Contains(cIn, StringComparison.OrdinalIgnoreCase))
                     {
                         NodeInput ni = nodeFrom.Inputs[i];
                         if (!ni.ConnectedOutput.IsEmpty())

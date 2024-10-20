@@ -21,7 +21,7 @@
             for (int i = 0; i < count; ++i)
             {
                 GL.GetActiveUniform(pId, (uint)i, 128, out _, out _, out _, out string nameStr);
-                if (nameStr.IndexOf('[') != -1)
+                if (nameStr.Contains('['))
                 {
                     int c = 0;
                     string sB = nameStr[..(nameStr.IndexOf('[') + 1)];

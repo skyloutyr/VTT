@@ -49,10 +49,7 @@
 
         public ShaderGraph EditedGraph { get; set; }
 
-        public unsafe void Create()
-        {
-            this._nodeLookupTexture = OpenGLUtil.LoadBasicTexture(new Image<Rgba32>(32, 32, new Rgba32(0, 0, 0, 255)));
-        }
+        public unsafe void Create() => this._nodeLookupTexture = OpenGLUtil.LoadBasicTexture(new Image<Rgba32>(32, 32, new Rgba32(0, 0, 0, 255)));
 
         public unsafe void Render(Guid shaderId, AssetRef draggedRef, GuiState state)
         {

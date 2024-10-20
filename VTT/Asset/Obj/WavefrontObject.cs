@@ -117,7 +117,7 @@
             else
             {
                 List<Vertex> vertices = new List<Vertex>();
-                List<System.Numerics.Vector3> tris = new List<System.Numerics.Vector3>();
+                List<Vector3> tris = new List<Vector3>();
 
                 for (int i = 0; i < faces.Count; i += 3)
                 {

@@ -63,6 +63,8 @@
         internal static extern IntPtr glfwGetCurrentContext();
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments", Justification = "LPStr is the correct type, LPWStr would be UTF-16, LPStr is ANSII 8 bytes, which is the correct expected type.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1401:P/Invokes should not be visible", Justification = "Needs to be visible for any APIs that want this delegate explicitly")]
         public static extern IntPtr glfwGetProcAddress([In][MarshalAs(UnmanagedType.LPStr)]string procName);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
@@ -117,16 +119,16 @@
         internal static extern void glfwPollEvents();
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int glfwDestroyWindow(IntPtr window);
+        internal static extern void glfwDestroyWindow(IntPtr window);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int glfwHideWindow(IntPtr window);
+        internal static extern void glfwHideWindow(IntPtr window);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int glfwShowWindow(IntPtr window);
+        internal static extern void glfwShowWindow(IntPtr window);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int glfwSetWindowMonitor(IntPtr window, IntPtr monitor, int x, int y, int w, int h, int refresh);
+        internal static extern void glfwSetWindowMonitor(IntPtr window, IntPtr monitor, int x, int y, int w, int h, int refresh);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void glfwGetWindowPos(IntPtr window, int* width, int* height);

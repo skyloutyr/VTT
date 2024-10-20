@@ -397,7 +397,7 @@
                 }
             }
 
-            int nAmt = primitives.Length * 2 - 1;
+            int nAmt = (primitives.Length * 2) - 1;
             UnsafeArray<Node> nodes = new UnsafeArray<Node>(nAmt);
             this.nodes = nodes;
             for (int i = 0; i < nAmt; ++i)

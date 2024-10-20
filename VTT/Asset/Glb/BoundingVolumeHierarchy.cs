@@ -198,10 +198,7 @@
             this.RootNode.Intersect(this, ref state, arrayPtr);
         }
 
-        public void Free()
-        {
-            this.TriangleIndices.Free();
-        }
+        public void Free() => this.TriangleIndices.Free();
 
         public struct TriangleIterationState
         {

@@ -8,6 +8,8 @@
 
     public abstract class ChatRendererBase
     {
+        public static Regex RollSyntaxRegex { get; } = new Regex("roll\\(([0-9]+), ([0-9]+)\\)\\[=", RegexOptions.Compiled);
+
         public ChatLine Container { get; }
 
         public ChatRendererBase(ChatLine container) => this.Container = container;
@@ -18,6 +20,5 @@
         public abstract string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang);
 
         public static string TextOrAlternative(string text, string alt) => string.IsNullOrEmpty(text) ? alt : text;
-        public static Regex RollSyntaxRegex = new Regex("roll\\(([0-9]+), ([0-9]+)\\)\\[=", RegexOptions.Compiled);
     }
 }

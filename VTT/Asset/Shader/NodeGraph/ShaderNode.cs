@@ -108,10 +108,7 @@
     {
         public object[] SimulationPixels { get; }
 
-        public NodeSimulationMatrix()
-        {
-            this.SimulationPixels = new object[32 * 32];
-        }
+        public NodeSimulationMatrix() => this.SimulationPixels = new object[32 * 32];
 
         public NodeSimulationMatrix(NodeSimulationMatrix val) : this()
         {

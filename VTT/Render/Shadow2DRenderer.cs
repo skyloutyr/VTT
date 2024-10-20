@@ -433,9 +433,9 @@
                         EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                         this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? 1.0f : Client.Instance.Frontend.GameHandle.IsAnyControlDown() ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
 
-                        float vMax = 0;
-                        float vDim = 0;
-                        Vector2 lightCursor = Vector2.Zero;
+                        float vMax;
+                        float vDim;
+                        Vector2 lightCursor;
                         SelectionManager sm = Client.Instance.Frontend.Renderer.SelectionManager;
                         MapObject mainSelectCandidate = null;
 

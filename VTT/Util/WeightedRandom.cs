@@ -56,7 +56,7 @@
 
     public class WeightedList<T> : IList<WeightedItem<T>>
     {
-        private List<WeightedItem<T>> _list = new List<WeightedItem<T>>();
+        private readonly List<WeightedItem<T>> _list = new List<WeightedItem<T>>();
         private int _totalWeight;
 
         public int TotalWeight => this._totalWeight;

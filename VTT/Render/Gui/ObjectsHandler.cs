@@ -1098,14 +1098,9 @@
         private unsafe void RenderObjectOverlays()
         {
             IEnumerable<MapObject> objectsSelected = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects;
-            if (!ImGui.GetIO().WantCaptureMouse)
-            {
-                objectsSelected = objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver }).Distinct();
-            }
-            else
-            {
-                objectsSelected = objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectListObjectMouseOver }).Distinct();
-            }
+            objectsSelected = !ImGui.GetIO().WantCaptureMouse
+                ? objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver }).Distinct()
+                : objectsSelected.Concat(new[] { Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectListObjectMouseOver }).Distinct();
 
             void RenderStatusEffects(MapObject mo, Vector3 screen, float tX = float.MaxValue)
             {

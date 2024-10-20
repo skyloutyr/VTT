@@ -97,10 +97,9 @@
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            FastAccessShader shader;
-            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out shader))
+            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out _))
             {
-                shader = this.ParticleShader;
+                FastAccessShader shader = this.ParticleShader;
                 shader.Program.Bind();
                 shader.Essentials.View.Set(this._cam.View);
                 shader.Essentials.Projection.Set(this._cam.Projection);
@@ -119,7 +118,7 @@
                 GL.ActiveTexture(2);
                 Client.Instance.Frontend.Renderer.Black.Bind();
             }
-            
+
             GL.ActiveTexture(0);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
             GL.Disable(Capability.Blend);

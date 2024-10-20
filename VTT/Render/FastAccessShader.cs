@@ -92,7 +92,7 @@
 
         public class BooleanUniformWrapper
         {
-            private UniformWrapper _uniform;
+            private readonly UniformWrapper _uniform;
             private bool _state;
 
             public BooleanUniformWrapper(UniformWrapper uniform)
@@ -113,7 +113,7 @@
 
         public class FloatUniformWrapper
         {
-            private UniformWrapper _uniform;
+            private readonly UniformWrapper _uniform;
             private float _state;
 
             public FloatUniformWrapper(UniformWrapper uniform)
@@ -144,7 +144,7 @@
 
         public class Vector4UniformWrapper
         {
-            private UniformWrapper _uniform;
+            private readonly UniformWrapper _uniform;
             private Vector4 _state;
 
             public Vector4UniformWrapper(UniformWrapper uniform)
@@ -165,7 +165,7 @@
 
         public class Vector2UniformWrapper
         {
-            private UniformWrapper _uniform;
+            private readonly UniformWrapper _uniform;
             private Vector2 _state;
 
             public Vector2UniformWrapper(UniformWrapper uniform)
@@ -186,7 +186,7 @@
 
         public class UnsignedIntegerUniformWrapper
         {
-            private UniformWrapper _uniform;
+            private readonly UniformWrapper _uniform;
             private uint _state;
 
             public UnsignedIntegerUniformWrapper(UniformWrapper uniform)

@@ -3235,10 +3235,10 @@ $OUTPUT@2$ = $INPUT@0$.a;",
         #endregion
 
         #region Images
-        private static Lazy<Image<Rgba32>> dummyAlbedo = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyAlbedo.png"));
-        private static Lazy<Image<Rgba32>> dummyNormal = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyNormal.png"));
-        private static Lazy<Image<Rgba32>> dummyAOMR = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyAOMR.png"));
-        private static Lazy<Image<Rgba32>>[] dummyCustomTextures = new Lazy<Image<Rgba32>>[64];
+        private static readonly Lazy<Image<Rgba32>> dummyAlbedo = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyAlbedo.png"));
+        private static readonly Lazy<Image<Rgba32>> dummyNormal = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyNormal.png"));
+        private static readonly Lazy<Image<Rgba32>> dummyAOMR = new Lazy<Image<Rgba32>>(() => IOVTT.ResourceToImage<Rgba32>("VTT.Embed.dummyAOMR.png"));
+        private static readonly Lazy<Image<Rgba32>>[] dummyCustomTextures = new Lazy<Image<Rgba32>>[64];
 
         private static Lazy<Image<Rgba32>> GetCustomTextureForIndex(int index)
         {

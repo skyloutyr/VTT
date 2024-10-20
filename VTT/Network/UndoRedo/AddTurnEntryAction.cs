@@ -18,12 +18,7 @@
         {
             lock (this.Map.TurnTracker.Lock)
             {
-                if (this.EntryIndex < 0 || this.EntryIndex >= this.Map.TurnTracker.Entries.Count)
-                {
-                    return -1;
-                }
-
-                return this.EntryIndex;
+                return this.EntryIndex < 0 || this.EntryIndex >= this.Map.TurnTracker.Entries.Count ? -1 : this.EntryIndex;
             }
         }
 

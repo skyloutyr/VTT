@@ -8,11 +8,7 @@
     {
         public const int DontCare = -1;
 
-        public static bool Init()
-        {
-            return glfwInit() > 0;
-        }
-
+        public static bool Init() => glfwInit() > 0;
         public static void WindowHint(WindowCreationHint hint, int value) => glfwWindowHint((int)hint, value);
         public static void WindowHint(WindowCreationHint hint, bool value) => glfwWindowHint((int)hint, value ? 1 : 0);
         public static void WindowHint(WindowCreationHint hint, ClientAPI value) => glfwWindowHint((int)hint, (int)value);
@@ -29,10 +25,7 @@
             return ret;
         }
 
-        public static void Terminate()
-        {
-            glfwTerminate();
-        }
+        public static void Terminate() => glfwTerminate();
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void CursorPositionCallback(IntPtr window, double x, double y);

@@ -12,8 +12,7 @@
 
         public override bool AcceptSmallChange(SmallChangeAction newAction)
         {
-            DrawingAction da = newAction as DrawingAction;
-            if (da != null && da.DPC.ID.Equals(this.DPC.ID))
+            if (newAction is DrawingAction da && da.DPC.ID.Equals(this.DPC.ID))
             {
                 this.DPC = da.DPC;
                 return true;

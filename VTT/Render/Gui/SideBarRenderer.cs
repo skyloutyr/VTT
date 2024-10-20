@@ -9,7 +9,6 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
-    using static Antlr4.Runtime.Atn.SemanticContext;
 
     public partial class GuiRenderer
     {

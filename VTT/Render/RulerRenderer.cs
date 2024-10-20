@@ -660,7 +660,7 @@
             this._vertexData.Add(end.Z);
             for (int i = 0; i < 36; ++i)
             {
-                float angleRad = (i * 10f) * MathF.PI / 180;
+                float angleRad = i * 10f * MathF.PI / 180;
                 Quaternion q = Quaternion.CreateFromAxisAngle(planeNormal, angleRad);
                 Vector4 v = Vector4.Transform(planePerpendicular, q);
                 Vector3 v3 = end + (v.Xyz().Normalized() * radius);
@@ -794,7 +794,7 @@
             zHeight += rEffect;
             start *= new Vector3(1, 1, 0); // Discard Z component
             int numSegments = (int)(12 * MathF.Max(1, (radius / 2.5f)));
-            float angleStep = (360.0f / numSegments) * MathF.PI / 180;
+            float angleStep = 360.0f / numSegments * MathF.PI / 180;
             float cos = MathF.Cos(angleStep);
             float sin = MathF.Sin(angleStep);
             Vector3 v = Vector3.UnitY;

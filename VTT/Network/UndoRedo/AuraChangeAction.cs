@@ -20,8 +20,7 @@
 
         public override bool AcceptSmallChange(SmallChangeAction newAction)
         {
-            AuraChangeAction aca = newAction as AuraChangeAction;
-            if (aca != null && aca.AuraIndex == this.AuraIndex && this.CheckIfRecent(aca.LastModifyTime, 3000))
+            if (newAction is AuraChangeAction aca && aca.AuraIndex == this.AuraIndex && this.CheckIfRecent(aca.LastModifyTime, 3000))
             {
                 this.NewAuraColor = aca.NewAuraColor;
                 this.NewAuraRange = aca.NewAuraRange;

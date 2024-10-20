@@ -20,8 +20,6 @@
         public ObservableValue<bool> Decorated { get; set; } = new ObservableValue<bool>(true);
 
         private readonly GameWindowSettings _gameWindowSettings;
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "TBD later")]
         private readonly NativeWindowSettings _nativeWindowSettings;
         private readonly IntPtr _nativeWindow;
         private readonly bool _haveVTearExt = false;
@@ -431,8 +429,8 @@
 
     public class PerformanceMetrics
     {
-        private List<ulong> _ticksBack = new List<ulong>();
-        private List<ulong> _ticksFront = new List<ulong>();
+        private readonly List<ulong> _ticksBack = new List<ulong>();
+        private readonly List<ulong> _ticksFront = new List<ulong>();
 
         private List<ulong> _ticksActive;
         private List<ulong> _ticksLast;

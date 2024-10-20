@@ -1219,17 +1219,7 @@
             this.CPUTimerAuras.Stop();
         }
 
-        private float GetCameraDistanceTo(MapObject mo, Camera cam)
-        {
-            if (mo.Container.Is2D)
-            {
-                return mo.Container.Camera2DHeight - mo.Position.Z;
-            }
-            else
-            {
-                return Vector3.Distance(mo.Position, cam.Position);
-            }
-        }
+        private float GetCameraDistanceTo(MapObject mo, Camera cam) => mo.Container.Is2D ? mo.Container.Camera2DHeight - mo.Position.Z : Vector3.Distance(mo.Position, cam.Position);
     }
 
     public enum EditMode
@@ -1303,6 +1293,8 @@
     public class BonesUBO
     {
         private readonly GPUBuffer _ubo;
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "Readonly on a pointer carries ambiguous meaning - the field itself is never modified, but the values at the pointer are.")]
         private unsafe Matrix4x4* _matrixArray;
 
         public BonesUBO()

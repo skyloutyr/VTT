@@ -15,8 +15,6 @@
         internal ImCachedLine[] _cachedLines;
         private float _spacebarWidth;
         private float _spacebarHeight;
-        private float _w;
-        private float _h;
 
         public ChatRendererLine(ChatLine container) : base(container)
         {
@@ -113,8 +111,8 @@
             }
 
             this._cachedLines = lines.ToArray();
-            height = this._h = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
-            width = this._w = wMax;
+            height = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
+            width = wMax;
         }
 
         public override void ClearCache() => this._cachedLines = null;

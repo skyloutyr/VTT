@@ -117,11 +117,9 @@
             this.GameHandle.FocusedChanged += this.Instance_Focus;
         }
 
-        private void Instance_KeyRepeat(KeyEventData obj)
-        {
+        private void Instance_KeyRepeat(KeyEventData obj) =>
             //ImGui creates key repeats by its own, no need to pass key repeat there
             this.Renderer?.MapRenderer?.HandleKeys(obj);
-        }
 
         private unsafe GLFWimage[] LoadIcon(string postfix)
         {

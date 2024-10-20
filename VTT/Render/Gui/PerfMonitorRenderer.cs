@@ -80,16 +80,7 @@
 
             if (ImGui.Begin(lang.Translate("ui.performance") + "###Performance Monitor"))
             {
-                double frameTarget;
-                if (Client.Instance.Frontend.GameHandle.VSync.Value != ClientSettings.VSyncMode.Off)
-                {
-                    frameTarget = 1000d / this._cachedRefreshRate;
-                }
-                else
-                {
-                    frameTarget = 0;
-                }
-
+                double frameTarget = Client.Instance.Frontend.GameHandle.VSync.Value != ClientSettings.VSyncMode.Off ? 1000d / this._cachedRefreshRate : 0;
                 double cpuDeferred = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerDeferred?.ElapsedMillis() ?? 0;
                 double cpuCompoundRender = Client.Instance.Frontend.Renderer.ObjectRenderer.CPUTimerCompound?.ElapsedMillis() ?? 0;
                 double cpuGrid = Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.CPUTimer?.ElapsedMillis() ?? 0;

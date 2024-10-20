@@ -116,10 +116,7 @@
             return ret;
         }
 
-        public void SerializeCompatibility(DataElement ret)
-        {
-            ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) => c.SetGuid(n, v));
-        }
+        public void SerializeCompatibility(DataElement ret) => ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) => c.SetGuid(n, v));
 
         public void Deserialize(DataElement e)
         {

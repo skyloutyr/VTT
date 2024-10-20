@@ -71,10 +71,7 @@
     {
         public string Data { get; set; }
 
-        public void Accept(byte[] binary)
-        {
-            this.Data = Encoding.UTF8.GetString(binary);
-        }
+        public void Accept(byte[] binary) => this.Data = Encoding.UTF8.GetString(binary);
 
         public void Dispose()
         {

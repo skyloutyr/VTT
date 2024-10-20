@@ -125,14 +125,7 @@
             this.IsBanned = br.ReadBoolean();
             this.CanDraw = br.ReadBoolean();
             int amt = br.ReadInt32();
-            if (amt == 0)
-            {
-                this.Image = null;
-            }
-            else
-            {
-                this.Image = SixLabors.ImageSharp.Image.Load<Rgba32>(br.ReadBytes(amt));
-            }
+            this.Image = amt == 0 ? null : SixLabors.ImageSharp.Image.Load<Rgba32>(br.ReadBytes(amt));
         }
     }
 }

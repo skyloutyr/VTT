@@ -414,7 +414,7 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + m * (1f / 60f);
+                        this.camera2dzoom /= 1.0f + (m * (1f / 60f));
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -428,7 +428,7 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + m * (1f / 60f);
+                        this.camera2dzoom *= 1.0f + (m * (1f / 60f));
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -442,7 +442,7 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + m * (1f / 60f);
+                        this.camera2dzoom /= 1.0f + (m * (1f / 60f));
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -456,7 +456,7 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + m * (1f / 60f);
+                        this.camera2dzoom *= 1.0f + (m * (1f / 60f));
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -538,7 +538,7 @@
                 Vector3 np2c;
                 if (dy != 0)
                 {
-                    Quaternion q = Quaternion.CreateFromAxisAngle(camRight, (-dy * (1f / 60f) * mod) * MathF.PI / 180);
+                    Quaternion q = Quaternion.CreateFromAxisAngle(camRight, -dy * (1f / 60f) * mod * MathF.PI / 180);
                     np2c = Vector4.Transform(new Vector4(point2camera, 1.0f), q).Xyz();
                     float dot = Vector3.Dot(Vector3.UnitZ, -np2c.Normalized());
                     Vector3 oldUp = this.ClientCamera.Up;
@@ -569,7 +569,7 @@
                         mod *= 0.1f;
                     }
 
-                    Quaternion q = Quaternion.CreateFromAxisAngle(camUp, (-dx * (1f / 60f) * mod) * MathF.PI / 180);
+                    Quaternion q = Quaternion.CreateFromAxisAngle(camUp, -dx * (1f / 60f) * mod * MathF.PI / 180);
                     np2c = Vector4.Transform(new Vector4(point2camera, 1.0f), q).Xyz();
                     this.ClientCamera.Position = this._pt + np2c;
                     this.ClientCamera.Direction = -np2c.Normalized();

@@ -2,9 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
-    using static VTT.GL.Bindings.MiniGLLoader;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public static unsafe class MiniGLLoader
     {
         public delegate IntPtr ProcAddressDelegate(string name);
@@ -391,5 +389,4 @@
 
         private static T ToDelegate<T>(IntPtr ptr) => Marshal.GetDelegateForFunctionPointer<T>(ptr);
     }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 }

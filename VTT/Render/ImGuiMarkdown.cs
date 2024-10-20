@@ -583,8 +583,7 @@ namespace VTT.Render
             {
                 float scale = ImGui.GetIO().FontGlobalScale;
                 float widthLeft = ImGui.GetContentRegionAvail().X;
-                string leftovers;
-                int indexTo = TextWrapFromFont(ImGui.GetFont(), scale, text, widthLeft, out leftovers);
+                int indexTo = TextWrapFromFont(ImGui.GetFont(), scale, text, widthLeft, out string leftovers);
                 if (indexTo == -1)
                 {
                     indexTo = text.Length;

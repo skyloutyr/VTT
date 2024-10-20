@@ -579,9 +579,6 @@
             }
         }
 
-        public IEnumerable<IAnimationStorage.BoneData> ProvideBones()
-        {
-            return this.StoredBoneData;
-        }
+        public IEnumerable<IAnimationStorage.BoneData> ProvideBones() => this.StoredBoneData;
     }
 }

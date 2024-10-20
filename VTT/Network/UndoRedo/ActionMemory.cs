@@ -9,7 +9,8 @@
     {
         private readonly List<ServerAction> _actions = new List<ServerAction>();
         private readonly object _lock = new object();
-        private ServerClient _owner;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "TBD Later")]
+        private readonly ServerClient _owner;
 
         public ActionMemory(ServerClient serverClient) => this._owner = serverClient;
 

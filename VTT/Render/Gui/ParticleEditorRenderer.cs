@@ -118,7 +118,7 @@
                             }
                         }
 
-                        if ((cEmissionType >= 3 && cEmissionType <= 8) || cEmissionType == 11)
+                        if (cEmissionType is (>= 3 and <= 8) or 11)
                         {
                             ImGui.Text(lang.Translate("ui.particle.emission_volume"));
                             Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;

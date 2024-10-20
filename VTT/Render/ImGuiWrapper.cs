@@ -310,7 +310,7 @@ void main()
                 }
 
                 string codepoints = line[..idx].Trim();
-                if (codepoints.IndexOf("..") != -1) // Have ranges
+                if (codepoints.Contains("..", StringComparison.OrdinalIgnoreCase)) // Have ranges
                 {
                     string[] cps = codepoints.Split("..");
                     uint start = Convert.ToUInt32(cps[0], 16);

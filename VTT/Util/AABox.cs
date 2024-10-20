@@ -98,12 +98,7 @@
             }
 
             // if tmin > tmax, ray doesn't intersect AABB
-            if (tmin > tmax)
-            {
-                return null;
-            }
-
-            return ray.Origin + (ray.Direction * tmin);
+            return tmin > tmax ? null : ray.Origin + (ray.Direction * tmin);
         }
 
         public readonly bool Contains(Vector3 point)

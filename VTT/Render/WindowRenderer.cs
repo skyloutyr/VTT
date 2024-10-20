@@ -13,8 +13,7 @@
     using VTT.Render.Gui;
     using VTT.Render.LightShadow;
     using VTT.Util;
-    using GL = VTT.GL.Bindings.GL;
-    using static System.Net.Mime.MediaTypeNames;
+    using GL = GL.Bindings.GL;
 
     public class WindowRenderer
     {
@@ -57,12 +56,11 @@
             this.ParticleRenderer.Create();
             this.Pipeline = new UniversalPipeline();
             this.Pipeline.Create();
-            int lMax = 0;
             OpenGLUtil.DetermineCompressedFormats();
-            lMax = GL.GetInteger(GLPropertyName.MaxTextureSize)[0];
+            int lMax = GL.GetInteger(GLPropertyName.MaxTextureSize)[0];
             Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax;
-            this.White = OpenGLUtil.LoadFromOnePixel(new SixLabors.ImageSharp.PixelFormats.Rgba32(1, 1, 1, 1f));
-            this.Black = OpenGLUtil.LoadFromOnePixel(new SixLabors.ImageSharp.PixelFormats.Rgba32(0, 0, 0, 1f));
+            this.White = OpenGLUtil.LoadFromOnePixel(new Rgba32(1, 1, 1, 1f));
+            this.Black = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 1f));
         }
 
         private int _mapTrackerUpdateCounter;

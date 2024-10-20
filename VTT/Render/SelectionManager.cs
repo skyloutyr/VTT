@@ -506,9 +506,6 @@
         }
 
         private bool _fxHandlerLmbDown;
-
-        private static readonly List<Vector3> hits = new List<Vector3>();
-
         private static Vector3? TorusIntersection(Ray r, Vector3 center, Vector3 torusAxis, float rMin, float rMax)
         {
             (Vector3, Vector3)? hits = r.IntersectsSphereBoth(center, rMax);
@@ -552,14 +549,9 @@
                 Vector2 pCurrent;
                 bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space);
                 bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);
-                if (cw != null && !shift)
-                {
-                    pCurrent = cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy();
-                }
-                else
-                {
-                    pCurrent = new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
-                }
+                pCurrent = cw != null && !shift
+                    ? cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy()
+                    : new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
 
                 Vector3 min = this.SelectedObjects[0].Position;
                 Vector3 max = this.SelectedObjects[0].Position;

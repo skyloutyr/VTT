@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Text;
@@ -184,7 +185,8 @@
                 bool foundSelectedBox = false;
                 foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes())
                 {
-                    if (box.IsMouseOver = box.Contains(cursorWorld))
+                    box.IsMouseOver = false;
+                    if (box.Contains(cursorWorld))
                     {
                         boxesMouseOver.Add(box);
                     }
@@ -203,15 +205,20 @@
                     this._boxSelected = null;
                 }
 
-                float dstCurrent = float.MaxValue;
+                float areaCurrent = float.MaxValue;
                 foreach (Shadow2DBox b in boxesMouseOver)
                 {
-                    float dst = (b.Center - cursorWorld).Length();
-                    if (dst < dstCurrent)
+                    float area = b.Area;
+                    if (area < areaCurrent)
                     {
                         bmover = b;
-                        dstCurrent = dst;
+                        areaCurrent = area;
                     }
+                }
+
+                if (bmover != null)
+                {
+                    bmover.IsMouseOver = true;
                 }
 
                 bool imGuiWantsMouse = ImGui.GetIO().WantCaptureMouse;
@@ -559,7 +566,7 @@
                                 }
                             }
 
-                            foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes())
+                            foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes().OrderByDescending(x => (int)x.BoxType))
                             {
                                 if (box.BoxType == Shadow2DBox.ShadowBoxType.Sunlight && box.IsActive)
                                 {

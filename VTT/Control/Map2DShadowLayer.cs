@@ -240,7 +240,7 @@
             [FieldOffset(28)]
             public int paddingB; // 4
 
-            public bool IsLeaf => this.primitiveCount > 0;
+            public readonly bool IsLeaf => this.primitiveCount > 0;
         }
 
         public bool WasUploaded { get; private set; } = true;
@@ -477,6 +477,14 @@
         public ShadowBoxType BoxType { get; set; }
 
         public Vector2 Center => this.Start + ((this.End - this.Start) * 0.5f);
+        public float Area
+        {
+            get
+            {
+                Vector2 extent = this.End - this.Start;
+                return MathF.Abs(extent.X) * MathF.Abs(extent.Y);
+            }
+        }
 
         public bool Contains(Vector2 point)
         {

@@ -27,14 +27,15 @@
                     {
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = new Vector3(this.CameraPosition.X, this.CameraPosition.Y, m.Camera2DHeight);
                         Client.Instance.Frontend.Renderer.MapRenderer.ChangeFOVOrZoom(this.CameraPosition.Z);
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction = this.CameraDirection;
                     }
                     else
                     {
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position = this.CameraPosition;
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction = this.CameraDirection;
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                     }
 
-                    Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction = this.CameraDirection;
-                    Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                 }
             }
         }

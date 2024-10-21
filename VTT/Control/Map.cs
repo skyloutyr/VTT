@@ -189,6 +189,16 @@
             this.EnableDarkvision = e.GetBool("EnableDarkvision");
             this.DefaultCameraPosition = e.GetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             this.DefaultCameraRotation = e.GetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
+            if (this.DefaultCameraPosition.HasAnyNans())
+            {
+                this.DefaultCameraPosition = new Vector3(5, 5, 5);
+            }
+
+            if (this.DefaultCameraRotation.HasAnyNans())
+            {
+                this.DefaultCameraRotation = new Vector3(-1, -1, -1).Normalized();
+            }
+
             this.EnableDrawing = e.GetBool("EnableDrawing", true);
             this.Has2DShadows = e.GetBool("Has2DShadows", false);
             (Guid, Guid, float)[] dvData = e.GetArray("DarkvisionData", (n, c) =>

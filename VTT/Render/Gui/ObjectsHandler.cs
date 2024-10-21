@@ -1024,8 +1024,8 @@
                         {
                             Vector3 p = mo.Position;
                             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                            cam.Position = p - (cam.Direction * 5.0f);
-                            cam.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                            cam.Position = state.clientMap.Is2D ? new Vector3(p.X, p.Y, cam.Position.Z) : p - (cam.Direction * 5.0f);
+                            cam.RecalculateData();
                             bool shift = ImGui.IsKeyDown(ImGuiKey.LeftShift);
                             if (!shift)
                             {

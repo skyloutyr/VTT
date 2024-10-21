@@ -47,7 +47,7 @@
 
             if (assumedUpAxis.Equals(default))
             {
-                assumedUpAxis = Vector3.UnitY;
+                assumedUpAxis = this.Up.Equals(default) ? Vector3.UnitY : this.Up;
             }
 
             this.Right = Vector3.Normalize(Vector3.Cross(direction, assumedUpAxis));
@@ -171,7 +171,7 @@
             this.Position = newLocation;
             if (recalculateData)
             {
-                this.RecalculateData();
+                this.RecalculateData(false, false, this.Up);
             }
         }
     }

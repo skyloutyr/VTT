@@ -305,6 +305,9 @@
             );
         }
 
+        public static bool HasAnyNans(this SVec2 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y);
+        public static bool HasAnyNans(this SVec3 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z);
+
         public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);
     }
 }

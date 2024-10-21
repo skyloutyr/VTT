@@ -165,7 +165,6 @@
                                 if (is2d)
                                 {
                                     vScale = 150.0f * zoomortho;
-                                    half += new Vector3(0.01f, 0.01f, 0);
                                 }
 
                                 AABox zArrow = new AABox(-0.077927f, -0.077927f, -0.5f, 0.077927f, 0.077927f, 0.5f).Offset(new Vector3(0, 0, 0.5f)).Scale(vScale).Offset(half);
@@ -291,7 +290,7 @@
                             AABox yBox = new AABox(-0.490000f, -0.01f, -0.490000f, 0.490000f, 0.01f, 0.490000f).Scale(vScale).Offset(half);
 
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
-                            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
+                            Quaternion q = is2d ? Quaternion.Identity : new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
                             BBBox p = new BBBox(new Vector3(-0.490000f, -0.490000f, -0.01f), new Vector3(0.490000f, 0.490000f, 0.01f), q).Scale(new Vector3(2.0f * vScale));
 
                             Vector3? pIntersection = p.Intersects(r, half);
@@ -350,7 +349,7 @@
                                     foreach (MapObject mo in this.SelectedObjects)
                                     {
                                         mo.ClientDragMoveResetInitialPosition = mo.Position;
-                                        mo.ClientDragRotaateInitialRotation = mo.Rotation;
+                                        mo.ClientDragRotateInitialRotation = mo.Rotation;
                                     }
 
                                     this._blockSelection = true;
@@ -375,7 +374,7 @@
                                     foreach (MapObject mo in this.SelectedObjects)
                                     {
                                         mo.ClientDragMoveResetInitialPosition = mo.Position;
-                                        mo.ClientDragRotaateInitialRotation = mo.Rotation;
+                                        mo.ClientDragRotateInitialRotation = mo.Rotation;
                                     }
 
                                     this._blockSelection = true;
@@ -575,7 +574,7 @@
 
                 foreach (MapObject mo in this.SelectedObjects)
                 {
-                    mo.Rotation = q * mo.ClientDragRotaateInitialRotation;
+                    mo.Rotation = q * mo.ClientDragRotateInitialRotation;
                 }
 
                 if (this.SelectedObjects.Count > 1)

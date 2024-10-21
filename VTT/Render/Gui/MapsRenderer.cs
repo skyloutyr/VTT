@@ -51,9 +51,13 @@
                             cPos = new Vector3(cPos.X, cPos.Y, Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho);
                         }
 
-                        Vector3 cDir = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cPos, Type = PacketChangeMapData.DataType.CameraPosition }.Send();
-                        new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
+
+                        if (!state.clientMap.Is2D)
+                        {
+                            Vector3 cDir = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
+                            new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
+                        }
                     }
 
                     if (ImGui.IsItemHovered())

@@ -87,14 +87,14 @@
             if (!this.IsOrtho)
             {
                 this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180, (float)w / h, 0.01f, 100f);
+                this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
             else
             {
                 float zoom = this.camera2dzoom;
                 this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
+                this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitY);
             }
-
-            this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
         }
 
         public void ChangeFOVOrZoom(float to)
@@ -127,12 +127,17 @@
             {
                 this.camera2dzoom = zoom;
                 this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
-                this.ClientCamera.Direction = new Vector3(0, 0.001f, -1).Normalized();
+                this.ClientCamera.Direction = -Vector3.UnitZ;
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);
-                this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitY);
             }
             else
             {
+                if (this.ClientCamera.Direction.Equals(-Vector3.UnitZ))
+                {
+                    this.ClientCamera.Direction = new Vector3(0, 0.01f, -1f).Normalized();
+                }
+
                 this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(60.0f * MathF.PI / 180, (float)w / h, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
@@ -183,7 +188,7 @@
                 float rX = (mX * (w / 2) * zoom) + this.ClientCamera.Position.X;
                 float rY = (mY * (h / 2) * zoom) + this.ClientCamera.Position.Y;
                 Vector3 pos = (right * rX) + (up * rY) + (Vector3.UnitZ * (Client.Instance.CurrentMap?.Camera2DHeight ?? 5));
-                Vector3 dir = new Vector3(0.01f, 0.01f, -1).Normalized();
+                Vector3 dir = -Vector3.UnitZ;
                 return new Ray(pos, dir);
             }
 
@@ -203,7 +208,12 @@
 
             if (!args.Mods.HasFlag(ModifierKeys.Shift) && !ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && !drag && cmap != null)
             {
-                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy().Normalized();
+                Vector2 cameraForward2D = this.IsOrtho || cmap.Is2D ? Vector2.UnitY : this.ClientCamera.Direction.Xy().Normalized();
+                if (cameraForward2D.HasAnyNans())
+                {
+                    cameraForward2D = Vector2.UnitY;
+                }
+
                 Vector2 gridForward2D = MathF.Abs(cameraForward2D.X) > MathF.Abs(cameraForward2D.Y) ? Vector2.UnitX * MathF.Sign(cameraForward2D.X) : Vector2.UnitY * MathF.Sign(cameraForward2D.Y);
                 Vector2 gridRight2D = gridForward2D.PerpendicularRight();
                 Vector3 gridMoveVec = default;
@@ -381,7 +391,12 @@
             float sensitivity = Client.Instance.Settings.Sensitivity;
             if (!ImGuiNET.ImGui.GetIO().WantCaptureKeyboard && !drag && Client.Instance.CurrentMap != null)
             {
-                Vector2 cameraForward2D = this.ClientCamera.Direction.Xy().Normalized();
+                Vector2 cameraForward2D = this.IsOrtho ? Vector2.UnitY : this.ClientCamera.Direction.Xy().Normalized();
+                if (cameraForward2D.HasAnyNans())
+                {
+                    cameraForward2D = Vector2.UnitY;
+                }
+
                 Vector2 cameraRight2D = cameraForward2D.PerpendicularRight();
                 Vector3 keyboardMoveVec = default;
 
@@ -473,7 +488,7 @@
                     {
                         Vector3 newPosVec = this.ClientCamera.Position + (keyboardMoveVec * (1f / 60f) * 3.0f);
                         this.ClientCamera.Position = newPosVec;
-                        this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                        this.ClientCamera.RecalculateData();
                     }
                 }
             }
@@ -521,7 +536,7 @@
                 {
                     // Not a bug: note that the timestep here is fixed for smooth motion regardless of framerate!
                     this.ClientCamera.Position += camMovement * 1/60f * 0.75f; 
-                    this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                    this.ClientCamera.RecalculateData();
                 }
             }
 
@@ -583,8 +598,7 @@
                 mod *= sensitivity;
                 if (!this.IsOrtho)
                 {
-                    this.ClientCamera.MoveCamera((this.ClientCamera.Direction * this._mouseWheelDY * mod) + this.ClientCamera.Position, false);
-                    this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                    this.ClientCamera.MoveCamera((this.ClientCamera.Direction * this._mouseWheelDY * mod) + this.ClientCamera.Position, true);
                 }
                 else
                 {

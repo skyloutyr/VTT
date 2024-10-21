@@ -616,8 +616,8 @@
                                 {
                                     Vector3 p = mo.Position;
                                     Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                                    cam.Position = p - (cam.Direction * 5.0f);
-                                    cam.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                                    cam.Position = cMap.Is2D ? new Vector3(p.X, p.Y, cam.Position.Z) : p - (cam.Direction * 5.0f);
+                                    cam.RecalculateData();
                                     if (Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
                                     {
                                         Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();

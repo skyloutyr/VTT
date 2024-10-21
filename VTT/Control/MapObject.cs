@@ -118,7 +118,7 @@
         public Vector3 ClientDragMoveResetInitialPosition { get; set; }
         public Vector3 ClientDragMoveAccumulatedPosition { get; set; }
 
-        public Quaternion ClientDragRotaateInitialRotation { get; set; }
+        public Quaternion ClientDragRotateInitialRotation { get; set; }
 
         public Vector3 ClientDragMoveInitialPosition { get; set; }
         public Vector3 ClientDragMoveServerInducedNewPosition { get; set; }

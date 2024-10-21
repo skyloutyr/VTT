@@ -522,10 +522,18 @@
                 if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.focus") + "###Focus"))
                 {
                     Vector3 camPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
-                    Vector3 camDirection = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
-                    Vector3 oPos = mouseOver.Position;
-                    Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.MoveCamera(oPos - (camDirection * 5.0f), false);
-                    Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                    if (Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho)
+                    {
+                        Vector3 oPos = mouseOver.Position;
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.MoveCamera(new Vector3(oPos.X, oPos.Y, camPos.Z), true);
+                    }
+                    else
+                    {
+                        Vector3 camDirection = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Direction;
+                        Vector3 oPos = mouseOver.Position;
+                        Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.MoveCamera(oPos - (camDirection * 5.0f), true);
+                    }
+
                     ImGui.CloseCurrentPopup();
                 }
 

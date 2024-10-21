@@ -168,6 +168,11 @@
                 return;
             }
 
+            if (map.Is2D)
+            {
+                return;
+            }
+
             float pitch = map.SunPitch;
             if (!map.SunEnabled || pitch < -1.6493362 || pitch > 1.6580629)
             {

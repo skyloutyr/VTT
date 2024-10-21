@@ -134,7 +134,7 @@
 
         public void Render(double deltaTime, Camera cam, Map m, bool renderMisc = true)
         {
-            if (m == null || !m.GridEnabled || !m.GridDrawn)
+            if (m != null && (!m.GridEnabled || !m.GridDrawn))
             {
                 return;
             }
@@ -151,9 +151,9 @@
             this._shader["projection"].Set(cam.Projection);
             this._shader["model"].Set(modelMatrix);
             this._shader["camera_position"].Set(cam.Position);
-            this._shader["g_color"].Set(m.GridColor.Vec4());
+            this._shader["g_color"].Set(m == null ? Color.White.Vec4() : m.GridColor.Vec4());
             this._shader["g_alpha"].Set(1f);
-            this._shader["g_size"].Set(m.GridSize);
+            this._shader["g_size"].Set(m == null ? 1 : m.GridSize);
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
@@ -198,16 +198,17 @@
                     this.InWorldShader["u_color"].Set(Color.Orange.Vec4());
                     GL.ActiveTexture(0);
                     Client.Instance.Frontend.Renderer.White.Bind();
+                    float gSize = m == null ? 1 : m.GridSize;
 
                     foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects)
                     {
-                        float msx = MathF.Abs(mo.Scale.X) % (m.GridSize * 2);
-                        float msy = MathF.Abs(mo.Scale.Y) % (m.GridSize * 2);
-                        float msz = MathF.Abs(mo.Scale.Z) % (m.GridSize * 2);
+                        float msx = MathF.Abs(mo.Scale.X) % (gSize * 2);
+                        float msy = MathF.Abs(mo.Scale.Y) % (gSize * 2);
+                        float msz = MathF.Abs(mo.Scale.Z) % (gSize * 2);
                         Vector3 bigScale = new Vector3(
-                            msx - 0.075f <= 0 || (m.GridSize * 2) - msx <= 0.075f ? 1 : 0,
-                            msy - 0.075f <= 0 || (m.GridSize * 2) - msy <= 0.075f ? 1 : 0,
-                            msz - 0.075f <= 0 || (m.GridSize * 2) - msz <= 0.075f ? 1 : 0
+                            msx - 0.075f <= 0 || (gSize * 2) - msx <= 0.075f ? 1 : 0,
+                            msy - 0.075f <= 0 || (gSize * 2) - msy <= 0.075f ? 1 : 0,
+                            msz - 0.075f <= 0 || (gSize * 2) - msz <= 0.075f ? 1 : 0
                         );
 
                         Vector3 snapped = mo.Position;

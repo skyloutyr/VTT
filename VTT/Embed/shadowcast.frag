@@ -4,7 +4,6 @@ in vec2 f_tex;
 uniform sampler2D positions;
 uniform samplerBuffer boxes;
 uniform samplerBuffer bvh;
-uniform samplerBuffer indices;
 uniform bool bvhHasData;
 uniform bool noCursor;
 uniform vec2 cursor_position;
@@ -25,6 +24,7 @@ uniform int num_lights;
 layout (location = 0) out float color;
 
 const float FLOAT_MAX = 1e+30;
+const float ILLUMINATED_THRESHOLD = 1.0 - 1e-5;
 
 struct Ray
 {
@@ -60,15 +60,7 @@ BVHNode getNode(int index)
     );
 }
 
-OBB getPrimitive(int index)
-{
-    int i = int(floatBitsToUint(texelFetch(indices, index).r));
-    vec4 a = texelFetch(boxes, (i * 2));
-    vec4 b = texelFetch(boxes, (i * 2) + 1);
-    return OBB(a.xy, a.zw, b.x, b.yz);
-}
-
-OBB getPrimitiveByIndexDirectly(int i)
+OBB getPrimitive(int i)
 {
     vec4 a = texelFetch(boxes, (i * 2));
     vec4 b = texelFetch(boxes, (i * 2) + 1);
@@ -283,10 +275,17 @@ void main()
                 else
                 {
                     float fact = d > light_threshold ? 0 : d > light_dimming ? (1.0 - ((d - light_dimming) / (light_threshold - light_dimming))) : 1;
-                    for (int i = 0; i < num_lights; ++i)
+                    if (fact < ILLUMINATED_THRESHOLD)
                     {
-                        float r = raycastLight(f_world_position, lights[i]);
-                        fact = max(fact, r);
+                        for (int i = 0; i < num_lights; ++i)
+                        {
+                            float r = raycastLight(f_world_position, lights[i]);
+                            fact = max(fact, r);
+                            if (fact >= ILLUMINATED_THRESHOLD)
+                            {
+                                break;
+                            }
+                        }
                     }
 
                     color = max(shadow_opacity, fact);

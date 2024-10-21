@@ -247,7 +247,6 @@
         public bool HasAnyBoxes => (this.primitives?.Length ?? 0) > 0;
         private UnsafeArray<ShadowOBB2D> primitives;
         private UnsafeArray<Node> nodes;
-        private UnsafeArray<int> primitiveIndices;
 
         private unsafe void UpdateNodeBounds(Node* node)
         {
@@ -255,8 +254,7 @@
             Vector2 max = new Vector2(float.MinValue, float.MinValue);
             for (int i = 0; i < node->primitiveCount; ++i)
             {
-                int leafPriIndex = this.primitiveIndices[node->leftFirst + i];
-                ShadowOBB2D bound = this.primitives[leafPriIndex];
+                ShadowOBB2D bound = this.primitives[node->leftFirst + i];
                 min = Vector2.Min(min, bound.BVHMin);
                 max = Vector2.Max(max, bound.BVHMax);
             }
@@ -313,13 +311,13 @@
             int j = i + node->primitiveCount - 1;
             while (i < j)
             {
-                if (GetComponent(this.primitives[this.primitiveIndices[i]].Center, axis) < splitPosition)
+                if (GetComponent(this.primitives[i].Center, axis) < splitPosition)
                 {
                     ++i;
                 }
                 else
                 {
-                    (this.primitiveIndices[j], this.primitiveIndices[i]) = (this.primitiveIndices[i], this.primitiveIndices[j]);
+                    (this.primitives[j], this.primitives[i]) = (this.primitives[i], this.primitives[j]);
                     --j;
                 }
             }
@@ -357,7 +355,7 @@
             int rightCount = 0;
             for (int i = 0; i < node->primitiveCount; ++i)
             {
-                ShadowOBB2D box = this.primitives[this.primitiveIndices[node->leftFirst + i]];
+                ShadowOBB2D box = this.primitives[node->leftFirst + i];
                 if (GetComponent(box.Center, axis) < candidatePos)
                 {
                     ++leftCount;
@@ -408,12 +406,6 @@
             int rootIndex = 0;
             int nodesUsed = 1;
 
-            this.primitiveIndices = new UnsafeArray<int>(primitives.Length);
-            for (int i = 0; i < this.primitiveIndices.Length; ++i)
-            {
-                this.primitiveIndices[i] = i;
-            }
-
             Node* root = nodes.GetPointer(rootIndex);
             root->leftFirst = 0;
             root->primitiveCount = this.primitives.Length;
@@ -435,16 +427,12 @@
                 renderer.BoxesBufferTexture?.Dispose();
                 renderer.BVHNodesDataBuffer.Dispose();
                 renderer.BVHNodesBufferTexture?.Dispose();
-                renderer.BVHIndicesDataBuffer.Dispose();
-                renderer.BVHIndicesBufferTexture?.Dispose();
             }
 
             renderer.BoxesDataBuffer = new GPUBuffer(BufferTarget.Texture);
             renderer.BVHNodesDataBuffer = new GPUBuffer(BufferTarget.Texture);
-            renderer.BVHIndicesDataBuffer = new GPUBuffer(BufferTarget.Texture);
             renderer.BoxesBufferTexture = new Texture(TextureTarget.Buffer);
             renderer.BVHNodesBufferTexture = new Texture(TextureTarget.Buffer);
-            renderer.BVHIndicesBufferTexture = new Texture(TextureTarget.Buffer);
 
             if (this.HasAnyBoxes)
             {
@@ -452,8 +440,6 @@
                 renderer.BoxesDataBuffer.SetData((IntPtr)this.primitives.GetPointer(), this.primitives.Length * sizeof(ShadowOBB2D));
                 renderer.BVHNodesDataBuffer.Bind();
                 renderer.BVHNodesDataBuffer.SetData((IntPtr)this.nodes.GetPointer(), this.nodes.Length * sizeof(Node));
-                renderer.BVHIndicesDataBuffer.Bind();
-                renderer.BVHIndicesDataBuffer.SetData((IntPtr)this.primitiveIndices.GetPointer(), this.primitiveIndices.Length * sizeof(int));
             }
             else
             {
@@ -461,16 +447,12 @@
                 renderer.BoxesDataBuffer.SetData(IntPtr.Zero, 1);
                 renderer.BVHNodesDataBuffer.Bind();
                 renderer.BVHNodesDataBuffer.SetData(IntPtr.Zero, 1);
-                renderer.BVHIndicesDataBuffer.Bind();
-                renderer.BVHIndicesDataBuffer.SetData(IntPtr.Zero, 1);
             }
 
             renderer.BoxesBufferTexture.Bind();
             GL.TexBuffer(SizedInternalFormat.RgbaFloat, renderer.BoxesDataBuffer);
             renderer.BVHNodesBufferTexture.Bind();
             GL.TexBuffer(SizedInternalFormat.RgbaFloat, renderer.BVHNodesDataBuffer);
-            renderer.BVHIndicesBufferTexture.Bind();
-            GL.TexBuffer(SizedInternalFormat.RedFloat, renderer.BVHIndicesDataBuffer);
 
             this.WasUploaded = true;
         }
@@ -479,10 +461,8 @@
         {
             this.primitives?.Free();
             this.nodes?.Free();
-            this.primitiveIndices?.Free();
             this.primitives = null;
             this.nodes = null;
-            this.primitiveIndices = null;
         }
     }
 

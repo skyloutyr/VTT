@@ -59,10 +59,8 @@
 
         public GPUBuffer BoxesDataBuffer { get; set; }
         public GPUBuffer BVHNodesDataBuffer { get; set; }
-        public GPUBuffer BVHIndicesDataBuffer { get; set; }
         public Texture BoxesBufferTexture { get; set; }
         public Texture BVHNodesBufferTexture { get; set; }
-        public Texture BVHIndicesBufferTexture { get; set; }
 
         public Texture OutputTexture { get; set; }
         public Texture WhiteSquare { get; set; }
@@ -108,7 +106,6 @@
             this.Raytracer["positions"].Set(0);
             this.Raytracer["boxes"].Set(1);
             this.Raytracer["bvh"].Set(2);
-            this.Raytracer["indices"].Set(3);
 
             this.OverlayVAO = new VertexArray();
             this.OverlayVBO = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
@@ -403,7 +400,7 @@
                         m.ShadowLayer2D.BVH.Upload(this);
                     }
 
-                    if (this.BoxesBufferTexture != null && this.BVHNodesBufferTexture != null && this.BVHIndicesBufferTexture != null)
+                    if (this.BoxesBufferTexture != null && this.BVHNodesBufferTexture != null)
                     {
                         GL.BindFramebuffer(FramebufferTarget.All, this.FBO.Value);
                         GL.Viewport(0, 0, SimulationWidth, SimulationHeight);
@@ -424,8 +421,6 @@
                         this.BoxesBufferTexture.Bind();
                         GL.ActiveTexture(2);
                         this.BVHNodesBufferTexture.Bind();
-                        GL.ActiveTexture(3);
-                        this.BVHIndicesBufferTexture.Bind();
                         GL.ActiveTexture(0);
 
                         this.Raytracer["bvhHasData"].Set(m.ShadowLayer2D.BVH.HasAnyBoxes);

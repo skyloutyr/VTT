@@ -717,7 +717,7 @@
                             this.RotateCircle.Render();
 
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
-                            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
+                            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction)).Normalized();
 
                             modelMatrix = Matrix4x4.CreateScale(0.5f * posScreen.W) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();

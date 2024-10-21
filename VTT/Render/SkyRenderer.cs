@@ -188,7 +188,7 @@
             this.SkyShader["projection"].Set(cam.Projection);
             this.SkyShader["view"].Set(cam.View);
             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
-            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
+            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction)).Normalized();
             Matrix4x4 model = Matrix4x4.CreateScale(8) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(cam.Position - (sunDir * 99));
             this.SkyShader["model"].Set(model);
             this._vao.Bind();

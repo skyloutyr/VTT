@@ -293,7 +293,8 @@
                     bool fowTest = true;
                     if (rr.ObjectHit != null && Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW)
                     {
-                        AABox bounds = rr.ObjectHit.CameraCullerBox.Offset(rr.ObjectHit.Position + new Vector3(0.5f, 0.5f, 0)); // Not sure why the 0.5 offset is needed here
+                        // 0.5, 0.5 offset is needed to bring the tested AABB into pixel-space from world-space, pixels have 0,0 in the bottom left, not the center, while the AABB has 0, 0 in its center/
+                        AABox bounds = rr.ObjectHit.CameraCullerBox.Offset(rr.ObjectHit.Position + new Vector3(0.5f, 0.5f, 0));
                         RectangleF projectedRect = new RectangleF(
                             bounds.Start.X, bounds.Start.Y,
                             bounds.End.X - bounds.Start.X, bounds.End.Y - bounds.Start.Y

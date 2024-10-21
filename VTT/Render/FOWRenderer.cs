@@ -159,7 +159,7 @@
             {
                 if (!this.HasFOW || this._fowTex == null)
                 {
-                    return false;
+                    return true;
                 }
 
                 int w = this._fowTex.Width;
@@ -191,15 +191,10 @@
                             continue;
                         }
 
-                        if (data == ulong.MaxValue)
-                        {
-                            return true;
-                        }
-
                         for (int i = 0; i < 64; ++i) // Subpixel test
                         {
                             float dx = (i & 7) * 0.125f;
-                            float dy = (i >> 4) * 0.125f;
+                            float dy = (i >> 3) * 0.125f;
                             subrect.X = x + dx;
                             subrect.Y = y + dy;
                             if (rect.Contains(subrect) || rect.IntersectsWith(subrect))

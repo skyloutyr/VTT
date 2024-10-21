@@ -366,7 +366,7 @@
                     {
                         Vector2 start = Vector2.Min(this._initialClickWorldPos, cursorWorld);
                         Vector2 end = Vector2.Max(this._initialClickWorldPos, cursorWorld);
-                        if (end.X - start.X >= 0.1f && end.Y - start.Y >= 0.1f) // Reject boxes that are too tiny
+                        if (end.X - start.X >= 0.01f && end.Y - start.Y >= 0.01f) // Reject boxes that are too tiny
                         {
                             Shadow2DBox.ShadowBoxType type = this.ControlMode == Shadow2DControlMode.AddBlocker ? Shadow2DBox.ShadowBoxType.Blocker : Shadow2DBox.ShadowBoxType.Sunlight;
                             Shadow2DBox box = new Shadow2DBox() { BoxID = Guid.NewGuid(), BoxType = type, Start = start, End = end, IsActive = true, Rotation = 0 };
@@ -566,7 +566,7 @@
                                 }
                             }
 
-                            foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes().OrderByDescending(x => (int)x.BoxType))
+                            foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes())
                             {
                                 if (box.BoxType == Shadow2DBox.ShadowBoxType.Sunlight && box.IsActive)
                                 {
@@ -667,7 +667,7 @@
                 this.OverlayVAO.Bind();
                 this.OverlayVBO.Bind();
 
-                foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes())
+                foreach (Shadow2DBox box in m.ShadowLayer2D.EnumerateBoxes().OrderByDescending(x => (int)x.BoxType))
                 {
                     Color clr = box.BoxType == Shadow2DBox.ShadowBoxType.Blocker
                         ? box.IsActive ? Color.SlateBlue : Color.DarkGoldenrod
@@ -687,7 +687,10 @@
                     Vector2 end = Vector2.Max(this._initialClickWorldPos, this._cursorWorldLastUpdate);
 
                     Vector2 c = start + ((end - start) * 0.5f);
-                    Color clr = this.ControlMode == Shadow2DControlMode.AddBlocker ? Color.SlateBlue : Color.LightCyan;
+
+                    bool allowed = end.X - start.X >= 0.01f && end.Y - start.Y >= 0.01f;
+
+                    Color clr = !allowed ? Color.Red : this.ControlMode == Shadow2DControlMode.AddBlocker ? Color.SlateBlue : Color.LightCyan;
 
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateTranslation(new Vector3(c, 0));
                     Vector2 halfExtent = (end - start) * 0.5f;

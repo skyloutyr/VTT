@@ -81,12 +81,12 @@ vec2 invDir(in vec2 dir)
     float y = 1.0 / dir.y;
     if (isinf(x) || isnan(x))
     {
-        x = FLOAT_MAX;
+        x = FLOAT_MAX * (dir.x >= 0.0 ? 1.0 : -1.0);
     }
 
     if (isinf(y) || isnan(y))
     {
-        y = FLOAT_MAX;
+        y = FLOAT_MAX * (dir.y >= 0.0 ? 1.0 : -1.0);
     }
 
     return vec2(x, y);

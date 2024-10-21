@@ -708,8 +708,7 @@
                             {
                                 if (scale)
                                 {
-                                    Vector3 dN = Vector4.Transform(new Vector4(delta, 1.0f), mo.Rotation).Xyz();
-                                    mo.Scale = mo.ClientDragMoveResetInitialPosition + dN;
+                                    mo.Scale = mo.ClientDragMoveResetInitialPosition + delta;
                                     if (alt)
                                     {
                                         mo.Scale = MapRenderer.SnapToGrid(mo.Scale, map.GridSize);

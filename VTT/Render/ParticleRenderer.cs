@@ -384,7 +384,7 @@
             this.CPUTimer.Stop();
         }
 
-        private List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
+        private readonly List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
         private bool HandleCustomShader(Guid shaderID, Map m, Camera cam, bool enableMemory, bool blank, out FastAccessShader shader)
         {
             if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)

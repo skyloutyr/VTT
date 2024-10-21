@@ -380,7 +380,7 @@
             this.ShaderEditorRenderer.Render(this._editedShaderId, this._draggedRef, this.FrameState);
             this.RenderLogs(lang);
             this.RenderTurnTrackerControls(cMap, lang, this.FrameState);
-            this.RenderTurnTrackerOverlay(cMap, window_flags);
+            this.RenderTurnTrackerOverlay(cMap, window_flags, this.FrameState);
             this.RenderPerformanceMonitor(lang);
 
             string ok = lang.Translate("ui.generic.ok");

@@ -25,7 +25,7 @@
 
         public void HandleScrollWheelExtra(float dx, float dy) => this._scrollDYChange += dy;
 
-        private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags)
+        private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags, GuiState state)
         {
             this._turnTrackerVisible = false;
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
@@ -148,6 +148,17 @@
                                             ImGui.TextUnformatted(tName);
                                             ImGui.PopStyleColor();
                                             ImGui.EndTooltip();
+                                            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                            {
+                                                if (mo.MapLayer <= 0 && !mo.DoNotRender && !mo.HideFromSelection)
+                                                {
+                                                    if (Client.Instance.Frontend.GameHandle.IsAnyAltDown())
+                                                    {
+                                                        Ping p = new Ping() { DeathTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 10000, OwnerColor = Extensions.FromArgb(Client.Instance.Settings.Color), OwnerID = Client.Instance.ID, OwnerName = Client.Instance.Settings.Name, Position = mo.Position, Type = Ping.PingType.Generic };
+                                                        new PacketPing() { Ping = p }.Send();
+                                                    }   
+                                                }
+                                            }
                                         }
 
                                         pen.X += sz.X + 2;

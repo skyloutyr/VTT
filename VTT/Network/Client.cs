@@ -707,6 +707,10 @@
         [JsonConverter(typeof(StringEnumConverter))]
         public Shadow2DResolution Shadow2DPrecision { get; set; } = Shadow2DResolution.Medium;
 
+        [DefaultValue(6)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int TurnTrackerSize { get; set; } = 3;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -769,7 +773,8 @@
                 OffscreenParticleUpdates = true,
                 ContextHandlingMode = GLContextHandlingMode.Checked,
                 Shadows2DAdmin = 0.75f,
-                Shadow2DPrecision = Shadow2DResolution.Medium
+                Shadow2DPrecision = Shadow2DResolution.Medium,
+                TurnTrackerSize = 3
             };
 
             ret.Save();

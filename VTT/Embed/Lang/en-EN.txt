@@ -741,3 +741,4 @@ ui.object_2dlight_data=2D Light Distances
 ui.object_2dlight_data.tt=Controls how far this object casts light.\nThe first parameter is the bright light radius.\nThe second parameter is the maximum light radius.\nLight beyond the bright radius will become progressively dimmer until it reaches the maximum.
 ui.object_2dlight_data.dim.tt=Within this range the light is bright.
 ui.object_2dlight_data.max.tt=This is the maximum light range for this object.
+menu.settings.turn_tracker_size=Turn tracker size

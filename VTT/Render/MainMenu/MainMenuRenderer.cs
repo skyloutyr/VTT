@@ -1097,6 +1097,14 @@
                         ImGui.EndDisabled();
                     }
 
+                    int ttAmtMax = Client.Instance.Settings.TurnTrackerSize;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.turn_tracker_size"));
+                    if (ImGui.SliderInt("##Turn Tracker Size", ref ttAmtMax, 2, 6))
+                    {
+                        Client.Instance.Settings.TurnTrackerSize = ttAmtMax;
+                        Client.Instance.Settings.Save();
+                    }
+
                     ClientSettings.UISkin dSkin = Client.Instance.Settings.InterfaceSkin;
                     string[] skins = Enum.GetNames(typeof(ClientSettings.UISkin)).Select(s => lang.Translate("menu.settings.ui_skin." + s.ToLowerInvariant())).ToArray();
                     int sIdx = (int)dSkin;

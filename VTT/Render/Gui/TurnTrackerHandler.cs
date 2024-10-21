@@ -63,7 +63,8 @@
                                     this._ttOffset -= Math.Sign(this._scrollDYChange);
                                 }
 
-                                for (int i = -6; i <= 6; ++i)
+                                int ttLenMax = Math.Clamp(Client.Instance.Settings.TurnTrackerSize, 2, 6);
+                                for (int i = -ttLenMax; i <= ttLenMax; ++i)
                                 {
                                     TurnTracker.Entry e = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex + i + this._ttOffset);
                                     Vec2 sz = e == currentEntry ? bgSize : smSize;
@@ -75,7 +76,7 @@
                                 }
 
                                 cursor.X += (640 - oX) / 2f;
-                                for (int i = -6; i <= 6; ++i)
+                                for (int i = -ttLenMax; i <= ttLenMax; ++i)
                                 {
                                     TurnTracker.Entry e = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex + i + this._ttOffset);
                                     Vec2 sz = e == currentEntry ? bgSize : smSize;

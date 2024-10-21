@@ -75,23 +75,6 @@ OBB getPrimitiveByIndexDirectly(int i)
     return OBB(a.xy, a.zw, b.x, b.yz);
 }
 
-vec2 invDir(in vec2 dir)
-{
-    float x = 1.0 / dir.x;
-    float y = 1.0 / dir.y;
-    if (isinf(x) || isnan(x))
-    {
-        x = FLOAT_MAX * (dir.x >= 0.0 ? 1.0 : -1.0);
-    }
-
-    if (isinf(y) || isnan(y))
-    {
-        y = FLOAT_MAX * (dir.y >= 0.0 ? 1.0 : -1.0);
-    }
-
-    return vec2(x, y);
-}
-
 vec2 rotate(vec2 v, float a) 
 {
 	float cs = cos(a);
@@ -142,7 +125,7 @@ float obbIntersect(in OBB box, in Ray r)
 	    Ray r1 = Ray(
             rotate(arel, box.rotation + 3.1415) + c,
             rdir,
-            invDir(rdir),
+            vec2(rdir.x == 0 ? FLOAT_MAX : (1.0 / rdir.x), rdir.y == 0 ? FLOAT_MAX : (1.0 / rdir.y)),
             r.t
         );
 
@@ -227,7 +210,7 @@ float raycastLight(vec2 f_world_position, LightSource light)
     Ray r = Ray(
         f_world_position,
         vn,
-        invDir(vn),
+        vec2(vn.x == 0 ? FLOAT_MAX : (1.0 / vn.x), vn.y == 0 ? FLOAT_MAX : (1.0 / vn.y)),
         d
     );
 

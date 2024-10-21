@@ -42,6 +42,9 @@ uniform sampler2DArray unifiedTexture;
 uniform vec2 unifiedTextureData[64];
 uniform vec4 unifiedTextureFrames[64];
 
+// 2D lighting and shadows
+uniform sampler2D texture_shadows2d;
+
 // Constants not applicable to particle rendering pipeline
 const vec4 m_aomr_frame = vec4(0.0, 0.0, 1.0, 1.0);
 const vec4 m_emissive_frame = vec4(0.0, 0.0, 1.0, 1.0);
@@ -179,4 +182,5 @@ void main()
         g_color = mix(vec4(sky_color, g_color.a), g_color, fowVal);
     }
 	
+    g_color.rgb *= texture(texture_shadows2d, gl_FragCoord.xy / viewport_size).r;
 }

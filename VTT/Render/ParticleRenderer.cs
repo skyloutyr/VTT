@@ -40,6 +40,7 @@
             this.ParticleShader["m_texture_normal"].Set(1);
             this.ParticleShader["m_texture_emissive"].Set(2);
             this.ParticleShader["m_texture_aomr"].Set(3);
+            this.ParticleShader["texture_shadows2d"].Set(4);
 
             this._fbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
@@ -89,15 +90,10 @@
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
             GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
-            Map m = Client.Instance.CurrentMap;
-            if (m != null)
-            {
-                Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.Render(0, this._cam, m, false);
-            }
-
+            Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.Render(0, this._cam, null, false);
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, this._cam, false, true, out _))
+            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, null, this._cam, false, true, out _))
             {
                 FastAccessShader shader = this.ParticleShader;
                 shader.Program.Bind();
@@ -113,6 +109,8 @@
                 shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                 shader["dataBuffer"].Set(14);
                 Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                GL.ActiveTexture(4);
+                Client.Instance.Frontend.Renderer.White.Bind();
                 GL.ActiveTexture(3);
                 Client.Instance.Frontend.Renderer.Black.Bind();
                 GL.ActiveTexture(2);
@@ -339,6 +337,7 @@
             shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
             shader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+            BindShadows2DTexture(m);
             GL.ActiveTexture(3);
             Client.Instance.Frontend.Renderer.Black.Bind();
             GL.ActiveTexture(2);
@@ -354,7 +353,7 @@
                         {
                             if (pc.IsActive)
                             {
-                                this.HandleCustomShader(pc.CustomShaderID, cam, true, false, out shader);
+                                this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
                                 pc.Render(shader, cam);
                             }
                         }
@@ -368,7 +367,7 @@
                 {
                     if (pc.IsActive)
                     {
-                        this.HandleCustomShader(pc.CustomShaderID, cam, true, false, out shader);
+                        this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
                         pc.Render(shader, cam);
                     }
                 }
@@ -386,7 +385,7 @@
         }
 
         private List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
-        private bool HandleCustomShader(Guid shaderID, Camera cam, bool enableMemory, bool blank, out FastAccessShader shader)
+        private bool HandleCustomShader(Guid shaderID, Map m, Camera cam, bool enableMemory, bool blank, out FastAccessShader shader)
         {
             if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)
             {
@@ -430,6 +429,7 @@
                             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
                         }
 
+                        BindShadows2DTexture(m);
                         GL.ActiveTexture(3);
                         Client.Instance.Frontend.Renderer.Black.Bind();
                         GL.ActiveTexture(2);
@@ -471,6 +471,16 @@
                     return false;
                 }
             }
+        }
+
+        private static void BindShadows2DTexture(Map m)
+        {
+            GL.ActiveTexture(4);
+            Texture t = m != null && m.Has2DShadows && m.Is2D
+                ? (Client.Instance.Frontend.Renderer.ObjectRenderer?.Shadow2DRenderer?.OutputTexture)
+                : (Client.Instance.Frontend.Renderer.ObjectRenderer?.Shadow2DRenderer?.WhiteSquare);
+            t ??= Client.Instance.Frontend.Renderer.White;
+            t.Bind();
         }
     }
 }

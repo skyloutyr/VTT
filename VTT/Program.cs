@@ -94,6 +94,7 @@
                     // NOOP
                 }
 
+                WriteCrashreport(e);
                 Console.WriteLine("A critical exception occured!");
                 Console.WriteLine(e.Message);
                 foreach (string s in e.StackTrace.Split('\n'))
@@ -107,14 +108,14 @@
 #endif
         }
 
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private static void WriteCrashreport(Exception e)
         {
-            try
+            if (e != null)
             {
-                string eT = e.ExceptionObject?.ToString() ?? string.Empty;
-                if (e.ExceptionObject is Exception exe && !string.IsNullOrEmpty(exe.StackTrace))
+                string eT = e.ToString();
+                if (e != null && !string.IsNullOrEmpty(e.StackTrace))
                 {
-                    foreach (string l in exe.StackTrace.Split('\n'))
+                    foreach (string l in e.StackTrace.Split('\n'))
                     {
                         eT += l + '\n';
                     }
@@ -122,13 +123,21 @@
 
                 string dateTimeString = DateTimeOffset.Now.ToString("dd-MM-yyyy-HH-mm-ss");
                 File.WriteAllText(Path.Combine(IOVTT.AppDir, "crash-" + dateTimeString + ".txt"), eT);
+            }
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            try
+            {
+                WriteCrashreport(e.ExceptionObject as Exception);
                 Client.Instance?.CloseLogger();
                 Server.Instance?.CloseLogger();
                 if (ArgsManager.TryGetValue("debug", out bool b) && !Debugger.IsAttached)
                 {
                     try
                     {
-                        W32MinidumpInterlop.GenerateMiniDump("dump-" + dateTimeString + ".dmp");
+                        W32MinidumpInterlop.GenerateMiniDump("dump-" + DateTimeOffset.Now.ToString("dd-MM-yyyy-HH-mm-ss") + ".dmp");
                     }
                     catch
                     {

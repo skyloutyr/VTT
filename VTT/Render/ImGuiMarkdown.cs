@@ -611,7 +611,14 @@ namespace VTT.Render
 
                     leftovers = ImGui.GetFont().CalcWordWrapPositionA(scale, text, widthLeft);
                     indexTo = text.Length - leftovers.Length;
-                    ImGui.TextUnformatted(text);
+                    if (indexTo > 0)
+                    {
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(text.Substring(0, indexTo)));
+                    }
+                    else
+                    {
+                        ImGui.TextUnformatted(text);
+                    }
                 }
             }
 

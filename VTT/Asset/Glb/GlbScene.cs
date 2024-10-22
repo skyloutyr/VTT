@@ -1316,7 +1316,7 @@
             ReadOnlySpan<int> data = GL.GetInteger(GLPropertyName.Viewport);
             FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
             shader.Program.Bind();
-            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader.Program);
             shader["ambient_intensity"].Set(0.03f);
             shader["gamma_correct"].Set(true);
 

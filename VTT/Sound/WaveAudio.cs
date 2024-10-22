@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -111,7 +112,6 @@
             float[] sBuffer = new float[bufferSize];
             int currentElementSize = 1024;
             int currentElementAmount = 0;
-            ushort max = 0;
             unsafe
             {
                 this._hdata = (ushort*)Marshal.AllocHGlobal(currentElementSize * sizeof(ushort));
@@ -139,7 +139,6 @@
                         int hr_i = (int)(float.IsNegative(f) ? f * 0x8000 : f * 0x7fff);
                         short s = (short)Math.Clamp(hr_i, short.MinValue, short.MaxValue);
                         ushort us = *(ushort*)&s;
-                        max = Math.Max(max, us);
                         this._hdata[currentElementAmount++] = us;
                     }
                 }

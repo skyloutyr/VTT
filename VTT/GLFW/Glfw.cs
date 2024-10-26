@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
+    using VTT.Util;
     using static GLFWLoader;
 
     public static class Glfw
@@ -21,7 +22,7 @@
         {
             byte* titleB = (byte*)Marshal.StringToCoTaskMemUTF8(title);
             IntPtr ret = glfwCreateWindow(w, h, titleB, monitor, share);
-            Marshal.ZeroFreeCoTaskMemUTF8((IntPtr)titleB);
+            Marshal.FreeCoTaskMem((IntPtr)titleB);
             return ret;
         }
 
@@ -122,9 +123,9 @@
         public static IntPtr GetCurrentContext() => glfwGetCurrentContext();
         public static unsafe bool ExtensionSupported(string name)
         {
-            byte* ptr = (byte*)Marshal.StringToHGlobalAnsi(name);
+            byte* ptr = (byte*)MemoryHelper.StringToPointerAnsi(name, out _);
             int i = glfwExtensionSupported(ptr);
-            Marshal.FreeHGlobal((IntPtr)ptr);
+            MemoryHelper.Free(ptr);
             return i != 0;
         }
 
@@ -140,7 +141,7 @@
         {
             byte* d = (byte*)Marshal.StringToCoTaskMemUTF8(title);
             glfwSetWindowTitle(window, d);
-            Marshal.ZeroFreeCoTaskMemUTF8((IntPtr)d);
+            Marshal.FreeCoTaskMem((IntPtr)d);
         }
 
         public static void SetWindowSize(IntPtr window, int w, int y) => glfwSetWindowSize(window, w, y);

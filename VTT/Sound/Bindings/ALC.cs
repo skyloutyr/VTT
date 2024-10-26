@@ -2,10 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Threading.Tasks;
+    using VTT.Util;
 
     public static unsafe class ALC
     {
@@ -37,9 +35,9 @@
 
         public static IntPtr OpenDevice(string name)
         {
-            byte* ptr = (byte*)Marshal.StringToHGlobalAnsi(name);
+            byte* ptr = (byte*)MemoryHelper.StringToPointerAnsi(name, out _);
             IntPtr ret = (IntPtr)ALLoader.alcOpenDevice(ptr);
-            Marshal.FreeHGlobal((IntPtr)ptr);
+            MemoryHelper.Free(ptr);
             return ret;
         }
 

@@ -1236,7 +1236,7 @@
         Shadows2D
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 432, Pack = 0)]
+    [StructLayout(LayoutKind.Explicit, Size = 432, Pack = 1)]
     public unsafe struct FrameUBO
     {
         [FieldOffset(0)] public Matrix4x4 view;
@@ -1269,7 +1269,7 @@
 
         public FrameUBOManager()
         {
-            this.memory = (FrameUBO*)Marshal.AllocHGlobal(sizeof(FrameUBO));
+            this.memory = MemoryHelper.Allocate<FrameUBO>(1);
             this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
             this._ubo.Bind();
             this._ubo.SetData(IntPtr.Zero, 432);
@@ -1279,7 +1279,7 @@
 
         public void Dispose()
         {
-            Marshal.FreeHGlobal((IntPtr)this.memory);
+            MemoryHelper.Free(this.memory);
             this._ubo.Dispose();
         }
 
@@ -1307,7 +1307,7 @@
             GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 2, this._ubo);
             unsafe
             {
-                this._matrixArray = (Matrix4x4*)Marshal.AllocHGlobal(sizeof(Matrix4x4) * 256);
+                this._matrixArray = MemoryHelper.Allocate<Matrix4x4>(256);
             }
         }
 

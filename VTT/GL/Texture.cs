@@ -7,6 +7,7 @@
     using System.Collections.Concurrent;
     using System.Runtime.InteropServices;
     using VTT.GL.Bindings;
+    using VTT.Util;
 
     public class Texture
     {
@@ -112,7 +113,7 @@
                 throw new Exception("Image too large for a 32bit process!");
             }
 
-            T* data = IntPtr.Size == 8 ? (T*)Marshal.AllocHGlobal(new IntPtr((long)sizeof(T) * w * h)) : (T*)Marshal.AllocHGlobal(sizeof(T) * w * h);
+            T* data = MemoryHelper.Allocate<T>((nuint)(w * h));
             GL.GetTexImage(this._type, level, GetFormatFromPixelType(typeof(T)), PixelDataType.Byte, data);
             ret.ProcessPixelRows(x =>
             {
@@ -124,7 +125,7 @@
                 }
             });
 
-            Marshal.FreeHGlobal((IntPtr)data);
+            MemoryHelper.Free(data);
             return ret;
         }
 
@@ -146,7 +147,7 @@
 
             if (img.Width * img.Height * sizeof(T) <= ImageMaximumContiguousMemoryAllowance)
             {
-                T* pixels = (T*)Marshal.AllocHGlobal(img.Width * img.Height * sizeof(T));
+                T* pixels = MemoryHelper.Allocate<T>((nuint)(img.Width * img.Height));
                 img.ProcessPixelRows(x =>
                 {
                     for (int y = 0; y < x.Height; ++y)
@@ -155,13 +156,13 @@
                         fixed (void* span = rowSpan)
                         {
                             int spanLength = rowSpan.Length * sizeof(T);
-                            System.Buffer.MemoryCopy(span, pixels + (y * x.Width), spanLength, spanLength);
+                            Buffer.MemoryCopy(span, pixels + (y * x.Width), spanLength, spanLength);
                         }
                     }
                 });
 
                 GL.TexImage2D(tType, level, format, img.Width, img.Height, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixels);
-                Marshal.FreeHGlobal((IntPtr)pixels);
+                MemoryHelper.Free(pixels);
             }
             else
             {
@@ -169,7 +170,7 @@
                 TextureTarget selfTT = tType;
                 if (img.Height % 4 == 0) // Height is a multiple of 4, attempt to copy in blocks of 4 to support compression
                 {
-                    T* pixelBuffer = (T*)Marshal.AllocHGlobal(sizeof(T) * img.Width * 4);
+                    T* pixelBuffer = MemoryHelper.Allocate<T>((nuint)(img.Width * 4));
                     img.ProcessPixelRows(x =>
                     {
                         for (int y = 0; y < x.Height; ++y)
@@ -188,7 +189,7 @@
                         GL.TexSubImage2D(selfTT, level, 0, img.Height - 4, x.Width, 4, GetFormatFromPixelType(typeof(T)), type, (IntPtr)pixelBuffer);
                     });
 
-                    Marshal.FreeHGlobal((IntPtr)pixelBuffer);
+                    MemoryHelper.Free(pixelBuffer);
                 }
                 else
                 {

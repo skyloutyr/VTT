@@ -5,6 +5,7 @@
     using System.Runtime.InteropServices;
     using VTT.Network;
     using VTT.Sound.Bindings;
+    using VTT.Util;
 
     public class SoundBuffer
     {
@@ -47,19 +48,23 @@
             {
                 if (this._ptrs.TryGetValue(buffer, out IntPtr val))
                 {
-                    Marshal.FreeHGlobal(val);
+                    unsafe
+                    {
+                        MemoryHelper.Free((void*)val);
+                    }
                 }
 
-                IntPtr ptr = this._ptrs[buffer] = Marshal.AllocHGlobal(data.Length * sizeof(ushort));
                 unsafe
                 {
+                    IntPtr ptr = this._ptrs[buffer] = (IntPtr)MemoryHelper.Allocate<ushort>((nuint)data.Length);
                     fixed (ushort* srcPtr = data)
                     {
                         Buffer.MemoryCopy(srcPtr, (void*)ptr, data.Length * sizeof(ushort), data.Length * sizeof(ushort));
                     }
+
+                    AL.BufferData((uint)buffer, this._nChannels == 1 ? SoundDataFormat.Mono16 : SoundDataFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
                 }
 
-                AL.BufferData((uint)buffer, this._nChannels == 1 ? SoundDataFormat.Mono16 : SoundDataFormat.Stereo16, ptr, data.Length * sizeof(ushort), this._freq);
                 return true;
             }
 
@@ -131,7 +136,10 @@
 
             foreach (KeyValuePair<int, IntPtr> a in this._ptrs)
             {
-                Marshal.FreeHGlobal(a.Value);
+                unsafe
+                {
+                    MemoryHelper.Free((void*)a.Value);
+                }
             }
         }
     }

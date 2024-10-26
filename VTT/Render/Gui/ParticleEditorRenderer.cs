@@ -430,7 +430,7 @@
                     {
                         popupState = false;
                         pr.CurrentlyEditedSystem = null;
-                        pr.CurrentlyEditedSystemInstance.Dispose();
+                        pr.CurrentlyEditedSystemInstance.Free();
                         pr.CurrentlyEditedSystemInstance = null;
                     }
 

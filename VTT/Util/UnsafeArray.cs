@@ -20,13 +20,13 @@
         public UnsafeArray(int amt = 1)
         {
             this._amt = amt;
-            this._ptr = (T*)Marshal.AllocHGlobal(amt * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)amt);
         }
 
         public UnsafeArray(T[] managed)
         {
             this._amt = managed.Length;
-            this._ptr = (T*)Marshal.AllocHGlobal(managed.Length * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)managed.Length);
             for (int i = managed.Length - 1; i >= 0; --i)
             {
                 this._ptr[i] = managed[i];
@@ -36,7 +36,7 @@
         public UnsafeArray(IList<T> managed)
         {
             this._amt = managed.Count;
-            this._ptr = (T*)Marshal.AllocHGlobal(managed.Count * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)managed.Count);
             for (int i = managed.Count - 1; i >= 0; --i)
             {
                 this._ptr[i] = managed[i];
@@ -70,7 +70,7 @@
         }
 
         public unsafe T* GetPointer(int element = 0) => this._ptr + element;
-        public void Free() => Marshal.FreeHGlobal((IntPtr)this._ptr);
+        public void Free() => MemoryHelper.Free(this._ptr);
         public IEnumerator<T> GetEnumerator()
         {
             for (int i = 0; i < this.Length; ++i)

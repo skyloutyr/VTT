@@ -4,6 +4,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
+    using VTT.Util;
     using static VTT.GL.Bindings.MiniGLLoader;
 
     public static unsafe class GL
@@ -51,10 +52,9 @@
         public static void BufferData(BufferTarget target, nint size, nint data, BufferUsage usage) => bufferDataO((uint)target, size, (void*)data, (uint)usage);
         public static void ShaderSource(uint shader, string src)
         {
-            byte* stringPtr = (byte*)Marshal.StringToHGlobalAnsi(src); // Can treat as byte* (char* in c)
-            int len = src.Length + 1; // Marshal.StringToHGlobalAnsi allocates (string.length + 1) * wchar_t size, include +1 (null terminator?)
+            byte* stringPtr = (byte*)MemoryHelper.StringToPointerAnsi(src, out int len); // Can treat as byte* (char* in c)
             shaderSourceO(shader, 1, &stringPtr, &len);
-            Marshal.FreeHGlobal((IntPtr)stringPtr);
+            MemoryHelper.Free(stringPtr);
         }
 
         public static uint CreateShader(ShaderType shaderType) => createShaderO((uint)shaderType);
@@ -70,10 +70,10 @@
         {
             int l = 0;
             int bLen = GetShaderProperty(shader, ShaderProperty.InfoLogLength);
-            byte* stringBytes = (byte*)Marshal.AllocHGlobal(bLen);
+            byte* stringBytes = MemoryHelper.Allocate<byte>((nuint)bLen);
             getShaderInfoLogO(shader, bLen, &l, stringBytes);
             string r = Marshal.PtrToStringAnsi((IntPtr)stringBytes, l);
-            Marshal.FreeHGlobal((IntPtr)stringBytes);
+            MemoryHelper.Free(stringBytes);
             return r;
         }
 
@@ -95,10 +95,10 @@
         {
             int l = 0;
             int bLen = GetProgramProperty(program, ProgramProperty.InfoLogLength)[0];
-            byte* stringBytes = (byte*)Marshal.AllocHGlobal(bLen);
+            byte* stringBytes = MemoryHelper.Allocate<byte>((nuint)bLen);
             getProgramInfoLogO(program, bLen, &l, stringBytes);
             string r = Marshal.PtrToStringAnsi((IntPtr)stringBytes, l);
-            Marshal.FreeHGlobal((IntPtr)stringBytes);
+            MemoryHelper.Free(stringBytes);
             return r;
         }
 
@@ -137,17 +137,17 @@
         public static void DisableIndexed(IndexedCapability cap, uint index) => disableiO((uint)cap, index);
         public static int GetUniformLocation(uint program, string uniformName)
         {
-            byte* ansiStr = (byte*)Marshal.StringToHGlobalAnsi(uniformName);
+            byte* ansiStr = (byte*)MemoryHelper.StringToPointerAnsi(uniformName, out _);
             int uniformLoc = getUniformLocationO(program, ansiStr);
-            Marshal.FreeHGlobal((IntPtr)ansiStr);
+            MemoryHelper.Free(ansiStr);
             return uniformLoc;
         }
 
         public static uint GetUniformBlockIndex(uint program, string uniormBlockName)
         {
-            byte* ansiStr = (byte*)Marshal.StringToHGlobalAnsi(uniormBlockName);
+            byte* ansiStr = (byte*)MemoryHelper.StringToPointerAnsi(uniormBlockName, out _);
             uint uniformLoc = getUniformBlockIndexO(program, ansiStr);
-            Marshal.FreeHGlobal((IntPtr)ansiStr);
+            MemoryHelper.Free(ansiStr);
             return uniformLoc;
         }
 
@@ -375,7 +375,7 @@
 
         public static void GetActiveUniform(uint program, uint index, int bufSize, out int length, out int size, out UniformDataType type, out string name)
         {
-            byte* stringData = (byte*)Marshal.AllocHGlobal(bufSize);
+            byte* stringData = (byte*)MemoryHelper.Allocate<byte>((nuint)bufSize);
 
             int l = 0;
             int s = 0;
@@ -388,7 +388,7 @@
             type = (UniformDataType)t;
             name = Marshal.PtrToStringAnsi((IntPtr)stringData, l);
 
-            Marshal.FreeHGlobal((IntPtr)stringData);
+            MemoryHelper.Free(stringData);
         }
 
         public static void BindBufferBase(BaseBufferTarget target, uint index, uint buffer) => bindBufferBaseO((uint)target, index, buffer);

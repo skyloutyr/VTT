@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
+    using VTT.Util;
 
     public class NetworkMonitor
     {
@@ -12,42 +13,37 @@
         private ulong _collected;
         private ulong _lastFrame;
 
-        private nint _collectedValues;
+        private UnsafeArray<ulong> _collectedValues;
         private int _valuesLength;
 
         public NetworkMonitor(int backbufferLength = 20) => this.AllocateValues(backbufferLength);
 
         public void AllocateValues(int amt)
         {
-            this._collectedValues = Marshal.AllocHGlobal(amt * sizeof(ulong));
+            this._collectedValues = new UnsafeArray<ulong>(amt);
             this._valuesLength = amt;
-            unsafe
+            for (int i = 0; i < this._valuesLength; ++i)
             {
-                ulong* data = (ulong*)this._collectedValues;
-                for (int i = 0; i < this._valuesLength; ++i)
-                {
-                    data[i] = 0ul;
-                }
+                this._collectedValues[i] = 0ul;
             }
         }
 
-        public void GetUnderlyingDataArray(out nint ptr, out int length)
+        public unsafe void GetUnderlyingDataArray(out nint ptr, out int length)
         {
-            ptr = this._collectedValues;
+            ptr = (nint)this._collectedValues.GetPointer();
             length = this._valuesLength;
         }
 
-        public void Free() => Marshal.FreeHGlobal(this._collectedValues);
+        public void Free() => this._collectedValues?.Free();
 
         public unsafe void AppendValue(ulong value)
         {
-            ulong* data = (ulong*)this._collectedValues;
             for (int i = 0; i < this._valuesLength - 1; ++i)
             {
-                data[i] = data[i + 1];
+                this._collectedValues[i] = this._collectedValues[i + 1];
             }
 
-            data[this._valuesLength - 1] = value;
+            this._collectedValues[this._valuesLength - 1] = value;
         }
 
         public void Tick()

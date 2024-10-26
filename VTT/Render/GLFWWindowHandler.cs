@@ -344,7 +344,7 @@
                 }
 
                 double dt = (double)(DateTime.Now.Ticks + skipTicks - nextTick) / skipTicks;
-                this.Render(dt);
+                this.Render(Math.Clamp(dt, 0, 1));
                 Glfw.PollEvents();
 
                 ulong delta = (ulong)DateTime.Now.Ticks - now;
@@ -429,11 +429,7 @@
 
     public class PerformanceMetrics
     {
-        private readonly List<ulong> _ticksBack = new List<ulong>();
-        private readonly List<ulong> _ticksFront = new List<ulong>();
-
-        private List<ulong> _ticksActive;
-        private List<ulong> _ticksLast;
+        private readonly UnsafeResizeableArray<ulong> _ticks;
 
         private ulong _tickMax = 0;
         private ulong _tickMin = ulong.MaxValue;
@@ -448,19 +444,14 @@
         public ulong LastTickMin => this._lastTickMin;
         public ulong LastTickAvg => this._lastTicksAvg;
         public ulong LastNumFrames => this._lastNumTicks;
-        public List<ulong> FrontBuffer => this._ticksLast;
 
-        public PerformanceMetrics()
-        {
-            this._ticksActive = this._ticksBack;
-            this._ticksLast = this._ticksFront;
-        }
+        public PerformanceMetrics() => this._ticks = new UnsafeResizeableArray<ulong>(1000);
 
         public bool CheckCumulative(ulong t) => this._ticksCumulativeNow >= t;
 
         public void AddTick(ulong tick)
         {
-            this._ticksActive.Add(tick);
+            this._ticks.Add(tick);
             this._tickMax = Math.Max(tick, this._tickMax);
             this._tickMin = Math.Min(tick, this._tickMin);
             this._ticksCumulativeNow += tick;
@@ -473,26 +464,20 @@
             this._tickMax = 0;
             this._tickMin = ulong.MaxValue;
             this._lastTicksAvg = 0;
-            for (int i = 0; i < this._ticksActive.Count; ++i)
+            for (int i = 0; i < this._ticks.Length; ++i)
             {
-                this._lastTicksAvg += this._ticksActive[i];
+                this._lastTicksAvg += this._ticks[i];
             }
 
-            this._lastTicksAvg /= (ulong)this._ticksActive.Count;
-            this._lastNumTicks = (ulong)this._ticksActive.Count;
-            if (this._ticksActive == this._ticksBack)
-            {
-                this._ticksActive = this._ticksFront;
-                this._ticksLast = this._ticksBack;
-            }
-            else
-            {
-                this._ticksActive = this._ticksBack;
-                this._ticksLast = this._ticksFront;
-            }
-
-            this._ticksActive.Clear();
+            this._lastTicksAvg /= (ulong)this._ticks.Length;
+            this._lastNumTicks = (ulong)this._ticks.Length;
+            this._ticks.Reset();
             this._ticksCumulativeNow -= delta;
+            if (this._ticksCumulativeNow > delta)
+            {
+                // If we are still above delta then we skipped ticks and don't care to corretly carry over values into the next second anymore.
+                this._ticksCumulativeNow = 0;
+            }
         }
     }
 }

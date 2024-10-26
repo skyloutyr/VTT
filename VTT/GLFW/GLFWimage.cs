@@ -1,9 +1,9 @@
 ﻿namespace VTT.GLFW
 {
-    using System;
     using System.Runtime.InteropServices;
+    using VTT.Util;
 
-    [StructLayout(LayoutKind.Sequential, Pack = 0)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly unsafe struct GLFWimage
     {
         public readonly int width;
@@ -14,7 +14,7 @@
         {
             this.width = width;
             this.height = height;
-            this.pixels = (byte*)Marshal.AllocHGlobal(pixels.Length);
+            this.pixels = MemoryHelper.Allocate<byte>((nuint)pixels.Length);
             for (int i = pixels.Length - 1; i >= 0; --i)
             {
                 this.pixels[i] = pixels[i];
@@ -28,6 +28,6 @@
             this.pixels = pixels;
         }
 
-        public void Free() => Marshal.FreeHGlobal((IntPtr)this.pixels);
+        public void Free() => MemoryHelper.Free(this.pixels);
     }
 }

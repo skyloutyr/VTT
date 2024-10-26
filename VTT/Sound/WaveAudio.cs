@@ -10,6 +10,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using VTT.Network;
+    using VTT.Util;
 
     public class WaveAudio : ISoundProvider
     {
@@ -46,6 +47,7 @@
             dataLength = this.DataLength;
         }
 
+        // Note that this destructively frees the data pointer passed!
         public bool TryGetMpegEncodedData(out byte[] data, out long[] packetOffsets)
         {
             if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
@@ -76,7 +78,7 @@
             this.SampleRate = sr;
             unsafe
             {
-                this._hdata = (ushort*)Marshal.AllocHGlobal(raw.Length);
+                this._hdata = MemoryHelper.Allocate<ushort>((nuint)(raw.Length / sizeof(ushort)));
                 this.DataLength = raw.Length / 2;
                 fixed (byte* ptr = raw)
                 {
@@ -114,7 +116,7 @@
             int currentElementAmount = 0;
             unsafe
             {
-                this._hdata = (ushort*)Marshal.AllocHGlobal(currentElementSize * sizeof(ushort));
+                this._hdata = MemoryHelper.Allocate<ushort>((nuint)currentElementSize);
                 int samplesRead;
                 while ((samplesRead = reader(sBuffer, 0, bufferSize)) > 0)
                 {
@@ -126,10 +128,7 @@
                             nextElementAmount *= 2;
                         }
 
-                        ushort* ptr = (ushort*)Marshal.AllocHGlobal(nextElementAmount * sizeof(ushort));
-                        Buffer.MemoryCopy(this._hdata, ptr, nextElementAmount * sizeof(ushort), currentElementAmount * sizeof(ushort));
-                        Marshal.FreeHGlobal((IntPtr)this._hdata);
-                        this._hdata = ptr;
+                        this._hdata = MemoryHelper.Reallocate(this._hdata, (nuint)nextElementAmount);
                         currentElementSize = nextElementAmount;
                     }
 
@@ -273,7 +272,7 @@
             int nTotalSamples = (int)(size / bps);
             unsafe
             {
-                this._hdata = (ushort*)Marshal.AllocHGlobal(nTotalSamples * sizeof(ushort));
+                this._hdata = MemoryHelper.Allocate<ushort>((nuint)nTotalSamples);
                 this.DataLength = nTotalSamples;
                 Span<byte> localData = stackalloc byte[bps];
                 Span<byte> uis = stackalloc byte[4];
@@ -316,7 +315,7 @@
 
                         default:
                         {
-                            Marshal.FreeHGlobal((IntPtr)this._hdata);
+                            MemoryHelper.Free(this._hdata);
                             throw new NotSupportedException($"Unsupported bps {bps} for riff/wave audio!");
                         }
                     }
@@ -332,7 +331,7 @@
             {
                 unsafe
                 {
-                    Marshal.FreeHGlobal((IntPtr)this._hdata);
+                    MemoryHelper.Free(this._hdata);
                     this.IsReady = false;
                 }
             }

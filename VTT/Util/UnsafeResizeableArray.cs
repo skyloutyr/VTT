@@ -3,7 +3,6 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Runtime.InteropServices;
 
     public unsafe class UnsafeResizeableArray<T> : IEnumerable<T> where T : unmanaged
     {
@@ -22,14 +21,14 @@
         {
             this._nextElementIndex = 0;
             this._allocatedSize = amt;
-            this._ptr = (T*)Marshal.AllocHGlobal(amt * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)amt);
         }
 
         public UnsafeResizeableArray(T[] managed)
         {
             this._nextElementIndex = managed.Length - 1;
             this._allocatedSize = managed.Length;
-            this._ptr = (T*)Marshal.AllocHGlobal((int)managed.Length * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)managed.Length);
             for (int i = managed.Length - 1; i >= 0; --i)
             {
                 this._ptr[i] = managed[i];
@@ -40,7 +39,7 @@
         {
             this._nextElementIndex = managed.Count;
             this._allocatedSize = managed.Count;
-            this._ptr = (T*)Marshal.AllocHGlobal((int)managed.Count * sizeof(T));
+            this._ptr = MemoryHelper.Allocate<T>((nuint)managed.Count);
             for (int i = managed.Count - 1; i >= 0; --i)
             {
                 this._ptr[i] = managed[i];
@@ -52,19 +51,13 @@
             if (this._allocatedSize <= nSz)
             {
                 int movedTo = this._allocatedSize;
-                while (true)
+                while (movedTo <= nSz)
                 {
                     movedTo *= 2;
-                    if (movedTo > nSz)
-                    {
-                        T* nptr = (T*)Marshal.AllocHGlobal(movedTo * sizeof(T));
-                        Buffer.MemoryCopy(this._ptr, nptr, movedTo * sizeof(T), this._nextElementIndex * sizeof(T));
-                        this._allocatedSize = movedTo;
-                        Marshal.FreeHGlobal((IntPtr)this._ptr);
-                        this._ptr = nptr;
-                        break;
-                    }
                 }
+
+                this._ptr = MemoryHelper.Reallocate(this._ptr, (nuint)movedTo);
+                this._allocatedSize = movedTo;
             }
         }
 
@@ -114,17 +107,17 @@
         {
             if (this._nextElementIndex < this._allocatedSize)
             {
-                T* nptr = (T*)Marshal.AllocHGlobal(this._nextElementIndex * sizeof(T));
+                T* nptr = MemoryHelper.Allocate<T>((nuint)this._nextElementIndex);
                 Buffer.MemoryCopy(this._ptr, nptr, _nextElementIndex * sizeof(T), this._nextElementIndex * sizeof(T));
                 this._allocatedSize = _nextElementIndex;
-                Marshal.FreeHGlobal((IntPtr)this._ptr);
+                MemoryHelper.Free(this._ptr);
                 this._ptr = nptr;
             }
         }
 
         public unsafe T* GetPointer(int element = 0) => this._ptr + element;
 
-        public void Free() => Marshal.FreeHGlobal((IntPtr)this._ptr);
+        public void Free() => MemoryHelper.Free(this._ptr);
 
         public IEnumerator<T> GetEnumerator()
         {

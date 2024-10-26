@@ -5,6 +5,7 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.GL.Bindings;
+    using VTT.Util;
 
     public unsafe class UBOHelper
     {
@@ -16,7 +17,7 @@
         public UBOHelper(BufferUsage usage, params ElementType[] elements)
         {
             int bSize = elements.Select(e => e.MachineSize).Sum();
-            this._dataView = (byte*)Marshal.AllocHGlobal(bSize);
+            this._dataView = MemoryHelper.Allocate<byte>((nuint)bSize);
             this._dLen = bSize;
             this._buf = new GPUBuffer(BufferTarget.Array, usage);
             this._buf.Bind();
@@ -25,7 +26,7 @@
 
         ~UBOHelper()
         {
-            Marshal.FreeHGlobal((IntPtr)this._dataView);
+            MemoryHelper.Free(this._dataView);
             this._buf.Dispose();
         }
 

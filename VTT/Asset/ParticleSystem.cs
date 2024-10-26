@@ -399,7 +399,7 @@
         }
     }
 
-    public unsafe sealed class ParticleSystemInstance : IDisposable
+    public unsafe sealed class ParticleSystemInstance
     {
         public ParticleSystem Template { get; set; }
         public ParticleContainer Container { get; set; }
@@ -445,11 +445,11 @@
                 numPossibleParticles = 1;
             }
 
-            this.Dispose();
-            this._allParticles = (Particle*)Marshal.AllocHGlobal(numPossibleParticles * sizeof(Particle));
+            this.Free();
+            this._allParticles = MemoryHelper.Allocate<Particle>((nuint)numPossibleParticles);
             this._numParticles = numPossibleParticles;
             this._sizeInBytes = numPossibleParticles * sizeof(GLParticleData);
-            this._buffer = (GLParticleData*)Marshal.AllocHGlobal(_sizeInBytes);
+            this._buffer = MemoryHelper.Allocate<GLParticleData>((nuint)numPossibleParticles);
             for (int i = 0; i < numPossibleParticles; ++i)
             {
                 this._allParticles[i] = new Particle() { active = 0, age = 0, color = Vector4.Zero, lifespan = 0, velocity = Vector3.Zero, worldPosition = Vector3.Zero };
@@ -1070,20 +1070,20 @@
             }
         }
 
-        public void Dispose()
+        public void Free()
         {
             GL.DeleteBuffer(this._glTextureBuffer);
             GL.DeleteTexture(this._glBufferTexture);
 
             if (this._buffer != null)
             {
-                Marshal.FreeHGlobal((IntPtr)this._buffer);
+                MemoryHelper.Free(this._buffer);
                 this._buffer = null;
             }
 
             if (this._allParticles != null)
             {
-                Marshal.FreeHGlobal((IntPtr)this._allParticles);
+                MemoryHelper.Free(this._allParticles);
                 this._allParticles = null;
             }
 

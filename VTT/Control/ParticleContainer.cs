@@ -48,7 +48,7 @@
                 if (this._psIns != null && this._psInsDispose)
                 {
                     this._psInsDispose = false;
-                    this._psIns.Dispose();
+                    this._psIns.Free();
                     this._psIns = null;
                 }
 
@@ -78,7 +78,7 @@
 
         public void DisposeInternal()
         {
-            this._psIns?.Dispose();
+            this._psIns?.Free();
             this._psIns = null;
         }
 

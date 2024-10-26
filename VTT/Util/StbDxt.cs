@@ -690,7 +690,7 @@ public static unsafe class StbDxt
         int nBlocksX = ((img.Width + 3) & ~3) >> 2;
         int nBlocksY = ((img.Height + 3) & ~3) >> 2;
         nBytes = nBlocksX * nBlocksY * 16;
-        byte* ret = (byte*)Marshal.AllocHGlobal(nBytes);
+        byte* ret = MemoryHelper.Allocate<byte>((nuint)nBytes);
         int tot = nBlocksX * nBlocksY;
         if (multithread)
         {
@@ -703,7 +703,7 @@ public static unsafe class StbDxt
                 Rgba32* mem = imv.GetBlock(blockX, blockY);
                 byte* blockData = stackalloc byte[16];
                 CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
-                Marshal.FreeHGlobal((IntPtr)mem);
+                MemoryHelper.Free(mem);
                 Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
             });
         }
@@ -718,7 +718,7 @@ public static unsafe class StbDxt
                     int blockY = y << 2;
                     Rgba32* mem = imv.GetBlock(blockX, blockY);
                     CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
-                    Marshal.FreeHGlobal((IntPtr)mem);
+                    MemoryHelper.Free(mem);
                     Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
                 }
             }
@@ -732,8 +732,7 @@ public static unsafe class StbDxt
     {
         int adjWidth = ((img.Width + 3) & ~3);
         int adjHeight = ((img.Height + 3) & ~3);
-        int nBytes = sizeof(Rgba32) * adjWidth * adjHeight;
-        Rgba32* mem = (Rgba32*)Marshal.AllocHGlobal(nBytes);
+        Rgba32* mem = MemoryHelper.Allocate<Rgba32>((nuint)(adjWidth * adjHeight));
         int bL = img.Width * sizeof(Rgba32);
         img.ProcessPixelRows(x =>
         {
@@ -768,37 +767,36 @@ public static unsafe class StbDxt
         {
             foreach (IntPtr ptr in data)
             {
-                Marshal.FreeHGlobal(ptr);
+                MemoryHelper.Free((void*)ptr);
             }
         }
     }
 
     private unsafe class ImageMemoryView
     {
-        private readonly Rgba32* mem;
-        private readonly int w;
+        private readonly Rgba32* _mem;
+        private readonly int _imageWidth;
 
         public ImageMemoryView(Rgba32* mem, int w)
         {
-            this.mem = mem;
-            this.w = w;
+            this._mem = mem;
+            this._imageWidth = w;
         }
 
         public Rgba32* GetBlock(int x, int y)
         {
-            int s = 4 * 4 * sizeof(Rgba32);
-            Rgba32* ret = (Rgba32*)Marshal.AllocHGlobal(s);
+            Rgba32* ret = MemoryHelper.Allocate<Rgba32>(16);
             for (int j = 0; j < 4; ++j)
             {
                 int dy = y + j;
-                Rgba32* m = this.mem + (dy * w) + x;
+                Rgba32* m = this._mem + (dy * this._imageWidth) + x;
                 Buffer.MemoryCopy(m, ret + (4 * j), 16, 16);
             }
 
             return ret;
         }
 
-        public void Free() => Marshal.FreeHGlobal((IntPtr)this.mem);
+        public void Free() => MemoryHelper.Free(this._mem);
     }
 }
 

@@ -92,7 +92,7 @@
             float t6 = (this.End.Z - ray.Origin.Z) * dirFract.Z;
             float tmin = MathF.Max(MathF.Max(MathF.Min(t1, t2), MathF.Min(t3, t4)), MathF.Min(t5, t6));
             float tmax = MathF.Min(MathF.Min(MathF.Max(t1, t2), MathF.Max(t3, t4)), MathF.Max(t5, t6));
-            if (tmax < 0)
+            if (tmax < 0 || float.IsNaN(tmin))
             {
                 return null;
             }

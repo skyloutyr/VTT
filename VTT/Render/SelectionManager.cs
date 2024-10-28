@@ -25,6 +25,7 @@
         private bool _blockSelection;
         private Vector3 _rayInitialHit;
         private Vector3 _axisLockVector;
+        private Vector3? _movementIntersectionValue;
         private int _moveMode;
         private float _initialAngle;
         private bool _deleteDown;
@@ -34,6 +35,9 @@
 
         public List<MapObject> SelectedObjects { get; } = new List<MapObject>();
         public List<MapObject> BoxSelectCandidates { get; } = new List<MapObject>();
+
+        public Vector3 ObjectMovementInitialHitLocation => this._rayInitialHit;
+        public Vector3? ObjectMovementCurrentHitLocation => this._movementIntersectionValue;
 
         public void Update()
         {
@@ -618,7 +622,7 @@
                 }
 
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);
+                bool alt = Client.Instance.Frontend.GameHandle.IsAnyAltDown();
                 bool scale = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale;
                 Vector3 min = this.SelectedObjects[0].Position;
                 Vector3 max = this.SelectedObjects[0].Position;
@@ -699,7 +703,7 @@
                         Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
                         Vector3 planeNormal = this._moveMode == 0 ? ((-cam.Direction) * (Vector3.One - this._axisLockVector)).Normalized() : (Vector3.One - this._axisLockVector).Normalized();
                         Plane p = new Plane(planeNormal, 1);
-                        Vector3? intersection = p.Intersect(r, this._rayInitialHit);
+                        Vector3? intersection = this._movementIntersectionValue = p.Intersect(r, this._rayInitialHit);
                         if (intersection.HasValue)
                         {
                             Vector3 iMajorAxis = intersection.Value * this._axisLockVector;
@@ -830,7 +834,7 @@
                     #endregion
                     Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
                     Plane p = new Plane(-cam.Direction, this._rayInitialHit.Length());
-                    Vector3? intersection = p.Intersect(r, this._rayInitialHit);
+                    Vector3? intersection = this._movementIntersectionValue = p.Intersect(r, this._rayInitialHit);
 
                     if (intersection.HasValue && (Client.Instance.Frontend.MouseX - this._lastLmbX != 0 || Client.Instance.Frontend.MouseY - this._lastLmbY != 0))
                     {

@@ -1343,6 +1343,57 @@
                     continue;
                 }
             }
+        
+            if (cMap != null && Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate && Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
+            {
+                Vector3? now = Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementCurrentHitLocation;
+                Vector3 start = Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementInitialHitLocation;
+                if (now.HasValue)
+                {
+                    ImGui.SetNextWindowPos(ImGui.GetMousePos());
+                    if (ImGui.Begin("overlayMovementTooltip", ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBackground))
+                    {
+                        float dst = (start - now.Value).Length() * cMap.GridUnit;
+                        bool alt = Client.Instance.Frontend.GameHandle.IsAnyAltDown();
+                        if (alt)
+                        {
+                            if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count == 1)
+                            {
+                                MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0];
+                                float msx = MathF.Abs(mo.Scale.X) % (cMap.GridSize * 2);
+                                float msy = MathF.Abs(mo.Scale.Y) % (cMap.GridSize * 2);
+                                float msz = MathF.Abs(mo.Scale.Z) % (cMap.GridSize * 2);
+                                Vector3 bigScale = new Vector3(
+                                    msx - 0.075f <= 0 || (cMap.GridSize * 2) - msx <= 0.075f ? 1 : 0,
+                                    msy - 0.075f <= 0 || (cMap.GridSize * 2) - msy <= 0.075f ? 1 : 0,
+                                    msz - 0.075f <= 0 || (cMap.GridSize * 2) - msz <= 0.075f ? 1 : 0
+                                );
+
+                                start = mo.ClientDragMoveResetInitialPosition;
+                                now = MapRenderer.SnapToGrid(mo.Position, cMap.GridSize, bigScale);
+                                dst = (start - now.Value).Length() * cMap.GridUnit;
+                            }
+                            else
+                            {
+                                now = MapRenderer.SnapToGrid(now.Value, cMap.GridSize);
+                                dst = (start - now.Value).Length() * cMap.GridUnit;
+                            }
+                        }
+
+                        Vector2 cPos = ImGui.GetCursorPos() + new Vector2(10, 0);
+                        ImGui.SetCursorPos(cPos + Vector2.One);
+                        ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
+                        ImGui.TextUnformatted($"{dst:0.0}");
+                        ImGui.PopStyleColor();
+                        ImGui.SetCursorPos(cPos);
+                        ImGui.PushStyleColor(ImGuiCol.Text, Color.White.Abgr());
+                        ImGui.TextUnformatted($"{dst:0.0}");
+                        ImGui.PopStyleColor();
+                    }
+
+                    ImGui.End();
+                }
+            }
         }
 
         private static readonly Dictionary<uint, (bool, bool, float)> activeSliders = new Dictionary<uint, (bool, bool, float)>();

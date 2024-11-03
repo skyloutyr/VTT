@@ -875,16 +875,19 @@
             }
         }
 
-        public void CreateLine(Vector3 start, Vector3 end)
+        public void CreateLine(Vector3 start, Vector3 end, bool completeToEnd = false)
         {
             Vector3 vE2S = (end - start).Normalized();
             Vector3 a = Vector3.Cross(Vector3.UnitX, vE2S);
-            Quaternion qZ = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitX, vE2S)).Normalized();
+            Quaternion qZ = new Quaternion(a, 1).Normalized();
 
             Vector3 oZ = Vector4.Transform(new Vector4(0, 0, 1, 1), qZ).Xyz().Normalized() * 0.03f;
             Vector3 oX = Vector3.Cross(vE2S, oZ).Normalized() * 0.03f;
 
-            end -= vE2S * 0.1f;
+            if (!completeToEnd)
+            {
+                end -= vE2S * 0.1f;
+            }
 
             Vector3 v1 = start + oX + oZ; // 0
             Vector3 v2 = start + oX - oZ; // 1
@@ -986,7 +989,16 @@
             this._ebo.SetData(this._indexData.ToArray());
         }
 
-        
+        public void RenderBuffers()
+        {
+            GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
+        }
+
+        public void ClearBuffers()
+        {
+            this._vertexData.Clear();
+            this._indexData.Clear();
+        }
 
         private static bool IsInCircle(BBBox box, Vector3 offset, Vector3 point, float rSq)
         {

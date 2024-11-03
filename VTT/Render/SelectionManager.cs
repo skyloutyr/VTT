@@ -26,7 +26,7 @@
         private Vector3 _rayInitialHit;
         private Vector3 _axisLockVector;
         private Vector3? _movementIntersectionValue;
-        private int _moveMode;
+        private MovementGizmoControlMode _moveMode;
         private float _initialAngle;
         private bool _deleteDown;
 
@@ -38,6 +38,7 @@
 
         public Vector3 ObjectMovementInitialHitLocation => this._rayInitialHit;
         public Vector3? ObjectMovementCurrentHitLocation => this._movementIntersectionValue;
+        public List<Vector3> ObjectMovementPath { get; } = new List<Vector3>();
 
         public void Update()
         {
@@ -109,7 +110,7 @@
                         Ray r = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
                         if (mode is EditMode.Translate or EditMode.Scale) // Translate and scale have the same selection BBs and mouse->world rules
                         {
-                            if (mode == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows)
+                            if (mode == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Arrows)
                             {
                                 float dotZ = MathF.Abs(Vector3.Dot(Vector3.UnitZ, cam.Direction));
                                 float dotX = MathF.Abs(Vector3.Dot(Vector3.UnitX, cam.Direction));
@@ -139,7 +140,7 @@
                                     if (intersection.HasValue)
                                     {
                                         this._blockSelection = true;
-                                        this._moveMode = 4;
+                                        this._moveMode = MovementGizmoControlMode.Blocking;
 
                                         offset.X = MathF.Abs(offset.X) <= 1e-7 ? 0 : offset.X;
                                         offset.Y = MathF.Abs(offset.Y) <= 1e-7 ? 0 : offset.Y;
@@ -251,13 +252,19 @@
                                         bx ? new Vector3(0, 1, 1) :
                                         by ? new Vector3(1, 0, 1) : Vector3.One;
 
-                                    this._moveMode = z || x || y ? 0 : bz || bx || by ? 1 : 2;
+                                    this._moveMode = z || x || y ? MovementGizmoControlMode.SingleAxis : bz || bx || by ? MovementGizmoControlMode.Plane : MovementGizmoControlMode.CameraViewPlane;
                                     if (mode == EditMode.Translate)
                                     {
                                         foreach (MapObject mo in this.SelectedObjects)
                                         {
                                             mo.ClientDragMoveAccumulatedPosition = mo.Position;
                                             mo.ClientDragMoveResetInitialPosition = mo.Position;
+                                        }
+
+                                        if (Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Path)
+                                        {
+                                            this.ObjectMovementPath.Clear();
+                                            this.ObjectMovementPath.Add(this.SelectedObjects[0].Position);
                                         }
                                     }
                                     else
@@ -349,7 +356,7 @@
                                     float det = -screenDelta.X;
                                     this._initialAngle = MathF.Atan2(det, dot);
                                     this.HalfRenderVector = half;
-                                    this._moveMode = 0;
+                                    this._moveMode = MovementGizmoControlMode.SingleAxis;
                                     foreach (MapObject mo in this.SelectedObjects)
                                     {
                                         mo.ClientDragMoveResetInitialPosition = mo.Position;
@@ -374,7 +381,7 @@
                                     float det = -screenDelta.X;
                                     this._initialAngle = MathF.Atan2(det, dot);
                                     this.HalfRenderVector = half;
-                                    this._moveMode = 0;
+                                    this._moveMode = MovementGizmoControlMode.SingleAxis;
                                     foreach (MapObject mo in this.SelectedObjects)
                                     {
                                         mo.ClientDragMoveResetInitialPosition = mo.Position;
@@ -392,7 +399,7 @@
                         if (!this._blockSelection)
                         {
                             this._blockSelection = true;
-                            this._moveMode = 4;
+                            this._moveMode = MovementGizmoControlMode.Blocking;
                             Client.Instance.Frontend.Renderer.PingRenderer.BeginPingUI(Client.Instance.Frontend.GameHandle.IsAnyControlDown());
                         }
                     }
@@ -403,7 +410,7 @@
                     this._isBoxSelect = true;
                 }
 
-                if (this._moveMode != 4)
+                if (this._moveMode != MovementGizmoControlMode.Blocking)
                 {
                     this.HandleMovementGizmo();
                     this.HandleRotationGizmo(cMap);
@@ -446,12 +453,11 @@
                     }
                     else
                     {
-                        if (this._moveMode != 4)
+                        if (this._moveMode != MovementGizmoControlMode.Blocking)
                         {
                             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                             if (em != EditMode.Select)
                             {
-
                                 List<(Guid, Guid, Vector4)> changes = this.SelectedObjects.Select(o => (o.MapID, o.ID, em == EditMode.Translate ? new Vector4(o.Position, 1.0f) : em == EditMode.Scale ? new Vector4(o.Scale, 1.0f) : new Vector4(o.Rotation.X, o.Rotation.Y, o.Rotation.Z, o.Rotation.W))).ToList();
                                 PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = (PacketChangeObjectModelMatrix.ChangeType)((int)em - 1) };
                                 pmo.Send();
@@ -466,7 +472,7 @@
                         }
                         else
                         {
-                            this._moveMode = 0;
+                            this._moveMode = MovementGizmoControlMode.SingleAxis;
                             Client.Instance.Frontend.Renderer.PingRenderer.EndPingUI();
                         }
                     }
@@ -610,7 +616,7 @@
         {
             if (this.SelectedObjects.Count > 0 && this._blockSelection && this._lmbDown && (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate || Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Scale) && Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode == CameraControlMode.Standard)
             {
-                if (this._moveMode == 4)
+                if (this._moveMode == MovementGizmoControlMode.Blocking)
                 {
                     return;
                 }
@@ -634,7 +640,7 @@
                 }
 
                 Vector3 half = (max - min) / 2;
-                if (this._moveMode is 0 or 1)
+                if (this._moveMode is MovementGizmoControlMode.SingleAxis or MovementGizmoControlMode.Plane)
                 {
                     if (Client.Instance.Frontend.MouseX - this._lastLmbX != 0 || Client.Instance.Frontend.MouseY - this._lastLmbY != 0)
                     {
@@ -952,7 +958,37 @@
                 this.BoxSelectCandidates.Clear();
             }
         }
-        public void Render(double delta)
+
+        private bool _rmbLastFrame;
+        public void Render(Map m, double delta)
+        {
+            if (m == null)
+            {
+                return;
+            }
+
+            bool rmb = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right);
+            if (!this._rmbLastFrame && rmb)
+            {
+                if (Client.Instance.Frontend.Renderer?.ObjectRenderer?.EditMode == EditMode.Translate && Client.Instance.Frontend.Renderer?.ObjectRenderer?.MovementMode == TranslationMode.Path && this.IsDraggingObjects)
+                {
+                    if (this.SelectedObjects.Count > 0)
+                    {
+                        MapObject mo = this.SelectedObjects[0];
+                        this.ObjectMovementPath.Add(mo.Position);
+                    }
+                }
+
+                this._rmbLastFrame = true;
+            }
+
+            if (!rmb && this._rmbLastFrame)
+            {
+                this._rmbLastFrame = false;
+            }
+        }
+
+        public void RenderGui(double delta)
         {
             if (this._isBoxSelect && this._lmbDown)
             {
@@ -980,6 +1016,14 @@
                 ImGui.PopStyleVar();
                 ImGui.PopStyleColor();
             }
+        }
+
+        private enum MovementGizmoControlMode
+        {
+            SingleAxis = 0,
+            Plane = 1,
+            CameraViewPlane = 2,
+            Blocking = 4
         }
     }
 }

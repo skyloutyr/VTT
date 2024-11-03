@@ -137,11 +137,12 @@
                 this.MapRenderer.Render(m, time);
                 this.ObjectRenderer.Render(m, time);
                 this.RulerRenderer?.Render(time);
+                this.SelectionManager?.Render(m, time);
                 this.ParticleRenderer.RenderFake();
                 this.ParticleRenderer.RenderAll();
                 this.MapRenderer.DrawingRenderer.Render(this.MapRenderer.ClientCamera);
                 this.GuiRenderer.Render(time);
-                this.SelectionManager.Render(time);
+                this.SelectionManager.RenderGui(time);
                 this.SkyRenderer.Render(time);
                 this.PingRenderer?.Render(time);
                 this.ObjectRenderer.RenderLate(m, time);

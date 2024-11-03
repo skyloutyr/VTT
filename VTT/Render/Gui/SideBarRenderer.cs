@@ -385,51 +385,34 @@
                 ImGui.SetNextWindowBgAlpha(0.35f);
                 ImGui.SetNextWindowPos(Vec56x70);
                 ImGui.Begin("##TranslateControls", window_flags);
-
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
-
-                bool selected = Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows;
-                if (selected)
+                for (int i = 0; i < 3; ++i)
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
+                    TranslationMode tMode = (TranslationMode)i;
+                    string modeName = Enum.GetName(tMode).ToLower();
+                    bool selected = tMode == Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode;
+                    if (selected)
+                    {
+                        ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                    }
 
-                if (ImGui.ImageButton("btnMoveArrows", this.MoveArrows, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows = true;
-                }
+                    if (ImGui.ImageButton("btnMovementMode_" + modeName, this._moveModeTextures[i], Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                    {
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode = tMode;
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.translate.arrows"));
-                }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.translate." + modeName));
+                    }
 
-                if (selected)
-                {
-                    ImGui.PopStyleColor();
-                }
+                    if (selected)
+                    {
+                        ImGui.PopStyleColor();
+                    }
 
-                ImGui.SameLine();
-
-                if (!selected)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
-
-                if (ImGui.ImageButton("btnMoveGizmo", this.MoveGizmo, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows = false;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.translate.gizmo"));
-                }
-
-                if (!selected)
-                {
-                    ImGui.PopStyleColor();
+                    ImGui.SameLine();
                 }
 
                 ImGui.PopStyleColor();

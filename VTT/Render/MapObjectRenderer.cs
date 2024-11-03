@@ -2,6 +2,7 @@
 {
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
@@ -34,7 +35,7 @@
         public Vector3 MouseHitWorld { get; set; }
 
         public EditMode EditMode { get; set; } = EditMode.Select;
-        public bool MoveModeArrows { get; set; }
+        public TranslationMode MovementMode { get; set; } = TranslationMode.Gizmo;
 
         public WavefrontObject MoveArrow { get; set; }
         public WavefrontObject MoveSide { get; set; }
@@ -427,6 +428,36 @@
                 }
             }
 
+            SelectionManager sm = Client.Instance.Frontend.Renderer.SelectionManager;
+            if (this.EditMode == EditMode.Translate && this.MovementMode == TranslationMode.Path && sm.ObjectMovementPath.Count > 0 && sm.IsDraggingObjects)
+            {
+                RulerRenderer rr = Client.Instance.Frontend.Renderer.RulerRenderer;
+                this.OverlayShader.Bind();
+                this.OverlayShader["view"].Set(cam.View);
+                this.OverlayShader["projection"].Set(cam.Projection);
+                this.OverlayShader["u_color"].Set(Extensions.FromArgb(Client.Instance.Settings.Color).Vec4());
+                GL.DepthMask(false);
+                for (int i = 0; i < sm.ObjectMovementPath.Count; ++i)
+                {
+                    Vector3 start = sm.ObjectMovementPath[i];
+                    Vector3 end = i == sm.ObjectMovementPath.Count - 1 ? sm.SelectedObjects[0].Position : sm.ObjectMovementPath[i + 1];
+
+                    this.OverlayShader["model"].Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(start));
+                    this.MoveCenter.Render();
+
+                    this.OverlayShader["model"].Set(Matrix4x4.Identity);
+                    rr.CreateLine(start, end, true);
+                    rr.UploadBuffers();
+                    rr.RenderBuffers();
+                    rr.ClearBuffers();
+                }
+
+                this.OverlayShader["model"].Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(sm.SelectedObjects[0].Position));
+                this.MoveCenter.Render();
+
+                GL.DepthMask(true);
+            }
+
             GL.Enable(Capability.CullFace);
             this.CPUTimerHighlights.Stop();
         }
@@ -488,7 +519,7 @@
                 {
                     case EditMode.Translate:
                     {
-                        if (this.MoveModeArrows)
+                        if (this.MovementMode == TranslationMode.Arrows)
                         {
                             float dotZ = MathF.Abs(Vector3.Dot(Vector3.UnitZ, cam.Direction));
                             float dotX = MathF.Abs(Vector3.Dot(Vector3.UnitX, cam.Direction));
@@ -1234,6 +1265,13 @@
         Draw,
         FX,
         Shadows2D
+    }
+
+    public enum TranslationMode
+    {
+        Gizmo,
+        Path,
+        Arrows
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 432, Pack = 1)]

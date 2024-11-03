@@ -1344,54 +1344,38 @@
                 }
             }
         
-            if (cMap != null && Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate && Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
+            if (cMap != null && Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate)
             {
-                Vector3? now = Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementCurrentHitLocation;
-                Vector3 start = Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementInitialHitLocation;
-                if (now.HasValue)
+                if (Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Path)
                 {
-                    ImGui.SetNextWindowPos(ImGui.GetMousePos());
-                    if (ImGui.Begin("overlayMovementTooltip", ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBackground))
+                    if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                     {
-                        float dst = (start - now.Value).Length() * cMap.GridUnit;
-                        bool alt = Client.Instance.Frontend.GameHandle.IsAnyAltDown();
-                        if (alt)
+                        MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0];
+                        float lengthAccum = 0;
+                        for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementPath.Count; ++i)
                         {
-                            if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count == 1)
-                            {
-                                MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0];
-                                float msx = MathF.Abs(mo.Scale.X) % (cMap.GridSize * 2);
-                                float msy = MathF.Abs(mo.Scale.Y) % (cMap.GridSize * 2);
-                                float msz = MathF.Abs(mo.Scale.Z) % (cMap.GridSize * 2);
-                                Vector3 bigScale = new Vector3(
-                                    msx - 0.075f <= 0 || (cMap.GridSize * 2) - msx <= 0.075f ? 1 : 0,
-                                    msy - 0.075f <= 0 || (cMap.GridSize * 2) - msy <= 0.075f ? 1 : 0,
-                                    msz - 0.075f <= 0 || (cMap.GridSize * 2) - msz <= 0.075f ? 1 : 0
-                                );
-
-                                start = mo.ClientDragMoveResetInitialPosition;
-                                now = MapRenderer.SnapToGrid(mo.Position, cMap.GridSize, bigScale);
-                                dst = (start - now.Value).Length() * cMap.GridUnit;
-                            }
-                            else
-                            {
-                                now = MapRenderer.SnapToGrid(now.Value, cMap.GridSize);
-                                dst = (start - now.Value).Length() * cMap.GridUnit;
-                            }
+                            Vector3 start = Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementPath[i];
+                            Vector3 end = i == Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementPath.Count - 1 ? mo.Position : Client.Instance.Frontend.Renderer.SelectionManager.ObjectMovementPath[i + 1];
+                            lengthAccum += (end - start).Length();
                         }
 
-                        Vector2 cPos = ImGui.GetCursorPos() + new Vector2(10, 0);
-                        ImGui.SetCursorPos(cPos + Vector2.One);
-                        ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
-                        ImGui.TextUnformatted($"{dst:0.0}");
-                        ImGui.PopStyleColor();
-                        ImGui.SetCursorPos(cPos);
-                        ImGui.PushStyleColor(ImGuiCol.Text, Color.White.Abgr());
-                        ImGui.TextUnformatted($"{dst:0.0}");
-                        ImGui.PopStyleColor();
-                    }
+                        lengthAccum *= cMap.GridUnit;
+                        Vector3 half = mo.ClientDragMoveResetInitialPosition + ((mo.Position - mo.ClientDragMoveResetInitialPosition) * 0.5f);
+                        Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half + Vector3.UnitZ);
+                        if (screen.Z >= 0)
+                        {
+                            string text = lengthAccum.ToString("0.00");
+                            Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
+                            ImGui.SetNextWindowPos(screen.Xy() - (new Vector2(tLen3.X, tLen3.Y) / 2));
+                            ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
+                            if (ImGui.Begin("PathMovementOverlayData", flags))
+                            {
+                                ImGui.TextUnformatted(text);
+                            }
 
-                    ImGui.End();
+                            ImGui.End();
+                        }
+                    }
                 }
             }
         }

@@ -220,7 +220,7 @@
                 float rot = 0;
                 gridForward2D *= cmap.GridSize;
                 gridRight2D *= cmap.GridSize;
-                bool arrows = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MoveModeArrows;
+                bool arrows = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Arrows;
 
                 float dotZ = MathF.Abs(Vector3.Dot(Vector3.UnitZ, this.ClientCamera.Direction));
                 float dotX = MathF.Abs(Vector3.Dot(Vector3.UnitX, this.ClientCamera.Direction));

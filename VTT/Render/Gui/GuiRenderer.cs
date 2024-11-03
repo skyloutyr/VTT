@@ -297,6 +297,7 @@
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
             this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddSunlight, this.DeleteIcon };
+            this._moveModeTextures = new Texture[] { this.MoveGizmo, this.MeasureModePolyline, this.MoveArrows };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
             this.MainMenuRenderer = new MainMenuRenderer();
@@ -308,10 +309,9 @@
             this.LoadStatuses();
         }
 
-        
-
         private Texture[] _modeTextures;
         private Texture[] _rulerModeTextures;
+        private Texture[] _moveModeTextures;
         public Texture[] Shadow2DControlModeTextures { get; private set; }
 
         private readonly List<string> _chat = new List<string>();
@@ -328,7 +328,8 @@
         {
             this.Timer.Restart();
             Map cMap = Client.Instance.CurrentMap;
-            MapObjectRenderer mor = Client.Instance.Frontend.Renderer.ObjectRenderer;
+            MapObjectRenderer mor = Client.Instance.Frontend?.Renderer?.ObjectRenderer;
+            SelectionManager sm = Client.Instance.Frontend?.Renderer?.SelectionManager;
             SimpleLanguage lang = Client.Instance.Lang;
             ImGuiWindowFlags window_flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove;
 
@@ -494,8 +495,17 @@
                 {
                     if (Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver != null)
                     {
-                        this._mouseOverWhenClicked = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;
-                        ImGui.OpenPopup("Object Actions");
+                        bool allow = true;
+                        if (sm != null && mor != null && mor.MovementMode == TranslationMode.Path && sm.IsDraggingObjects)
+                        {
+                            allow = false;
+                        }
+
+                        if (allow)
+                        {
+                            this._mouseOverWhenClicked = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;
+                            ImGui.OpenPopup("Object Actions");
+                        }
                     }
                 }
             }

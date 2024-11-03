@@ -387,6 +387,6 @@
         internal delegate void framebufferRenderbufferD(uint target, uint attachment, uint renderbuffertarget, uint renderbuffer);
         internal static framebufferRenderbufferD framebufferRenderbufferO;
 
-        private static T ToDelegate<T>(IntPtr ptr) => Marshal.GetDelegateForFunctionPointer<T>(ptr);
+        private static T ToDelegate<T>(IntPtr ptr) where T : Delegate => IntPtr.Zero.Equals(ptr) ? null : Marshal.GetDelegateForFunctionPointer<T>(ptr);
     }
 }

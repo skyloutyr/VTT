@@ -268,6 +268,7 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * Particles may have variety by using sprite sheets, with fine control over the selection of a given sprite.
 * A rudimentary music player that has different playing modes, volume slider, ordering and basic controls.
 * Alt-clicking a portrait in the turn tracker will ping that object on the map, so long as it is not hidden. You can also right-click a portrait in the turn tracker to bring up that object's context menu - provided you could do that by regularly right-clicking that object.
+* If you control-click the button to move all clients to a map, then it will only move the connected clients to that map.
 
 ---
 ## Known issues, suggestions and missing features tracker

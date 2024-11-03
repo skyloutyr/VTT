@@ -187,7 +187,7 @@
                                                 }
                                             }
 
-                                            if (ImGui.IsMouseClicked(ImGuiMouseButton.Right) && !ImGui.IsPopupOpen("Object Actions"))
+                                            if ((mo.MapLayer <= 0 || Client.Instance.IsAdmin || Client.Instance.IsObserver) && ImGui.IsMouseClicked(ImGuiMouseButton.Right) && !ImGui.IsPopupOpen("Object Actions"))
                                             {
                                                 bool adminObserverOrOwner = Client.Instance.IsObserver || Client.Instance.IsAdmin || mo.CanEdit(Client.Instance.ID);
                                                 bool fowTest = true;

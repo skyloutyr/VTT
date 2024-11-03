@@ -50,7 +50,7 @@ namespace VTT.Render
                             Vector2 imPos = ImGui.GetCursorPos();
                             float tW = ap.GLTex.Size.Width;
                             float tH = ap.GLTex.Size.Height;
-                            AssetPreview.FrameData frame = ap.GetCurrentFrame((int)((Client.Instance.Frontend.UpdatesExisted) % int.MaxValue * (100f / 60f)));
+                            AssetPreview.FrameData frame = ap.GetCurrentFrame((int)((int)Client.Instance.Frontend.UpdatesExisted * (100f / 60f)));
                             float progress = (float)frame.TotalDurationToHere / ap.FramesTotalDelay;
                             float sS = frame.X / tW;
                             float sE = sS + (frame.Width / tW);

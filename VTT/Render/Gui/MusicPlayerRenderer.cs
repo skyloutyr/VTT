@@ -30,7 +30,7 @@
                 }
                 else
                 {
-                    float oX = (float)(Client.Instance.Frontend.UpdatesExisted + delta);
+                    float oX = (float)((uint)Client.Instance.Frontend.UpdatesExisted + delta);
                     //float missingPortion = textSize.X - rect.X + 64;
                     oX %= textSize.X + 32;
 
@@ -193,13 +193,13 @@
                         }
 
                         ImGui.NewLine();
-                        ImGui.BeginChild("MusicPlayerTracks", new System.Numerics.Vector2(390, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking);
+                        ImGui.BeginChild("MusicPlayerTracks", new Vector2(390, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking);
                         i = 0;
 
                         Vector4 clrInactiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg);
                         Vector4 clrActiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive);
                         clrActiveV = Vector4.Lerp(clrInactiveV, clrActiveV, MathF.Abs(MathF.Sin(
-                            (Client.Instance.Frontend.UpdatesExisted + (float)delta) % 360f * MathF.PI / 180.0f
+                            ((int)Client.Instance.Frontend.UpdatesExisted + (float)delta) % 360f * MathF.PI / 180.0f
                         )));
 
                         uint clrInactive = new Color(clrInactiveV).Abgr();

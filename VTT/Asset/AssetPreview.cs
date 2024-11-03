@@ -2,7 +2,6 @@
 {
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
-    using System;
     using VTT.Asset.Glb;
     using VTT.GL;
     using VTT.GL.Bindings;
@@ -18,6 +17,11 @@
 
         public FrameData GetCurrentFrame(int timeframe)
         {
+            if (!this.IsAnimated || this.FramesTotalDelay == 0)
+            {
+                return this.Frames == null || this.Frames.Length == 0 ? new FrameData() : this.Frames[0];
+            }
+
             timeframe %= this.FramesTotalDelay;
             for (int i = 0; i < this.Frames.Length; ++i)
             {
@@ -64,18 +68,11 @@
                 tex.Bind();
                 tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                 tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                if (this.Data.Length > 85000)
-                {
-                    System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
-                }
-
                 tex.SetImage(img, SizedInternalFormat.Rgba8);
                 tex.GenerateMipMaps();
                 img.Dispose();
                 this.Data = null;
                 this.GLTex = tex;
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
             }
 
             return this.GLTex;
@@ -91,6 +88,8 @@
             public int Width { get; set; }
             public int Duration { get; set; }
             public int TotalDurationToHere { get; set; }
+
+            public readonly bool IsValidFrame => this.Width + this.Height > 0;
 
             public FrameData(int x, int y, int height, int width, int length, int tdTH)
             {

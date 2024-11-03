@@ -51,59 +51,62 @@
         public bool movingParticleAssetOverFXRecepticle = false;
         public ConcurrentQueue<string> dropEventsReceiver = new ConcurrentQueue<string>();
         public List<string> dropEvents = new List<string>();
+        public MapObject overrideObjectOpenRightClickContextMenu;
 
         public void Reset()
         {
-            openNewFolderPopup = false;
-            editFolderPopup = false;
-            deleteFolderPopup = false;
-            editAssetPopup = false;
-            deleteAssetPopup = false;
-            changeColorPopup = false;
-            changeMapColorPopup = false;
-            deleteMapPopup = false;
-            rollPopup = false;
-            changeTeamColorPopup = false;
-            menu = false;
-            inspectPopup = false;
-            linkPopup = false;
-            journalPopup = false;
-            newStatusEffectPopup = false;
-            changeTintColorPopup = false;
-            changeNameColorPopup = false;
-            changeAuraColorPopup = false;
-            changeFastLightColorPopup = false;
-            editTexturePopup = false;
-            moveTo = null;
-            mouseOverMoveUp = false;
-            dirHovered = null;
-            objectModelHovered = null;
-            objectCustomNameplateHovered = null;
-            objectCustomShaderHovered = null;
-            editParticleSystemPopup = false;
-            particleModelHovered = null;
-            particleShaderHovered = null;
-            particleMaskHovered = null;
-            changeParticleColorPopup = false;
-            particleContainerHovered = null;
-            shaderGraphExtraTexturesHovered = null;
-            shaderGraphExtraTexturesHoveredIndex = -1;
-            clientMap = Client.Instance.CurrentMap;
-            editShaderPopup = false;
-            editModelPopup = false;
-            mapAmbianceHovered = null;
-            movingAssetOverMusicPlayerAddPoint = false;
-            movingParticleAssetOverFXRecepticle = false;
-            dropEvents.Clear();
-            while (!dropEventsReceiver.IsEmpty)
+            this.openNewFolderPopup = false;
+            this.editFolderPopup = false;
+            this.deleteFolderPopup = false;
+            this.editAssetPopup = false;
+            this.deleteAssetPopup = false;
+            this.changeColorPopup = false;
+            this.changeMapColorPopup = false;
+            this.deleteMapPopup = false;
+            this.rollPopup = false;
+            this.changeTeamColorPopup = false;
+            this.menu = false;
+            this.inspectPopup = false;
+            this.linkPopup = false;
+            this.journalPopup = false;
+            this.newStatusEffectPopup = false;
+            this.changeTintColorPopup = false;
+            this.changeNameColorPopup = false;
+            this.changeAuraColorPopup = false;
+            this.changeFastLightColorPopup = false;
+            this.editTexturePopup = false;
+            this.moveTo = null;
+            this.mouseOverMoveUp = false;
+            this.dirHovered = null;
+            this.objectModelHovered = null;
+            this.objectCustomNameplateHovered = null;
+            this.objectCustomShaderHovered = null;
+            this.editParticleSystemPopup = false;
+            this.particleModelHovered = null;
+            this.particleShaderHovered = null;
+            this.particleMaskHovered = null;
+            this.changeParticleColorPopup = false;
+            this.particleContainerHovered = null;
+            this.shaderGraphExtraTexturesHovered = null;
+            this.shaderGraphExtraTexturesHoveredIndex = -1;
+            this.clientMap = Client.Instance.CurrentMap;
+            this.editShaderPopup = false;
+            this.editModelPopup = false;
+            this.mapAmbianceHovered = null;
+            this.movingAssetOverMusicPlayerAddPoint = false;
+            this.movingParticleAssetOverFXRecepticle = false;
+            this.dropEvents.Clear();
+            while (!this.dropEventsReceiver.IsEmpty)
             {
-                if (!dropEventsReceiver.TryDequeue(out string res))
+                if (!this.dropEventsReceiver.TryDequeue(out string res))
                 {
                     break;
                 }
 
-                dropEvents.Add(res);
+                this.dropEvents.Add(res);
             }
+
+            this.overrideObjectOpenRightClickContextMenu = null;
         }
     }
 }

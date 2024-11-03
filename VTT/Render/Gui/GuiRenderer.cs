@@ -3,9 +3,7 @@
     using ImGuiNET;
     using Newtonsoft.Json.Linq;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
@@ -485,12 +483,20 @@
             }
 
             // Right click context menu
-            if (!ImGui.GetIO().WantCaptureMouse && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+            if ((!ImGui.GetIO().WantCaptureMouse && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) || this.FrameState.overrideObjectOpenRightClickContextMenu != null)
             {
-                if (Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver != null)
+                if (this.FrameState.overrideObjectOpenRightClickContextMenu != null)
                 {
-                    this._mouseOverWhenClicked = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;
+                    this._mouseOverWhenClicked = this.FrameState.overrideObjectOpenRightClickContextMenu;
                     ImGui.OpenPopup("Object Actions");
+                }
+                else
+                {
+                    if (Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver != null)
+                    {
+                        this._mouseOverWhenClicked = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;
+                        ImGui.OpenPopup("Object Actions");
+                    }
                 }
             }
 
@@ -670,7 +676,7 @@
                             {
                                 float tW = glTex.Size.Width;
                                 float tH = glTex.Size.Height;
-                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)ap.FramesTotalDelay));
+                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
                                 float sS = frame.X / tW;
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;
@@ -679,7 +685,7 @@
                             }
                             else
                             {
-                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), System.Numerics.Vector2.Zero, System.Numerics.Vector2.One, this._inspectedObject.TintColor.Abgr());
+                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), Vector2.Zero, Vector2.One, this._inspectedObject.TintColor.Abgr());
                             }
                         }
 

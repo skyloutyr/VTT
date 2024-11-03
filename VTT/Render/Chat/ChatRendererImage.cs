@@ -67,12 +67,12 @@
             AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetWebImage(url, out AssetPreview ap);
             if (status == AssetStatus.Return && ap != null && ap.GLTex != null)
             {
-                if (ap.IsAnimated)
+                if (ap.IsAnimated && ap.FramesTotalDelay > 0)
                 {
                     Vector2 imPos = ImGui.GetCursorPos();
                     float tW = ap.GLTex.Size.Width;
                     float tH = ap.GLTex.Size.Height;
-                    AssetPreview.FrameData frame = ap.GetCurrentFrame((int)((this.IsPaused ? this.PauseFrame : Client.Instance.Frontend.UpdatesExisted) % int.MaxValue * (100f / 60f)));
+                    AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((this.IsPaused ? this.PauseFrame : Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
                     float progress = (float)frame.TotalDurationToHere / ap.FramesTotalDelay;
                     float sS = frame.X / tW;
                     float sE = sS + (frame.Width / tW);

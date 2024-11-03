@@ -87,7 +87,7 @@
                                         Vec4 hColor = (Vec4)tColor;
                                         if (e == currentEntry)
                                         {
-                                            hColor = Vec4.Lerp((Vec4)Color.Gold, (Vec4)Color.White, (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                            hColor = Vec4.Lerp((Vec4)Color.Gold, (Vec4)Color.White, (1.0f + MathF.Sin((int)Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                             uint particleColor = tColor.Abgr();
                                             for (int j = this._particles.Count - 1; j >= 0; j--)
                                             {
@@ -117,25 +117,51 @@
                                                 portrairColor = !Client.Instance.IsAdmin ? ImColBlack : new Vec4(0.5f, 0.5f, 0.5f, 1.0f);
                                             }
 
-                                            float ar = 64f / 96f;
-                                            ar *= 0.5f;
+                                            float arDesired = 64f / 96f;
                                             Texture glTex = ap.GetGLTexture();
                                             if (glTex != null && glTex.IsAsyncReady)
                                             {
+                                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
+                                                float ar = 0;
+                                                if (frame.IsValidFrame)
+                                                {
+                                                    ar = (float)frame.Width / frame.Height;
+                                                }
+
+                                                if (float.IsNaN(ar) || ar == 0)
+                                                {
+                                                    ar = (float)glTex.Size.Width / glTex.Size.Height;
+                                                    if (float.IsNaN(ar) || ar == 0)
+                                                    {
+                                                        ar = 1;
+                                                    }
+                                                }
+
+                                                float arCorrectionW = 0;
+                                                float arCorrectionH = 0;
+                                                float arCorrection = MathF.Abs(arDesired - ar) * 0.5f;
+                                                if (ar > arDesired) // Image width > desired image width, correct width
+                                                {
+                                                    arCorrectionW = arCorrection;
+                                                }
+                                                else
+                                                {
+                                                    arCorrectionH = arCorrection;
+                                                }
+
                                                 if (ap.IsAnimated)
                                                 {
                                                     float atW = glTex.Size.Width;
                                                     float atH = glTex.Size.Height;
-                                                    AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)ap.FramesTotalDelay));
                                                     float sS = frame.X / atW;
                                                     float sE = sS + (frame.Width / atW);
                                                     float tS = frame.Y / atH;
                                                     float tE = tS + (frame.Height / atH);
-                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(sS + (frame.Width / atW * 0.25f), tS), new Vec2(sE - (frame.Width / atW * 0.25f), tE), new Color(portrairColor).Abgr());
+                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(sS + (frame.Width / atW * arCorrectionW), tS + (frame.Height / atH * arCorrectionH)), new Vec2(sE - (frame.Width / atW * arCorrectionW), tE - (frame.Height / atH * arCorrectionH)), new Color(portrairColor).Abgr());
                                                 }
                                                 else
                                                 {
-                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(0.25f, 0), new Vec2(0.75f, 1), new Color(portrairColor).Abgr());
+                                                    idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(arCorrectionW, arCorrectionH), new Vec2(1 - arCorrectionW, 1 - arCorrectionH), new Color(portrairColor).Abgr());
                                                 }
                                             }
                                         }
@@ -157,7 +183,35 @@
                                                     {
                                                         Ping p = new Ping() { DeathTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 10000, OwnerColor = Extensions.FromArgb(Client.Instance.Settings.Color), OwnerID = Client.Instance.ID, OwnerName = Client.Instance.Settings.Name, Position = mo.Position, Type = Ping.PingType.Generic };
                                                         new PacketPing() { Ping = p }.Send();
-                                                    }   
+                                                    }
+                                                }
+                                            }
+
+                                            if (ImGui.IsMouseClicked(ImGuiMouseButton.Right) && !ImGui.IsPopupOpen("Object Actions"))
+                                            {
+                                                bool adminObserverOrOwner = Client.Instance.IsObserver || Client.Instance.IsAdmin || mo.CanEdit(Client.Instance.ID);
+                                                bool fowTest = true;
+                                                if (Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW)
+                                                {
+                                                    AABox bounds = mo.CameraCullerBox.Offset(mo.Position + new Vector3(0.5f, 0.5f, 0));
+                                                    RectangleF projectedRect = new RectangleF(
+                                                        bounds.Start.X, bounds.Start.Y,
+                                                        bounds.End.X - bounds.Start.X, bounds.End.Y - bounds.Start.Y
+                                                    );
+
+                                                    fowTest = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.CachedFastTestRect(mo.ID, projectedRect, out bool oob);
+                                                    if (oob)
+                                                    {
+                                                        fowTest = true; // handle outside of fow objects as always visible?
+                                                    }
+                                                }
+
+                                                if (fowTest || adminObserverOrOwner)
+                                                {
+                                                    if (!mo.HideFromSelection || adminObserverOrOwner)
+                                                    {
+                                                        state.overrideObjectOpenRightClickContextMenu = mo;
+                                                    }
                                                 }
                                             }
                                         }
@@ -609,7 +663,7 @@
                             {
                                 Vec4 colorDark = new Vec4(0.234f, 0, 0.4f, 1.0f);
                                 Vec4 colorBright = new Vec4(0.862f, 0, 0.292f, 1.0f);
-                                Vec4 borderColor = System.Numerics.Vector4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin(Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                Vec4 borderColor = System.Numerics.Vector4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin((int)Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 

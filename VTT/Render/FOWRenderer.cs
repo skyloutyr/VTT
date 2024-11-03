@@ -152,6 +152,30 @@
             texture.Dispose();
         }
 
+        private const ulong CacheMemoryTime = 60ul;
+        private Guid _lastCacheTestID = Guid.Empty;
+        private ulong _lastCacheTestTicks;
+        private bool _lastCacheTestResult;
+        private bool _lastCacheTestOOBResult;
+        public bool CachedFastTestRect(Guid id, RectangleF rect, out bool wasOOB)
+        {
+            if (Guid.Equals(id, this._lastCacheTestID))
+            {
+                ulong ticksNow = Client.Instance.Frontend.UpdatesExisted;
+                if (ticksNow - this._lastCacheTestTicks <= CacheMemoryTime)
+                {
+                    wasOOB = this._lastCacheTestOOBResult;
+                    return this._lastCacheTestResult;
+                }
+            }
+
+            this._lastCacheTestID = id;
+            this._lastCacheTestTicks = Client.Instance.Frontend.UpdatesExisted;
+            this._lastCacheTestResult = this.FastTestRect(rect, out this._lastCacheTestOOBResult);
+            wasOOB = this._lastCacheTestOOBResult;
+            return this._lastCacheTestResult;
+        }
+
         public bool FastTestRect(RectangleF rect, out bool wasOOB)
         {
             wasOOB = false;

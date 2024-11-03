@@ -30,8 +30,8 @@
 
         public int UpdaterExitCode { get; set; } = -2;
 
-        public ulong UpdatesExisted { get; set; }
-        public ulong FramesExisted { get; set; }
+        public ULongCounter UpdatesExisted { get; set; } = new ULongCounter();
+        public ULongCounter FramesExisted { get; set; } = new ULongCounter();
 
         public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.Size.Value.Width;
         public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.Size.Value.Height;
@@ -310,7 +310,7 @@
         private int _kaTimer;
         private void Instance_UpdateFrame()
         {
-            ++this.UpdatesExisted;
+            this.UpdatesExisted.Increment();
             NetClient nc = Client.Instance.NetClient;
             if (nc != null)
             {
@@ -403,7 +403,7 @@
         {
             this.CheckResize();
 
-            ++this.FramesExisted;
+            this.FramesExisted.Increment();
 
             if (this._lastFocusState != this.GameHandle.IsFocused)
             {

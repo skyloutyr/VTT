@@ -149,7 +149,7 @@
                             {
                                 float tW = glTex.Size.Width;
                                 float tH = glTex.Size.Height;
-                                AssetPreview.FrameData frame = this._portraitTex.preview.GetCurrentFrame((int)(Client.Instance.Frontend.UpdatesExisted % (ulong)this._portraitTex.preview.FramesTotalDelay));
+                                AssetPreview.FrameData frame = this._portraitTex.preview.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
                                 float sS = frame.X / tW;
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;

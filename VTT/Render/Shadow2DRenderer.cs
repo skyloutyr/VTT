@@ -433,7 +433,8 @@
                         this.Raytracer["bvhHasData"].Set(m.ShadowLayer2D.BVH.HasAnyBoxes);
                         Vector3 cpos = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
                         EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
-                        this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? 1.0f : Client.Instance.Frontend.GameHandle.IsAnyControlDown() ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
+                        bool ctrl = !ImGui.GetIO().WantCaptureMouse && !ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsAnyControlDown();
+                        this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? 1.0f : ctrl ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
 
                         float vMax;
                         float vDim;
@@ -626,8 +627,6 @@
                         }
 
                         pipeline.DrawFullScreenQuad();
-
-                        // TODO render!
 
                         GL.DepthMask(true);
                         GL.Enable(Capability.DepthTest);

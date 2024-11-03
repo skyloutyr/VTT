@@ -789,13 +789,6 @@
 
             this.Container.Previews.Clear();
 
-            foreach (AssetPreview ap in this.Container.Portraits.Values)
-            {
-                ap?.GLTex?.Dispose();
-            }
-
-            this.Container.Portraits.Clear();
-
             foreach (AssetPreview ap in this.Container.WebPictures.Values)
             {
                 ap?.GLTex?.Dispose();
@@ -816,6 +809,12 @@
             }
 
             this.Container.Assets.Clear();
+            foreach (AssetPreview ap in this.Container.Portraits.Values)
+            {
+                ap?.GLTex?.Dispose();
+            }
+
+            this.Container.Portraits.Clear();
         }
     }
 

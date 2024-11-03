@@ -267,6 +267,7 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * Objects can be marked as info objects. When marked as such they will also display their description when moused-over.
 * Particles may have variety by using sprite sheets, with fine control over the selection of a given sprite.
 * A rudimentary music player that has different playing modes, volume slider, ordering and basic controls.
+* Alt-clicking a portrait in the turn tracker will ping that object on the map, so long as it is not hidden. You can also right-click a portrait in the turn tracker to bring up that object's context menu - provided you could do that by regularly right-clicking that object.
 
 ---
 ## Known issues, suggestions and missing features tracker

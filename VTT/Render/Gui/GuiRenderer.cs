@@ -672,20 +672,38 @@
                         Texture glTex = ap.GetGLTexture();
                         if (glTex != null)
                         {
+                            AssetPreview.FrameData frame = ap.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
+                            float ar = 0;
+                            if (frame.IsValidFrame)
+                            {
+                                ar = (float)frame.Width / frame.Height;
+                            }
+
+                            if (float.IsNaN(ar) || ar == 0)
+                            {
+                                ar = (float)glTex.Size.Width / glTex.Size.Height;
+                                if (float.IsNaN(ar) || ar == 0)
+                                {
+                                    ar = 1;
+                                }
+                            }
+
+                            Vector2 posCorrection = Vector2.Zero;
+                            posCorrection = ar > 1 ? new Vector2(0, 96 - (96 * (1 / ar))) : new Vector2(96 - (96 * ar), 0);
+                            posCorrection *= 0.5f;
                             if (ap.IsAnimated)
                             {
                                 float tW = glTex.Size.Width;
                                 float tH = glTex.Size.Height;
-                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
                                 float sS = frame.X / tW;
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;
                                 float tE = tS + (frame.Height / tH);
-                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), new Vector2(sS, tS), new Vector2(sE, tE), this._inspectedObject.TintColor.Abgr());
+                                drawList.AddImage(glTex, screenPos + posCorrection, screenPos + new Vector2(96, 96) - posCorrection, new Vector2(sS, tS), new Vector2(sE, tE), this._inspectedObject.TintColor.Abgr());
                             }
                             else
                             {
-                                drawList.AddImage(glTex, screenPos, screenPos + new Vector2(96, 96), Vector2.Zero, Vector2.One, this._inspectedObject.TintColor.Abgr());
+                                drawList.AddImage(glTex, screenPos + posCorrection, screenPos + new Vector2(96, 96) - posCorrection, Vector2.Zero, Vector2.One, this._inspectedObject.TintColor.Abgr());
                             }
                         }
 

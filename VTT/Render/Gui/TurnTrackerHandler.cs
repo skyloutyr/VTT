@@ -25,6 +25,44 @@
 
         public void HandleScrollWheelExtra(float dx, float dy) => this._scrollDYChange += dy;
 
+        private void GetTurnTrackerSizes(ref float windowPositionX, out Vec2 windowSize, out Vec2 bgSize, out Vec2 smSize, out Vec2 separatorSize)
+        {
+            ClientSettings.TurnTrackerScaling scaling = Client.Instance.Settings.TurnTrackerScale;
+            switch (scaling)
+            {
+                case ClientSettings.TurnTrackerScaling.Smaller:
+                {
+                    windowSize = new Vec2(420, 94);
+                    bgSize = new Vec2(42, 64);
+                    smSize = new Vec2(32, 48);
+                    separatorSize = new Vec2(8, 48);
+                    windowPositionX = windowPositionX / 3;
+                    return;
+                }
+
+                case ClientSettings.TurnTrackerScaling.Larger:
+                {
+                    windowSize = new Vec2(960, 185);
+                    bgSize = new Vec2(96, 144);
+                    smSize = new Vec2(72, 108);
+                    separatorSize = new Vec2(18, 108);
+                    windowPositionX = windowPositionX / 5;
+                    return;
+                }
+
+                case ClientSettings.TurnTrackerScaling.Medium:
+                default:
+                {
+                    windowSize = new Vec2(640, 132);
+                    bgSize = new Vec2(64, 96);
+                    smSize = new Vec2(48, 72);
+                    separatorSize = new Vec2(12, 72);
+                    windowPositionX = windowPositionX / 4;
+                    return;
+                }
+            }
+        }
+
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags, GuiState state)
         {
             this._turnTrackerVisible = false;
@@ -33,14 +71,19 @@
                 return;
             }
 
+            float ww = ImGui.GetMainViewport().WorkSize.X;
+            this.GetTurnTrackerSizes(ref ww, out Vec2 windowSize, out Vec2 bgSize, out Vec2 smSize, out Vec2 separatorSize);
+            float lastEntrySeparatorPaddingX = separatorSize.X + 2;
+            float portraitAspectRatio = bgSize.X / bgSize.Y;
+            Vec2 textPosition = new Vec2(windowSize.X / 2, windowSize.Y - 22);
+
             if (cMap != null && cMap.TurnTracker.Visible)
             {
-                float ww = ImGui.GetMainViewport().WorkSize.X;
                 if (!this._turnTrackerCollapsed)
                 {
                     this._turnTrackerVisible = true;
-                    ImGui.SetNextWindowSize(new Vec2(640, 132));
-                    ImGui.SetNextWindowPos(new(ww / 4, 0));
+                    ImGui.SetNextWindowSize(windowSize);
+                    ImGui.SetNextWindowPos(new Vec2(ww, 0));
                     if (ImGui.Begin("##TurnTracker", (window_flags | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollWithMouse) & ~ImGuiWindowFlags.AlwaysAutoResize))
                     {
                         if (cMap.TurnTracker.Entries.Count > 0)
@@ -49,16 +92,14 @@
                             {
                                 ImDrawListPtr idl = ImGui.GetWindowDrawList();
                                 Vec2 cursor = ImGui.GetCursorScreenPos();
-                                ImGui.PushClipRect(cursor, cursor + new Vec2(640, 132), false);
+                                ImGui.PushClipRect(cursor, cursor + windowSize, false);
                                 TurnTracker.Entry currentEntry = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex);
                                 TurnTracker.Entry last = cMap.TurnTracker.Entries[^1];
                                 TurnTracker.Entry first = cMap.TurnTracker.Entries[0];
-                                Vec2 bgSize = new Vec2(64, 96);
-                                Vec2 smSize = new Vec2(48, 72);
-                                Vec2 separatorSize = new Vec2(12, 72);
+                                
                                 Vec2 pen = new Vec2(0, 0);
                                 float oX = 0;
-                                if (this._scrollDYChange != 0 && ImGui.IsMouseHoveringRect(cursor, cursor + new Vec2(640, 132)))
+                                if (this._scrollDYChange != 0 && ImGui.IsMouseHoveringRect(cursor, cursor + windowSize))
                                 {
                                     this._ttOffset -= Math.Sign(this._scrollDYChange);
                                 }
@@ -71,11 +112,11 @@
                                     oX += sz.X + 2;
                                     if (e == last)
                                     {
-                                        oX += 14;
+                                        oX += lastEntrySeparatorPaddingX;
                                     }
                                 }
 
-                                cursor.X += (640 - oX) / 2f;
+                                cursor.X += (windowSize.X - oX) / 2f;
                                 for (int i = -ttLenMax; i <= ttLenMax; ++i)
                                 {
                                     TurnTracker.Entry e = cMap.TurnTracker.GetAt(cMap.TurnTracker.EntryIndex + i + this._ttOffset);
@@ -117,7 +158,7 @@
                                                 portrairColor = !Client.Instance.IsAdmin ? ImColBlack : new Vec4(0.5f, 0.5f, 0.5f, 1.0f);
                                             }
 
-                                            float arDesired = 64f / 96f;
+                                            float arDesired = portraitAspectRatio;
                                             Texture glTex = ap.GetGLTexture();
                                             if (glTex != null && glTex.IsAsyncReady)
                                             {
@@ -220,7 +261,7 @@
                                         if (e == last)
                                         {
                                             idl.AddImage(this.TurnTrackerSeparator, cursor + pen, cursor + pen + separatorSize);
-                                            pen.X += 14;
+                                            pen.X += lastEntrySeparatorPaddingX;
                                         }
                                     }
                                     else
@@ -376,21 +417,21 @@
                             {
                                 for (int i = 0; i < 4; ++i)
                                 {
-                                    ImGui.SetCursorPosX(319 - (tW / 2) + ((i & 1) * 2));
-                                    ImGui.SetCursorPosY(109 + ((i >> 1) * 2));
+                                    ImGui.SetCursorPosX(textPosition.X - 1 - (tW / 2) + ((i & 1) * 2));
+                                    ImGui.SetCursorPosY(textPosition.Y - 1 + ((i >> 1) * 2));
                                     ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                                 }
                             }
                             else
                             {
-                                ImGui.SetCursorPosX(321 - (tW / 2));
-                                ImGui.SetCursorPosY(111);
+                                ImGui.SetCursorPosX(textPosition.X + 1 - (tW / 2));
+                                ImGui.SetCursorPosY(textPosition.Y + 1);
                                 ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                             }
 
                             ImGui.PopStyleColor();
-                            ImGui.SetCursorPosX(320 - (tW / 2));
-                            ImGui.SetCursorPosY(110);
+                            ImGui.SetCursorPosX(textPosition.X - (tW / 2));
+                            ImGui.SetCursorPosY(textPosition.Y);
                             ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
                         }
                     }
@@ -398,7 +439,7 @@
                     ImGui.End();
                 }
 
-                ImGui.SetNextWindowPos(new((ww / 4) + 640, -12));
+                ImGui.SetNextWindowPos(new Vec2(ww + windowSize.X, -12));
                 ImGui.SetNextWindowBgAlpha(0.0f);
                 ImGui.Begin("##TurnTrackerCollapseContainer", window_flags | ImGuiWindowFlags.NoBackground);
                 ImGui.PushItemWidth(48);
@@ -411,7 +452,7 @@
 
                 if (!this._turnTrackerCollapsed && this._ttOffset != 0)
                 {
-                    ImGui.SetNextWindowPos(new((ww / 4) - 24, -12));
+                    ImGui.SetNextWindowPos(new Vec2(ww - 24, -12));
                     ImGui.SetNextWindowBgAlpha(0.0f);
                     ImGui.Begin("##TurnTrackerResetContainer", window_flags | ImGuiWindowFlags.NoBackground);
                     ImGui.PushItemWidth(48);
@@ -436,6 +477,9 @@
                 ttp.Update();
             }
 
+            float discarded = 0;
+            this.GetTurnTrackerSizes(ref discarded, out _, out Vec2 bgSize, out _, out _);
+            Vec2 bgPadding = new Vec2(4, 4);
             if (this._turnTrackerVisible && Client.Instance.Settings.TurnTrackerParticlesEnabled && Client.Instance.Settings.ParticlesEnabled)
             {
                 int d = 0;
@@ -451,7 +495,7 @@
                         LifetimeMax = lt,
                         Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
                         Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                        RelativePosition = new Vec2(4 + (this.Random.NextSingle() * 56), 92),
+                        RelativePosition = new Vec2(bgPadding.X + ((this.Random.NextSingle() * bgSize.X) - (bgPadding.X * 2)), bgSize.Y),
                         ScaleMultiplier = isSpecial ? 0.5f : 0.8f + (this.Random.NextSingle() * 0.4f),
                     };
 
@@ -465,7 +509,7 @@
                     LifetimeMax = lt,
                     Color = 0xffffffffu,
                     Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
-                    RelativePosition = new Vec2(4 + (this.Random.NextSingle() * 56), 92),
+                    RelativePosition = new Vec2(bgPadding.X + ((this.Random.NextSingle() * bgSize.X) - (bgPadding.X * 2)), bgSize.Y),
                     ScaleMultiplier = 1.0f + (this.Random.NextSingle() * 0.5f),
                 };
 

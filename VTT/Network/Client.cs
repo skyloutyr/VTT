@@ -711,6 +711,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int TurnTrackerSize { get; set; } = 6;
 
+        [DefaultValue(TurnTrackerScaling.Medium)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public TurnTrackerScaling TurnTrackerScale { get; set; } = TurnTrackerScaling.Medium;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -774,7 +779,8 @@
                 ContextHandlingMode = GLContextHandlingMode.Checked,
                 Shadows2DAdmin = 0.75f,
                 Shadow2DPrecision = Shadow2DResolution.Medium,
-                TurnTrackerSize = 6
+                TurnTrackerSize = 6,
+                TurnTrackerScale = TurnTrackerScaling.Medium
             };
 
             ret.Save();
@@ -890,6 +896,13 @@
             Medium,
             High,
             Full
+        }
+
+        public enum TurnTrackerScaling
+        {
+            Smaller,
+            Medium,
+            Larger
         }
     }
 

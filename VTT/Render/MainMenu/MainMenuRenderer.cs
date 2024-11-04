@@ -1105,6 +1105,20 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    int ttScalingC = (int)Client.Instance.Settings.TurnTrackerScale;
+                    string[] ttScalingTexts = { lang.Translate("menu.settings.turn_tracker_scaling.small"), lang.Translate("menu.settings.turn_tracker_scaling.medium"), lang.Translate("menu.settings.turn_tracker_scaling.large") };
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.turn_tracker_scaling"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.turn_tracker_scaling.tt"));
+                    }
+
+                    if (ImGui.Combo("##Turn Tracker Scaling", ref ttScalingC, ttScalingTexts, ttScalingTexts.Length))
+                    {
+                        Client.Instance.Settings.TurnTrackerScale = (TurnTrackerScaling)ttScalingC;
+                        Client.Instance.Settings.Save();
+                    }
+
                     ClientSettings.UISkin dSkin = Client.Instance.Settings.InterfaceSkin;
                     string[] skins = Enum.GetNames(typeof(ClientSettings.UISkin)).Select(s => lang.Translate("menu.settings.ui_skin." + s.ToLowerInvariant())).ToArray();
                     int sIdx = (int)dSkin;

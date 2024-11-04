@@ -709,7 +709,7 @@
 
         [DefaultValue(6)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public int TurnTrackerSize { get; set; } = 3;
+        public int TurnTrackerSize { get; set; } = 6;
 
         public static ClientSettings Load()
         {
@@ -774,7 +774,7 @@
                 ContextHandlingMode = GLContextHandlingMode.Checked,
                 Shadows2DAdmin = 0.75f,
                 Shadow2DPrecision = Shadow2DResolution.Medium,
-                TurnTrackerSize = 3
+                TurnTrackerSize = 6
             };
 
             ret.Save();

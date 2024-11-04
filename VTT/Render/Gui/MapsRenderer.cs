@@ -386,7 +386,7 @@
                     float yaw = state.clientMap.SunYaw;
                     float pitch = state.clientMap.SunPitch;
                     float intensity = state.clientMap.SunIntensity;
-                    float aintensity = state.clientMap.AmbietIntensity;
+                    float aintensity = state.clientMap.AmbientIntensity;
                     if (ImGui.SliderAngle(lang.Translate("ui.maps.sun_yaw") + "###Sun Yaw", ref yaw, -180, 180))
                     {
                         state.clientMap.SunYaw = yaw;
@@ -410,7 +410,7 @@
 
                     if (ImGui.SliderFloat(lang.Translate("ui.maps.ambient_intensity") + "###Ambient Intensity", ref aintensity, 0, 100))
                     {
-                        state.clientMap.AmbietIntensity = aintensity;
+                        state.clientMap.AmbientIntensity = aintensity;
                         PacketChangeMapData pcmd = new PacketChangeMapData() { Data = aintensity, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.AmbietIntensity };
                         pcmd.Send();
                     }

@@ -98,7 +98,7 @@
                 shader["camera_direction"].Set(cam.Direction);
                 shader["dl_direction"].Set(cachedSunDir);
                 shader["dl_color"].Set(cachedSunColor * m.SunIntensity);
-                shader["al_color"].Set(cachedAmbientColor * m.AmbietIntensity);
+                shader["al_color"].Set(cachedAmbientColor * m.AmbientIntensity);
                 shader["sun_view"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunView);
                 shader["sun_projection"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunProjection);
                 shader["sky_color"].Set(cachedSkyColor);
@@ -180,7 +180,7 @@
                 shader["camera_position"].Set(cam.Position);
                 shader["dl_direction"].Set(sunDir);
                 shader["dl_color"].Set(sunColor.Vec3() * m.SunIntensity);
-                shader["al_color"].Set(ambientColor * m.AmbietIntensity);
+                shader["al_color"].Set(ambientColor * m.AmbientIntensity);
                 shader["sun_view"].Set(dlRenderer.SunView);
                 shader["sun_projection"].Set(dlRenderer.SunProjection);
                 shader["sky_color"].Set(skyColor.Vec3());

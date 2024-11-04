@@ -1111,7 +1111,7 @@
                     this.FrameUBOManager.memory->camera_direction = new Vector4(cam.Direction, 0);
                     this.FrameUBOManager.memory->dl_direction = new Vector4(this._cachedSunDir, 1.0f);
                     this.FrameUBOManager.memory->dl_color = this._cachedSunColor.Vec4() * m.SunIntensity;
-                    this.FrameUBOManager.memory->al_color = new Vector4(this._cachedAmbientColor, 1.0f) * m.AmbietIntensity;
+                    this.FrameUBOManager.memory->al_color = new Vector4(this._cachedAmbientColor, 1.0f) * m.AmbientIntensity;
                     this.FrameUBOManager.memory->sun_view = this.DirectionalLightRenderer.SunView;
                     this.FrameUBOManager.memory->sun_projection = this.DirectionalLightRenderer.SunProjection;
                     this.FrameUBOManager.memory->sky_color = this._cachedSkyColor.Vec4();
@@ -1156,7 +1156,7 @@
                 shader["camera_direction"].Set(cam.Direction);
                 shader["dl_direction"].Set(this._cachedSunDir);
                 shader["dl_color"].Set(this._cachedSunColor.Vec3() * m.SunIntensity);
-                shader["al_color"].Set(this._cachedAmbientColor * m.AmbietIntensity);
+                shader["al_color"].Set(this._cachedAmbientColor * m.AmbientIntensity);
                 shader["sun_view"].Set(this.DirectionalLightRenderer.SunView);
                 shader["sun_projection"].Set(this.DirectionalLightRenderer.SunProjection);
                 shader["sky_color"].Set(this._cachedSkyColor.Vec3());

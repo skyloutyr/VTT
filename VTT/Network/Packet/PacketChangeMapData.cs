@@ -149,7 +149,7 @@
 
                     case DataType.AmbietIntensity:
                     {
-                        m.AmbietIntensity = (float)this.Data;
+                        m.AmbientIntensity = (float)this.Data;
                         break;
                     }
 

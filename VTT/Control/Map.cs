@@ -31,7 +31,7 @@
         public float SunYaw { get; set; }
         public float SunPitch { get; set; }
         public float SunIntensity { get; set; } = 1.0f;
-        public float AmbietIntensity { get; set; } = 1.0f;
+        public float AmbientIntensity { get; set; } = 1.0f;
 
         public bool EnableShadows { get; set; } = true;
         public bool EnableDirectionalShadows { get; set; } = false;
@@ -182,7 +182,7 @@
             this.SunYaw = e.GetSingle("SunYaw");
             this.SunPitch = e.GetSingle("SunPitch");
             this.SunIntensity = e.GetSingle("SunIntensity");
-            this.AmbietIntensity = e.GetSingle("AmbietIntensity", 1.0f);
+            this.AmbientIntensity = e.GetSingle("AmbietIntensity", 1.0f);
             this.TurnTracker.Deserialize(e.GetMap("TurnTracker", new DataElement()));
             this.EnableShadows = e.GetBool("EnableShadows");
             this.EnableDirectionalShadows = e.GetBool("EnableDirectionalShadows");
@@ -284,7 +284,7 @@
             ret.SetSingle("SunYaw", this.SunYaw);
             ret.SetSingle("SunPitch", this.SunPitch);
             ret.SetSingle("SunIntensity", this.SunIntensity);
-            ret.SetSingle("AmbietIntensity", this.AmbietIntensity);
+            ret.SetSingle("AmbietIntensity", this.AmbientIntensity);
             ret.SetMap("TurnTracker", this.TurnTracker.Serialize());
             ret.SetBool("EnableShadows", this.EnableShadows);
             ret.SetBool("EnableDirectionalShadows", this.EnableDirectionalShadows);

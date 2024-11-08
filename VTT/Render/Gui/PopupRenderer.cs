@@ -641,7 +641,6 @@
                             this._sortedStatuses.Add(s);
                         }
                     }
-                    // TODO filter
                 }
 
                 IEnumerable<(string, float, float)> iterableBtns = string.IsNullOrEmpty(rF) ? this._allStatuses : this._sortedStatuses;

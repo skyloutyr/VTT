@@ -246,7 +246,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = reflect($INPUT@0$, $INPUT@1$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector3.Reflect(((Vector3)x[0]), ((Vector3)x[1])))
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => Vector3.Reflect((Vector3)x[0], (Vector3)x[1]))
 );
 
         public static ShaderNodeTemplate Vec3Invert { get; } = new ShaderNodeTemplate(Guid.Parse("7428236d-634e-46d4-82c3-8a2e852712f9"), ShaderTemplateCategory.MathVec3, "Invert Vec3", true, new NodeInput[] {
@@ -750,7 +750,7 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = reflect($INPUT@0$, $INPUT@1$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => System.Numerics.Vector2.Reflect(((Vector2)x[0]), ((Vector2)x[1])))
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => Vector2.Reflect(((Vector2)x[0]), ((Vector2)x[1])))
 );
 
         public static ShaderNodeTemplate Vec2Invert { get; } = new ShaderNodeTemplate(Guid.Parse("24ee2e34-ca37-4f2d-8062-3c36d0af4aa0"), ShaderTemplateCategory.MathVec2, "Invert Vec2", true, new NodeInput[] {
@@ -1188,8 +1188,11 @@ r = $INPUT@6$;
         },
 
 @"$OUTPUT@0$ = reflect($INPUT@0$, $INPUT@1$);",
-(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => (Vector4)x[0]) // TODO missing refect simulation
-);
+(matrix, outIndex) => NodeSimulationMatrix.Parallel(matrix, x => {
+    Vector4 incident = (Vector4)x[0];
+    Vector4 normal = (Vector4)x[1];
+    return incident - (normal * 2f * Vector4.Dot(normal, incident));
+}));
 
         public static ShaderNodeTemplate Vec4Invert { get; } = new ShaderNodeTemplate(Guid.Parse("fde5337e-2c3a-4018-b7bd-265a9a3a918a"), ShaderTemplateCategory.MathVec4, "Invert Vec4", true, new NodeInput[] {
             new NodeInput() {

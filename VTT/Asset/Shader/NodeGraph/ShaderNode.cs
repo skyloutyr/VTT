@@ -47,7 +47,7 @@
             return ret;
         }
 
-        public NodeSimulationMatrix SimulateProcess(ShaderGraph container, int index, List<ShaderNode> recursionProtection)
+        public NodeSimulationMatrix SimulateProcess(SimulationContext ctx, ShaderGraph container, int index, List<ShaderNode> recursionProtection)
         {
             if (recursionProtection.Contains(this))
             {
@@ -59,15 +59,15 @@
             for (int i = 0; i < this.Inputs.Count; i++)
             {
                 NodeInput ni = this.Inputs[i];
-                NodeSimulationMatrix o = ins[i];
+                NodeSimulationMatrix o;
                 if (!ni.ConnectedOutput.Equals(Guid.Empty) && container.AllOutputsById.TryGetValue(ni.ConnectedOutput, out (ShaderNode, NodeOutput) data))
                 {
-                    o = data.Item1.SimulateProcess(container, data.Item1.Outputs.IndexOf(data.Item2), recursionProtection);
+                    o = data.Item1.SimulateProcess(ctx, container, data.Item1.Outputs.IndexOf(data.Item2), recursionProtection);
                     o = container.SimulationConvert(data.Item2.SelfType, ni.SelfType, o);
                 }
                 else
                 {
-                    o = container.SimulationConvert(ni.SelfType, ni.SelfType, new NodeSimulationMatrix(ni.CurrentValue));
+                    o = container.SimulationConvert(ni.SelfType, ni.SelfType, new NodeSimulationMatrix(ctx, ni.CurrentValue));
                 }
 
                 ins[i] = o;
@@ -76,7 +76,7 @@
             recursionProtection.Remove(this);
             if (ShaderNodeTemplate.TemplatesByID.TryGetValue(this.TemplateID, out ShaderNodeTemplate val))
             {
-                return val.Simulator(ins, index);
+                return val.Simulator(ctx, ins, index);
             }
             else
             {
@@ -107,20 +107,27 @@
     public class NodeSimulationMatrix
     {
         public object[] SimulationPixels { get; }
+        public int Width { get; }
+        public int Height { get; }
 
-        public NodeSimulationMatrix() => this.SimulationPixels = new object[32 * 32];
-
-        public NodeSimulationMatrix(NodeSimulationMatrix val) : this()
+        public NodeSimulationMatrix(SimulationContext ctx)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            this.Width = ctx.Width;
+            this.Height = ctx.Height;
+            this.SimulationPixels = new object[this.Width * this.Height];
+        }
+
+        public NodeSimulationMatrix(SimulationContext ctx, NodeSimulationMatrix val) : this(ctx)
+        {
+            for (int i = 0; i < this.Width * this.Height; ++i)
             {
                 this.SimulationPixels[i] = val.SimulationPixels[i];
             }
         }
 
-        public NodeSimulationMatrix(object o) : this()
+        public NodeSimulationMatrix(SimulationContext ctx, object o) : this(ctx)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            for (int i = 0; i < this.Width * this.Height; ++i)
             {
                 this.SimulationPixels[i] = o;
             }
@@ -128,7 +135,7 @@
 
         public NodeSimulationMatrix Cast<T1, T>(Func<T1, T> processor)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            for (int i = 0; i < this.Width * this.Height; ++i)
             {
                 this.SimulationPixels[i] = processor((T1)this.SimulationPixels[i]);
             }
@@ -136,24 +143,47 @@
             return this;
         }
 
-        public NodeSimulationMatrix(Image<Rgba32> image) : this()
+        public NodeSimulationMatrix CastParallel<T1, T>(Func<T1, T> processor)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            System.Threading.Tasks.Parallel.For(0, this.Width * this.Height, i => this.SimulationPixels[i] = processor((T1)this.SimulationPixels[i]));
+            return this;
+        }
+
+        public NodeSimulationMatrix(SimulationContext ctx, Image<Rgba32> image) : this(ctx)
+        {
+            for (int i = 0; i < this.Width * this.Height; ++i)
             {
-                int x = i % 32;
-                int y = i / 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
+                int x = i % this.Width;
+                int y = i / this.Height;
+                this.SimulationPixels[i] = this.GetPixel(image, x, y);
             }
         }
 
-        public NodeSimulationMatrix(Image<Rgba32> image, Vector2 coordinateOffsets) : this()
+        private Vector4 GetPixel(Image<Rgba32> img, int x, int y)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            if (img.Width != this.Width)
             {
-                int x = i % 32;
-                int y = i / 32;
-                x += (int)(coordinateOffsets.X * 32);
-                y += (int)(coordinateOffsets.Y * 32);
+                float factor = (float)img.Width / this.Width;
+                x = (int)MathF.Floor(x * factor);
+            }
+
+            if (img.Height != this.Height)
+            {
+                float factor = (float)img.Height / this.Height;
+                y = (int)MathF.Floor(y * factor);
+            }
+
+            return img[x, y].ToScaledVector4();
+        }
+
+        public NodeSimulationMatrix(SimulationContext ctx, Image<Rgba32> image, Vector2 coordinateOffsets) : this(ctx)
+        {
+            for (int i = 0; i < this.Width * this.Height; ++i)
+            {
+                int x = i % this.Width;
+                int y = i / this.Height;
+                x += (int)(coordinateOffsets.X * this.Width);
+                y += (int)(coordinateOffsets.Y * this.Height);
                 if (x < 0)
                 {
                     x = Math.Abs(x);
@@ -164,21 +194,21 @@
                     y = Math.Abs(y);
                 }
 
-                x %= 32;
-                y %= 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
+                x %= this.Width;
+                y %= this.Height;
+                this.SimulationPixels[i] = this.GetPixel(image, x, y);
             }
         }
 
-        public NodeSimulationMatrix(Image<Rgba32> image, NodeSimulationMatrix offsetsMatrix) : this()
+        public NodeSimulationMatrix(SimulationContext ctx, Image<Rgba32> image, NodeSimulationMatrix offsetsMatrix) : this(ctx)
         {
-            for (int i = 0; i < 32 * 32; ++i)
+            for (int i = 0; i < this.Width * this.Height; ++i)
             {
                 int x = 0;
                 int y = 0;
                 Vector2 coordinateOffsets = (Vector2)offsetsMatrix.SimulationPixels[i];
-                x += (int)(coordinateOffsets.X * 32);
-                y += (int)(coordinateOffsets.Y * 32);
+                x += (int)(coordinateOffsets.X * this.Width);
+                y += (int)(coordinateOffsets.Y * this.Height);
                 if (x < 0)
                 {
                     x = Math.Abs(x);
@@ -189,9 +219,9 @@
                     y = Math.Abs(y);
                 }
 
-                x %= 32;
-                y %= 32;
-                this.SimulationPixels[i] = image[x, y].ToScaledVector4();
+                x %= this.Width;
+                y %= this.Height;
+                this.SimulationPixels[i] = this.GetPixel(image, x, y);
             }
         }
 
@@ -290,12 +320,12 @@
             }
         }
 
-        public static NodeSimulationMatrix Parallel(NodeSimulationMatrix[] inputs, Func<object[], object> processor)
+        public static NodeSimulationMatrix Parallel(SimulationContext ctx, NodeSimulationMatrix[] inputs, Func<object[], object> processor)
         {
-            NodeSimulationMatrix ret = new NodeSimulationMatrix();
-            object[][] raw = new object[32 * 32][];
+            NodeSimulationMatrix ret = new NodeSimulationMatrix(ctx);
+            object[][] raw = new object[ctx.Width * ctx.Height][];
 
-            System.Threading.Tasks.Parallel.For(0, 32 * 32, i =>
+            System.Threading.Tasks.Parallel.For(0, ctx.Width * ctx.Height, i =>
             {
                 raw[i] = new object[inputs.Length];
                 for (int j = 0; j < inputs.Length; ++j)
@@ -309,30 +339,84 @@
             return ret;
         }
 
-        public static NodeSimulationMatrix SimulateScreenPositionMatrix()
+        public static NodeSimulationMatrix SimulateScreenPositionMatrix(SimulationContext ctx)
         {
-            NodeSimulationMatrix ret = new NodeSimulationMatrix();
-            for (int i = 0; i < 32 * 32; ++i)
+            NodeSimulationMatrix ret = new NodeSimulationMatrix(ctx);
+            for (int i = 0; i < ctx.Width * ctx.Height; ++i)
             {
-                int x = i % 32;
-                int y = i / 32;
+                int x = i % ctx.Width;
+                int y = i / ctx.Height;
                 ret.SimulationPixels[i] = new Vector3(x, y, 0);
             }
 
             return ret;
         }
 
-        public static NodeSimulationMatrix SimulateUVMatrix()
+        public static NodeSimulationMatrix SimulateUVMatrix(SimulationContext ctx)
         {
-            NodeSimulationMatrix ret = new NodeSimulationMatrix();
-            for (int i = 0; i < 32 * 32; ++i)
+            NodeSimulationMatrix ret = new NodeSimulationMatrix(ctx);
+            for (int i = 0; i < ctx.Width * ctx.Height; ++i)
             {
-                int x = i % 32;
-                int y = i / 32;
-                ret.SimulationPixels[i] = new Vector2(x / 32f, 1.0f - (y / 32f));
+                int x = i % ctx.Width;
+                int y = i / ctx.Height;
+                ret.SimulationPixels[i] = new Vector2((float)x / ctx.Width, 1.0f - ((float)y / ctx.Height));
             }
 
             return ret;
+        }
+    }
+
+    public class SimulationContext
+    {
+        public int Width { get; }
+        public int Height { get; }
+
+        public Image<Rgba32> Albedo { get; }
+        public Image<Rgba32> Normal { get; }
+        public Image<Rgba32> AOMR { get; }
+
+        public SimulationContext(int width, int height, Image<Rgba32> albedo, Image<Rgba32> normal, Image<Rgba32> aOMR)
+        {
+            this.Width = width;
+            this.Height = height;
+            this.Albedo = albedo;
+            this.Normal = normal;
+            this.AOMR = aOMR;
+        }
+
+        public NodeSimulationMatrix Parallel(NodeSimulationMatrix[] inputs, Func<object[], object> processor) => NodeSimulationMatrix.Parallel(this, inputs, processor);
+        public NodeSimulationMatrix CreateMatrix() => new NodeSimulationMatrix(this);
+        public NodeSimulationMatrix CreateMatrix(NodeSimulationMatrix from) => new NodeSimulationMatrix(this, from);
+        public NodeSimulationMatrix CreateMatrix(Image<Rgba32> img) => new NodeSimulationMatrix(this, img);
+        public NodeSimulationMatrix CreateMatrix(float f) => new NodeSimulationMatrix(this, f);
+        public NodeSimulationMatrix CreateMatrix(Vector2 f) => new NodeSimulationMatrix(this, f);
+        public NodeSimulationMatrix CreateMatrix(Vector3 f) => new NodeSimulationMatrix(this, f);
+        public NodeSimulationMatrix CreateMatrix(Vector4 f) => new NodeSimulationMatrix(this, f);
+        public NodeSimulationMatrix CreateMatrix(uint ui) => new NodeSimulationMatrix(this, ui);
+        public NodeSimulationMatrix CreateMatrix(int i) => new NodeSimulationMatrix(this, i);
+        public NodeSimulationMatrix CreateAlbedo() => new NodeSimulationMatrix(this, this.Albedo);
+        public NodeSimulationMatrix CreateAlbedo(Vector2 offset) => new NodeSimulationMatrix(this, this.Albedo, offset);
+        public NodeSimulationMatrix CreateAlbedo(NodeSimulationMatrix offset) => new NodeSimulationMatrix(this, this.Albedo, offset);
+        public NodeSimulationMatrix CreateNormal() => new NodeSimulationMatrix(this, this.Normal);
+        public NodeSimulationMatrix CreateNormal(Vector2 offset) => new NodeSimulationMatrix(this, this.Normal, offset);
+        public NodeSimulationMatrix CreateNormal(NodeSimulationMatrix offset) => new NodeSimulationMatrix(this, this.Normal, offset);
+        public NodeSimulationMatrix CreateAOMR() => new NodeSimulationMatrix(this, this.AOMR);
+        public NodeSimulationMatrix CreateAOMR(Vector2 offset) => new NodeSimulationMatrix(this, this.AOMR, offset);
+        public NodeSimulationMatrix CreateAOMR(NodeSimulationMatrix offset) => new NodeSimulationMatrix(this, this.AOMR, offset);
+        public NodeSimulationMatrix CreateCustomImage(Image<Rgba32> img) => new NodeSimulationMatrix(this, img);
+        public NodeSimulationMatrix CreateCustomImage(Image<Rgba32> img, Vector2 offset) => new NodeSimulationMatrix(this, img, offset);
+        public NodeSimulationMatrix CreateCustomImage(Image<Rgba32> img, NodeSimulationMatrix offset) => new NodeSimulationMatrix(this, img, offset);
+        public NodeSimulationMatrix CreateScreenPositions() => NodeSimulationMatrix.SimulateScreenPositionMatrix(this);
+        public NodeSimulationMatrix CreateViewportSize() => this.CreateMatrix(new Vector2(this.Width, this.Height));
+        public NodeSimulationMatrix CreateUVs() => NodeSimulationMatrix.SimulateUVMatrix(this);
+        public NodeSimulationMatrix Cast<T1, T>(NodeSimulationMatrix matrix, Func<T1, T> converter) => matrix.Cast(converter);
+        public NodeSimulationMatrix ParallelCast<T1, T>(NodeSimulationMatrix matrix, Func<T1, T> converter) => matrix.CastParallel(converter);
+
+        public void Free()
+        {
+            this.Albedo.Dispose();
+            this.Normal.Dispose();
+            this.AOMR.Dispose();
         }
     }
 }

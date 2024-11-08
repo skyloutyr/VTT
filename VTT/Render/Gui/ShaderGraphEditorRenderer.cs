@@ -701,9 +701,24 @@
                             using BinaryWriter bw = new BinaryWriter(ms);
                             this.EditedGraph.Serialize().Write(bw);
                             byte[] bin = ms.ToArray();
-                            using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                            Image<Rgba32> img;
+                            try
+                            {
+                                SimulationContext ctx = ShaderNodeTemplate.PreviewContext.Value;
+                                img = this.EditedGraph.GeneratePreviewImage(ctx, out _);
+                                if (img == null)
+                                {
+                                    img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                }
+                            }
+                            catch
+                            {
+                                img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                            }
+
                             using MemoryStream imgMs = new MemoryStream();
                             img.SaveAsPng(imgMs);
+                            img.Dispose();
                             new PacketAssetUpdate() { AssetID = shaderId, NewBinary = a.ToBinary(bin), NewPreviewBinary = imgMs.ToArray() }.Send();
                         }
                         else
@@ -761,7 +776,7 @@
                 {
                     uint currentTexture = (uint)OGL.GetInteger(GLPropertyName.TextureBinding2D)[0];
                     this._nodeLookupTexture.Bind();
-                    Image<Rgba32> img = this.EditedGraph.GetNodeImage(node, nodeIndex, out NodeSimulationMatrix matrix);
+                    Image<Rgba32> img = this.EditedGraph.GetNodeImage(ShaderNodeTemplate.DummyContext.Value, node, nodeIndex, out NodeSimulationMatrix matrix);
                     this._nodeLookupTexture.SetImage(img, SizedInternalFormat.Rgba8);
                     OGL.BindTexture(TextureTarget.Texture2D, currentTexture);
                     img.Dispose();

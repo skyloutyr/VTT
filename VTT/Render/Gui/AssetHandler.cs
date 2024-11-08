@@ -683,7 +683,7 @@
                                     using MemoryStream ms = new MemoryStream();
                                     using BinaryWriter bw = new BinaryWriter(ms);
                                     sn.Serialize().Write(bw);
-                                    using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                    Image<Rgba32> img = ShaderNodeTemplate.PreviewContext.Value.Albedo;
                                     using MemoryStream imgMs = new MemoryStream();
                                     img.SaveAsPng(imgMs);
                                     PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
@@ -698,7 +698,7 @@
                                     using MemoryStream ms = new MemoryStream();
                                     using BinaryWriter bw = new BinaryWriter(ms);
                                     sn.Serialize().Write(bw);
-                                    using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                    Image<Rgba32> img = ShaderNodeTemplate.PreviewContext.Value.Albedo;
                                     using MemoryStream imgMs = new MemoryStream();
                                     img.SaveAsPng(imgMs);
                                     PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };

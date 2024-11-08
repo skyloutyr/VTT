@@ -174,6 +174,9 @@
     <None Remove="Embed\pl.geom" />
     <None Remove="Embed\pl.vert" />
     <None Remove="Embed\pop-ding-notification-effect-2.wav" />
+    <None Remove="Embed\previewAlbedo.png" />
+    <None Remove="Embed\previewAOMR.png" />
+    <None Remove="Embed\previewNormal.png" />
     <None Remove="Embed\shadowcast.frag" />
     <None Remove="Embed\shadowcast.vert" />
     <None Remove="Embed\simple-interface-tone.wav" />
@@ -249,6 +252,9 @@
     <EmbeddedResource Include="Embed\pattern5.png" />
     <EmbeddedResource Include="Embed\pattern6.png" />
     <EmbeddedResource Include="Embed\pattern7.png" />
+    <EmbeddedResource Include="Embed\previewAlbedo.png" />
+    <EmbeddedResource Include="Embed\previewAOMR.png" />
+    <EmbeddedResource Include="Embed\previewNormal.png" />
     <EmbeddedResource Include="Embed\shadowcast.frag" />
     <EmbeddedResource Include="Embed\shadowcast.vert" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />

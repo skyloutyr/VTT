@@ -36,28 +36,28 @@
             }
         }
 
-        public Image<Rgba32> GetNodeImage(ShaderNode node, int outputIndex, out NodeSimulationMatrix mat)
+        public Image<Rgba32> GetNodeImage(SimulationContext ctx, ShaderNode node, int outputIndex, out NodeSimulationMatrix mat)
         {
             List<ShaderNode> recursionList = new List<ShaderNode>();
             try
             {
-                mat = node.SimulateProcess(this, outputIndex, recursionList);
+                mat = node.SimulateProcess(ctx, this, outputIndex, recursionList);
             }
             catch (StackOverflowException)
             {
-                mat = new NodeSimulationMatrix(0);
+                mat = ctx.CreateMatrix(0);
                 return new Image<Rgba32>(1, 1, new Rgba32(255, 0, 0, 255));
             }
 
-            Image<Rgba32> ret = new Image<Rgba32>(32, 32);
+            Image<Rgba32> ret = new Image<Rgba32>(ctx.Width, ctx.Height);
             switch (mat.SimulationPixels[0])
             {
                 case bool:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         bool b = (bool)mat.SimulationPixels[i];
                         ret[x, y] = b ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
                     }
@@ -67,10 +67,10 @@
 
                 case int:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         int it = (int)mat.SimulationPixels[i];
                         ret[x, y] = it > 0 ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
                     }
@@ -80,10 +80,10 @@
 
                 case uint:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         uint it = (uint)mat.SimulationPixels[i];
                         ret[x, y] = it > 0 ? new Rgba32(255, 255, 255, 255) : new Rgba32(0, 0, 0, 255);
                     }
@@ -93,10 +93,10 @@
 
                 case float:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         float f = (float)mat.SimulationPixels[i];
                         ret[x, y] = new Rgba32(f, f, f, 1f);
                     }
@@ -106,10 +106,10 @@
 
                 case Vector2:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         Vector2 v = (Vector2)mat.SimulationPixels[i];
                         ret[x, y] = new Rgba32(v.X, v.Y, 0.0f, 1f);
                     }
@@ -119,10 +119,10 @@
 
                 case Vector3:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         Vector3 v = (Vector3)mat.SimulationPixels[i];
                         ret[x, y] = new Rgba32(v.X, v.Y, v.Z, 1f);
                     }
@@ -132,10 +132,10 @@
 
                 case Vector4:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         Vector4 v = (Vector4)mat.SimulationPixels[i];
                         ret[x, y] = new Rgba32(v.X * v.W, v.Y * v.W, v.Z * v.W, 1.0f);
                     }
@@ -145,10 +145,10 @@
 
                 default:
                 {
-                    for (int i = 0; i < 32 * 32; ++i)
+                    for (int i = 0; i < ctx.Width * ctx.Height; ++i)
                     {
-                        int x = i % 32;
-                        int y = i / 32;
+                        int x = i % ctx.Width;
+                        int y = i / ctx.Height;
                         Rgba32 rgba = (x >= 16 && y < 16) || (x < 16 && y >= 16) ? new Rgba32(255, 0, 255, 255) : new Rgba32(0, 0, 0, 255);
                         ret[x, y] = rgba;
                     }
@@ -260,6 +260,18 @@
             }
 
             return this._glData;
+        }
+
+        public Image<Rgba32> GeneratePreviewImage(SimulationContext ctx, out NodeSimulationMatrix mat)
+        {
+            ShaderNode mainOut = this.Nodes.Find(n => n.TemplateID.Equals(ShaderNodeTemplate.MaterialPBR.ID));
+            if (mainOut == null)
+            {
+                mat = null;
+                return null;
+            }
+
+            return this.GetNodeImage(ctx, mainOut, 0, out mat);
         }
 
         public bool TryCompileShaderCode(out string code)

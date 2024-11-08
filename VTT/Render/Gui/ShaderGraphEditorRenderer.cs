@@ -17,6 +17,7 @@
     using SVec4 = System.Numerics.Vector4;
     using OGL = GL.Bindings.GL;
     using VTT.GL.Bindings;
+    using System.Threading;
 
     public class ShaderGraphEditorRenderer
     {
@@ -701,25 +702,34 @@
                             using BinaryWriter bw = new BinaryWriter(ms);
                             this.EditedGraph.Serialize().Write(bw);
                             byte[] bin = ms.ToArray();
-                            Image<Rgba32> img;
-                            try
-                            {
-                                SimulationContext ctx = ShaderNodeTemplate.PreviewContext.Value;
-                                img = this.EditedGraph.GeneratePreviewImage(ctx, out _);
-                                if (img == null)
-                                {
-                                    img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
-                                }
-                            }
-                            catch
-                            {
-                                img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
-                            }
-
+                            using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
                             using MemoryStream imgMs = new MemoryStream();
                             img.SaveAsPng(imgMs);
                             img.Dispose();
                             new PacketAssetUpdate() { AssetID = shaderId, NewBinary = a.ToBinary(bin), NewPreviewBinary = imgMs.ToArray() }.Send();
+                            ShaderGraph bgCopy = this.EditedGraph.FullCopy();
+                            Guid bgId = shaderId;
+                            ThreadPool.QueueUserWorkItem(x =>
+                            {
+                                try
+                                {
+                                    SimulationContext ctx = ShaderNodeTemplate.PreviewContext.Value;
+                                    Image<Rgba32> pimg = bgCopy.GeneratePreviewImage(ctx, out _);
+                                    if (pimg != null)
+                                    {
+                                        MemoryStream pimgMs = new MemoryStream();
+                                        pimg.SaveAsPng(pimgMs);
+                                        byte[] data = pimgMs.ToArray();
+                                        pimg.Dispose();
+                                        pimgMs.Dispose();
+                                        Client.Instance.DoTask(() => new PacketAssetPreviewUpdate() { AssetID = bgId, NewPreviewBinary = data }.Send());
+                                    }
+                                }
+                                catch
+                                {
+                                    // NOOP
+                                }
+                            });
                         }
                         else
                         {

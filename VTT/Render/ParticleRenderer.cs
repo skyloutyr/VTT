@@ -403,62 +403,67 @@
                 if (aStat == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                 {
                     shader = a.Shader.NodeGraph.GetGLShader(true);
-                    if (!ShaderProgram.IsLastShaderSame(shader))
+                    if (shader != null)
                     {
-                        shader.Program.Bind();
-                    }
-
-                    if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
-                    {
-                        shader.Essentials.View.Set(cam.View);
-                        shader.Essentials.Projection.Set(cam.Projection);
-                        shader.Essentials.Transform.Set(Matrix4x4.Identity);
-                        shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                        shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                        shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-                        shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-                        shader["cursor_position"].Set(blank ? Vector3.Zero : Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-                        shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
-                        shader["dataBuffer"].Set(14);
-                        if (blank)
+                        if (!ShaderProgram.IsLastShaderSame(shader))
                         {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
-                        }
-                        else
-                        {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+                            shader.Program.Bind();
                         }
 
-                        BindShadows2DTexture(m);
-                        GL.ActiveTexture(3);
-                        Client.Instance.Frontend.Renderer.Black.Bind();
-                        GL.ActiveTexture(2);
-                        Client.Instance.Frontend.Renderer.Black.Bind();
-
-                        // Load custom texture
-                        GL.ActiveTexture(12);
-                        if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
+                        if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
                         {
-                            t.Bind();
-                            for (int i = 0; i < sz.Length; ++i)
+                            shader.Essentials.View.Set(cam.View);
+                            shader.Essentials.Projection.Set(cam.Projection);
+                            shader.Essentials.Transform.Set(Matrix4x4.Identity);
+                            shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
+                            shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+                            shader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+                            shader["cursor_position"].Set(blank ? Vector3.Zero : Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
+                            shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
+                            shader["dataBuffer"].Set(14);
+                            if (blank)
                             {
-                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(double.NaN).LocationUniform);
+                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                            }
+                            else
+                            {
+                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+                            }
+
+                            BindShadows2DTexture(m);
+                            GL.ActiveTexture(3);
+                            Client.Instance.Frontend.Renderer.Black.Bind();
+                            GL.ActiveTexture(2);
+                            Client.Instance.Frontend.Renderer.Black.Bind();
+
+                            // Load custom texture
+                            GL.ActiveTexture(12);
+                            if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
+                            {
+                                t.Bind();
+                                for (int i = 0; i < sz.Length; ++i)
+                                {
+                                    shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                                    shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(double.NaN).LocationUniform);
+                                }
+                            }
+                            else
+                            {
+                                Client.Instance.Frontend.Renderer.White.Bind();
+                            }
+
+                            GL.ActiveTexture(0);
+                            if (enableMemory)
+                            {
+                                this._programsPopulated.Add(shader);
                             }
                         }
-                        else
-                        {
-                            Client.Instance.Frontend.Renderer.White.Bind();
-                        }
 
-                        GL.ActiveTexture(0);
-                        if (enableMemory)
-                        {
-                            this._programsPopulated.Add(shader);
-                        }
+                        return true;
                     }
 
-                    return true;
+                    return false;
                 }
                 else
                 {

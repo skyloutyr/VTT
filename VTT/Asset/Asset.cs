@@ -145,11 +145,7 @@
             this.NodeGraph.Deserialize(de);
         }
 
-        public void Dispose()
-        {
-            // NOOP
-            // TODO figure out shader disposal structure
-        }
+        public void Dispose() => this.NodeGraph?.Free();
     }
 
     public class SoundData : IAssetData

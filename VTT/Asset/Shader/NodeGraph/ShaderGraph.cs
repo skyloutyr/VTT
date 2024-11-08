@@ -22,9 +22,9 @@
 
         public LinkedTextureContainer ExtraTextures { get; set; } = new LinkedTextureContainer();
 
-        private FastAccessShader _glData { get; set; }
-        private bool _glValid { get; set; }
-        private bool _glGen { get; set; }
+        private FastAccessShader _glData;
+        private bool _glValid;
+        private bool _glGen;
 
         private void RemoveDefine(ref string lines, string define)
         {
@@ -1328,6 +1328,17 @@
             return ret;
         }
 
-        
+        public void Free()
+        {
+            lock (this.Lock)
+            {
+                if (this._glData != null && this._glGen)
+                {
+                    this._glValid = false;
+                    this._glData.Program.Dispose();
+                    this._glData = null;
+                }
+            }
+        }
     }
 }

@@ -1268,8 +1268,6 @@
 
         public Image<Rgba32> CreatePreview(int width, int height, Vector4 clearColor, bool portrait = false)
         {
-            // TODO update preview creation code to account for async texture loading
-
             // Create camera
             Util.Camera camera;
             Matrix4x4 mat = Matrix4x4.Identity;

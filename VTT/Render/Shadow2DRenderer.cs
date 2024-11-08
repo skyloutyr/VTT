@@ -303,7 +303,6 @@
                             {
                                 case Shadow2DControlMode.Translate:
                                 {
-                                    // TODO commit changes
                                     Vector2 d = cursorWorld - this._initialClickWorldPos;
                                     this._boxSelected.Start = this._initialBoxStart;
                                     this._boxSelected.End = this._initialBoxEnd;

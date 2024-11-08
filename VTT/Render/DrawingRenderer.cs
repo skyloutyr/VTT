@@ -197,7 +197,6 @@
                                         int rems = dpc.Points.RemoveAll(x => x.IsInRange(cw.Value, this.CurrentRadius, dpc.Radius));
                                         if (rems > 0)
                                         {
-                                            // TODO server update
                                             if (dpc.Points.Count > 0)
                                             {
                                                 dpc.NotifyUpdate();

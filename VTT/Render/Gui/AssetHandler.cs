@@ -32,307 +32,423 @@
             }
         }
 
-        public bool ProcessFileDrop(string s, int index)
+        private AsyncAssetLoader.AssetLoadStatus _mostSevereUploadIssue = AsyncAssetLoader.AssetLoadStatus.Ok;
+        private readonly List<(string, AsyncAssetLoader.AssetLoadStatus)> _assetLoadErrors = new List<(string, AsyncAssetLoader.AssetLoadStatus)>();
+        public void AddAsyncAssetLoadNotification(string path, AsyncAssetLoader.AssetLoadStatus status)
         {
-            if (this._mouseOverAssets && Client.Instance.IsAdmin)
+            if (!Client.Instance.Connected)
             {
-                string ext = Path.GetExtension(s).ToLower();
-                if (ext.EndsWith("glb")) // Model
-                {
-                    GlbScene glbm = null;
-                    Image<Rgba32> img = null;
-                    try
-                    {
-                        byte[] binary = File.ReadAllBytes(s);
-                        using MemoryStream str = new MemoryStream(binary);
-                        glbm = new GlbScene(new ModelData.Metadata() { CompressNormal = false, CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false }, str);
-                        img = glbm.CreatePreview(256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
-                        using MemoryStream imgMs = new MemoryStream();
-                        img.SaveAsPng(imgMs);
-                        Asset a = new Asset()
-                        {
-                            ID = Guid.NewGuid(),
-                            Model = new ModelData { GLMdl = glbm },
-                            Type = AssetType.Model
-                        };
+                this._mostSevereUploadIssue = AsyncAssetLoader.AssetLoadStatus.Aborted;
+                this._assetLoadErrors.Add((path, AsyncAssetLoader.AssetLoadStatus.Aborted));
+                return;
+            }
 
+            if (status >= AsyncAssetLoader.AssetLoadStatus.ErrorGeneric)
+            {
+                this._assetLoadErrors.Add((path, status));
+                this._mostSevereUploadIssue = status;
+            }
+        }
+
+        public bool ProcessFileDrop(string s, int index) => this._mouseOverAssets && Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s));
+
+        private bool LoadAssetAsync(string s)
+        {
+            string cFolder = this.CurrentFolder.GetPath();
+            string ext = Path.GetExtension(s).ToLower();
+            if (ext.EndsWith("glb"))
+            {
+                Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.Model, s, x => {
+                    if (x && Client.Instance.Connected)
+                    {
                         AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model, ModelInfo = new ModelData.Metadata() { CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false, CompressNormal = false } };
-                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(binary), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                        pau.Send(Client.Instance.NetClient);
-                        glbm.Dispose();
-                        img.Dispose();
-                        return true;
+                        AssetRef aRef = new AssetRef() { AssetID = x.Asset.ID, AssetPreviewID = x.Asset.ID, IsServer = false, Meta = metadata };
+                        new PacketAssetUpload() { AssetBinary = x.AssetBinary, AssetPreview = x.Preview, IsServer = false, Meta = metadata, Path = cFolder, Session = Client.Instance.SessionID }.Send();
                     }
-                    catch (Exception ex)
+
+                    this.AddAsyncAssetLoadNotification(s, x.Status);
+                });
+
+                return true;    
+            }
+
+            if (ext.EndsWith(".fsh") || ext.EndsWith(".frag"))
+            {
+                Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.FragmentShader, s, x =>
+                {
+                    if (x && Client.Instance.Connected)
                     {
-                        // Issue parsing model/rendering preview
-                        Client.Instance.Logger.Log(LogLevel.Error, "Could not parse glb - " + ex.Message);
-                        Client.Instance.Logger.Exception(LogLevel.Error, ex);
-                        try
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.GlslFragmentShader };
+                        AssetRef aRef = new AssetRef() { AssetID = x.Asset.ID, AssetPreviewID = x.Asset.ID, IsServer = false, Meta = metadata };
+                        new PacketAssetUpload() { AssetBinary = x.AssetBinary, AssetPreview = x.Preview, Meta = metadata, Path = cFolder }.Send();
+                    }
+
+                    this.AddAsyncAssetLoadNotification(s, x.Status);
+                });
+
+                return true;
+            }
+
+            if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg"))
+            {
+                Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.Texture, s, x =>
+                {
+                    if (x && Client.Instance.Connected)
+                    {
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = (TextureData.Metadata)x.ExtraData };
+                        AssetRef aRef = new AssetRef() { AssetID = x.Asset.ID, AssetPreviewID = x.Asset.ID, IsServer = false, Meta = metadata };
+                        new PacketAssetUpload() { AssetBinary = x.AssetBinary, AssetPreview = x.Preview, IsServer = false, Meta = metadata, Path = cFolder, Session = Client.Instance.SessionID }.Send();
+                    }
+
+                    this.AddAsyncAssetLoadNotification(s, x.Status);
+                });
+
+                return true;
+            }
+
+            if (ext.EndsWith("webm"))
+            {
+                if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
+                {
+                    Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.AnimatedTexture, s, x =>
+                    {
+                        if (x && Client.Instance.Connected)
                         {
-                            glbm?.Dispose();
-                            img?.Dispose();
-                        }
-                        catch
-                        {
-                            // NOOP
+                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = (TextureData.Metadata)x.ExtraData };
+                            AssetRef aRef = new AssetRef() { AssetID = x.Asset.ID, AssetPreviewID = x.Asset.ID, IsServer = false, Meta = metadata };
+                            new PacketAssetUpload() { AssetBinary = x.AssetBinary, AssetPreview = x.Preview, IsServer = false, Meta = metadata, Path = cFolder, Session = Client.Instance.SessionID }.Send();
                         }
 
-                        return false;
-                    }
+                        this.AddAsyncAssetLoadNotification(s, x.Status);
+                    });
+                }
+                else
+                {
+                    this.AddAsyncAssetLoadNotification(s, AsyncAssetLoader.AssetLoadStatus.ErrorNoFFMpeg);
+                    return false;
                 }
 
-                if (ext.EndsWith(".fsh") || ext.EndsWith(".frag")) // Glsl fragment shader
+                return true;
+            }
+
+            if (ext.EndsWith("wav") || ext.EndsWith("mp3") || ext.EndsWith("ogg"))
+            {
+                Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.Sound, s, x =>
+                {
+                    if (x && Client.Instance.Connected)
+                    {
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Sound, SoundInfo = (SoundData.Metadata)x.ExtraData };
+                        AssetRef aRef = new AssetRef() { AssetID = x.Asset.ID, AssetPreviewID = x.Asset.ID, IsServer = false, Meta = metadata };
+                        new PacketAssetUpload() { AssetBinary = x.AssetBinary, AssetPreview = x.Preview, IsServer = false, Meta = metadata, Path = cFolder, Session = Client.Instance.SessionID }.Send();
+                    }
+
+                    this.AddAsyncAssetLoadNotification(s, x.Status);
+                });
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool LoadAssetSync(string s)
+        {
+            string ext = Path.GetExtension(s).ToLower();
+            if (ext.EndsWith("glb")) // Model
+            {
+                GlbScene glbm = null;
+                Image<Rgba32> img = null;
+                try
+                {
+                    byte[] binary = File.ReadAllBytes(s);
+                    using MemoryStream str = new MemoryStream(binary);
+                    glbm = new GlbScene(new ModelData.Metadata() { CompressNormal = false, CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false }, str);
+                    img = glbm.CreatePreview(256, 256, new Vector4(0.39f, 0.39f, 0.39f, 1.0f));
+                    using MemoryStream imgMs = new MemoryStream();
+                    img.SaveAsPng(imgMs);
+                    Asset a = new Asset()
+                    {
+                        ID = Guid.NewGuid(),
+                        Model = new ModelData { GLMdl = glbm },
+                        Type = AssetType.Model
+                    };
+
+                    AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Model, ModelInfo = new ModelData.Metadata() { CompressAlbedo = false, CompressAOMR = false, CompressEmissive = false, CompressNormal = false } };
+                    AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                    PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(binary), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                    pau.Send(Client.Instance.NetClient);
+                    glbm.Dispose();
+                    img.Dispose();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    // Issue parsing model/rendering preview
+                    Client.Instance.Logger.Log(LogLevel.Error, "Could not parse glb - " + ex.Message);
+                    Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                    try
+                    {
+                        glbm?.Dispose();
+                        img?.Dispose();
+                    }
+                    catch
+                    {
+                        // NOOP
+                    }
+
+                    return false;
+                }
+            }
+
+            if (ext.EndsWith(".fsh") || ext.EndsWith(".frag")) // Glsl fragment shader
+            {
+                try
+                {
+                    static bool IsSmallChar(char c) => c is ',' or ' ' or '.' or '\'' or '"' or ':' or ';' or '^' or '*' or '-' or '_' or '+' or '=';
+
+                    string data = File.ReadAllText(s);
+                    string[] contents = data.Split('\n');
+                    Image<Rgba32> previewImg = new Image<Rgba32>(256, 256);
+                    for (int i = 0; i < 256 && i < contents.Length; ++i)
+                    {
+                        string line = contents[i];
+                        for (int x = 0; x < 256 && x < line.Length; ++x)
+                        {
+                            char c = line[x];
+                            Rgba32 col = IsSmallChar(c) ? new Rgba32(0xff1f1f1f) : new Rgba32(0xfffafafa);
+                            previewImg[x, i] = col;
+                        }
+                    }
+
+                    using MemoryStream ms = new MemoryStream();
+                    previewImg.SaveAsPng(ms);
+                    previewImg.Dispose();
+                    Asset a = new Asset()
+                    {
+                        ID = Guid.NewGuid(),
+                        GlslFragment = new GlslFragmentData() { Data = data },
+                        Type = AssetType.GlslFragmentShader
+                    };
+
+                    AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.GlslFragmentShader };
+                    AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                    new PacketAssetUpload() { AssetBinary = a.ToBinary(Encoding.UTF8.GetBytes(data)), AssetPreview = ms.ToArray(), Meta = metadata, Path = this.CurrentFolder.GetPath() }.Send();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Error, "Could not load gltf shader - " + ex.Message);
+                    Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                    return false;
+                }
+            }
+
+            if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg")) // Image
+            {
+                Image<Rgba32> img = null;
+                Image<Rgba32> preview = null;
+                try
+                {
+                    img = Image.Load<Rgba32>(s);
+                    preview = img.Clone();
+                    preview.Mutate(x => x.Resize(256, 256));
+                    using MemoryStream ms = new MemoryStream();
+                    preview.SaveAsPng(ms);
+                    preview.Dispose();
+                    Asset a = new Asset()
+                    {
+                        ID = Guid.NewGuid(),
+                        Texture = TextureData.CreateDefaultFromImage(img, out byte[] tdataBinary, out TextureData.Metadata meta),
+                        Type = AssetType.Texture
+                    };
+
+                    AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = meta };
+                    AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                    PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(tdataBinary), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                    pau.Send(Client.Instance.NetClient);
+                    img.Dispose();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Error, "Could not parse image - " + ex.Message);
+                    Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                    try
+                    {
+                        img?.Dispose();
+                        preview?.Dispose();
+                    }
+                    catch
+                    {
+                        // NOOP
+                    }
+
+                    return false;
+                }
+            }
+
+            if (ext.EndsWith("webm"))
+            {
+                if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
                 {
                     try
                     {
-                        static bool IsSmallChar(char c) => c is ',' or ' ' or '.' or '\'' or '"' or ':' or ';' or '^' or '*' or '-' or '_' or '+' or '=';
-
-                        string data = File.ReadAllText(s);
-                        string[] contents = data.Split('\n');
-                        Image<Rgba32> previewImg = new Image<Rgba32>(256, 256);
-                        for (int i = 0; i < 256 && i < contents.Length; ++i)
+                        int i = 0;
+                        byte[] previewBinary = Array.Empty<byte>();
+                        List<TextureData.Frame> frames = new List<TextureData.Frame>();
+                        foreach (Image<Rgba32> img in Client.Instance.Frontend.FFmpegWrapper.DecodeAllFrames(s))
                         {
-                            string line = contents[i];
-                            for (int x = 0; x < 256 && x < line.Length; ++x)
+                            if (i == 0)
                             {
-                                char c = line[x];
-                                Rgba32 col = IsSmallChar(c) ? new Rgba32(0xff1f1f1f) : new Rgba32(0xfffafafa);
-                                previewImg[x, i] = col;
+                                Image<Rgba32> preview = img.Clone();
+                                preview.Mutate(x => x.Resize(256, 256));
+                                using MemoryStream ms1 = new MemoryStream();
+                                preview.SaveAsPng(ms1);
+                                previewBinary = ms1.ToArray();
+                                preview.Dispose();
                             }
+
+                            MemoryStream ms = new MemoryStream();
+                            img.SaveAsPng(ms);
+                            byte[] imgBin = ms.ToArray();
+                            ms.Dispose();
+                            TextureData.Frame f = new TextureData.Frame(i, 1, false, imgBin);
+                            frames.Add(f);
+                            img.Dispose();
+                            ++i;
                         }
 
-                        using MemoryStream ms = new MemoryStream();
-                        previewImg.SaveAsPng(ms);
-                        previewImg.Dispose();
-                        Asset a = new Asset()
+                        TextureData ret = new TextureData()
                         {
-                            ID = Guid.NewGuid(),
-                            GlslFragment = new GlslFragmentData() { Data = data },
-                            Type = AssetType.GlslFragmentShader
+                            Meta = new TextureData.Metadata()
+                            {
+                                WrapS = WrapParam.Repeat,
+                                WrapT = WrapParam.Repeat,
+                                FilterMag = FilterParam.Linear,
+                                FilterMin = FilterParam.LinearMipmapLinear,
+                                EnableBlending = true,
+                                Compress = true,
+                                GammaCorrect = true,
+                            },
+
+                            Frames = frames.ToArray()
                         };
 
-                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.GlslFragmentShader };
-                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                        new PacketAssetUpload() { AssetBinary = a.ToBinary(Encoding.UTF8.GetBytes(data)), AssetPreview = ms.ToArray(), Meta = metadata, Path = this.CurrentFolder.GetPath() }.Send();
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Error, "Could not load gltf shader - " + ex.Message);
-                        Client.Instance.Logger.Exception(LogLevel.Error, ex);
-                        return false;
-                    }
-                }
-
-                if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg")) // Image
-                {
-                    Image<Rgba32> img = null;
-                    Image<Rgba32> preview = null;
-                    try
-                    {
-                        img = Image.Load<Rgba32>(s);
-                        preview = img.Clone();
-                        preview.Mutate(x => x.Resize(256, 256));
-                        using MemoryStream ms = new MemoryStream();
-                        preview.SaveAsPng(ms);
-                        preview.Dispose();
                         Asset a = new Asset()
                         {
                             ID = Guid.NewGuid(),
-                            Texture = TextureData.CreateDefaultFromImage(img, out byte[] tdataBinary, out TextureData.Metadata meta),
+                            Texture = ret,
                             Type = AssetType.Texture
                         };
 
-                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = meta };
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = ret.Meta };
                         AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(tdataBinary), AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(ret.Write()), AssetPreview = previewBinary, IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
                         pau.Send(Client.Instance.NetClient);
-                        img.Dispose();
                         return true;
                     }
                     catch (Exception ex)
                     {
-                        Client.Instance.Logger.Log(LogLevel.Error, "Could not parse image - " + ex.Message);
+                        Client.Instance.Logger.Log(LogLevel.Error, "Could not parse webm - " + ex.Message);
                         Client.Instance.Logger.Exception(LogLevel.Error, ex);
-                        try
-                        {
-                            img?.Dispose();
-                            preview?.Dispose();
-                        }
-                        catch
-                        {
-                            // NOOP
-                        }
-
+                        // Nothing to dispose of, high potential memory leak
                         return false;
                     }
                 }
-
-                if (ext.EndsWith("webm"))
+                else
                 {
-                    if (Client.Instance.Frontend.FFmpegWrapper.IsInitialized)
+                    Client.Instance.Logger.Log(LogLevel.Warn, "Couldn't upload webm due to missing ffmpeg");
+                }
+            }
+
+            if (ext.EndsWith("wav") || ext.EndsWith("mp3") || ext.EndsWith("ogg")) // Sound
+            {
+                try
+                {
+                    long len = new FileInfo(s).Length;
+                    if (len >= int.MaxValue / 2) // 1 GB
                     {
-                        try
-                        {
-                            int i = 0;
-                            byte[] previewBinary = Array.Empty<byte>();
-                            List<TextureData.Frame> frames = new List<TextureData.Frame>();
-                            foreach (Image<Rgba32> img in Client.Instance.Frontend.FFmpegWrapper.DecodeAllFrames(s))
-                            {
-                                if (i == 0)
-                                {
-                                    Image<Rgba32> preview = img.Clone();
-                                    preview.Mutate(x => x.Resize(256, 256));
-                                    using MemoryStream ms1 = new MemoryStream();
-                                    preview.SaveAsPng(ms1);
-                                    previewBinary = ms1.ToArray();
-                                    preview.Dispose();
-                                }
-
-                                MemoryStream ms = new MemoryStream();
-                                img.SaveAsPng(ms);
-                                byte[] imgBin = ms.ToArray();
-                                ms.Dispose();
-                                TextureData.Frame f = new TextureData.Frame(i, 1, false, imgBin);
-                                frames.Add(f);
-                                img.Dispose();
-                                ++i;
-                            }
-
-                            TextureData ret = new TextureData()
-                            {
-                                Meta = new TextureData.Metadata()
-                                {
-                                    WrapS = WrapParam.Repeat,
-                                    WrapT = WrapParam.Repeat,
-                                    FilterMag = FilterParam.Linear,
-                                    FilterMin = FilterParam.LinearMipmapLinear,
-                                    EnableBlending = true,
-                                    Compress = true,
-                                    GammaCorrect = true,
-                                },
-
-                                Frames = frames.ToArray()
-                            };
-
-                            Asset a = new Asset()
-                            {
-                                ID = Guid.NewGuid(),
-                                Texture = ret,
-                                Type = AssetType.Texture
-                            };
-
-                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Texture, TextureInfo = ret.Meta };
-                            AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                            PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = a.ToBinary(ret.Write()), AssetPreview = previewBinary, IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                            pau.Send(Client.Instance.NetClient);
-                            return true;
-                        }
-                        catch (Exception ex)
-                        {
-                            Client.Instance.Logger.Log(LogLevel.Error, "Could not parse webm - " + ex.Message);
-                            Client.Instance.Logger.Exception(LogLevel.Error, ex);
-                            // Nothing to dispose of, high potential memory leak
-                            return false;
-                        }
+                        Client.Instance.Logger.Log(LogLevel.Warn, "Audio file too large - maximum allowed is 1Gb!");
                     }
                     else
                     {
-                        Client.Instance.Logger.Log(LogLevel.Warn, "Couldn't upload webm due to missing ffmpeg");
-                    }
-                }
-
-                if (ext.EndsWith("wav") || ext.EndsWith("mp3") || ext.EndsWith("ogg")) // Sound
-                {
-                    try
-                    {
-                        long len = new FileInfo(s).Length;
-                        if (len >= int.MaxValue / 2) // 1 GB
+                        WaveAudio wa = null;
+                        Image<Rgba32> img = null;
+                        SoundData.Metadata meta = new SoundData.Metadata();
+                        if (ext.EndsWith("wav")) // Wave Sound
                         {
-                            Client.Instance.Logger.Log(LogLevel.Warn, "Audio file too large - maximum allowed is 1Gb!");
+                            wa = new WaveAudio();
+                            wa.Load(File.OpenRead(s));
+                        }
+
+                        if (ext.EndsWith("mp3"))
+                        {
+                            MpegFile mpeg = new MpegFile(File.OpenRead(s));
+                            wa = new WaveAudio(mpeg);
+                            mpeg.Dispose();
+                        }
+
+                        if (ext.EndsWith("ogg"))
+                        {
+                            VorbisReader vorbis = new VorbisReader(File.OpenRead(s));
+                            wa = new WaveAudio(vorbis);
+                            vorbis.Dispose();
+                        }
+
+                        img = wa.GenWaveForm(1024, 1024);
+                        byte[] dataArray = null;
+                        bool doCompress = (Client.Instance.Frontend.FFmpegWrapper.IsInitialized &&
+                            Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.Always) ||
+                            (Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.LargeFilesOnly && wa.DataLength > 4194304); // 4Mb
+
+                        if (doCompress && wa.TryGetMpegEncodedData(out dataArray, out long[] packetOffsets) && dataArray != null)
+                        {
+                            meta.SoundType = SoundData.Metadata.StorageType.Mpeg;
+                            meta.IsFullData = false;
+                            meta.TotalChunks = packetOffsets.Length;
+                            meta.CompressedChunkOffsets = packetOffsets;
                         }
                         else
                         {
-                            WaveAudio wa = null;
-                            Image<Rgba32> img = null;
-                            SoundData.Metadata meta = new SoundData.Metadata();
-                            if (ext.EndsWith("wav")) // Wave Sound
-                            {
-                                wa = new WaveAudio();
-                                wa.Load(File.OpenRead(s));
-                            }
-
-                            if (ext.EndsWith("mp3"))
-                            {
-                                MpegFile mpeg = new MpegFile(File.OpenRead(s));
-                                wa = new WaveAudio(mpeg);
-                                mpeg.Dispose();
-                            }
-
-                            if (ext.EndsWith("ogg"))
-                            {
-                                VorbisReader vorbis = new VorbisReader(File.OpenRead(s));
-                                wa = new WaveAudio(vorbis);
-                                vorbis.Dispose();
-                            }
-
-                            img = wa.GenWaveForm(1024, 1024);
-                            byte[] dataArray = null;
-                            bool doCompress = (Client.Instance.Frontend.FFmpegWrapper.IsInitialized &&
-                                Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.Always) ||
-                                (Client.Instance.Settings.SoundCompressionPolicy == ClientSettings.AudioCompressionPolicy.LargeFilesOnly && wa.DataLength > 4194304); // 4Mb
-
-                            if (doCompress && wa.TryGetMpegEncodedData(out dataArray, out long[] packetOffsets) && dataArray != null)
-                            {
-                                meta.SoundType = SoundData.Metadata.StorageType.Mpeg;
-                                meta.IsFullData = false;
-                                meta.TotalChunks = packetOffsets.Length;
-                                meta.CompressedChunkOffsets = packetOffsets;
-                            }
-                            else
-                            {
-                                meta.SoundType = SoundData.Metadata.StorageType.Raw;
-                                meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
-                                meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
-                                meta.CompressedChunkOffsets = Array.Empty<long>();
-                            }
-
-                            meta.SampleRate = wa.SampleRate;
-                            meta.NumChannels = wa.NumChannels;
-                            meta.TotalDuration = wa.Duration;
-                            meta.SoundAssetName = Path.GetFileNameWithoutExtension(s);
-                            SoundData sound = new SoundData();
-                            sound.Meta = meta;
-
-                            Asset a = new Asset()
-                            {
-                                ID = Guid.NewGuid(),
-                                Sound = sound,
-                                Type = AssetType.Sound
-                            };
-
-                            using MemoryStream ms = new MemoryStream();
-                            img.SaveAsPng(ms);
-
-                            AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Sound, SoundInfo = meta };
-                            AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
-                            PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = meta.SoundType == SoundData.Metadata.StorageType.Raw ? wa.GetManagedDataCopy() : dataArray, AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
-                            pau.Send(Client.Instance.NetClient);
-
-                            wa.Free();
-                            img.Dispose();
+                            meta.SoundType = SoundData.Metadata.StorageType.Raw;
+                            meta.IsFullData = wa.DataLength <= 4194304; // 4mb are allowed as raw
+                            meta.TotalChunks = (int)Math.Ceiling((double)wa.DataLength / (wa.SampleRate * wa.NumChannels * 5)); // 5s audio buffers
+                            meta.CompressedChunkOffsets = Array.Empty<long>();
                         }
 
-                        return true;
+                        meta.SampleRate = wa.SampleRate;
+                        meta.NumChannels = wa.NumChannels;
+                        meta.TotalDuration = wa.Duration;
+                        meta.SoundAssetName = Path.GetFileNameWithoutExtension(s);
+                        SoundData sound = new SoundData();
+                        sound.Meta = meta;
+
+                        Asset a = new Asset()
+                        {
+                            ID = Guid.NewGuid(),
+                            Sound = sound,
+                            Type = AssetType.Sound
+                        };
+
+                        using MemoryStream ms = new MemoryStream();
+                        img.SaveAsPng(ms);
+
+                        AssetMetadata metadata = new AssetMetadata() { Name = Path.GetFileNameWithoutExtension(s), Type = AssetType.Sound, SoundInfo = meta };
+                        AssetRef aRef = new AssetRef() { AssetID = a.ID, AssetPreviewID = a.ID, IsServer = false, Meta = metadata };
+                        PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = meta.SoundType == SoundData.Metadata.StorageType.Raw ? wa.GetManagedDataCopy() : dataArray, AssetPreview = ms.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
+                        pau.Send(Client.Instance.NetClient);
+
+                        wa.Free();
+                        img.Dispose();
                     }
-                    catch (Exception ex)
-                    {
-                        Client.Instance.Logger.Log(LogLevel.Error, "Could not parse sound - " + ex.Message);
-                        Client.Instance.Logger.Exception(LogLevel.Error, ex);
-                        return false;
-                    }
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Error, "Could not parse sound - " + ex.Message);
+                    Client.Instance.Logger.Exception(LogLevel.Error, ex);
+                    return false;
                 }
             }
 
@@ -647,9 +763,9 @@
                 this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem | ImGuiHoveredFlags.RootAndChildWindows);
                 */
 
-                    System.Numerics.Vector2 winSize = ImGui.GetWindowSize();
+                    Vector2 winSize = ImGui.GetWindowSize();
 
-                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new System.Numerics.Vector2(winSize.X - 500, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsNavbar"), new Vector2(winSize.X - 500, 24), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.MenuBar);
                     if (ImGui.BeginMenuBar())
                     {
                         if (ImGui.BeginMenu(lang.Translate("ui.menu.new")))
@@ -738,7 +854,7 @@
                     ImGui.Columns(2);
                     ImGui.SetColumnWidth(0, 240);
                     float cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChild(ImGui.GetID("AssetsFS"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.HorizontalScrollbar);
+                    ImGui.BeginChild(ImGui.GetID("AssetsFS"), new Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20 - (Client.Instance.Settings.AsyncAssetLoading ? 24 : 0)), ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.HorizontalScrollbar);
                     void RecursivelyDrawDirectories(AssetDirectory dir)
                     {
                         bool isCurrent = dir.Equals(this.CurrentFolder);
@@ -751,7 +867,7 @@
 
                         if (isCurrent)
                         {
-                            System.Numerics.Vector4 clr = *ImGui.GetStyleColorVec4(ImGuiCol.HeaderHovered);
+                            Vector4 clr = *ImGui.GetStyleColorVec4(ImGuiCol.HeaderHovered);
                             ImGui.PushStyleColor(ImGuiCol.Text, clr);
                             ImGui.SetNextItemOpen(true);
                         }
@@ -796,9 +912,66 @@
 
                     ImGui.EndChild();
 
+                    if (Client.Instance.Settings.AsyncAssetLoading)
+                    {
+                        AsyncAssetLoader aal = Client.Instance.Frontend.AssetLoader;
+                        int t = aal.RequestsTotal;
+                        int c = aal.RequestsCompleted;
+                        float pbVal = 0;
+                        if (t > 0)
+                        {
+                            pbVal = (float)c / t;
+                        }
+
+                        if (this._mostSevereUploadIssue == AsyncAssetLoader.AssetLoadStatus.Ok)
+                        {
+                            ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkGreen.Abgr());
+                            ImGui.TextUnformatted("✅");
+                            ImGui.PopStyleColor();
+                        }
+                        else
+                        {
+                            if (this._mostSevereUploadIssue >= AsyncAssetLoader.AssetLoadStatus.ErrorGeneric)
+                            {
+                                ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkRed.Abgr());
+                                ImGui.TextUnformatted("⮿");
+                                ImGui.PopStyleColor();
+                            }
+                            else
+                            {
+                                ImGui.PushStyleColor(ImGuiCol.Text, Color.Yellow.Abgr());
+                                ImGui.TextUnformatted("⚠");
+                                ImGui.PopStyleColor();
+                            }
+                        }
+
+                        if (ImGui.IsItemHovered() && this._assetLoadErrors.Count > 0)
+                        {
+                            ImGui.BeginTooltip();
+                            foreach ((string, AsyncAssetLoader.AssetLoadStatus) d in this._assetLoadErrors)
+                            {
+                                ImGui.TextUnformatted(lang.Translate("ui.asset_load_error." + Enum.GetName(d.Item2).ToString().ToLower().ToLower(), d.Item1));
+                            }
+
+                            ImGui.EndTooltip();
+                        }
+
+                        ImGui.SameLine();
+                        Vector2 preProgressBarCPos = ImGui.GetCursorPos();
+                        ImGui.ProgressBar(pbVal, new Vector2(cw - 40, 20), $"{c}/{t}");
+                        if (c != t)
+                        {
+                            ImGui.SetCursorPos(preProgressBarCPos);
+                            int pbframe = (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
+                            float pbtexelIndexStart = (float)pbframe / this.LoadingSpinnerFrames;
+                            float pbtexelSize = 1f / this.LoadingSpinnerFrames;
+                            ImGui.Image(this.LoadingSpinner, new Vector2(20, 20), new Vector2(pbtexelIndexStart, 0), new Vector2(pbtexelIndexStart + pbtexelSize, 1));
+                        }
+                    }
+
                     ImGui.NextColumn();
                     cw = ImGui.GetColumnWidth();
-                    ImGui.BeginChild(ImGui.GetID("AssetsView"), new System.Numerics.Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
+                    ImGui.BeginChild(ImGui.GetID("AssetsView"), new Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
                     this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
                     IOrderedEnumerable<AssetRef> assetEnumeration;
                     switch (this._sortOption)
@@ -835,7 +1008,7 @@
                         float cursorXBeforeElement = ImGui.GetCursorPosX();
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, System.Numerics.Vector2.Zero);
                         ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, System.Numerics.Vector2.Zero);
-                        ImGui.BeginChild(ImGui.GetID("Asset_" + aRef.AssetID), new System.Numerics.Vector2(96, 112));
+                        ImGui.BeginChild(ImGui.GetID("Asset_" + aRef.AssetID), new Vector2(96, 112));
                         AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
 
                         bool hover = ImGui.IsWindowHovered();
@@ -850,24 +1023,24 @@
                                 (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
                             float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
                             float texelSize = 1f / this.LoadingSpinnerFrames;
-                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : this.LoadingSpinner, cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), new System.Numerics.Vector2(texelIndexStart, 0), new System.Numerics.Vector2(texelIndexStart + texelSize, 1));
+                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : this.LoadingSpinner, cursorCurrent, cursorCurrent + new Vector2(96, 96), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1));
                             if (hover)
                             {
-                                idlp.AddRect(cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
+                                idlp.AddRect(cursorCurrent, cursorCurrent + new Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
                             }
                         }
                         else
                         {
-                            idlp.AddImage(a is AssetStatus.Error or AssetStatus.NoAsset ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96));
+                            idlp.AddImage(a is AssetStatus.Error or AssetStatus.NoAsset ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new Vector2(96, 96));
                             if (hover)
                             {
-                                idlp.AddRect(cursorCurrent, cursorCurrent + new System.Numerics.Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
+                                idlp.AddRect(cursorCurrent, cursorCurrent + new Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
                             }
                         }
 
                         string aName = aRef.Name;
-                        System.Numerics.Vector2 ts = FitLabelByBinarySearch(aRef.Name, ref aName);
-                        idlp.AddText(cursorCurrent + new System.Numerics.Vector2(48 - (ts.X * 0.5f), 96), hover ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Text), aName);
+                        Vector2 ts = FitLabelByBinarySearch(aRef.Name, ref aName);
+                        idlp.AddText(cursorCurrent + new Vector2(48 - (ts.X * 0.5f), 96), hover ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Text), aName);
                         idlp.AddImage(
                             aRef.Type switch
                             {
@@ -880,8 +1053,8 @@
                                 _ => this.ErrorIcon
                             },
 
-                            cursorCurrent + new System.Numerics.Vector2(80, 80),
-                            cursorCurrent + new System.Numerics.Vector2(96, 96)
+                            cursorCurrent + new Vector2(80, 80),
+                            cursorCurrent + new Vector2(96, 96)
                         );
 
                         if (hover)
@@ -1238,20 +1411,20 @@
                         (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
                     float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
                     float texelSize = 1f / this.LoadingSpinnerFrames;
-                    ImGui.Image(a == AssetStatus.Await ? this.LoadingSpinner : a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(texelIndexStart, 0), new System.Numerics.Vector2(texelIndexStart + texelSize, 1), new System.Numerics.Vector4(1, 1, 1, 1));
+                    ImGui.Image(a == AssetStatus.Await ? this.LoadingSpinner : a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new Vector2(48, 48), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1), new Vector4(1, 1, 1, 1));
                 }
                 else
                 {
-                    ImGui.Image(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new System.Numerics.Vector2(48, 48), new System.Numerics.Vector2(0, 0), new System.Numerics.Vector2(1, 1), new System.Numerics.Vector4(1, 1, 1, 1));
+                    ImGui.Image(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new Vector2(48, 48), new Vector2(0, 0), new Vector2(1, 1), new Vector4(1, 1, 1, 1));
                 }
 
                 ImGui.End();
             }
         }
 
-        private static System.Numerics.Vector2 FitLabelByBinarySearch(string original, ref string txt)
+        private static Vector2 FitLabelByBinarySearch(string original, ref string txt)
         {
-            System.Numerics.Vector2 label_size = default;
+            Vector2 label_size = default;
             txt = original[..1];
             int c = 1;
             while (c < original.Length && label_size.X < 96)

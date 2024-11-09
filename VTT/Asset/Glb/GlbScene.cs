@@ -48,6 +48,8 @@
         private readonly bool _checkGlRequests;
         private readonly ModelData.Metadata _meta;
         private bool _matsReady;
+        private readonly object _lock = new object();
+        private readonly Action<GlbScene> _glCompleteCallback;
 
         public bool GlReady => this.glReady && this.MaterialsGlReady;
 
@@ -79,10 +81,11 @@
         {
         }
 
-        public unsafe GlbScene(ModelData.Metadata meta, Stream modelStream)
+        public unsafe GlbScene(ModelData.Metadata meta, Stream modelStream, Action<GlbScene> glCompletenessCallback = null)
         {
             this._createdOnGlThread = Client.Instance.Frontend.CheckThread();
             this._meta = meta;
+            this._glCompleteCallback = glCompletenessCallback;
 
             // Have to do these stream gymnastics because khronos' Gltf implementation implicitly closes the stream it reads data from...
             this.LoadGLBFromStream(modelStream, out Gltf g, out byte[] bin);
@@ -740,11 +743,12 @@
 
             this.RaycastBounds = this.SimplifiedRaycastMesh?.Bounds ?? this.CombinedBounds;
 
-            this._checkGlRequests = true;
-            if (this._glRequestsTodo <= 0)
+            lock (this._lock)
             {
-                this.glReady = true;
+                this._checkGlRequests = true;
             }
+
+            this.CheckGLCompleteness(false);
         }
 
         public void Dispose()
@@ -1394,15 +1398,11 @@
             }
             else
             {
-                ++this._glRequestsTodo;
+                this.AddGLRequest();
                 Client.Instance.Frontend.EnqueueOrExecuteTask(() =>
                 {
                     mesh.CreateGl();
-                    --this._glRequestsTodo;
-                    if (this._checkGlRequests && this._glRequestsTodo <= 0)
-                    {
-                        this.glReady = true;
-                    }
+                    this.CheckGLCompleteness(true);
                 });
             }
         }
@@ -1443,19 +1443,40 @@
             else
             {
                 VTT.GL.Texture glTex = new VTT.GL.Texture(TextureTarget.Texture2D, false);
-                ++this._glRequestsTodo;
+                this.AddGLRequest();
                 Client.Instance.Frontend.EnqueueOrExecuteTask(() =>
                 {
                     glTex.Allocate();
                     LoadTexture(glTex);
-                    --this._glRequestsTodo;
-                    if (this._checkGlRequests && this._glRequestsTodo <= 0)
-                    {
-                        this.glReady = true;
-                    }
+                    this.CheckGLCompleteness(true);
                 });
 
                 return glTex;
+            }
+        }
+    
+        private void AddGLRequest()
+        {
+            lock (this._lock)
+            {
+                ++this._glRequestsTodo;
+            }
+        }
+
+        private void CheckGLCompleteness(bool decrementCounter)
+        {
+            lock (this._lock)
+            {
+                if (decrementCounter)
+                {
+                    --this._glRequestsTodo;
+                }
+
+                if (this._checkGlRequests && this._glRequestsTodo <= 0)
+                {
+                    this.glReady = true;
+                    this._glCompleteCallback?.Invoke(this);
+                }
             }
         }
     }

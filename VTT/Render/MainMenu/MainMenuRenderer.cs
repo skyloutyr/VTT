@@ -603,6 +603,18 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.sound_compression.tt"));
                     }
 
+                    bool cAssetLoadIsAsync = Client.Instance.Settings.AsyncAssetLoading;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.async_asset_loading") + "###Async Asset Loading", ref cAssetLoadIsAsync))
+                    {
+                        Client.Instance.Settings.AsyncAssetLoading = cAssetLoadIsAsync;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.async_asset_loading.tt"));
+                    }
+
                     ImGui.TextUnformatted(lang.Translate("menu.settings.player_image"));
                     if (Client.Instance.Connected)
                     {

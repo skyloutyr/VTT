@@ -345,7 +345,8 @@
             this.DoTask(postSetAction);
         }
 
-        public void DoTask(Action a) => this.Frontend.ActionsToDo.Enqueue(a);
+        public void DoTask(Action a) => this.Frontend.EnqueueTask(a);
+        public void DoTaskNextFrame(Action a) => this.Frontend.EnqueueTaskNextUpdate(a);
         public void SetDisconnectReason(DisconnectReason dCR)
         {
             this.LastDisconnectReason = dCR;
@@ -716,6 +717,10 @@
         [JsonConverter(typeof(StringEnumConverter))]
         public TurnTrackerScaling TurnTrackerScale { get; set; } = TurnTrackerScaling.Medium;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AsyncAssetLoading { get; set; } = false;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -780,7 +785,8 @@
                 Shadows2DAdmin = 0.75f,
                 Shadow2DPrecision = Shadow2DResolution.Medium,
                 TurnTrackerSize = 6,
-                TurnTrackerScale = TurnTrackerScaling.Medium
+                TurnTrackerScale = TurnTrackerScaling.Medium,
+                AsyncAssetLoading = false
             };
 
             ret.Save();

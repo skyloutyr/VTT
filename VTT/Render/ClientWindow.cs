@@ -25,8 +25,10 @@
         public FFmpegWrapper FFmpegWrapper { get; set; }
         public GLFWWindowHandler GameHandle { get; set; }
         public AsyncTextureUploader TextureUploader { get; private set; }
+        public AsyncAssetLoader AssetLoader { get; private set; }
 
-        public ConcurrentQueue<Action> ActionsToDo { get; } = new ConcurrentQueue<Action>();
+        private readonly ConcurrentQueue<RepeatableActionContainer> _actionsToDo = new ConcurrentQueue<RepeatableActionContainer>();
+        private readonly ConcurrentQueue<RepeatableActionContainer> _actionsToDoNextFrame = new ConcurrentQueue<RepeatableActionContainer>();
 
         public int UpdaterExitCode { get; set; } = -2;
 
@@ -164,7 +166,7 @@
 
         public void PushNotification()
         {
-            this.ActionsToDo.Enqueue(() =>
+            this.EnqueueTask(() =>
             {
                 if (!this.GameHandle.IsFocused)
                 {
@@ -175,6 +177,11 @@
                 }
             });
         }
+
+        public void EnqueueTask(Action a) => this._actionsToDo.Enqueue((RepeatableActionContainer)a);
+        public void EnqueueSpecializedTask(RepeatableActionContainer a) => this._actionsToDo.Enqueue(a);
+        public void EnqueueTaskNextUpdate(Action a) => this._actionsToDoNextFrame.Enqueue((RepeatableActionContainer)a);
+        public void EnqueueSpecializedTaskNextUpdate(RepeatableActionContainer a) => this._actionsToDoNextFrame.Enqueue(a);
 
         private ClientSettings.FullscreenMode? _lastFsMode;
         private Size? oldScreenSize;
@@ -343,11 +350,22 @@
             GuiRenderer.Instance.Update();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulseRequest();
             Client.Instance.AssetManager.ClientAssetLibrary?.PulsePreview();
-            while (!this.ActionsToDo.IsEmpty)
+            while (!this._actionsToDo.IsEmpty)
             {
-                if (this.ActionsToDo.TryDequeue(out Action a))
+                if (this._actionsToDo.TryDequeue(out RepeatableActionContainer a))
                 {
-                    a.Invoke();
+                    if (!a.Invoke())
+                    {
+                        this._actionsToDoNextFrame.Enqueue(a);
+                    }
+                }
+            }
+
+            while (!this._actionsToDoNextFrame.IsEmpty)
+            {
+                if (this._actionsToDoNextFrame.TryDequeue(out RepeatableActionContainer a))
+                {
+                    this._actionsToDo.Enqueue(a);
                 }
             }
 
@@ -357,11 +375,12 @@
             Server.Instance?.NetworkOut.TickTimeframe();
         }
 
-        private VTT.GL.Bindings.GL.DebugProcCallback _debugProc;
+        private GL.DebugProcCallback _debugProc;
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
             this.TextureUploader = new AsyncTextureUploader();
+            this.AssetLoader = new AsyncAssetLoader();
             this.Sound = new SoundManager();
             this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();

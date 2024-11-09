@@ -682,7 +682,7 @@
             {
                 if (ImGui.Button(lang.Translate("ui.menu.disconnect") + "###Disconnect", new Vector2(128, 32)))
                 {
-                    Client.Instance.Frontend.ActionsToDo.Enqueue(() =>
+                    Client.Instance.Frontend.EnqueueTask(() =>
                     {
                         Client.Instance.Disconnect(DisconnectReason.ManualDisconnect);
                         if (Server.Instance != null)

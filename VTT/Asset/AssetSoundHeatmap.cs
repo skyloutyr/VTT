@@ -44,8 +44,19 @@
                 }
             }
 
-            spot = a.Get(index, now);
+            spot = (a?.WasFullyDisposed ?? true) ? null : a?.Get(index, now);
             return spot != null ? AssetStatus.Return : AssetStatus.Error;
+        }
+
+        public void TryFreeAccessor(Guid id)
+        {
+            lock (this._locker)
+            {
+                if (this.DataMap.TryGetValue(id, out Accessor a))
+                {
+                    a.DisposeFS(true);
+                }
+            }
         }
 
         public void Pulse()
@@ -66,8 +77,10 @@
             private readonly object _locker = new object();
             private readonly int _chunkLength;
             private readonly long[] _compressedOffsets;
+            private bool _markedDisposed;
 
             public Spot[] Spots { get; init; }
+            public bool WasFullyDisposed => this._markedDisposed;
 
             public const long ExpirationTime = 60000; // 1 min spot lifetime
 
@@ -103,24 +116,9 @@
                     }
                 }
 
-                if (!haveAny && this._fsStream != null)
+                if (!haveAny)
                 {
-                    lock (this._locker)
-                    {
-                        try
-                        {
-                            this._fsStream.Close();
-                            this._fsStream.Dispose();
-                        }
-                        catch
-                        {
-                            // NOOP - just release unused resources
-                        }
-                        finally
-                        {
-                            this._fsStream = null;
-                        }
-                    }
+                    this.DisposeFS(false);
                 }
             }
 
@@ -134,6 +132,11 @@
                 Spot s = this.Spots[index];
                 lock (this._locker)
                 {
+                    if (this._markedDisposed)
+                    {
+                        return null;
+                    }
+
                     try
                     {
                         if (s == null)
@@ -217,6 +220,30 @@
                 }
 
                 return this._fsStream;
+            }
+
+            public void DisposeFS(bool markDisposed)
+            {
+                lock (this._locker)
+                {
+                    if (this._fsStream != null)
+                    {
+                        try
+                        {
+                            this._fsStream.Close();
+                            this._fsStream.Dispose();
+                        }
+                        finally
+                        {
+                            this._fsStream = null;
+                        }
+                    }
+
+                    if (markDisposed)
+                    {
+                        this._markedDisposed = true;
+                    }
+                }
             }
         }
 

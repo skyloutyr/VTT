@@ -26,9 +26,19 @@
                 AssetManager am = server.AssetManager;
                 if (am.Refs.TryGetValue(this.RefID, out AssetRef aref))
                 {
+                    am.Refs.Remove(this.RefID);
+                    am.FindDirForRef(this.RefID)?.Refs.Remove(aref);
+                    am.ServerAssetCache.DeleteCache(aref.AssetID);
+
                     string fLoc = aref.ServerPointer.FileLocation;
                     string jsLoc = fLoc + ".json";
                     string pLoc = Path.Combine(IOVTT.ServerDir, "Previews", aref.ServerPointer.PreviewPointer.ToString() + ".png");
+                    
+                    if (aref.Type == AssetType.Sound)
+                    {
+                        server.AssetManager.ServerSoundHeatmap.TryFreeAccessor(aref.AssetID);
+                    }
+                    
                     try
                     {
                         File.Delete(fLoc);
@@ -58,10 +68,6 @@
                         l.Log(LogLevel.Error, $"Could not delete asset preview for {this.RefID}!");
                         l.Exception(LogLevel.Error, e);
                     }
-
-                    am.FindDirForRef(this.RefID)?.Refs.Remove(aref);
-                    am.Refs.Remove(this.RefID);
-                    am.ServerAssetCache.DeleteCache(aref.AssetID);
 
                     l.Log(LogLevel.Info, $"Deleted asset {aref.AssetID} at {this.RefID}.");
                     this.Broadcast(x => x.IsAdmin);

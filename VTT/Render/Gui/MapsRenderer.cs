@@ -531,7 +531,7 @@
                         {
                             AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
                             mdlTxt += aRef.Name;
-                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                            if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                             {
                                 GL.Texture tex = ap.GetGLTexture();
                                 if (tex != null)

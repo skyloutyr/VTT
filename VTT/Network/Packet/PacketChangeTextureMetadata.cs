@@ -59,16 +59,9 @@
                     client.AssetManager.Refs[this.RefID].Meta.TextureInfo = this.Metadata; // Update metadata
                 }
 
-                if (client.AssetManager.Assets.ContainsKey(this.AssetID))
-                {
-                    client.Logger.Log(LogLevel.Debug, "Erasing asset record.");
-                    Client.Instance.DoTask(() =>
-                    {
-                        client.AssetManager.Assets.Remove(this.AssetID);
-                        client.AssetManager.Portraits.Remove(this.AssetID);
-                        client.AssetManager.ClientAssetLibrary.EraseAssetRecord(this.AssetID);
-                    });
-                }
+
+                client.Logger.Log(LogLevel.Debug, "Erasing asset record.");
+                client.DoTask(() => client.AssetManager.ClientAssetLibrary.Assets.EraseRecord(this.AssetID));
             }
         }
 

@@ -93,15 +93,10 @@
                     assetID = aref.AssetID;
                 }
 
-                if (!Guid.Empty.Equals(assetID) && client.AssetManager.Assets.ContainsKey(assetID))
+                if (!Guid.Empty.Equals(assetID))
                 {
                     client.Logger.Log(LogLevel.Debug, "Erasing asset record.");
-                    Client.Instance.DoTask(() =>
-                    {
-                        client.AssetManager.Assets.Remove(assetID);
-                        client.AssetManager.Portraits.Remove(assetID);
-                        client.AssetManager.ClientAssetLibrary.EraseAssetRecord(assetID);
-                    });
+                    Client.Instance.DoTask(() => client.AssetManager.ClientAssetLibrary.Assets.EraseRecord(assetID));
                 }
             }
         }

@@ -411,7 +411,7 @@
                     }
                     else
                     {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderId, AssetType.Shader, out Asset a) == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderId, AssetType.Shader, out Asset a) == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                         {
                             this.EditedGraph = a.Shader.NodeGraph.FullCopy();
                             this.EditedGraph.ValidatePreprocess(out this._shaderErrors, out this._shaderWarnings);
@@ -696,7 +696,7 @@
                     this.popupState = false;
                     if (bOk)
                     {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderId, AssetType.Shader, out Asset a) == AssetStatus.Return && (a.Shader?.NodeGraph?.IsLoaded ?? false))
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderId, AssetType.Shader, out Asset a) == AssetStatus.Return && (a.Shader?.NodeGraph?.IsLoaded ?? false))
                         {
                             using MemoryStream ms = new MemoryStream();
                             using BinaryWriter bw = new BinaryWriter(ms);
@@ -814,7 +814,7 @@
             {
                 AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
                 mdlTxt += aRef.Name;
-                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                 {
                     VTT.GL.Texture tex = ap.GetGLTexture();
                     if (tex != null)

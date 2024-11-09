@@ -136,7 +136,7 @@
 
         public Guid PlayAsset(Guid assetID, float volume = 1.0f, SoundCategory cat = SoundCategory.Asset, AssetSound.Type aType = AssetSound.Type.Asset)
         {
-            Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(assetID, AssetType.Sound, out _); // Request here
+            Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(assetID, AssetType.Sound, out _); // Request here
             Guid sId = Guid.Empty;
             lock (this._assetLock)
             {

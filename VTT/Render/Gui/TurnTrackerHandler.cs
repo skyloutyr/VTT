@@ -144,7 +144,7 @@
                                             }
                                         }
 
-                                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap) == AssetStatus.Return)
+                                        if (Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(mo.AssetID, AssetType.Model, out AssetPreview ap) == AssetStatus.Return)
                                         {
                                             Vec4 borderColor = Vec4.Zero;
                                             if (e == currentEntry)

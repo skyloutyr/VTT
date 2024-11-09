@@ -34,7 +34,7 @@
             foreach (Guid id in this.ExtraTexturesAttachments)
             {
                 AssetStatus ast;
-                if ((ast = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(id, AssetType.Texture, out Asset tAss)) != AssetStatus.Return || tAss == null || tAss.Texture == null || !tAss.Texture.glReady)
+                if ((ast = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(id, AssetType.Texture, out Asset tAss)) != AssetStatus.Return || tAss == null || tAss.Texture == null || !tAss.Texture.glReady)
                 {
                     t = null;
                     sizes = Array.Empty<Vector2>();
@@ -73,7 +73,7 @@
             int i = 0;
             foreach (Guid id in this.ExtraTexturesAttachments) // Ensure data loaded
             {
-                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(id, AssetType.Texture, out Asset tAss) == AssetStatus.Return && tAss != null && tAss.Texture != null && tAss.Texture.glReady)
+                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(id, AssetType.Texture, out Asset tAss) == AssetStatus.Return && tAss != null && tAss.Texture != null && tAss.Texture.glReady)
                 {
                     imgs[i++] = tAss.Texture.CompoundImage();
                     maxW = Math.Max(maxW, imgs[i - 1].Width);

@@ -78,7 +78,7 @@
             return this.GLTex;
         }
 
-        public void Delete() => this.GLTex?.Dispose();
+        public void Free() => this.GLTex?.Dispose();
 
         public struct FrameData
         {

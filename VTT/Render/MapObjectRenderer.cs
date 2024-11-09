@@ -829,7 +829,7 @@
                         continue;
                     }
 
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
                     if (status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                     {
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
@@ -867,7 +867,7 @@
             {
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
                     bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
                     if (ready)
                     {
@@ -950,7 +950,7 @@
                 shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
                 foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
                     bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
                     bool haveAssetButNoMTTextures = !assetReady && !(a?.Model?.GLMdl?.MaterialsGlReady ?? true);
                     if (i > 0 || mo.ClientDeferredRejectThisFrame)

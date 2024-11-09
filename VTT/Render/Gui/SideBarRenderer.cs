@@ -632,7 +632,7 @@
                 {
                     AssetRef aRef = Client.Instance.AssetManager.Refs[this._fxToEmitParticleSystemID];
                     mdlTxt += aRef.Name;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(this._fxToEmitParticleSystemID, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._fxToEmitParticleSystemID, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                     {
                         GL.Texture tex = ap.GetGLTexture();
                         if (tex != null)

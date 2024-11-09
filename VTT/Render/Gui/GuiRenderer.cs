@@ -652,7 +652,7 @@
             {
                 if (this._inspectedObject != null)
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(this._inspectedObject.AssetID, out AssetPreview ap);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(this._inspectedObject.AssetID, AssetType.Model, out AssetPreview ap);
                     if (status == AssetStatus.Return && ap != null)
                     {
                         Vector2 winSize = ImGui.GetWindowSize();

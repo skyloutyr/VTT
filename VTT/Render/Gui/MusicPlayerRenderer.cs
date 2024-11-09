@@ -58,7 +58,7 @@
                     if (mp.CurrentTrackPosition != -1)
                     {
                         (Guid, float) d = mp.Tracks[mp.CurrentTrackPosition];
-                        aStatus = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(d.Item1, AssetType.Sound, out a);
+                        aStatus = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(d.Item1, AssetType.Sound, out a);
                         float sNow = float.NaN;
                         float sMax = float.NaN;
                         if (aStatus == AssetStatus.Return && a?.Type == AssetType.Sound && a?.Sound?.Meta != null)
@@ -127,14 +127,14 @@
                     }
 
                     DrawScrollingText(ImGui.GetWindowDrawList(), ImGui.GetCursorScreenPos(), new Vector2(390, 32), musicName, true);
-                    ImGui.ProgressBar(musicDurationPercentage, new System.Numerics.Vector2(390, 16), " ");
+                    ImGui.ProgressBar(musicDurationPercentage, new Vector2(390, 16), " ");
                     Vector2 musicNameSize = ImGuiHelper.CalcTextSize(musicDuration);
                     ImGui.SetCursorPosX(195 - (musicNameSize.X / 2));
                     ImGui.TextUnformatted(musicDuration);
                     if (Client.Instance.IsAdmin)
                     {
                         ImGui.NewLine();
-                        if (ImGui.ImageButton("MusicPlayerStop", this.PlayerStop, new System.Numerics.Vector2(24, 24)))
+                        if (ImGui.ImageButton("MusicPlayerStop", this.PlayerStop, new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerSetIndex() { Index = -1 }.Send();
                         }
@@ -145,7 +145,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.ImageButton("MusicPlayerPlay", this.PlayIcon, new System.Numerics.Vector2(24, 24)))
+                        if (ImGui.ImageButton("MusicPlayerPlay", this.PlayIcon, new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerSetIndex() { Index = this._lastSelectedTrackIndex }.Send();
                         }
@@ -156,7 +156,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.ImageButton("MusicPlayerNext", this.PlayerNext, new System.Numerics.Vector2(24, 24)))
+                        if (ImGui.ImageButton("MusicPlayerNext", this.PlayerNext, new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.ForceNext }.Send();
                         }
@@ -210,7 +210,7 @@
                             foreach ((Guid, float) track in mp.Tracks)
                             {
                                 Guid aId = track.Item1;
-                                AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(aId, AssetType.Sound, out a);
+                                AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(aId, AssetType.Sound, out a);
                                 string soundName = lang.Translate("ui.music_player.name_unknown", track.Item1);
                                 GL.Texture icon = this.AssetMusicIcon;
                                 GL.Texture assetTypeIcon = this.AssetMusicIcon;
@@ -244,7 +244,7 @@
                                         }
                                     }
 
-                                    status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview preview);
+                                    status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview preview);
                                     if (status == AssetStatus.Return && preview != null)
                                     {
                                         icon = preview.GetGLTexture();
@@ -394,15 +394,15 @@
                     {
                         ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                         var imScreenPos = ImGui.GetCursorScreenPos();
-                        var rectEnd = imScreenPos + new System.Numerics.Vector2(320, 24);
+                        var rectEnd = imScreenPos + new Vector2(320, 24);
                         bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                         uint bClr = assetEval == null ? mouseOver ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Border) : mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                         drawList.AddRect(imScreenPos, rectEnd, bClr);
-                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new System.Numerics.Vector2(4, 4), imScreenPos + new System.Numerics.Vector2(20, 20));
+                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
                         string mdlTxt = text;
                         int mdlTxtOffset = 0;
                         drawList.PushClipRect(imScreenPos, rectEnd);
-                        drawList.AddText(imScreenPos + new System.Numerics.Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                         drawList.PopClipRect();
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
                         return mouseOver;
@@ -418,7 +418,7 @@
                 ImGui.SetNextWindowPos(new(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY));
                 if (ImGui.Begin("###PopupDraggedTrackSubWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMouseInputs | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoTitleBar))
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this._draggedTrackData.Item1, AssetType.Sound, out Asset a);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this._draggedTrackData.Item1, AssetType.Sound, out Asset a);
                     string soundName = this._draggedTrackData.Item3;
                     GL.Texture icon = this.AssetMusicIcon;
                     GL.Texture assetTypeIcon = this.AssetMusicIcon;
@@ -437,7 +437,7 @@
                             }
                         }
 
-                        status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(this._draggedTrackData.Item1, out AssetPreview preview);
+                        status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._draggedTrackData.Item1, AssetType.Texture, out AssetPreview preview);
                         if (status == AssetStatus.Return && preview != null)
                         {
                             icon = preview.GetGLTexture();

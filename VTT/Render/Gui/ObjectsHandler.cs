@@ -488,7 +488,7 @@
                                         {
                                             AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
                                             mdlTxt += aRef.Name;
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                                             {
                                                 GL.Texture tex = ap.GetGLTexture();
                                                 if (tex != null)
@@ -551,7 +551,7 @@
                                         ImGui.Text(lang.Translate("ui.particle_containers.attachment"));
                                         if (!mo.AssetID.Equals(Guid.Empty))
                                         {
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
+                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
                                             {
                                                 string[] arr = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
                                                 int idx = Array.IndexOf(arr, arr.FirstOrDefault(s => s.Equals(pc.AttachmentPoint), string.Empty));
@@ -966,7 +966,7 @@
                 {
                     AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
                     mdlTxt += aRef.Name;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                     {
                         GL.Texture tex = ap.GetGLTexture();
                         if (tex != null)
@@ -1194,7 +1194,7 @@
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
                     if (hasNp)
                     {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
                         {
                             Vector2 cPn = ImGui.GetCursorPos();
                             ImDrawListPtr backList = ImGui.GetWindowDrawList();

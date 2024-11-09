@@ -129,7 +129,7 @@
 
                                 if (mo != null)
                                 {
-                                    AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrCreatePortrait(mo.AssetID, out AssetPreview ap);
+                                    AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(mo.AssetID, AssetType.Model, out AssetPreview ap);
                                     if (a == AssetStatus.Return)
                                     {
                                         this._portraitTex.preview = ap;

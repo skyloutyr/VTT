@@ -348,8 +348,7 @@
             this.Renderer.Update();
             this.GuiWrapper.Update();
             GuiRenderer.Instance.Update();
-            Client.Instance.AssetManager.ClientAssetLibrary?.PulseRequest();
-            Client.Instance.AssetManager.ClientAssetLibrary?.PulsePreview();
+            Client.Instance.AssetManager.ClientAssetLibrary?.Pulse();
             while (!this._actionsToDo.IsEmpty)
             {
                 if (this._actionsToDo.TryDequeue(out RepeatableActionContainer a))

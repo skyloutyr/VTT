@@ -1008,10 +1008,10 @@
                         }
 
                         float cursorXBeforeElement = ImGui.GetCursorPosX();
-                        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, System.Numerics.Vector2.Zero);
-                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, System.Numerics.Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, Vector2.Zero);
                         ImGui.BeginChild(ImGui.GetID("Asset_" + aRef.AssetID), new Vector2(96, 112));
-                        AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aRef.AssetID, out AssetPreview ap);
+                        AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aRef.AssetID, AssetType.Texture, out AssetPreview ap);
 
                         bool hover = ImGui.IsWindowHovered();
                         bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
@@ -1135,7 +1135,7 @@
 
                                     if (ImGui.MenuItem(lang.Translate("ui.assets.duplicate_particle") + "###Duplicate Particle System"))
                                     {
-                                        Client.Instance.AssetManager.ClientAssetLibrary.PerformClientAssetAction(aRef.AssetID, AssetType.ParticleSystem, (status, a) =>
+                                        Client.Instance.AssetManager.ClientAssetLibrary.Assets.ActUpon(aRef.AssetID, AssetType.ParticleSystem, (status, a) =>
                                         {
                                             if (status == AssetStatus.Return && a != null && a.Type == AssetType.ParticleSystem)
                                             {
@@ -1164,7 +1164,7 @@
 
                                     if (ImGui.MenuItem(lang.Translate("ui.assets.duplicate_shader") + "###Duplicate Shader"))
                                     {
-                                        Client.Instance.AssetManager.ClientAssetLibrary.PerformClientAssetAction(aRef.AssetID, AssetType.Shader, (status, a) =>
+                                        Client.Instance.AssetManager.ClientAssetLibrary.Assets.ActUpon(aRef.AssetID, AssetType.Shader, (status, a) =>
                                         {
                                             if (status == AssetStatus.Return && a != null && a.Type == AssetType.Shader)
                                             {
@@ -1427,7 +1427,7 @@
                 ImGui.SetNextWindowPos(new(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY));
                 ImGui.Begin("Dragged Preview", flags);
 
-                AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(this._draggedRef.AssetPreviewID, out AssetPreview ap);
+                AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._draggedRef.AssetPreviewID, AssetType.Texture, out AssetPreview ap);
                 if (a == AssetStatus.Await)
                 {
                     int frame =

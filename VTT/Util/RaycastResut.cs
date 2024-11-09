@@ -59,9 +59,9 @@
                     if (vec.HasValue)
                     {
                         Guid aID = mo.AssetID;
-                        if (!Guid.Empty.Equals(aID) && Client.Instance.AssetManager.Assets.ContainsKey(aID))
+                        if (!Guid.Empty.Equals(aID) && Client.Instance.AssetManager.ClientAssetLibrary.Assets.TryGetWithoutRequest(aID, out Asset.Asset a))
                         {
-                            hitsBroad.Add((mo, Client.Instance.AssetManager.Assets[aID]));
+                            hitsBroad.Add((mo, a));
                         }
                     }
                 }

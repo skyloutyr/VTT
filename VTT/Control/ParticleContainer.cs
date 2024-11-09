@@ -52,7 +52,7 @@
                     this._psIns = null;
                 }
 
-                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.SystemID, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a?.ParticleSystem != null)
+                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.SystemID, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a?.ParticleSystem != null)
                 {
                     if (this._psIns == null)
                     {

@@ -83,7 +83,7 @@
                 }
                 else
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(this.AssetID, AssetType.Sound, out Asset a);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.AssetID, AssetType.Sound, out Asset a);
                     if (status == AssetStatus.Return)
                     {
                         if (a?.Type == AssetType.Sound && a?.Sound != null && a?.Sound?.Meta != null)

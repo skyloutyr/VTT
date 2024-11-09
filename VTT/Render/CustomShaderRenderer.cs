@@ -19,7 +19,7 @@
                 return false;
             }
 
-            if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return)
+            if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return)
             {
                 if (a.Type == Asset.AssetType.Shader && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                 {

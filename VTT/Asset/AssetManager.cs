@@ -1,6 +1,7 @@
 ﻿namespace VTT.Asset
 {
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.Formats.Gif;
     using SixLabors.ImageSharp.PixelFormats;
@@ -23,11 +24,7 @@
 
     public class AssetManager
     {
-        public Dictionary<Guid, Asset> Assets { get; } = new Dictionary<Guid, Asset>();
         public Dictionary<Guid, AssetRef> Refs { get; } = new Dictionary<Guid, AssetRef>();
-        public Dictionary<Guid, AssetPreview> Previews { get; } = new Dictionary<Guid, AssetPreview>();
-        public Dictionary<Guid, AssetPreview> Portraits { get; } = new Dictionary<Guid, AssetPreview>();
-        public Dictionary<string, AssetPreview> WebPictures { get; } = new Dictionary<string, AssetPreview>();
 
         public ClientAssetLibrary ClientAssetLibrary { get; } = new ClientAssetLibrary();
         public AssetBinaryCache ServerAssetCache { get; }
@@ -227,472 +224,67 @@
 
         public AssetManager Container { get; set; }
 
-        public Queue<Guid> RequestQueue { get; } = new Queue<Guid>();
-        public Queue<Guid> PreviewRequestQueue { get; } = new Queue<Guid>();
-        public Queue<AssetType> RequestTypeQueue { get; } = new Queue<AssetType>();
+        public AssetLibrary<Guid, Asset> Assets { get; }
+        public AssetLibrary<Guid, AssetPreview> Previews { get; }
+        public AssetLibrary<Guid, AssetPreview> Portraits { get; }
+        public AssetLibrary<string, AssetPreview> WebPictures { get; }
 
-        public Dictionary<Guid, AssetStatus> ErroredAssets { get; } = new Dictionary<Guid, AssetStatus>();
-        public Dictionary<Guid, AssetStatus> ErroredPreviews { get; } = new Dictionary<Guid, AssetStatus>();
-        public Dictionary<string, AssetStatus> ErroredWebImages { get; } = new Dictionary<string, AssetStatus>();
-
-        public long LastRequestTime { get; set; }
-        public long LastPreviewRequestTime { get; set; }
         public int GlMaxTextureSize { get; set; }
 
-        private readonly object _lock = new object();
-        private readonly object _lock2 = new object();
-
-        public AssetStatus GetWebImage(string url, out AssetPreview ap)
+        public ClientAssetLibrary()
         {
-            if (this.Container.WebPictures.TryGetValue(url, out ap))
+            this.Assets = new AssetLibrary<Guid, Asset>()
             {
-                return AssetStatus.Return;
-            }
+                ValueValidator = this.ValidateAsset,
+                RequestGenerator = this.RequestAsset,
+                DataParser = this.ReceiveAsset,
+                ValueCleaner = this.ClearAsset,
+                ValueEraser = this.EraseAsset,
+            };
 
-            ap = null;
-            if (this.ErroredWebImages.TryGetValue(url, out AssetStatus ret))
+            this.Previews = new AssetLibrary<Guid, AssetPreview>()
+            { 
+                RequestGenerator = this.RequestPreview,
+                DataParser = this.ReceivePreview,
+                ValueCleaner = this.ClearPreview,
+            };
+
+            this.Portraits = new AssetLibrary<Guid, AssetPreview>()
             {
-                return ret;
-            }
+                CustomValueGetter = this.GetPortrait,
+                ValueCleaner = this.ClearPreview
+            };
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", $"VTT-C#-Client-ImageRequestBot/1.0.0 (https://github.com/skyloutyr; skyloutyr@gmail.com) Requesting-User-Constant-GUID/{Client.Instance.ID} ClientCachePolicy/Aggressive");
-
-            try
+            this.WebPictures = new AssetLibrary<string, AssetPreview>()
             {
-                client.GetByteArrayAsync(url).ContinueWith((t) =>
-                {
-                    try
-                    {
-                        if (t.Status == System.Threading.Tasks.TaskStatus.RanToCompletion)
-                        {
-                            byte[] array = t.Result;
-                            Image<Rgba32> img = Image.Load<Rgba32>(array);
-                            List<AssetPreview.FrameData> frames = new List<AssetPreview.FrameData>();
-                            if (img.Frames.Count > 1)
-                            {
-                                GraphicsOptions opts = new GraphicsOptions() { AlphaCompositionMode = PixelAlphaCompositionMode.Src, Antialias = false, ColorBlendingMode = PixelColorBlendingMode.Normal };
-                                ImageFrameCollection<Rgba32> ifc = img.Frames;
-                                int wS = 0;
-                                int wM = 0;
-                                int hM = 0;
-                                foreach (ImageFrame<Rgba32> frame in ifc.Cast<ImageFrame<Rgba32>>())
-                                {
-                                    if (wS + frame.Width > this.GlMaxTextureSize)
-                                    {
-                                        wM = Math.Max(wM, wS);
-                                        wS = 0;
-                                        hM += frame.Height;
-                                        if (hM > this.GlMaxTextureSize)
-                                        {
-                                            this.ErroredWebImages[url] = AssetStatus.Error;
-                                            img.Dispose();
-                                            return;
-                                        }
-                                    }
-
-                                    wS += frame.Width;
-                                }
-
-                                wM = Math.Max(wM, wS);
-                                hM += img.Height;
-
-                                Image<Rgba32> final = new Image<Rgba32>(wM, hM);
-                                GifMetadata imgGifMeta = img.Metadata?.GetGifMetadata();
-                                int posX = 0;
-                                int posY = 0;
-                                int cumulativeDelay = 0;
-                                for (int i = 0; i < ifc.Count; ++i)
-                                {
-                                    Image<Rgba32> frame = ifc.CloneFrame(i);
-                                    ImageFrame<Rgba32> aFrame = ifc[i];
-                                    int delay = 10;
-                                    if (aFrame.Metadata != null)
-                                    {
-                                        try
-                                        {
-                                            GifFrameMetadata gfm = aFrame.Metadata.GetGifMetadata();
-                                            delay = gfm?.FrameDelay ?? 10;
-                                            if (delay == 0)
-                                            {
-                                                delay = 10;
-                                            }
-                                        }
-                                        catch
-                                        {
-                                            // NOOP
-                                        }
-                                    }
-
-                                    if (posX + frame.Width > wM)
-                                    {
-                                        posX = 0;
-                                        posY += img.Height;
-                                    }
-
-                                    cumulativeDelay += delay;
-                                    final.Mutate(x => x.DrawImage(frame, new Point(posX, posY), opts));
-                                    AssetPreview.FrameData currentData = new AssetPreview.FrameData(posX, posY, frame.Height, frame.Width, delay, cumulativeDelay);
-                                    frames.Add(currentData);
-                                    posX += frame.Width;
-                                    frame.Dispose();
-                                }
-
-                                img.Dispose();
-                                img = final;
-                            }
-
-                            Client.Instance.DoTask(() =>
-                            {
-                                Texture tex = new Texture(TextureTarget.Texture2D);
-                                tex.Bind();
-                                if (frames.Count == 0)
-                                {
-                                    tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
-                                    tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                                    tex.SetImage(img, SizedInternalFormat.Rgba8);
-                                    tex.GenerateMipMaps();
-                                    img.Dispose();
-                                    Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
-                                }
-                                else
-                                {
-                                    tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-                                    tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
-                                    System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
-                                    tex.SetImage(img, SizedInternalFormat.Rgba8);
-                                    img.Dispose();
-                                    Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
-                                }
-
-                                AssetPreview prev = new AssetPreview() { GLTex = tex, IsAnimated = frames.Count > 0 };
-                                if (frames.Count > 0)
-                                {
-                                    prev.Frames = frames.ToArray();
-                                    prev.FramesTotalDelay = frames.Sum(f => f.Duration);
-                                }
-
-                                this.Container.WebPictures[url] = prev;
-                                this.Container.ClientAssetLibrary.ErroredWebImages.Remove(url);
-                            });
-                        }
-                        else
-                        {
-                            this.ErroredWebImages[url] = AssetStatus.Error;
-                        }
-                    }
-                    catch
-                    {
-                        this.ErroredWebImages[url] = AssetStatus.Error;
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Client.Instance.Logger.Log(LogLevel.Error, "Image download request failed!");
-                Client.Instance.Logger.Exception(LogLevel.Error, e);
-                this.ErroredWebImages[url] = AssetStatus.Error;
-                return AssetStatus.Error;
-            }
-
-            this.ErroredWebImages[url] = AssetStatus.Await;
-            return AssetStatus.Await;
+                RequestGenerator = this.RequestWebImage,
+                DataParser = this.ReceiveWebImage,
+                ValueCleaner = this.ClearWebImage
+            };
         }
 
-        public AssetStatus GetOrCreatePortrait(Guid aID, out AssetPreview ap)
+        #region Asset Handling
+        private void ValidateAsset(Guid id, AssetType requestedType, Asset a)
         {
-            if (this.Container.Portraits.TryGetValue(aID, out ap))
-            {
-                return AssetStatus.Return;
-            }
-
-            ap = null;
-            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
-            {
-                return ret;
-            }
-
-            if (this.RequestQueue.Contains(aID))
-            {
-                return AssetStatus.Await; // Asset already requested
-            }
-
-            if (!this.Container.Assets.ContainsKey(aID))
-            {
-                // Request asset
-                this.RequestQueue.Enqueue(aID);
-                this.RequestTypeQueue.Enqueue(AssetType.Model);
-                this.PulseRequest();
-                return AssetStatus.Await;
-            }
-
-            Asset a = this.Container.Assets[aID];
             if (a != null)
             {
-                if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
-                {
-                    // Safe to do as CopyGlTexture will call GetOrCreateGLTexture anyway. GetOrCreate will not queue multiple times if texture is not ready
-                    Texture t1 = a.Texture.GetOrCreateGLTexture(false, out TextureAnimation anim);
-                    if (t1.IsAsyncReady)
-                    {
-                        Texture tex = a.Texture.CopyGlTexture(SizedInternalFormat.Rgba8);
-                        AssetPreview prev = new AssetPreview() { GLTex = tex };
-                        prev.CopyFromAnimation(anim, tex.Size);
-                        this.Container.Portraits[aID] = prev;
-                        ap = prev;
-                        return AssetStatus.Return;
-                    }
-                    else
-                    {
-                        return AssetStatus.Await;
-                    }
-                }
-
-                if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.GlReady ?? false))
-                {
-                    using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new Vector4(0, 0, 0, 0), true);
-                    Texture tex = new Texture(TextureTarget.Texture2D);
-                    tex.Bind();
-                    tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
-                    tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                    tex.SetImage(img, SizedInternalFormat.Rgba8);
-                    tex.GenerateMipMaps();
-                    AssetPreview prev = new AssetPreview() { GLTex = tex };
-                    this.Container.Portraits[aID] = prev;
-                    ap = prev;
-
-                    return AssetStatus.Return;
-                }
-
-                return AssetStatus.Error;
-            }
-
-            return AssetStatus.NoAsset; //Race condition?
-        }
-
-        public AssetStatus GetOrRequestPreview(Guid aID, out AssetPreview ap)
-        {
-            if (this.Container.Previews.TryGetValue(aID, out ap))
-            {
-                return AssetStatus.Return;
-            }
-
-            ap = null;
-            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus retEA))
-            {
-                return retEA;
-            }
-
-            if (this.ErroredPreviews.TryGetValue(aID, out AssetStatus retEP))
-            {
-                return retEP;
-            }
-
-            if (this.PreviewRequestQueue.Contains(aID))
-            {
-                return AssetStatus.Await;
-            }
-
-            this.PreviewRequestQueue.Enqueue(aID);
-            this.PulsePreview();
-            return AssetStatus.Await;
-        }
-
-        private readonly ConcurrentDictionary<Guid, ConcurrentQueue<Action<AssetStatus, Asset>>> _assetCallbacks = new ConcurrentDictionary<Guid, ConcurrentQueue<Action<AssetStatus, Asset>>>();
-        private readonly object _assetCallbackLock = new object();
-
-        public void PerformClientAssetAction(Guid aID, AssetType aType, Action<AssetStatus, Asset> callback)
-        {
-            if (this.Container.Assets.TryGetValue(aID, out Asset a))
-            {
-                if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
+                if (a.Type == AssetType.Texture && requestedType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
                 {
                     Glb.GlbScene mdl = a.Texture.ToGlbModel();
                     a.Model = new ModelData() { GLMdl = mdl };
                 }
-
-                callback(AssetStatus.Return, a);
-                return;
-            }
-
-            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
-            {
-                callback(ret, null);
-                return;
-            }
-
-            if (this.RequestQueue.Contains(aID))
-            {
-                // Asset already requested, enqueue?
-                lock (this._assetCallbackLock)
-                {
-                    // Try for object status here again, may be present
-                    if (this.Container.Assets.TryGetValue(aID, out a))
-                    {
-                        if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
-                        {
-                            Glb.GlbScene mdl = a.Texture.ToGlbModel();
-                            a.Model = new ModelData() { GLMdl = mdl };
-                        }
-
-                        callback(AssetStatus.Return, a);
-                        return;
-                    }
-
-                    if (this.ErroredAssets.TryGetValue(aID, out ret))
-                    {
-                        callback(ret, null);
-                        return;
-                    }
-
-                    // Enqueue
-                    if (!this._assetCallbacks.TryGetValue(aID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbackQueue))
-                    {
-                        ConcurrentQueue<Action<AssetStatus, Asset>> cq = callbackQueue = new ConcurrentQueue<Action<AssetStatus, Asset>>();
-                        this._assetCallbacks.TryAdd(aID, cq);
-                    }
-
-                    callbackQueue.Enqueue(callback);
-                }
-
-                return;
-            }
-
-            this.RequestQueue.Enqueue(aID);
-            this.RequestTypeQueue.Enqueue(aType);
-            this.PulseRequest();
-        }
-
-        public AssetStatus GetOrRequestAsset(Guid aID, AssetType aType, out Asset a)
-        {
-            if (this.Container.Assets.TryGetValue(aID, out a))
-            {
-                if (a.Type == AssetType.Texture && aType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
-                {
-                    Glb.GlbScene mdl = a.Texture.ToGlbModel();
-                    a.Model = new ModelData() { GLMdl = mdl };
-                }
-
-                return AssetStatus.Return;
-            }
-
-            a = null;
-            if (this.ErroredAssets.TryGetValue(aID, out AssetStatus ret))
-            {
-                return ret;
-            }
-
-            if (this.RequestQueue.Contains(aID))
-            {
-                return AssetStatus.Await; // Asset already requested
-            }
-
-            this.RequestQueue.Enqueue(aID);
-            this.RequestTypeQueue.Enqueue(aType);
-            this.PulseRequest();
-            return AssetStatus.Await; // Requested asset
-        }
-
-        public void EraseAssetRecord(Guid aID) => this.ErroredAssets.Remove(aID);
-
-        public void PulsePreview()
-        {
-            lock (this._lock2) // Multithreaded access prevention
-            {
-                bool timestampMatch = this.LastPreviewRequestTime == 0 || ((DateTimeOffset.Now.ToUnixTimeMilliseconds() - this.LastPreviewRequestTime) >= AssetAwaitTime);
-                if (timestampMatch)
-                {
-                    if (this.PreviewRequestQueue.Count > 0)
-                    {
-                        this.LastPreviewRequestTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        Guid id = this.PreviewRequestQueue.Dequeue();
-                        this.ErroredPreviews[id] = AssetStatus.Await;
-                        this.InternalRequestAssetPreview(id);
-                    }
-                }
             }
         }
 
-        private void InternalRequestAssetPreview(Guid guid)
-        {
-            PacketAssetPreview pap = new PacketAssetPreview() { ID = guid, Session = Client.Instance.SessionID, IsServer = false };
-            pap.Send(Client.Instance.NetClient);
-        }
+        private void RequestAsset(Guid id, AssetType at) => new PacketAssetRequest() { AssetID = id, AssetType = at }.Send();
 
-        public void PulseRequest()
+        private AssetStatus ReceiveAsset(Guid id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out Asset val)
         {
-            lock (this._lock) // Multithreaded access prevention
+            Asset a = val = new Asset() { ID = id, Type = type };
+            ThreadPool.QueueUserWorkItem(x =>
             {
-                bool timestampMatch = this.LastRequestTime == 0 || ((DateTimeOffset.Now.ToUnixTimeMilliseconds() - this.LastRequestTime) >= AssetAwaitTime);
-                if (timestampMatch)
-                {
-                    if (this.RequestQueue.Count > 0)
-                    {
-                        Guid id = this.RequestQueue.Dequeue();
-                        this.LastRequestTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        this.ErroredAssets[id] = AssetStatus.Await;
-                        this.InternalRequestAsset(id, this.RequestTypeQueue.Dequeue());
-                    }
-                }
-            }
-        }
-
-        private void InternalRequestAsset(Guid assetID, AssetType aType)
-        {
-            PacketAssetRequest par = new PacketAssetRequest() { AssetID = assetID, AssetType = aType, IsServer = false };
-            par.Send(Client.Instance.NetClient);
-        }
-
-        public void ErrorAsset(Guid assetID, AssetResponseType responseType)
-        {
-            AssetStatus astat = responseType == AssetResponseType.InternalError ? AssetStatus.Error : AssetStatus.NoAsset;
-            this.ErroredAssets[assetID] = astat;
-
-            // Notify callbacks of error
-            lock (this._assetCallbackLock)
-            {
-                if (this._assetCallbacks.TryGetValue(assetID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbacks))
-                {
-                    while (!callbacks.IsEmpty)
-                    {
-                        if (!callbacks.TryDequeue(out Action<AssetStatus, Asset> callback))
-                        {
-                            break;
-                        }
-
-                        callback(astat, null);
-                    }
-                }
-            }
-
-            this.LastRequestTime = 0;
-            this.PulseRequest(); // Check for new requests and process them
-        }
-
-        public void ReceivePreview(Guid assetID, AssetResponseType response, byte[] binary)
-        {
-            if (response != AssetResponseType.Ok)
-            {
-                this.ErroredPreviews[assetID] = response == AssetResponseType.InternalError ? AssetStatus.Error : AssetStatus.NoAsset;
-            }
-            else
-            {
-                AssetPreview ap = new AssetPreview() { Data = binary };
-                this.Container.Previews[assetID] = ap;
-                this.ErroredPreviews.Remove(assetID);
-            }
-
-            this.LastPreviewRequestTime = 0;
-            this.PulsePreview();
-        }
-
-        public void ReceiveAsset(Guid assetID, AssetType assetType, byte[] binary, AssetMetadata meta)
-        {
-            Asset a = new Asset() { ID = assetID, Type = assetType };
-            byte[] rawBinary = AssetBinaryPointer.GetRawAssetBinary(binary);
-            ThreadPool.QueueUserWorkItem((token) =>
-            {
-                switch (assetType)
+                byte[] rawBinary = AssetBinaryPointer.GetRawAssetBinary(bin);
+                switch (type)
                 {
                     case AssetType.Texture:
                     {
@@ -748,74 +340,563 @@
                 }
             });
 
-            this.Container.Assets[assetID] = a;
-            this.EraseAssetRecord(assetID);
+            return AssetStatus.Return;
+        }
 
-            // Process callbacks.
-            lock (this._assetCallbackLock)
+        private void ClearAsset(Guid id, Asset a) => a?.Dispose();
+
+        private void EraseAsset(Guid id)
+        {
+            this.Previews.EraseRecord(id);
+            this.Portraits.EraseRecord(id);
+        }
+
+        #endregion
+
+        #region Preview Handling
+        private void RequestPreview(Guid id, AssetType at)
+        {
+            if (this.Assets.GetStatus(id, out AssetStatus status) && status is AssetStatus.Error or AssetStatus.NoAsset)
             {
-                if (this._assetCallbacks.TryGetValue(assetID, out ConcurrentQueue<Action<AssetStatus, Asset>> callbacks))
+                this.Previews.Receive(id, at, status == AssetStatus.Error ? AssetResponseType.InternalError : AssetResponseType.NoAsset, null, null);
+            }
+            else
+            {
+                new PacketAssetPreview() { ID = id }.Send();
+            }
+        }
+
+        private AssetStatus ReceivePreview(Guid id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out AssetPreview preview)
+        {
+            if (response != AssetResponseType.Ok)
+            {
+                preview = null;
+                return response == AssetResponseType.InternalError ? AssetStatus.Error : AssetStatus.NoAsset;
+            }
+
+            preview = new AssetPreview() { Data = bin };
+            return AssetStatus.Return;
+        }
+
+        private void ClearPreview(Guid id, AssetPreview preview) => preview.Free();
+
+        #endregion
+
+        #region Portrait Handling
+        private bool GetPortrait(Guid id, AssetType type, Dictionary<Guid, AssetPreview> values, Dictionary<Guid, AssetStatus> statuses, Action<Guid, AssetType> requesterDelegate, out AssetStatus status, out AssetPreview value)
+        {
+            if (statuses.TryGetValue(id, out AssetStatus cStat))
+            {
+                if (cStat is AssetStatus.Error or AssetStatus.NoAsset)
                 {
-                    while (!callbacks.IsEmpty)
-                    {
-                        if (!callbacks.TryDequeue(out Action<AssetStatus, Asset> callback))
-                        {
-                            break;
-                        }
-
-                        callback(AssetStatus.Return, a);
-                    }
-
-                    this._assetCallbacks.TryRemove(assetID, out _); // Do not care for out param
+                    status = cStat;
+                    value = null;
+                    return true;
                 }
             }
 
+            AssetStatus assetStatus = this.Assets.Get(id, AssetType.Model, out Asset a);
+            switch (assetStatus)
+            {
+                case AssetStatus.Error:
+                {
+                    statuses[id] = status = AssetStatus.Error;
+                    value = null;
+                    return true;
+                }
 
-            this.LastRequestTime = 0;
-            this.PulseRequest(); // Check for new requests and process them
+                case AssetStatus.NoAsset:
+                {
+                    statuses[id] = status = AssetStatus.NoAsset;
+                    value = null;
+                    return true;
+                }
+
+                case AssetStatus.Return:
+                {
+                    if (a != null)
+                    {
+                        if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
+                        {
+                            // Safe to do as CopyGlTexture will call GetOrCreateGLTexture anyway. GetOrCreate will not queue multiple times if texture is not ready
+                            Texture t1 = a.Texture.GetOrCreateGLTexture(false, out TextureAnimation anim);
+                            if (t1.IsAsyncReady)
+                            {
+                                Texture tex = a.Texture.CopyGlTexture(SizedInternalFormat.Rgba8);
+                                AssetPreview prev = new AssetPreview() { GLTex = tex };
+                                prev.CopyFromAnimation(anim, tex.Size);
+                                values[id] = value = prev;
+                                statuses[id] = AssetStatus.Return;
+                                status = AssetStatus.Return;
+                                return true;
+                            }
+                            else
+                            {
+                                statuses[id] = status = AssetStatus.Await;
+                                value = null;
+                                return true;
+                            }
+                        }
+
+                        if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.GlReady ?? false))
+                        {
+                            using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new Vector4(0, 0, 0, 0), true);
+                            Texture tex = new Texture(TextureTarget.Texture2D);
+                            tex.Bind();
+                            tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
+                            tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
+                            tex.SetImage(img, SizedInternalFormat.Rgba8);
+                            tex.GenerateMipMaps();
+                            AssetPreview prev = new AssetPreview() { GLTex = tex };
+                            values[id] = value = prev;
+                            statuses[id] = AssetStatus.Return;
+                            status = AssetStatus.Return;
+                            return true;
+                        }
+
+                        goto case AssetStatus.Await;
+                    }
+                    else
+                    {
+                        goto case AssetStatus.Error;
+                    }
+                }
+
+                case AssetStatus.Await:
+                default:
+                {
+                    status = statuses[id] = AssetStatus.Await;
+                    value = null;
+                    return true;
+                }
+            }
         }
+
+        #endregion
+
+        #region Web Picture Handling
+        private void RequestWebImage(string id, AssetType type)
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", $"VTT-C#-Client-ImageRequestBot/1.0.0 (https://github.com/skyloutyr; skyloutyr@gmail.com) Requesting-User-Constant-GUID/{Client.Instance.ID} ClientCachePolicy/Aggressive");
+            try
+            {
+                client.GetByteArrayAsync(id).ContinueWith(t =>
+                {
+                    try
+                    {
+                        if (t.Status == TaskStatus.RanToCompletion)
+                        {
+                            byte[] array = t.Result;
+                            this.WebPictures.ReceiveAsync(id, type, AssetResponseType.Ok, array, null);
+                        }
+                        else
+                        {
+                            this.WebPictures.ReceiveAsync(id, type, AssetResponseType.InternalError, null, null);
+                        }
+                    }
+                    catch
+                    {
+                        this.WebPictures.ReceiveAsync(id, type, AssetResponseType.InternalError, null, null);
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                Client.Instance.Logger.Log(LogLevel.Error, "Image download request failed!");
+                Client.Instance.Logger.Exception(LogLevel.Error, e);
+                this.WebPictures.ReceiveAsync(id, type, AssetResponseType.InternalError, null, null);
+            }
+        }
+
+        private AssetStatus ReceiveWebImage(string id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out AssetPreview preview)
+        {
+            if (response == AssetResponseType.Ok)
+            {
+                ThreadPool.QueueUserWorkItem(x => 
+                {
+                    Image<Rgba32> img = Image.Load<Rgba32>(bin);
+                    List<AssetPreview.FrameData> frames = new List<AssetPreview.FrameData>();
+                    if (img.Frames.Count > 1)
+                    {
+                        GraphicsOptions opts = new GraphicsOptions() { AlphaCompositionMode = PixelAlphaCompositionMode.Src, Antialias = false, ColorBlendingMode = PixelColorBlendingMode.Normal };
+                        ImageFrameCollection<Rgba32> ifc = img.Frames;
+                        int wS = 0;
+                        int wM = 0;
+                        int hM = 0;
+                        foreach (ImageFrame<Rgba32> frame in ifc.Cast<ImageFrame<Rgba32>>())
+                        {
+                            if (wS + frame.Width > this.GlMaxTextureSize)
+                            {
+                                wM = Math.Max(wM, wS);
+                                wS = 0;
+                                hM += frame.Height;
+                                if (hM > this.GlMaxTextureSize)
+                                {
+                                    img.Dispose();
+                                    Client.Instance.DoTask(() => this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null));
+                                    return;
+                                }
+                            }
+
+                            wS += frame.Width;
+                        }
+
+                        wM = Math.Max(wM, wS);
+                        hM += img.Height;
+
+                        Image<Rgba32> final = new Image<Rgba32>(wM, hM);
+                        GifMetadata imgGifMeta = img.Metadata?.GetGifMetadata();
+                        int posX = 0;
+                        int posY = 0;
+                        int cumulativeDelay = 0;
+                        for (int i = 0; i < ifc.Count; ++i)
+                        {
+                            Image<Rgba32> frame = ifc.CloneFrame(i);
+                            ImageFrame<Rgba32> aFrame = ifc[i];
+                            int delay = 10;
+                            if (aFrame.Metadata != null)
+                            {
+                                try
+                                {
+                                    GifFrameMetadata gfm = aFrame.Metadata.GetGifMetadata();
+                                    delay = gfm?.FrameDelay ?? 10;
+                                    if (delay == 0)
+                                    {
+                                        delay = 10;
+                                    }
+                                }
+                                catch
+                                {
+                                    // NOOP
+                                }
+                            }
+
+                            if (posX + frame.Width > wM)
+                            {
+                                posX = 0;
+                                posY += img.Height;
+                            }
+
+                            cumulativeDelay += delay;
+                            final.Mutate(x => x.DrawImage(frame, new Point(posX, posY), opts));
+                            AssetPreview.FrameData currentData = new AssetPreview.FrameData(posX, posY, frame.Height, frame.Width, delay, cumulativeDelay);
+                            frames.Add(currentData);
+                            posX += frame.Width;
+                            frame.Dispose();
+                        }
+
+                        img.Dispose();
+                        img = final;
+                    }
+
+                    Client.Instance.DoTask(() =>
+                    {
+                        Texture tex = new Texture(TextureTarget.Texture2D);
+                        tex.Bind();
+                        if (frames.Count == 0)
+                        {
+                            tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
+                            tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
+                            tex.SetImage(img, SizedInternalFormat.Rgba8);
+                            tex.GenerateMipMaps();
+                            img.Dispose();
+                            Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
+                        }
+                        else
+                        {
+                            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                            tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+                            tex.SetImage(img, SizedInternalFormat.Rgba8);
+                            img.Dispose();
+                            Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
+                        }
+
+                        AssetPreview prev = new AssetPreview() { GLTex = tex, IsAnimated = frames.Count > 0 };
+                        if (frames.Count > 0)
+                        {
+                            prev.Frames = frames.ToArray();
+                            prev.FramesTotalDelay = frames.Sum(f => f.Duration);
+                        }
+
+                        this.WebPictures.EraseRecord(id);
+                        this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Return, prev);
+                    });
+                });
+
+                preview = null;
+                return AssetStatus.Await;
+            }
+            else
+            {
+                preview = null;
+                return AssetStatus.Error;
+            }
+        }
+
+        private void ClearWebImage(string id, AssetPreview preview) => preview.Free();
+        #endregion
 
         public void Clear()
         {
             this.ClearAssets();
-            this.ErroredPreviews.Clear();
-            this.ErroredWebImages.Clear();
-            this.RequestQueue.Clear();
-            this.RequestTypeQueue.Clear();
-            foreach (AssetPreview ap in this.Container.Previews.Values)
-            {
-                ap?.GLTex?.Dispose();
-            }
-
-            this.Container.Previews.Clear();
-
-            foreach (AssetPreview ap in this.Container.WebPictures.Values)
-            {
-                ap?.GLTex?.Dispose();
-            }
-
-            this.Container.WebPictures.Clear();
+            this.Previews.Clear();
+            this.WebPictures.Clear();
             Client.Instance.Frontend.Sound?.ClearAssets();
             ParticleSystem.ImageEmissionLocations.Clear();
         }
 
         public void ClearAssets()
         {
-            this.LastRequestTime = 0;
-            this.ErroredAssets.Clear();
-            foreach (Asset a in this.Container.Assets.Values)
-            {
-                a.Dispose();
-            }
-
-            this.Container.Assets.Clear();
-            foreach (AssetPreview ap in this.Container.Portraits.Values)
-            {
-                ap?.GLTex?.Dispose();
-            }
-
-            this.Container.Portraits.Clear();
+            Client.Instance.Logger.Log(LogLevel.Debug, $"Cleared {this.Assets.NumRecords} asset records.");
+            this.Assets.Clear();
+            this.Portraits.Clear();
         }
+
+        public void Pulse()
+        {
+            this.Assets.Pulse();
+            this.Previews.Pulse();
+            this.WebPictures.Pulse();
+        }
+    }
+
+    public class AssetLibrary<K, T>
+    {
+        public delegate AssetStatus AssetReceiverFilterProcedure(K id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta);
+        public delegate AssetStatus AssetReceiverParserProcedure(K id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out T val);
+        public delegate bool AssetCustomGetterProcedure(K id, AssetType type, Dictionary<K, T> values, Dictionary<K, AssetStatus> statuses, Action<K, AssetType> requesterDelegate, out AssetStatus status, out T value);
+
+        private readonly Dictionary<K, T> _values = new Dictionary<K, T>();
+        private readonly Queue<(K, AssetType)> _requests = new Queue<(K, AssetType)>();
+        private readonly Dictionary<K, AssetStatus> _statuses = new Dictionary<K, AssetStatus>();
+        private readonly Dictionary<K, List<Action<AssetStatus, T>>> _callbacks = new Dictionary<K, List<Action<AssetStatus, T>>>();
+
+        private long _lastRequestTicks;
+
+        public Action<K, AssetType, T> ValueValidator { get; set; }
+        public Action<K, AssetType> RequestGenerator { get; set; }
+        public AssetReceiverFilterProcedure ReceivePreProcessor { get; set; }
+        public AssetReceiverParserProcedure DataParser { get; set; }
+        public Action<K, T> ValueCleaner { get; set; }
+        public Action<K> ValueEraser { get; set; }
+        public AssetCustomGetterProcedure CustomValueGetter { get; set; }
+
+        public bool GetStatus(K id, out AssetStatus status)
+        {
+            if (this._values.TryGetValue(id, out _))
+            {
+                status = AssetStatus.Return;
+                return true;
+            }
+
+            if (this._statuses.TryGetValue(id, out status))
+            {
+                return true;
+            }
+
+            status = AssetStatus.NoAsset;
+            return false;
+        }
+
+        public bool TryUpdate(K id, Action<T> act)
+        {
+            if (this._values.TryGetValue(id, out T val))
+            {
+                act(val);
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryGetWithoutRequest(K id, out T val) => this._values.TryGetValue(id, out val);
+
+        public AssetStatus ActUpon(K id, AssetType t, Action<AssetStatus, T> callback)
+        {
+            if (this._values.TryGetValue(id, out T value))
+            {
+                callback(AssetStatus.Return, value);
+                return AssetStatus.Return;
+            }
+
+            if (this._statuses.TryGetValue(id, out AssetStatus ret))
+            {
+                if (ret == AssetStatus.Return)
+                {
+                    throw new Exception($"Have asset status return for an asset {id}, but no such asset exists!");
+                }
+
+                if (ret != AssetStatus.Await)
+                {
+                    callback(ret, default);
+                    return ret;
+                }    
+            }
+
+            if (!this._callbacks.TryGetValue(id, out List<Action<AssetStatus, T>> callbacks))
+            {
+                callbacks = new List<Action<AssetStatus, T>>();
+                this._callbacks[id] = callbacks;
+            }
+
+            callbacks.Add(callback);
+            return AssetStatus.Await;
+        }
+
+        public AssetStatus Get(K id, AssetType t, out T value)
+        {
+            if (this._values.TryGetValue(id, out value))
+            {
+                this.ValueValidator?.Invoke(id, t, value);
+                return AssetStatus.Return;
+            }
+
+            if (this.CustomValueGetter != null)
+            {
+                if (this.CustomValueGetter(id, t, this._values, this._statuses, this.RequestAssetInternal, out AssetStatus stat, out T v))
+                {
+                    value = v;
+                    return stat;
+                }
+            }
+
+            value = default;
+            if (this._statuses.TryGetValue(id, out AssetStatus ret))
+            {
+                return ret;
+            }
+
+            this.RequestAssetInternal(id, t);
+            return AssetStatus.Await;
+        }
+
+        private void RequestAssetInternal(K id, AssetType t)
+        {
+            this._statuses[id] = AssetStatus.Await;
+            this._requests.Enqueue((id, t));
+            this.PulseRequest();
+        }
+
+        private void PulseRequest()
+        {
+            this._lastRequestTicks = DateTimeOffset.Now.Ticks;
+            if (this._requests.TryDequeue(out (K, AssetType) dat))
+            {
+                this.RequestGenerator(dat.Item1, dat.Item2);
+            }
+        }
+
+        public void ReceiveAsync(K id, AssetType type, AssetResponseType response, byte[] binary, AssetMetadata meta) => Client.Instance.DoTask(() => this.Receive(id, type, response, binary, meta));
+
+        public void Receive(K id, AssetType type, AssetResponseType response, byte[] binary, AssetMetadata meta)
+        {
+            switch (response)
+            {
+                case AssetResponseType.InternalError:
+                {
+                    this._statuses[id] = AssetStatus.Error;
+                    this.FireCallbacks(id, AssetStatus.Error, default);
+                    this.PulseRequest();
+                    return;
+                }
+
+                case AssetResponseType.NoAsset:
+                {
+                    this._statuses[id] = AssetStatus.NoAsset;
+                    this.FireCallbacks(id, AssetStatus.NoAsset, default);
+                    this.PulseRequest();
+                    return;
+                }
+
+                default:
+                {
+                    AssetStatus pps = this.ReceivePreProcessor?.Invoke(id, type, response, binary, meta) ?? AssetStatus.Return;
+                    if (pps != AssetStatus.Return)
+                    {
+                        this._statuses[id] = pps;
+                        this.FireCallbacks(id, pps, default);
+                        this.PulseRequest();
+                        return;
+                    }
+
+                    T val = default;
+                    pps = this.DataParser?.Invoke(id, type, response, binary, meta, out val) ?? AssetStatus.Error;
+                    if (pps == AssetStatus.Return)
+                    {
+                        this._values[id] = val;
+                    }
+
+                    this.FireCallbacks(id, pps, val);
+                    this._statuses[id] = pps;
+                    this.PulseRequest();
+                    return;
+                }
+            }
+        }
+
+        private void FireCallbacks(K id, AssetStatus status, T value)
+        {
+            if (this._callbacks.TryGetValue(id, out List<Action<AssetStatus, T>> callbacks))
+            {
+                foreach (Action<AssetStatus, T> action in callbacks)
+                {
+                    action(status, value);
+                }
+
+                this._callbacks.Remove(id);
+            }
+        }
+
+        public void EraseRecord(K id)
+        {
+            if (this._values.Remove(id, out T val))
+            {
+                this.ValueCleaner?.Invoke(id, val);
+            }
+
+            this._statuses.Remove(id);
+            this.ValueEraser?.Invoke(id);
+        }
+    
+        public void DangerousSetStatusAndData(K id, AssetStatus status, T val)
+        {
+            if (val != null)
+            {
+                this._values[id] = val;
+            }
+
+            this._statuses[id] = status;
+        }
+
+        public void Pulse()
+        {
+            long now = DateTimeOffset.Now.Ticks;
+            if (now - this._lastRequestTicks >= TimeSpan.TicksPerSecond * 30)
+            {
+                this.PulseRequest();
+            }
+        }
+
+        public void Clear()
+        {
+            foreach (KeyValuePair<K, T> kv in this._values)
+            {
+                if (kv.Value != null)
+                {
+                    this.ValueCleaner(kv.Key, kv.Value);
+                }
+            }
+
+            this._values.Clear();
+            this._statuses.Clear();
+            this._requests.Clear();
+            this._callbacks.Clear();
+        }
+
+        public int NumRecords => this._values.Count;
+        public int NumStatuses => this._statuses.Count;
+        public int NumPendingRequests => this._requests.Count;
     }
 
     public enum AssetStatus

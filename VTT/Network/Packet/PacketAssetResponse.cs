@@ -22,11 +22,11 @@
                 ClientAssetLibrary cal = client.AssetManager.ClientAssetLibrary;
                 if (this.ResponseType == AssetResponseType.Ok)
                 {
-                    cal.ReceiveAsset(this.AssetID, this.AssetType, this.Binary, this.Metadata);
+                    cal.Assets.ReceiveAsync(this.AssetID, this.AssetType, this.ResponseType, this.Binary, this.Metadata);
                 }
                 else
                 {
-                    cal.ErrorAsset(this.AssetID, this.ResponseType);
+                    cal.Assets.ReceiveAsync(this.AssetID, this.AssetType, this.ResponseType, null, null);
                 }
             }
         }

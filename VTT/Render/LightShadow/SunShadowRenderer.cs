@@ -113,7 +113,7 @@
                             continue;
                         }
 
-                        AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(mo.AssetID, AssetType.Model, out Asset a);
+                        AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
                         if (status == AssetStatus.Return && a != null && a.Model != null && a.Model.GLMdl != null)
                         {
                             Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;

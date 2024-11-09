@@ -44,14 +44,7 @@
             }
             else
             {
-                client.DoTask(() =>
-                {
-                    client.AssetManager.Assets.Remove(this.AssetID);
-                    client.AssetManager.ClientAssetLibrary.EraseAssetRecord(this.AssetID);
-                    client.AssetManager.Previews.Remove(this.AssetID);
-                    client.AssetManager.Portraits.Remove(this.AssetID);
-                    client.AssetManager.ClientAssetLibrary.ErroredPreviews.Remove(this.AssetID);
-                });
+                client.DoTask(() => client.AssetManager.ClientAssetLibrary.Assets.EraseRecord(this.AssetID));
             }
         }
 

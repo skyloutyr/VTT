@@ -42,7 +42,7 @@
             else
             {
                 client.Logger.Log(Util.LogLevel.Info, "Got asset preview for id " + this.ID + ", result " + this.Response);
-                client.AssetManager.ClientAssetLibrary.ReceivePreview(this.ID, this.Response, this.ImageBinary);
+                client.AssetManager.ClientAssetLibrary.Previews.ReceiveAsync(this.ID, Asset.AssetType.Texture, this.Response, this.ImageBinary, null);
             }
         }
 

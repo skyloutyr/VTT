@@ -64,7 +64,7 @@
             }
 
             string url = this.Container.Blocks[2].Text;
-            AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetWebImage(url, out AssetPreview ap);
+            AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(url, AssetType.Texture, out AssetPreview ap);
             if (status == AssetStatus.Return && ap != null && ap.GLTex != null)
             {
                 if (ap.IsAnimated && ap.FramesTotalDelay > 0)

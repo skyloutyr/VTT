@@ -46,7 +46,7 @@
                     }
 
                     bool doRender = false;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(particleSystemId, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a.ParticleSystem != null)
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(particleSystemId, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a.ParticleSystem != null)
                     {
                         doRender = true;
                         if (pr.CurrentlyEditedSystem == null)
@@ -756,7 +756,7 @@
             {
                 AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
                 mdlTxt += aRef.Name;
-                if (Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestPreview(aId, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                 {
                     GL.Texture tex = ap.GetGLTexture();
                     if (tex != null)

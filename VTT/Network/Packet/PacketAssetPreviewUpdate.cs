@@ -38,11 +38,7 @@
             }
             else
             {
-                client.DoTask(() =>
-                {
-                    client.AssetManager.Previews.Remove(this.AssetID);
-                    client.AssetManager.ClientAssetLibrary.ErroredPreviews.Remove(this.AssetID);
-                });
+                client.DoTask(() => client.AssetManager.ClientAssetLibrary.Previews.EraseRecord(this.AssetID));
             }
         }
         

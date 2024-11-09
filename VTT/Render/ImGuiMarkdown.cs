@@ -42,7 +42,7 @@ namespace VTT.Render
                 },
 
                 ImageCallback = x => {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.GetWebImage(x.Link, out AssetPreview ap);
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(x.Link, AssetType.Texture, out AssetPreview ap);
                     if (status == AssetStatus.Return && ap != null && ap.GLTex != null)
                     {
                         if (ap.IsAnimated)

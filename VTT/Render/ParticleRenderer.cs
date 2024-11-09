@@ -399,7 +399,7 @@
             }
             else
             {
-                AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.GetOrRequestAsset(shaderID, AssetType.Shader, out Asset a);
+                AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderID, AssetType.Shader, out Asset a);
                 if (aStat == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                 {
                     shader = a.Shader.NodeGraph.GetGLShader(true);

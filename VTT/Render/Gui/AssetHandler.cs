@@ -843,8 +843,8 @@
                     {
                         ImGui.SetKeyboardFocusHere();
                         this._searchText = "";
-
                     }
+
                     ImGui.SameLine();
                     ImGui.Image(this.Search, new Vector2(24, 24));
 
@@ -923,25 +923,35 @@
                             pbVal = (float)c / t;
                         }
 
-                        if (this._mostSevereUploadIssue == AsyncAssetLoader.AssetLoadStatus.Ok)
+                        if (c != t)
                         {
-                            ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkGreen.Abgr());
-                            ImGui.TextUnformatted("✅");
-                            ImGui.PopStyleColor();
+                            int pbframe = (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
+                            float pbtexelIndexStart = (float)pbframe / this.LoadingSpinnerFrames;
+                            float pbtexelSize = 1f / this.LoadingSpinnerFrames;
+                            ImGui.Image(this.LoadingSpinner, new Vector2(20, 20), new Vector2(pbtexelIndexStart, 0), new Vector2(pbtexelIndexStart + pbtexelSize, 1));
                         }
                         else
                         {
-                            if (this._mostSevereUploadIssue >= AsyncAssetLoader.AssetLoadStatus.ErrorGeneric)
+                            if (this._mostSevereUploadIssue == AsyncAssetLoader.AssetLoadStatus.Ok)
                             {
-                                ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkRed.Abgr());
-                                ImGui.TextUnformatted("⮿");
+                                ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkGreen.Abgr());
+                                ImGui.TextUnformatted("✅");
                                 ImGui.PopStyleColor();
                             }
                             else
                             {
-                                ImGui.PushStyleColor(ImGuiCol.Text, Color.Yellow.Abgr());
-                                ImGui.TextUnformatted("⚠");
-                                ImGui.PopStyleColor();
+                                if (this._mostSevereUploadIssue >= AsyncAssetLoader.AssetLoadStatus.ErrorGeneric)
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkRed.Abgr());
+                                    ImGui.TextUnformatted("⮿");
+                                    ImGui.PopStyleColor();
+                                }
+                                else
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Text, Color.Yellow.Abgr());
+                                    ImGui.TextUnformatted("⚠");
+                                    ImGui.PopStyleColor();
+                                }
                             }
                         }
 
@@ -957,16 +967,7 @@
                         }
 
                         ImGui.SameLine();
-                        Vector2 preProgressBarCPos = ImGui.GetCursorPos();
                         ImGui.ProgressBar(pbVal, new Vector2(cw - 40, 20), $"{c}/{t}");
-                        if (c != t)
-                        {
-                            ImGui.SetCursorPos(preProgressBarCPos);
-                            int pbframe = (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
-                            float pbtexelIndexStart = (float)pbframe / this.LoadingSpinnerFrames;
-                            float pbtexelSize = 1f / this.LoadingSpinnerFrames;
-                            ImGui.Image(this.LoadingSpinner, new Vector2(20, 20), new Vector2(pbtexelIndexStart, 0), new Vector2(pbtexelIndexStart + pbtexelSize, 1));
-                        }
                     }
 
                     ImGui.NextColumn();

@@ -33,6 +33,11 @@
 
         public void Exception(LogLevel level, Exception e)
         {
+            if (e != null)
+            {
+                Log(level, e.GetType().FullName + ": " + e.Message);
+            }
+
             if (e?.StackTrace != null)
             {
                 foreach (string line in e.StackTrace.Split('\n'))

@@ -1173,32 +1173,30 @@
                                                 using MemoryStream ms = new MemoryStream();
                                                 using BinaryWriter bw = new BinaryWriter(ms);
                                                 graph.Serialize().Write(bw);
-                                                using Image<Rgba32> img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                                Image<Rgba32> img;
+                                                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.TryGetWithoutRequest(a.ID, out AssetPreview preview))
+                                                {
+                                                    Texture glTex = ap.GetGLTexture();
+                                                    if (glTex != null && glTex.IsAsyncReady)
+                                                    {
+                                                        glTex.Bind();
+                                                        img = glTex.GetImage<Rgba32>(0);
+                                                    }
+                                                    else
+                                                    {
+                                                        img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    img = new Image<Rgba32>(256, 256, new Rgba32(0, 0, 0, 1.0f));
+                                                }
+
                                                 using MemoryStream imgMs = new MemoryStream();
                                                 img.SaveAsPng(imgMs);
                                                 PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
                                                 pau.Send(Client.Instance.NetClient);
-                                                Guid cId = a.ID;
-                                                ThreadPool.QueueUserWorkItem(x => {
-                                                    try
-                                                    {
-                                                        SimulationContext ctx = ShaderNodeTemplate.PreviewContext.Value;
-                                                        Image<Rgba32> pimg = graph.GeneratePreviewImage(ctx, out _);
-                                                        if (pimg != null)
-                                                        {
-                                                            MemoryStream pimgMs = new MemoryStream();
-                                                            pimg.SaveAsPng(pimgMs);
-                                                            byte[] data = pimgMs.ToArray();
-                                                            pimg.Dispose();
-                                                            pimgMs.Dispose();
-                                                            Client.Instance.DoTask(() => new PacketAssetPreviewUpdate() { AssetID = cId, NewPreviewBinary = data }.Send());
-                                                        }
-                                                    }
-                                                    catch
-                                                    {
-                                                        // NOOP
-                                                    }
-                                                });
+                                                img.Dispose();
                                             }
                                         });
                                     }

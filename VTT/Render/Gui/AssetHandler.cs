@@ -12,6 +12,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Text;
+    using System.Threading;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
@@ -1177,6 +1178,27 @@
                                                 img.SaveAsPng(imgMs);
                                                 PacketAssetUpload pau = new PacketAssetUpload() { AssetBinary = new Asset().ToBinary(ms.ToArray()), AssetPreview = imgMs.ToArray(), IsServer = false, Meta = metadata, Path = this.CurrentFolder.GetPath(), Session = Client.Instance.SessionID };
                                                 pau.Send(Client.Instance.NetClient);
+                                                Guid cId = a.ID;
+                                                ThreadPool.QueueUserWorkItem(x => {
+                                                    try
+                                                    {
+                                                        SimulationContext ctx = ShaderNodeTemplate.PreviewContext.Value;
+                                                        Image<Rgba32> pimg = graph.GeneratePreviewImage(ctx, out _);
+                                                        if (pimg != null)
+                                                        {
+                                                            MemoryStream pimgMs = new MemoryStream();
+                                                            pimg.SaveAsPng(pimgMs);
+                                                            byte[] data = pimgMs.ToArray();
+                                                            pimg.Dispose();
+                                                            pimgMs.Dispose();
+                                                            Client.Instance.DoTask(() => new PacketAssetPreviewUpdate() { AssetID = cId, NewPreviewBinary = data }.Send());
+                                                        }
+                                                    }
+                                                    catch
+                                                    {
+                                                        // NOOP
+                                                    }
+                                                });
                                             }
                                         });
                                     }

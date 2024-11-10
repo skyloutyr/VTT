@@ -14,7 +14,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            this.GetContextLogger().Log(LogLevel.Debug, "Got asset rename packet for " + this.RefID);
+            this.            ContextLogger.Log(LogLevel.Debug, "Got asset rename packet for " + this.RefID);
             if (isServer)
             {
                 if (this.Sender.IsAdmin)

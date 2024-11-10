@@ -11,7 +11,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            Logger l = this.GetContextLogger();
+            Logger l = this.ContextLogger;
             if (isServer) // ?
             {
                 l.Log(LogLevel.Warn, $"Client {this.Sender.ID} sent a music player full data packet which is not allowed, but interpreting as request.");

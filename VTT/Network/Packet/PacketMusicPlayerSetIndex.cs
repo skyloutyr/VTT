@@ -13,7 +13,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            Logger l = this.GetContextLogger();
+            Logger l = this.ContextLogger;
             MusicPlayer mp;
             if (isServer)
             {

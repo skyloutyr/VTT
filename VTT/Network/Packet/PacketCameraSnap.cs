@@ -13,7 +13,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            this.GetContextLogger().Log(Util.LogLevel.Debug, "Got camera snap request");
+            this.            ContextLogger.Log(Util.LogLevel.Debug, "Got camera snap request");
             if (isServer)
             {
                 this.Broadcast(c => c.ClientMapID.Equals(this.Sender.ClientMapID));

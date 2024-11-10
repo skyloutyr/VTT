@@ -112,6 +112,6 @@
             return arr;
         }
 
-        public Logger GetContextLogger() => this.IsServer ? Server.Instance.Logger : Client.Instance.Logger;
+        public Logger ContextLogger => this.IsServer ? Server.Instance.Logger : Client.Instance.Logger;
     }
 }

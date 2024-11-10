@@ -19,7 +19,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            Logger l = this.GetContextLogger();
+            Logger l = this.ContextLogger;
             l.Log(LogLevel.Debug, "Got aura packet");
             bool allowed = true;
             Map m = null;

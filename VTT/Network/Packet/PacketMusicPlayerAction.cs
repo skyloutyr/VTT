@@ -19,7 +19,7 @@
             MusicPlayer mp = isServer ? server.MusicPlayer : client.Frontend?.Sound?.MusicPlayer;
             bool hasPermission = !isServer || this.Sender.IsAdmin;
             bool anyActions = false;
-            Logger l = this.GetContextLogger();
+            Logger l = this.ContextLogger;
             if (mp != null)
             {
                 switch (this.ActionType)

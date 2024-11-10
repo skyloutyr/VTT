@@ -13,7 +13,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            Logger logger = this.GetContextLogger();
+            Logger logger = this.ContextLogger;
             if (isServer)
             {
                 if (!this.Sender.IsAdmin)

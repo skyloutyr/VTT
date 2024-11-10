@@ -43,6 +43,7 @@
 
         public static IntPtr CreateContext(IntPtr device) => (IntPtr)ALLoader.alcCreateContext((void*)device, null);
         public static bool MakeContextCurrent(IntPtr ctx) => ALLoader.alcMakeContextCurrent((void*)ctx);
+        public static IntPtr GetCurrentContext() => (IntPtr)ALLoader.alcGetCurrentContext();
         public static void DestroyContext(IntPtr ctx) => ALLoader.alcDestroyContext((void*)ctx);
         public static void CloseDevice(IntPtr device) => ALLoader.alcCloseDevice((void*)device);
 

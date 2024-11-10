@@ -1,5 +1,6 @@
 ﻿namespace VTT.Sound.Bindings
 {
+    using System;
     using System.Runtime.InteropServices;
 
     public static unsafe class ALLoader
@@ -77,6 +78,9 @@
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool alcMakeContextCurrent(void* context);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void* alcGetCurrentContext();
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void alcDestroyContext(void* context);

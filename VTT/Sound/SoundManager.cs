@@ -215,7 +215,26 @@
             if (this.IsAvailable)
             {
                 Map m = Client.Instance.CurrentMap;
-                ALC.MakeContextCurrent(this._ctx);
+                switch (Client.Instance.Settings.ContextHandlingMode)
+                {
+                    case ClientSettings.GLContextHandlingMode.Explicit:
+                    {
+                        ALC.MakeContextCurrent(this._ctx);
+                        break;
+                    }
+
+                    case ClientSettings.GLContextHandlingMode.Implicit:
+                    case ClientSettings.GLContextHandlingMode.Checked:
+                    default:
+                    {
+                        if (this._ctx != ALC.GetCurrentContext())
+                        {
+                            ALC.MakeContextCurrent(this._ctx);
+                        }
+
+                        break;
+                    }
+                }
 
                 while (!this._assetsToStop.IsEmpty)
                 {

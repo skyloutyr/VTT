@@ -378,6 +378,7 @@
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
+            StbDxt.Init();
             this.TextureUploader = new AsyncTextureUploader();
             this.AssetLoader = new AsyncAssetLoader();
             this.Sound = new SoundManager();

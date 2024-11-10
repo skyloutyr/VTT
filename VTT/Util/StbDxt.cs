@@ -52,81 +52,87 @@ using System.Threading.Tasks;
 [Flags]
 public enum CompressionMode
 {
-    Normal = 0,
+    Normal = 1,
     Quality = 2
 }
 
 public static unsafe class StbDxt
 {
-    private static readonly byte[][] OMatch5 = {
-        new byte[]{ 0,  0 },  new byte[]{ 0,  0 },  new byte[]{ 0,  1 },  new byte[]{ 0,  1 },  new byte[]{ 1,  0 },  new byte[]{ 1,  0 },  new byte[]{ 1,  0 },  new byte[]{ 1,  1 },
-        new byte[]{ 1,  1 },  new byte[]{ 1,  1 },  new byte[]{ 1,  2 },  new byte[]{ 0,  4 },  new byte[]{ 2,  1 },  new byte[]{ 2,  1 },  new byte[]{ 2,  1 },  new byte[]{ 2,  2 },
-        new byte[]{ 2,  2 },  new byte[]{ 2,  2 },  new byte[]{ 2,  3 },  new byte[]{ 1,  5 },  new byte[]{ 3,  2 },  new byte[]{ 3,  2 },  new byte[]{ 4,  0 },  new byte[]{ 3,  3 },
-        new byte[]{ 3,  3 },  new byte[]{ 3,  3 },  new byte[]{ 3,  4 },  new byte[]{ 3,  4 },  new byte[]{ 3,  4 },  new byte[]{ 3,  5 },  new byte[]{ 4,  3 },  new byte[]{ 4,  3 },
-        new byte[]{ 5,  2 },  new byte[]{ 4,  4 },  new byte[]{ 4,  4 },  new byte[]{ 4,  5 },  new byte[]{ 4,  5 },  new byte[]{ 5,  4 },  new byte[]{ 5,  4 },  new byte[]{ 5,  4 },
-        new byte[]{ 6,  3 },  new byte[]{ 5,  5 },  new byte[]{ 5,  5 },  new byte[]{ 5,  6 },  new byte[]{ 4,  8 },  new byte[]{ 6,  5 },  new byte[]{ 6,  5 },  new byte[]{ 6,  5 },
-        new byte[]{ 6,  6 },  new byte[]{ 6,  6 },  new byte[]{ 6,  6 },  new byte[]{ 6,  7 },  new byte[]{ 5,  9 },  new byte[]{ 7,  6 },  new byte[]{ 7,  6 },  new byte[]{ 8,  4 },
-        new byte[]{ 7,  7 },  new byte[]{ 7,  7 },  new byte[]{ 7,  7 },  new byte[]{ 7,  8 },  new byte[]{ 7,  8 },  new byte[]{ 7,  8 },  new byte[]{ 7,  9 },  new byte[]{ 8,  7 },
-        new byte[]{ 8,  7 },  new byte[]{ 9,  6 },  new byte[]{ 8,  8 },  new byte[]{ 8,  8 },  new byte[]{ 8,  9 },  new byte[]{ 8,  9 },  new byte[]{ 9,  8 },  new byte[]{ 9,  8 },
-        new byte[]{ 9,  8 },  new byte[]{ 10,  7 }, new byte[]{ 9,  9 },  new byte[]{ 9,  9 },  new byte[]{ 9, 10 },  new byte[]{ 8, 12 },  new byte[]{ 10,  9 }, new byte[]{ 10,  9 },
-        new byte[]{ 10,  9 }, new byte[]{ 10, 10 }, new byte[]{ 10, 10 }, new byte[]{ 10, 10 }, new byte[]{ 10, 11 }, new byte[]{ 9, 13 },  new byte[]{ 11, 10 }, new byte[]{ 11, 10 },
-        new byte[]{ 12,  8 }, new byte[]{ 11, 11 }, new byte[]{ 11, 11 }, new byte[]{ 11, 11 }, new byte[]{ 11, 12 }, new byte[]{ 11, 12 }, new byte[]{ 11, 12 }, new byte[]{ 11, 13 },
-        new byte[]{ 12, 11 }, new byte[]{ 12, 11 }, new byte[]{ 13, 10 }, new byte[]{ 12, 12 }, new byte[]{ 12, 12 }, new byte[]{ 12, 13 }, new byte[]{ 12, 13 }, new byte[]{ 13, 12 },
-        new byte[]{ 13, 12 }, new byte[]{ 13, 12 }, new byte[]{ 14, 11 }, new byte[]{ 13, 13 }, new byte[]{ 13, 13 }, new byte[]{ 13, 14 }, new byte[]{ 12, 16 }, new byte[]{ 14, 13 },
-        new byte[]{ 14, 13 }, new byte[]{ 14, 13 }, new byte[]{ 14, 14 }, new byte[]{ 14, 14 }, new byte[]{ 14, 14 }, new byte[]{ 14, 15 }, new byte[]{ 13, 17 }, new byte[]{ 15, 14 },
-        new byte[]{ 15, 14 }, new byte[]{ 16, 12 }, new byte[]{ 15, 15 }, new byte[]{ 15, 15 }, new byte[]{ 15, 15 }, new byte[]{ 15, 16 }, new byte[]{ 15, 16 }, new byte[]{ 15, 16 },
-        new byte[]{ 15, 17 }, new byte[]{ 16, 15 }, new byte[]{ 16, 15 }, new byte[]{ 17, 14 }, new byte[]{ 16, 16 }, new byte[]{ 16, 16 }, new byte[]{ 16, 17 }, new byte[]{ 16, 17 },
-        new byte[]{ 17, 16 }, new byte[]{ 17, 16 }, new byte[]{ 17, 16 }, new byte[]{ 18, 15 }, new byte[]{ 17, 17 }, new byte[]{ 17, 17 }, new byte[]{ 17, 18 }, new byte[]{ 16, 20 },
-        new byte[]{ 18, 17 }, new byte[]{ 18, 17 }, new byte[]{ 18, 17 }, new byte[]{ 18, 18 }, new byte[]{ 18, 18 }, new byte[]{ 18, 18 }, new byte[]{ 18, 19 }, new byte[]{ 17, 21 },
-        new byte[]{ 19, 18 }, new byte[]{ 19, 18 }, new byte[]{ 20, 16 }, new byte[]{ 19, 19 }, new byte[]{ 19, 19 }, new byte[]{ 19, 19 }, new byte[]{ 19, 20 }, new byte[]{ 19, 20 },
-        new byte[]{ 19, 20 }, new byte[]{ 19, 21 }, new byte[]{ 20, 19 }, new byte[]{ 20, 19 }, new byte[]{ 21, 18 }, new byte[]{ 20, 20 }, new byte[]{ 20, 20 }, new byte[]{ 20, 21 },
-        new byte[]{ 20, 21 }, new byte[]{ 21, 20 }, new byte[]{ 21, 20 }, new byte[]{ 21, 20 }, new byte[]{ 22, 19 }, new byte[]{ 21, 21 }, new byte[]{ 21, 21 }, new byte[]{ 21, 22 },
-        new byte[]{ 20, 24 }, new byte[]{ 22, 21 }, new byte[]{ 22, 21 }, new byte[]{ 22, 21 }, new byte[]{ 22, 22 }, new byte[]{ 22, 22 }, new byte[]{ 22, 22 }, new byte[]{ 22, 23 },
-        new byte[]{ 21, 25 }, new byte[]{ 23, 22 }, new byte[]{ 23, 22 }, new byte[]{ 24, 20 }, new byte[]{ 23, 23 }, new byte[]{ 23, 23 }, new byte[]{ 23, 23 }, new byte[]{ 23, 24 },
-        new byte[]{ 23, 24 }, new byte[]{ 23, 24 }, new byte[]{ 23, 25 }, new byte[]{ 24, 23 }, new byte[]{ 24, 23 }, new byte[]{ 25, 22 }, new byte[]{ 24, 24 }, new byte[]{ 24, 24 },
-        new byte[]{ 24, 25 }, new byte[]{ 24, 25 }, new byte[]{ 25, 24 }, new byte[]{ 25, 24 }, new byte[]{ 25, 24 }, new byte[]{ 26, 23 }, new byte[]{ 25, 25 }, new byte[]{ 25, 25 },
-        new byte[]{ 25, 26 }, new byte[]{ 24, 28 }, new byte[]{ 26, 25 }, new byte[]{ 26, 25 }, new byte[]{ 26, 25 }, new byte[]{ 26, 26 }, new byte[]{ 26, 26 }, new byte[]{ 26, 26 },
-        new byte[]{ 26, 27 }, new byte[]{ 25, 29 }, new byte[]{ 27, 26 }, new byte[]{ 27, 26 }, new byte[]{ 28, 24 }, new byte[]{ 27, 27 }, new byte[]{ 27, 27 }, new byte[]{ 27, 27 },
-        new byte[]{ 27, 28 }, new byte[]{ 27, 28 }, new byte[]{ 27, 28 }, new byte[]{ 27, 29 }, new byte[]{ 28, 27 }, new byte[]{ 28, 27 }, new byte[]{ 29, 26 }, new byte[]{ 28, 28 },
-        new byte[]{ 28, 28 }, new byte[]{ 28, 29 }, new byte[]{ 28, 29 }, new byte[]{ 29, 28 }, new byte[]{ 29, 28 }, new byte[]{ 29, 28 }, new byte[]{ 30, 27 }, new byte[]{ 29, 29 },
-        new byte[]{ 29, 29 }, new byte[]{ 29, 30 }, new byte[]{ 29, 30 }, new byte[]{ 30, 29 }, new byte[]{ 30, 29 }, new byte[]{ 30, 29 }, new byte[]{ 30, 30 }, new byte[]{ 30, 30 },
-        new byte[]{ 30, 30 }, new byte[]{ 30, 31 }, new byte[]{ 30, 31 }, new byte[]{ 31, 30 }, new byte[]{ 31, 30 }, new byte[]{ 31, 30 }, new byte[]{ 31, 31 }, new byte[]{ 31, 31 },
-    };
+    private static UnsafeArray<byte> OMatch5;
+    private static UnsafeArray<byte> OMatch6;
 
-    private static readonly byte[][] OMatch6 = {
-        new byte[]{ 0,  0 },  new byte[]{ 0,  1 },  new byte[]{ 1,  0 },  new byte[]{ 1,  1 },  new byte[]{ 1,  1 },  new byte[]{ 1,  2 },  new byte[]{ 2,  1 },  new byte[]{ 2,  2 },
-        new byte[]{ 2,  2 },  new byte[]{ 2,  3 },  new byte[]{ 3,  2 },  new byte[]{ 3,  3 },  new byte[]{ 3,  3 },  new byte[]{ 3,  4 },  new byte[]{ 4,  3 },  new byte[]{ 4,  4 },
-        new byte[]{ 4,  4 },  new byte[]{ 4,  5 },  new byte[]{ 5,  4 },  new byte[]{ 5,  5 },  new byte[]{ 5,  5 },  new byte[]{ 5,  6 },  new byte[]{ 6,  5 },  new byte[]{ 6,  6 },
-        new byte[]{ 6,  6 },  new byte[]{ 6,  7 },  new byte[]{ 7,  6 },  new byte[]{ 7,  7 },  new byte[]{ 7,  7 },  new byte[]{ 7,  8 },  new byte[]{ 8,  7 },  new byte[]{ 8,  8 },
-        new byte[]{ 8,  8 },  new byte[]{ 8,  9 },  new byte[]{ 9,  8 },  new byte[]{ 9,  9 },  new byte[]{ 9,  9 },  new byte[]{ 9, 10 },  new byte[]{ 10,  9 }, new byte[]{ 10, 10 },
-        new byte[]{ 10, 10 }, new byte[]{ 10, 11 }, new byte[]{ 11, 10 }, new byte[]{ 8, 16 },  new byte[]{ 11, 11 }, new byte[]{ 11, 12 }, new byte[]{ 12, 11 }, new byte[]{ 9, 17 },
-        new byte[]{ 12, 12 }, new byte[]{ 12, 13 }, new byte[]{ 13, 12 }, new byte[]{ 11, 16 }, new byte[]{ 13, 13 }, new byte[]{ 13, 14 }, new byte[]{ 14, 13 }, new byte[]{ 12, 17 },
-        new byte[]{ 14, 14 }, new byte[]{ 14, 15 }, new byte[]{ 15, 14 }, new byte[]{ 14, 16 }, new byte[]{ 15, 15 }, new byte[]{ 15, 16 }, new byte[]{ 16, 14 }, new byte[]{ 16, 15 },
-        new byte[]{ 17, 14 }, new byte[]{ 16, 16 }, new byte[]{ 16, 17 }, new byte[]{ 17, 16 }, new byte[]{ 18, 15 }, new byte[]{ 17, 17 }, new byte[]{ 17, 18 }, new byte[]{ 18, 17 },
-        new byte[]{ 20, 14 }, new byte[]{ 18, 18 }, new byte[]{ 18, 19 }, new byte[]{ 19, 18 }, new byte[]{ 21, 15 }, new byte[]{ 19, 19 }, new byte[]{ 19, 20 }, new byte[]{ 20, 19 },
-        new byte[]{ 20, 20 }, new byte[]{ 20, 20 }, new byte[]{ 20, 21 }, new byte[]{ 21, 20 }, new byte[]{ 21, 21 }, new byte[]{ 21, 21 }, new byte[]{ 21, 22 }, new byte[]{ 22, 21 },
-        new byte[]{ 22, 22 }, new byte[]{ 22, 22 }, new byte[]{ 22, 23 }, new byte[]{ 23, 22 }, new byte[]{ 23, 23 }, new byte[]{ 23, 23 }, new byte[]{ 23, 24 }, new byte[]{ 24, 23 },
-        new byte[]{ 24, 24 }, new byte[]{ 24, 24 }, new byte[]{ 24, 25 }, new byte[]{ 25, 24 }, new byte[]{ 25, 25 }, new byte[]{ 25, 25 }, new byte[]{ 25, 26 }, new byte[]{ 26, 25 },
-        new byte[]{ 26, 26 }, new byte[]{ 26, 26 }, new byte[]{ 26, 27 }, new byte[]{ 27, 26 }, new byte[]{ 24, 32 }, new byte[]{ 27, 27 }, new byte[]{ 27, 28 }, new byte[]{ 28, 27 },
-        new byte[]{ 25, 33 }, new byte[]{ 28, 28 }, new byte[]{ 28, 29 }, new byte[]{ 29, 28 }, new byte[]{ 27, 32 }, new byte[]{ 29, 29 }, new byte[]{ 29, 30 }, new byte[]{ 30, 29 },
-        new byte[]{ 28, 33 }, new byte[]{ 30, 30 }, new byte[]{ 30, 31 }, new byte[]{ 31, 30 }, new byte[]{ 30, 32 }, new byte[]{ 31, 31 }, new byte[]{ 31, 32 }, new byte[]{ 32, 30 },
-        new byte[]{ 32, 31 }, new byte[]{ 33, 30 }, new byte[]{ 32, 32 }, new byte[]{ 32, 33 }, new byte[]{ 33, 32 }, new byte[]{ 34, 31 }, new byte[]{ 33, 33 }, new byte[]{ 33, 34 },
-        new byte[]{ 34, 33 }, new byte[]{ 36, 30 }, new byte[]{ 34, 34 }, new byte[]{ 34, 35 }, new byte[]{ 35, 34 }, new byte[]{ 37, 31 }, new byte[]{ 35, 35 }, new byte[]{ 35, 36 },
-        new byte[]{ 36, 35 }, new byte[]{ 36, 36 }, new byte[]{ 36, 36 }, new byte[]{ 36, 37 }, new byte[]{ 37, 36 }, new byte[]{ 37, 37 }, new byte[]{ 37, 37 }, new byte[]{ 37, 38 },
-        new byte[]{ 38, 37 }, new byte[]{ 38, 38 }, new byte[]{ 38, 38 }, new byte[]{ 38, 39 }, new byte[]{ 39, 38 }, new byte[]{ 39, 39 }, new byte[]{ 39, 39 }, new byte[]{ 39, 40 },
-        new byte[]{ 40, 39 }, new byte[]{ 40, 40 }, new byte[]{ 40, 40 }, new byte[]{ 40, 41 }, new byte[]{ 41, 40 }, new byte[]{ 41, 41 }, new byte[]{ 41, 41 }, new byte[]{ 41, 42 },
-        new byte[]{ 42, 41 }, new byte[]{ 42, 42 }, new byte[]{ 42, 42 }, new byte[]{ 42, 43 }, new byte[]{ 43, 42 }, new byte[]{ 40, 48 }, new byte[]{ 43, 43 }, new byte[]{ 43, 44 },
-        new byte[]{ 44, 43 }, new byte[]{ 41, 49 }, new byte[]{ 44, 44 }, new byte[]{ 44, 45 }, new byte[]{ 45, 44 }, new byte[]{ 43, 48 }, new byte[]{ 45, 45 }, new byte[]{ 45, 46 },
-        new byte[]{ 46, 45 }, new byte[]{ 44, 49 }, new byte[]{ 46, 46 }, new byte[]{ 46, 47 }, new byte[]{ 47, 46 }, new byte[]{ 46, 48 }, new byte[]{ 47, 47 }, new byte[]{ 47, 48 },
-        new byte[]{ 48, 46 }, new byte[]{ 48, 47 }, new byte[]{ 49, 46 }, new byte[]{ 48, 48 }, new byte[]{ 48, 49 }, new byte[]{ 49, 48 }, new byte[]{ 50, 47 }, new byte[]{ 49, 49 },
-        new byte[]{ 49, 50 }, new byte[]{ 50, 49 }, new byte[]{ 52, 46 }, new byte[]{ 50, 50 }, new byte[]{ 50, 51 }, new byte[]{ 51, 50 }, new byte[]{ 53, 47 }, new byte[]{ 51, 51 },
-        new byte[]{ 51, 52 }, new byte[]{ 52, 51 }, new byte[]{ 52, 52 }, new byte[]{ 52, 52 }, new byte[]{ 52, 53 }, new byte[]{ 53, 52 }, new byte[]{ 53, 53 }, new byte[]{ 53, 53 },
-        new byte[]{ 53, 54 }, new byte[]{ 54, 53 }, new byte[]{ 54, 54 }, new byte[]{ 54, 54 }, new byte[]{ 54, 55 }, new byte[]{ 55, 54 }, new byte[]{ 55, 55 }, new byte[]{ 55, 55 },
-        new byte[]{ 55, 56 }, new byte[]{ 56, 55 }, new byte[]{ 56, 56 }, new byte[]{ 56, 56 }, new byte[]{ 56, 57 }, new byte[]{ 57, 56 }, new byte[]{ 57, 57 }, new byte[]{ 57, 57 },
-        new byte[]{ 57, 58 }, new byte[]{ 58, 57 }, new byte[]{ 58, 58 }, new byte[]{ 58, 58 }, new byte[]{ 58, 59 }, new byte[]{ 59, 58 }, new byte[]{ 59, 59 }, new byte[]{ 59, 59 },
-        new byte[]{ 59, 60 }, new byte[]{ 60, 59 }, new byte[]{ 60, 60 }, new byte[]{ 60, 60 }, new byte[]{ 60, 61 }, new byte[]{ 61, 60 }, new byte[]{ 61, 61 }, new byte[]{ 61, 61 },
-        new byte[]{ 61, 62 }, new byte[]{ 62, 61 }, new byte[]{ 62, 62 }, new byte[]{ 62, 62 }, new byte[]{ 62, 63 }, new byte[]{ 63, 62 }, new byte[]{ 63, 63 }, new byte[]{ 63, 63 },
-    };
+    public static void Init()
+    {
+        OMatch5 = new UnsafeArray<byte>(new byte[]{
+            0,   0,    0,  0 ,   0,  1 ,   0,  1 ,   1,  0 ,   1,  0 ,   1,  0 ,   1,  1 ,
+            1,   1,    1,  1 ,   1,  2 ,   0,  4 ,   2,  1 ,   2,  1 ,   2,  1 ,   2,  2 ,
+            2,   2,    2,  2 ,   2,  3 ,   1,  5 ,   3,  2 ,   3,  2 ,   4,  0 ,   3,  3 ,
+            3,   3,    3,  3 ,   3,  4 ,   3,  4 ,   3,  4 ,   3,  5 ,   4,  3 ,   4,  3 ,
+            5,   2,    4,  4 ,   4,  4 ,   4,  5 ,   4,  5 ,   5,  4 ,   5,  4 ,   5,  4 ,
+            6,   3,    5,  5 ,   5,  5 ,   5,  6 ,   4,  8 ,   6,  5 ,   6,  5 ,   6,  5 ,
+            6,   6,    6,  6 ,   6,  6 ,   6,  7 ,   5,  9 ,   7,  6 ,   7,  6 ,   8,  4 ,
+            7,   7,    7,  7 ,   7,  7 ,   7,  8 ,   7,  8 ,   7,  8 ,   7,  9 ,   8,  7 ,
+            8,   7,    9,  6 ,   8,  8 ,   8,  8 ,   8,  9 ,   8,  9 ,   9,  8 ,   9,  8 ,
+            9,   8,    10, 7 ,   9,  9 ,   9,  9 ,   9, 10 ,   8, 12 ,   10,  9,   10,  9,
+            10,  9,    10, 10,   10, 10,   10, 10,   10, 11,   9, 13 ,   11, 10,   11, 10,
+            12,  8,    11, 11,   11, 11,   11, 11,   11, 12,   11, 12,   11, 12,   11, 13,
+            12, 11,    12, 11,   13, 10,   12, 12,   12, 12,   12, 13,   12, 13,   13, 12,
+            13, 12,    13, 12,   14, 11,   13, 13,   13, 13,   13, 14,   12, 16,   14, 13,
+            14, 13,    14, 13,   14, 14,   14, 14,   14, 14,   14, 15,   13, 17,   15, 14,
+            15, 14,    16, 12,   15, 15,   15, 15,   15, 15,   15, 16,   15, 16,   15, 16,
+            15, 17,    16, 15,   16, 15,   17, 14,   16, 16,   16, 16,   16, 17,   16, 17,
+            17, 16,    17, 16,   17, 16,   18, 15,   17, 17,   17, 17,   17, 18,   16, 20,
+            18, 17,    18, 17,   18, 17,   18, 18,   18, 18,   18, 18,   18, 19,   17, 21,
+            19, 18,    19, 18,   20, 16,   19, 19,   19, 19,   19, 19,   19, 20,   19, 20,
+            19, 20,    19, 21,   20, 19,   20, 19,   21, 18,   20, 20,   20, 20,   20, 21,
+            20, 21,    21, 20,   21, 20,   21, 20,   22, 19,   21, 21,   21, 21,   21, 22,
+            20, 24,    22, 21,   22, 21,   22, 21,   22, 22,   22, 22,   22, 22,   22, 23,
+            21, 25,    23, 22,   23, 22,   24, 20,   23, 23,   23, 23,   23, 23,   23, 24,
+            23, 24,    23, 24,   23, 25,   24, 23,   24, 23,   25, 22,   24, 24,   24, 24,
+            24, 25,    24, 25,   25, 24,   25, 24,   25, 24,   26, 23,   25, 25,   25, 25,
+            25, 26,    24, 28,   26, 25,   26, 25,   26, 25,   26, 26,   26, 26,   26, 26,
+            26, 27,    25, 29,   27, 26,   27, 26,   28, 24,   27, 27,   27, 27,   27, 27,
+            27, 28,    27, 28,   27, 28,   27, 29,   28, 27,   28, 27,   29, 26,   28, 28,
+            28, 28,    28, 29,   28, 29,   29, 28,   29, 28,   29, 28,   30, 27,   29, 29,
+            29, 29,    29, 30,   29, 30,   30, 29,   30, 29,   30, 29,   30, 30,   30, 30,
+            30, 30,    30, 31,   30, 31,   31, 30,   31, 30,   31, 30,   31, 31,   31, 31,
+        });
+
+        OMatch6 = new UnsafeArray<byte>(new byte[] {
+            0,  0 ,   0,  1 ,   1,  0 ,   1,  1 ,   1,  1 ,   1,  2 ,   2,  1 ,   2,  2 ,
+            2,  2 ,   2,  3 ,   3,  2 ,   3,  3 ,   3,  3 ,   3,  4 ,   4,  3 ,   4,  4 ,
+            4,  4 ,   4,  5 ,   5,  4 ,   5,  5 ,   5,  5 ,   5,  6 ,   6,  5 ,   6,  6 ,
+            6,  6 ,   6,  7 ,   7,  6 ,   7,  7 ,   7,  7 ,   7,  8 ,   8,  7 ,   8,  8 ,
+            8,  8 ,   8,  9 ,   9,  8 ,   9,  9 ,   9,  9 ,   9, 10 ,   10,  9,   10, 10,
+            10, 10,   10, 11,   11, 10,   8, 16 ,   11, 11,   11, 12,   12, 11,   9, 17 ,
+            12, 12,   12, 13,   13, 12,   11, 16,   13, 13,   13, 14,   14, 13,   12, 17,
+            14, 14,   14, 15,   15, 14,   14, 16,   15, 15,   15, 16,   16, 14,   16, 15,
+            17, 14,   16, 16,   16, 17,   17, 16,   18, 15,   17, 17,   17, 18,   18, 17,
+            20, 14,   18, 18,   18, 19,   19, 18,   21, 15,   19, 19,   19, 20,   20, 19,
+            20, 20,   20, 20,   20, 21,   21, 20,   21, 21,   21, 21,   21, 22,   22, 21,
+            22, 22,   22, 22,   22, 23,   23, 22,   23, 23,   23, 23,   23, 24,   24, 23,
+            24, 24,   24, 24,   24, 25,   25, 24,   25, 25,   25, 25,   25, 26,   26, 25,
+            26, 26,   26, 26,   26, 27,   27, 26,   24, 32,   27, 27,   27, 28,   28, 27,
+            25, 33,   28, 28,   28, 29,   29, 28,   27, 32,   29, 29,   29, 30,   30, 29,
+            28, 33,   30, 30,   30, 31,   31, 30,   30, 32,   31, 31,   31, 32,   32, 30,
+            32, 31,   33, 30,   32, 32,   32, 33,   33, 32,   34, 31,   33, 33,   33, 34,
+            34, 33,   36, 30,   34, 34,   34, 35,   35, 34,   37, 31,   35, 35,   35, 36,
+            36, 35,   36, 36,   36, 36,   36, 37,   37, 36,   37, 37,   37, 37,   37, 38,
+            38, 37,   38, 38,   38, 38,   38, 39,   39, 38,   39, 39,   39, 39,   39, 40,
+            40, 39,   40, 40,   40, 40,   40, 41,   41, 40,   41, 41,   41, 41,   41, 42,
+            42, 41,   42, 42,   42, 42,   42, 43,   43, 42,   40, 48,   43, 43,   43, 44,
+            44, 43,   41, 49,   44, 44,   44, 45,   45, 44,   43, 48,   45, 45,   45, 46,
+            46, 45,   44, 49,   46, 46,   46, 47,   47, 46,   46, 48,   47, 47,   47, 48,
+            48, 46,   48, 47,   49, 46,   48, 48,   48, 49,   49, 48,   50, 47,   49, 49,
+            49, 50,   50, 49,   52, 46,   50, 50,   50, 51,   51, 50,   53, 47,   51, 51,
+            51, 52,   52, 51,   52, 52,   52, 52,   52, 53,   53, 52,   53, 53,   53, 53,
+            53, 54,   54, 53,   54, 54,   54, 54,   54, 55,   55, 54,   55, 55,   55, 55,
+            55, 56,   56, 55,   56, 56,   56, 56,   56, 57,   57, 56,   57, 57,   57, 57,
+            57, 58,   58, 57,   58, 58,   58, 58,   58, 59,   59, 58,   59, 59,   59, 59,
+            59, 60,   60, 59,   60, 60,   60, 60,   60, 61,   61, 60,   61, 61,   61, 61,
+            61, 62,   62, 61,   62, 62,   62, 62,   62, 63,   63, 62,   63, 63,   63, 63,
+        });
+    }
 
     static int Mul8Bit(int a, int b)
     {
@@ -428,8 +434,8 @@ public static unsafe class StbDxt
 
             r >>= 4; g >>= 4; b >>= 4;
 
-            max16 = unchecked((ushort)((OMatch5[r][0] << 11) | (OMatch6[g][0] << 5) | OMatch5[b][0]));
-            min16 = unchecked((ushort)((OMatch5[r][1] << 11) | (OMatch6[g][1] << 5) | OMatch5[b][1]));
+            max16 = unchecked((ushort)((OMatch5[r * 2 + 0] << 11) | (OMatch6[g * 2 + 0] << 5) | OMatch5[b * 2 + 0]));
+            min16 = unchecked((ushort)((OMatch5[r * 2 + 1] << 11) | (OMatch6[g * 2 + 1] << 5) | OMatch5[b * 2 + 1]));
         }
         else
         {
@@ -485,7 +491,7 @@ public static unsafe class StbDxt
         ushort max16, min16;
         byte* color = stackalloc byte[4 * 4];
 
-        refinecount = mode.HasFlag(CompressionMode.Quality) ? 2 : 1;
+        refinecount = (int)mode;
 
         // check if block is constant
         for (i = 1; i < 16; i++)
@@ -500,8 +506,8 @@ public static unsafe class StbDxt
         { // constant color
             int r = block[0], g = block[1], b = block[2];
             mask = 0xaaaaaaaa;
-            max16 = unchecked((ushort)((OMatch5[r][0] << 11) | (OMatch6[g][0] << 5) | OMatch5[b][0]));
-            min16 = unchecked((ushort)((OMatch5[r][1] << 11) | (OMatch6[g][1] << 5) | OMatch5[b][1]));
+            max16 = unchecked((ushort)((OMatch5[r * 2 + 0] << 11) | (OMatch6[g * 2 + 0] << 5) | OMatch5[b * 2 + 0]));
+            min16 = unchecked((ushort)((OMatch5[r * 2 + 1] << 11) | (OMatch6[g * 2 + 1] << 5) | OMatch5[b * 2 + 1]));
         }
         else
         {
@@ -562,21 +568,22 @@ public static unsafe class StbDxt
 
     static void CompressAlphaBlock(byte* dest, byte* src, int stride)
     {
-        int i, dist, bias, dist4, dist2, bits, mask;
+        int dist, bias, dist4, dist2, bits, mask;
 
         // find min/max color
-        int mn, mx;
+        byte mn, mx;
         mn = mx = src[0];
 
-        for (i = 1; i < 16; i++)
+        for (int i = 1; i < 16; i++)
         {
-            if (src[i * stride] < mn) mn = src[i * stride];
-            else if (src[i * stride] > mx) mx = src[i * stride];
+            byte v = src[i * stride];
+            mn = Math.Min(mn, v);
+            mx = Math.Max(mx, v);
         }
 
         // encode them
-        dest[0] = (byte)mx;
-        dest[1] = (byte)mn;
+        dest[0] = mx;
+        dest[1] = mn;
         dest += 2;
 
         // determine bias and emit color indices
@@ -590,14 +597,20 @@ public static unsafe class StbDxt
         bits = 0;
         mask = 0;
 
-        for (i = 0; i < 16; i++)
+        for (int i = 0; i < 16; i++)
         {
             int a = (src[i * stride] * 7) + bias;
             int ind, t;
 
             // select index. this is a "linear scale" lerp factor between 0 (val=min) and 7 (val=max).
-            t = (a >= dist4) ? -1 : 0; ind = t & 4; a -= dist4 & t;
-            t = (a >= dist2) ? -1 : 0; ind += t & 2; a -= dist2 & t;
+            t = (a >= dist4) ? -1 : 0; 
+            ind = t & 4; 
+            a -= dist4 & t;
+
+            t = (a >= dist2) ? -1 : 0; 
+            ind += t & 2; 
+            a -= dist2 & t;
+
             ind += (a >= dist ? 1 : 0);
 
             // turn linear scale into DXT index (0/1 are extremal pts)
@@ -620,13 +633,12 @@ public static unsafe class StbDxt
         byte* data = stackalloc byte[16 * 4];
         if (alpha)
         {
-            int i;
             CompressAlphaBlock(dest, src + 3, 4);
             dest += 8;
             // make a new copy of the data in which alpha is opaque,
             // because code uses a fast test for color constancy
             Buffer.MemoryCopy(src, data, 4 * 16, 4 * 16);
-            for (i = 0; i < 16; ++i)
+            for (int i = 0; i < 16; ++i)
             {
                 data[(i * 4) + 3] = 255;
             }
@@ -672,8 +684,7 @@ public static unsafe class StbDxt
             {
                 int lmW = mW >> i;
                 int lmH = mH >> i;
-                Image<Rgba32> mipped = img.Clone();
-                mipped.Mutate(x => x.Resize(lmW, lmH, KnownResamplers.Box));
+                Image<Rgba32> mipped = img.Clone(x => x.Resize(lmW, lmH, KnownResamplers.Box));
                 ret[i] = (IntPtr)CompressImage(mipped, multithread, out int lnBytesMip);
                 sizes[i] = lnBytesMip;
                 szs[i] = new Size(lmW, lmH);
@@ -694,34 +705,36 @@ public static unsafe class StbDxt
         int tot = nBlocksX * nBlocksY;
         if (multithread)
         {
-            Parallel.For(0, tot, i =>
+            Parallel.For(0, tot, () => new UnsafeArray<Rgba32>(16), (int i, ParallelLoopState storage, UnsafeArray<Rgba32> arr) =>
             {
                 int x = i % nBlocksX;
                 int y = i / nBlocksX;
                 int blockX = x << 2;
                 int blockY = y << 2;
-                Rgba32* mem = imv.GetBlock(blockX, blockY);
+                Rgba32* mem = imv.FillBlock(arr.GetPointer(), blockX, blockY);
                 byte* blockData = stackalloc byte[16];
                 CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
-                MemoryHelper.Free(mem);
                 Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
-            });
+                return arr;
+            }, x => x.Free());
         }
         else
         {
             byte* blockData = stackalloc byte[16];
+            Rgba32* mem = MemoryHelper.Allocate<Rgba32>(16);
             for (int y = 0; y < nBlocksY; ++y)
             {
                 for (int x = 0; x < nBlocksX; ++x)
                 {
                     int blockX = x << 2;
                     int blockY = y << 2;
-                    Rgba32* mem = imv.GetBlock(blockX, blockY);
+                    imv.FillBlock(mem, blockX, blockY);
                     CompressDXTBlock(blockData, (byte*)mem, true, CompressionMode.Normal);
-                    MemoryHelper.Free(mem);
                     Buffer.MemoryCopy(blockData, ret + (x * 16) + (y * nBlocksX * 16), 16, 16);
                 }
             }
+
+            MemoryHelper.Free(mem);
         }
 
         imv.Free();
@@ -794,6 +807,18 @@ public static unsafe class StbDxt
             }
 
             return ret;
+        }
+
+        public Rgba32* FillBlock(Rgba32* ptr, int x, int y)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                int dy = y + j;
+                Rgba32* m = this._mem + (dy * this._imageWidth) + x;
+                Buffer.MemoryCopy(m, ptr + (4 * j), 16, 16);
+            }
+
+            return ptr;
         }
 
         public void Free() => MemoryHelper.Free(this._mem);

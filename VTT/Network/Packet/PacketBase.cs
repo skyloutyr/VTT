@@ -98,12 +98,9 @@
             bw.Write((byte)(this.Compressed ? 1 : 0));
             if (this.Compressed)
             {
-                using MemoryStream ms2 = new MemoryStream();
-                using DeflateStream ds = new DeflateStream(ms2, System.IO.Compression.CompressionMode.Compress);
+                using DeflateStream ds = new DeflateStream(ms, System.IO.Compression.CompressionMode.Compress);
                 using BinaryWriter bw2 = new BinaryWriter(ds);
                 this.Encode(bw2);
-                ds.Close();
-                bw.Write(ms2.ToArray());
             }
             else
             {

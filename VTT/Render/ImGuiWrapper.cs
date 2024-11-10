@@ -391,6 +391,8 @@ void main()
             _shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
         }
 
+        private int _maxVboSize = 0;
+        private int _maxEboSize = 0;
         unsafe void RenderDrawData()
         {
             ImDrawDataPtr drawData = ImGui.GetDrawData();
@@ -423,12 +425,19 @@ void main()
             {
                 var cmdList = drawData.CmdLists[n];
 
-                _vertexArrayObject.Bind();
+                this._vertexArrayObject.Bind();
                 // Upload vertex/index buffers
-                _vboHandle.Bind();
-                _vboHandle.SetData(cmdList.VtxBuffer.Data, cmdList.VtxBuffer.Size * drawVertSize);
-                _elementsHandle.Bind();
-                _elementsHandle.SetData(cmdList.IdxBuffer.Data, cmdList.IdxBuffer.Size * drawIdxSize);
+                int vS = cmdList.VtxBuffer.Size * drawVertSize;
+                int eS = cmdList.IdxBuffer.Size * drawIdxSize;
+                this._maxVboSize = Math.Max(this._maxVboSize, vS);
+                this._maxEboSize = Math.Max(this._maxEboSize, eS);
+
+                this._vboHandle.Bind();
+                this._vboHandle.SetData(IntPtr.Zero, this._maxVboSize);
+                this._vboHandle.SetSubData(cmdList.VtxBuffer.Data, vS, 0);
+                this._elementsHandle.Bind();
+                this._elementsHandle.SetData(IntPtr.Zero, this._maxEboSize);
+                this._elementsHandle.SetSubData(cmdList.IdxBuffer.Data, eS, 0);
 
                 for (var cmd_i = 0; cmd_i < cmdList.CmdBuffer.Size; cmd_i++)
                 {

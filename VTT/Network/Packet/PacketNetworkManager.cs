@@ -96,8 +96,8 @@
                         pb.IsServer = this.IsServer;
                         if ((compressedFlag & 1) == 1)
                         {
-                            using MemoryStream ms2 = new MemoryStream(packet, 3, packet.Length - 3); // 3 is packet ID (2 bytes) + compressed flag (1 byte)
-                            using DeflateStream ds = new DeflateStream(ms2, CompressionMode.Decompress);
+                            ms.Position = 3; // 3 is packet ID (2 bytes) + compressed flag (1 byte)
+                            using DeflateStream ds = new DeflateStream(ms, CompressionMode.Decompress);
                             using BinaryReader br2 = new BinaryReader(ds);
                             pb.Decode(br2);
                         }

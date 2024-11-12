@@ -60,7 +60,7 @@ namespace VTT.Render
                             return new MarkdownImageData()
                             {
                                 IsValid = true,
-                                Size = CalcImageToImGuiContentRegion(tW, tH),
+                                Size = CalcImageToImGuiContentRegion(frame.Width, frame.Height),
                                 UserTextureID = ap.GLTex,
                                 UV0 = new Vector2(sS, tS),
                                 UV1 = new Vector2(sE, tE),

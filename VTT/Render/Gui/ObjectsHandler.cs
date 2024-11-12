@@ -994,6 +994,7 @@
             }
         }
 
+        private string _objectSearchText = "";
         private unsafe void RenderObjectsList(GuiState state, SimpleLanguage lang)
         {
             if (ImGui.Begin(lang.Translate("ui.objects") + "###Objects"))
@@ -1018,37 +1019,40 @@
                             ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)c);
                         }
 
-                        ImGui.BeginChild("objNav_" + mo.ID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar);
-                        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                        if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
+                        if (ImGui.BeginChild("objNav_" + mo.ID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar))
                         {
-                            Vector3 p = mo.Position;
-                            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                            cam.Position = state.clientMap.Is2D ? new Vector3(p.X, p.Y, cam.Position.Z) : p - (cam.Direction * 5.0f);
-                            cam.RecalculateData();
-                            bool shift = ImGui.IsKeyDown(ImGuiKey.LeftShift);
-                            if (!shift)
+                            ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+                            if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
                             {
-                                Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();
-                                Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);
-                            }
-                            else
-                            {
-                                if (!selected)
+                                Vector3 p = mo.Position;
+                                Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+                                cam.Position = state.clientMap.Is2D ? new Vector3(p.X, p.Y, cam.Position.Z) : p - (cam.Direction * 5.0f);
+                                cam.RecalculateData();
+                                bool shift = ImGui.IsKeyDown(ImGuiKey.LeftShift);
+                                if (!shift)
                                 {
+                                    Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Clear();
                                     Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);
                                 }
+                                else
+                                {
+                                    if (!selected)
+                                    {
+                                        Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Add(mo);
+                                    }
+                                }
                             }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.objects.goto"));
+                            }
+
+                            ImGui.PopStyleColor();
+                            ImGui.SameLine();
+                            ImGui.TextUnformatted((mo.Name ?? lang.Translate("ui.objects.unnamed")) + "(" + mo.ID + ")");
                         }
 
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.objects.goto"));
-                        }
-
-                        ImGui.PopStyleColor();
-                        ImGui.SameLine();
-                        ImGui.TextUnformatted((mo.Name ?? lang.Translate("ui.objects.unnamed")) + "(" + mo.ID + ")");
                         ImGui.EndChild();
                         bool mOver = ImGui.IsItemHovered();
                         if (mOver)
@@ -1062,12 +1066,31 @@
                         }
                     }
 
+                    ImGui.SetNextItemWidth(wC.X - 64);
+                    ImGui.InputText("##ObjectsSearchBar", ref this._objectSearchText, ushort.MaxValue, ImGuiInputTextFlags.EscapeClearsAll);
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    {
+                        ImGui.SetKeyboardFocusHere();
+                        this._searchText = "";
+                    }
+
+                    ImGui.SameLine();
+                    ImGui.Image(this.Search, new Vector2(24, 24));
+
                     int currentLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
                     ImGui.TextUnformatted(lang.Translate("ui.object_layer." + currentLayer));
                     ImGui.PopStyleColor();
                     foreach (MapObject mo in state.clientMap.IterateObjects(currentLayer).OrderBy(x => x.Name))
                     {
+                        if (!string.IsNullOrEmpty(this._objectSearchText))
+                        {
+                            if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
+                        }
+
                         RenderObjectInfo(mo, true);
                     }
 
@@ -1085,6 +1108,14 @@
                             ImGui.PopStyleColor();
                             foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
                             {
+                                if (!string.IsNullOrEmpty(this._objectSearchText))
+                                {
+                                    if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 RenderObjectInfo(mo, false);
                             }
                         }

@@ -31,7 +31,11 @@
                         if (m.GetObject(oID, out MapObject mo))
                         {
                             DataElement de = this.Obj.Serialize();
+
+                            // Have to expliciclty clear and reupload all particles here
+                            mo.Particles.ClearContainers();
                             mo.Deserialize(de);
+                            mo.Particles.UploadAllConainers();
                         }
                         else
                         {

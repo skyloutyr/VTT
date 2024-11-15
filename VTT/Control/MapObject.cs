@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Numerics;
     using VTT.Asset.Glb;
+    using VTT.Network;
     using VTT.Util;
 
     public class MapObject : ISerializable
@@ -78,7 +79,7 @@
         public object Lock = new object();
         public object FastLightsLock = new object();
         public Dictionary<string, (float, float)> StatusEffects { get; } = new Dictionary<string, (float, float)>();
-        public Dictionary<Guid, ParticleContainer> ParticleContainers { get; } = new Dictionary<Guid, ParticleContainer>();
+        public ParticleRepository Particles { get; }
 
         public bool LightsEnabled { get; set; }
         public bool LightsCastShadows { get; set; }
@@ -139,6 +140,11 @@
         public bool IsRemoved { get; set; }
         #endregion
 
+        public MapObject()
+        {
+            this.Particles = new ParticleRepository(this);
+        }
+
         public DataElement Serialize()
         {
             DataElement ret = new();
@@ -182,7 +188,7 @@
                 c.SetMap(n, e);
             });
 
-            ret.SetArray("Particles", this.ParticleContainers.Values.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+            this.Particles.Serialize(ret);
             ret.SetBool("HasCustomNameplate", this.HasCustomNameplate);
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
             ret.SetBool("IsInfoObject", this.IsInfoObject);
@@ -196,7 +202,6 @@
             ret.SetVec2("Shadow2DLightSourceData", this.Shadow2DLightSourceData);
             return ret;
         }
-
 
         public void Deserialize(DataElement e)
         {
@@ -244,20 +249,7 @@
                 this.StatusEffects[s.Item1] = (s.Item2, s.Item3);
             }
 
-            this.ParticleContainers.Clear();
-            ParticleContainer[] containers = e.GetArray("Particles", (n, e) =>
-            {
-                DataElement d = e.GetMap(n);
-                ParticleContainer ret = new ParticleContainer(this);
-                ret.Deserialize(d);
-                return ret;
-            }, Array.Empty<ParticleContainer>());
-
-            foreach (ParticleContainer c in containers)
-            {
-                this.ParticleContainers[c.ID] = c;
-            }
-
+            this.Particles.Deserialize(e);
             this.HasCustomNameplate = e.GetBool("HasCustomNameplate", false);
             this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
             this.IsInfoObject = e.GetBool("IsInfoObject");
@@ -313,12 +305,7 @@
                 ret.StatusEffects.Add(s.Key, s.Value);
             }
 
-            foreach (KeyValuePair<Guid, ParticleContainer> p in this.ParticleContainers)
-            {
-                Guid nID = Guid.NewGuid();
-                ParticleContainer p1 = new ParticleContainer(ret) { AttachmentPoint = p.Value.AttachmentPoint, ContainerPositionOffset = p.Value.ContainerPositionOffset, IsActive = p.Value.IsActive, UseContainerOrientation = p.Value.UseContainerOrientation, RotateVelocityByOrientation = p.Value.RotateVelocityByOrientation, SystemID = p.Value.SystemID, ID = nID };
-                ret.ParticleContainers[nID] = p1;
-            }
+            this.Particles.CloneTo(ret);
 
             return ret;
         }
@@ -371,6 +358,150 @@
                 {
                     this.Rotation = this.ClientDragMoveServerInducedNewRotation;
                     this.ClientDragMoveServerInducedRotationChangeProgress = -1;
+                }
+            }
+        }
+
+        public class ParticleRepository
+        {
+            public MapObject Container { get; }
+            private readonly Dictionary<Guid, ParticleContainer> _containers = new Dictionary<Guid, ParticleContainer>();
+            private readonly object _lock = new object();
+
+            public ParticleRepository(MapObject container) 
+            {
+                this.Container = container;
+            }
+
+            public IEnumerable<ParticleContainer> GetAllContainers()
+            {
+                lock (this._lock)
+                {
+                    foreach (KeyValuePair<Guid, ParticleContainer> kv in this._containers)
+                    {
+                        yield return kv.Value;
+                    }
+                }
+
+                yield break;
+            }
+
+            public void CloneTo(MapObject ret)
+            {
+                lock (this._lock)
+                {
+                    lock (ret.Particles._lock)
+                    {
+                        foreach (KeyValuePair<Guid, ParticleContainer> kv in this._containers)
+                        {
+                            Guid nID = Guid.NewGuid();
+                            ParticleContainer p1 = new ParticleContainer(ret) { AttachmentPoint = kv.Value.AttachmentPoint, ContainerPositionOffset = kv.Value.ContainerPositionOffset, IsActive = kv.Value.IsActive, UseContainerOrientation = kv.Value.UseContainerOrientation, RotateVelocityByOrientation = kv.Value.RotateVelocityByOrientation, SystemID = kv.Value.SystemID, ID = nID };
+                            ret.Particles._containers[nID] = p1;
+                        }
+                    }
+                }
+            }
+
+            public void AddContainer(ParticleContainer pc)
+            {
+                lock (this._lock)
+                {
+                    this._containers[pc.ID] = pc;
+                    if (!this.Container.IsServer)
+                    {
+                        Client.Instance.Frontend.Renderer?.ParticleRenderer?.AddEmitter(pc);
+                    }
+                }
+            }
+
+            public void RemoveContainer(Guid id)
+            {
+                lock (this._lock)
+                {
+                    if (this._containers.Remove(id, out ParticleContainer pc))
+                    {
+                        if (!this.Container.IsServer)
+                        {
+                            Client.Instance.Frontend.Renderer?.ParticleRenderer?.RemoveEmitter(pc);
+                        }
+                    }
+                }
+            }
+
+            public void ClearContainers()
+            {
+                lock (this._lock)
+                {
+                    if (!this.Container.IsServer)
+                    {
+                        foreach (KeyValuePair<Guid, ParticleContainer> kv in this._containers)
+                        {
+                            Client.Instance.Frontend.Renderer?.ParticleRenderer?.RemoveEmitter(kv.Value);
+                        }
+                    }
+
+                    this._containers.Clear();
+                }
+            }
+
+            public void UploadAllConainers()
+            {
+                lock (this._lock)
+                {
+                    if (!this.Container.IsServer)
+                    {
+                        foreach (KeyValuePair<Guid, ParticleContainer> kv in this._containers)
+                        {
+                            Client.Instance.Frontend.Renderer?.ParticleRenderer?.AddEmitter(kv.Value);
+                        }
+                    }
+                }
+            }
+
+            public void UpdateContainer(Guid id, DataElement data)
+            {
+                lock (this._lock)
+                {
+                    if (this._containers.TryGetValue(id, out ParticleContainer pc))
+                    {
+                        if (!this.Container.IsServer)
+                        {
+                            // Using safe update due to potential offscreen container update, need to synchronize with offscreen
+                            Client.Instance.Frontend.Renderer?.ParticleRenderer?.SafeUpdateEmitter(pc, data);
+                        }
+                        else
+                        {
+                            pc.Deserialize(data);
+                        }
+                    }
+                }
+            }
+
+            public void Serialize(DataElement de)
+            {
+                lock (this._lock)
+                {
+                    de.SetArray("Particles", this._containers.Values.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+                }
+            }
+
+            public void Deserialize(DataElement e)
+            {
+                lock (this._lock)
+                {
+                    this._containers.Clear();
+                    ParticleContainer[] containers = e.GetArray("Particles", (n, e) =>
+                    {
+                        DataElement d = e.GetMap(n);
+                        ParticleContainer ret = new ParticleContainer(this.Container);
+                        ret.Deserialize(d);
+                        return ret;
+                    }, Array.Empty<ParticleContainer>());
+
+                    foreach (ParticleContainer c in containers)
+                    {
+                        this._containers[c.ID] = c;
+                    }
                 }
             }
         }

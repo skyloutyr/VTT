@@ -472,7 +472,7 @@
                             {
                                 lock (mo.Lock)
                                 {
-                                    foreach (ParticleContainer pc in mo.ParticleContainers.Values)
+                                    foreach (ParticleContainer pc in mo.Particles.GetAllContainers())
                                     {
                                         ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                                         var imScreenPos = ImGui.GetCursorScreenPos();

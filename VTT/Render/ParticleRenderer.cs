@@ -12,6 +12,8 @@
     using VTT.Network;
     using VTT.Util;
     using VTT.GL.Bindings;
+    using System.Collections.Concurrent;
+    using System.Linq;
 
     public class ParticleRenderer
     {
@@ -31,6 +33,10 @@
         public bool OffscreenParticleUpdate { get; set; } = true;
 
         public Stopwatch CPUTimer { get; set; }
+
+        private readonly List<ParticleContainer> _containers = new List<ParticleContainer>();
+        private readonly ConcurrentQueue<ParticleAction> _containerActionQueue = new ConcurrentQueue<ParticleAction>();
+        private volatile bool _freed;
 
         public void Create()
         {
@@ -126,10 +132,10 @@
 
         private static readonly EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
         private static readonly EventWaitHandle particleSecondaryMutex = new EventWaitHandle(true, EventResetMode.AutoReset);
-        private static readonly List<ParticleContainer> containers = new List<ParticleContainer>();
-        private readonly object fxLock = new object();
-        private readonly List<ParticleContainer> fxContainers = new List<ParticleContainer>();
-        private bool clearFx;
+
+        public void AddEmitter(ParticleContainer pc) => this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.Addition, pc));
+        public void RemoveEmitter(ParticleContainer pc) => this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.Deletion, pc));
+        public void SafeUpdateEmitter(ParticleContainer pc, DataElement data) => this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.Update, pc, data));
 
         public void AddFXEmitter(Guid systemID, Vector3 position, int particlesToEmit)
         {
@@ -145,13 +151,19 @@
                 UseContainerOrientation = false
             };
 
-            lock (this.fxLock)
+            this.AddEmitter(pc);
+        }
+
+        private void FreeEmitter(ParticleContainer pc, int idx = -1)
+        {
+            pc.IsActive = false;
+            pc.DisposeInternal();
+            if (idx != -1)
             {
-                this.fxContainers.Add(pc);
+                this._containers.RemoveAt(idx);
             }
         }
 
-        private readonly List<Map> _disposeQueue = new List<Map>();
         public void Update()
         {
             if (this.OffscreenParticleUpdate)
@@ -165,71 +177,57 @@
 
             if (Client.Instance.Settings.ParticlesEnabled)
             {
-                Map m = Client.Instance.CurrentMap;
-                if (m != null)
+                while (this._containerActionQueue.TryDequeue(out ParticleAction a))
                 {
-                    foreach (MapObject mo in m.IterateObjects(null))
+                    switch (a.type)
                     {
-                        lock (mo.Lock)
+                        case ParticleAction.Kind.Addition:
                         {
-                            foreach (ParticleContainer pc in mo.ParticleContainers.Values)
+                            this._containers.Add(a.container);
+                            break;
+                        }
+
+                        case ParticleAction.Kind.Deletion:
+                        {
+                            this.FreeEmitter(a.container);
+                            this._containers.Remove(a.container);
+                            break;
+                        }
+
+                        case ParticleAction.Kind.Update:
+                        {
+                            a.container.Deserialize(a.readData);
+                            break;
+                        }
+
+                        case ParticleAction.Kind.FullClear:
+                        {
+                            foreach (ParticleContainer pc in this._containers)
                             {
-                                pc.UpdateBufferState();
-                                containers.Add(pc);
+                                pc.IsActive = false;
+                                pc.DisposeInternal();
                             }
+
+                            this._containers.Clear();
+                            break;
+                        }
+
+                        default:
+                        {
+                            break;
                         }
                     }
                 }
 
-                lock (this.fxLock)
+                for (int i = this._containers.Count - 1; i >= 0; i--)
                 {
-                    for (int i = this.fxContainers.Count - 1; i >= 0; i--)
+                    ParticleContainer pc = this._containers[i];
+                    pc.UpdateBufferState();
+                    if (pc.IsFXEmitter && pc.ParticlesToEmit == -1)
                     {
-                        ParticleContainer pc = this.fxContainers[i];
-                        if (this.clearFx)
-                        {
-                            pc.IsActive = false;
-                            pc.DisposeInternal();
-                            this.fxContainers.RemoveAt(i);
-                            continue;
-                        }
-
-                        pc.UpdateBufferState();
-                        if (pc.ParticlesToEmit == -1)
-                        {
-                            pc.IsActive = false;
-                            pc.DisposeInternal();
-                            this.fxContainers.RemoveAt(i);
-                        }
+                        this.FreeEmitter(pc, i);
                     }
-
-                    this.clearFx = false;
                 }
-
-
-                if (this._disposeQueue.Count > 0)
-                {
-                    foreach (Map map in this._disposeQueue)
-                    {
-                        if (map != null)
-                        {
-                            foreach (MapObject mo in map.IterateObjects(null))
-                            {
-                                lock (mo.Lock)
-                                {
-                                    foreach (ParticleContainer pc in mo.ParticleContainers.Values)
-                                    {
-                                        pc.IsActive = false;
-                                        pc.DisposeInternal();
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    this._disposeQueue.Clear();
-                }
-
             }
 
             if (this.OffscreenParticleUpdate)
@@ -240,29 +238,10 @@
 
         public void UpdateOffscreen()
         {
-            while (true)
+            while (!this._freed)
             {
                 particleMutex.WaitOne();
-                if (Client.Instance.Settings.ParticlesEnabled)
-                {
-                    foreach (ParticleContainer pc in containers)
-                    {
-                        pc.Update();
-                    }
-
-                    containers.Clear();
-
-                    lock (this.fxLock)
-                    {
-                        for (int i = this.fxContainers.Count - 1; i >= 0; i--)
-                        {
-                            ParticleContainer pc = this.fxContainers[i];
-                            pc.Update();
-                        }
-                    }
-                }
-
-
+                this.UpdateForward();
                 particleSecondaryMutex.Set();
             }
         }
@@ -271,20 +250,9 @@
         {
             if (Client.Instance.Settings.ParticlesEnabled)
             {
-                foreach (ParticleContainer pc in containers)
+                foreach (ParticleContainer pc in this._containers)
                 {
                     pc.Update();
-                }
-
-                containers.Clear();
-
-                lock (this.fxLock)
-                {
-                    for (int i = this.fxContainers.Count - 1; i >= 0; i--)
-                    {
-                        ParticleContainer pc = this.fxContainers[i];
-                        pc.Update();
-                    }
                 }
             }
         }
@@ -292,11 +260,7 @@
         // Only call this method when changing maps, descyncs internal state for client objects!
         public void ClearParticles(Map m)
         {
-            this._disposeQueue.Add(m);
-            lock (this.fxLock)
-            {
-                this.clearFx = true;
-            }
+            this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.FullClear, null));
         }
 
         public void RenderAll()
@@ -316,11 +280,7 @@
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Enable(Capability.Multisample);
-                GL.Enable(Capability.SampleAlphaToCoverage);
-            }
+            GL.DepthMask(false);
 
             this._programsPopulated.Clear();
             FastAccessShader shader = this.ParticleShader;
@@ -343,45 +303,25 @@
             GL.ActiveTexture(2);
             Client.Instance.Frontend.Renderer.Black.Bind();
             GL.ActiveTexture(0);
-            foreach (MapObject mo in m.IterateObjects(null))
+            foreach (ParticleContainer pc in this._containers.OrderByDescending(x => this.GetCameraDistanceTo(x, cam, m)))
             {
-                if (mo.MapLayer <= 0 || Client.Instance.IsAdmin)
+                if (pc.Container != null && (pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin) && pc.IsActive)
                 {
-                    lock (mo.Lock)
-                    {
-                        foreach (ParticleContainer pc in mo.ParticleContainers.Values)
-                        {
-                            if (pc.IsActive)
-                            {
-                                this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
-                                pc.Render(shader, cam);
-                            }
-                        }
-                    }
+                    this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
+                    pc.Render(shader, cam);
                 }
             }
 
-            lock (this.fxLock)
-            {
-                foreach (ParticleContainer pc in this.fxContainers)
-                {
-                    if (pc.IsActive)
-                    {
-                        this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
-                        pc.Render(shader, cam);
-                    }
-                }
-            }
-
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Disable(Capability.Multisample);
-                GL.Disable(Capability.SampleAlphaToCoverage);
-            }
-
+            GL.DepthMask(true);
             GL.Disable(Capability.Blend);
 
             this.CPUTimer.Stop();
+        }
+
+        private float GetCameraDistanceTo(ParticleContainer pc, Camera cam, Map m)
+        {
+            Vector3 sPos = (pc.Container?.Position ?? Vector3.Zero) + pc.ContainerPositionOffset;
+            return m.Is2D ? m.Camera2DHeight - sPos.Z : Vector3.Distance(sPos, cam.Position);
         }
 
         private readonly List<ShaderProgram> _programsPopulated = new List<ShaderProgram>();
@@ -486,6 +426,28 @@
                 : (Client.Instance.Frontend.Renderer.ObjectRenderer?.Shadow2DRenderer?.WhiteSquare);
             t ??= Client.Instance.Frontend.Renderer.White;
             t.Bind();
+        }
+
+        private class ParticleAction
+        {
+            public readonly Kind type;
+            public readonly ParticleContainer container;
+            public readonly DataElement readData;
+
+            public ParticleAction(Kind type, ParticleContainer container, DataElement data = null)
+            {
+                this.type = type;
+                this.container = container;
+                this.readData = data;
+            }
+
+            public enum Kind
+            {
+                Addition,
+                Deletion,
+                FullClear,
+                Update
+            }
         }
     }
 }

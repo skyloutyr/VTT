@@ -69,27 +69,19 @@
                             this.Container = pc.Serialize();
                         }
 
-                        mo.ParticleContainers[pc.ID] = pc;
+                        mo.Particles.AddContainer(pc);
                         break;
                     }
 
                     case Action.Delete:
                     {
-                        if (mo.ParticleContainers.ContainsKey(this.ParticleID))
-                        {
-                            mo.ParticleContainers.Remove(this.ParticleID);
-                        }
-
+                        mo.Particles.RemoveContainer(this.ParticleID);
                         break;
                     }
 
                     case Action.Edit:
                     {
-                        if (mo.ParticleContainers.ContainsKey(this.ParticleID))
-                        {
-                            mo.ParticleContainers[this.ParticleID].Deserialize(this.Container);
-                        }
-
+                        mo.Particles.UpdateContainer(this.ParticleID, this.Container);
                         break;
                     }
                 }

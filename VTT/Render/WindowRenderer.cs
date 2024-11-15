@@ -96,6 +96,7 @@
                         }
                         else
                         {
+                            mo.Particles.ClearContainers();
                             mo.Container = null;
                             mo.MapID = Guid.Empty;
                             m.Objects.Remove(mo);
@@ -138,9 +139,9 @@
                 this.ObjectRenderer.Render(m, time);
                 this.RulerRenderer?.Render(time);
                 this.SelectionManager?.Render(m, time);
+                this.MapRenderer.DrawingRenderer.Render(this.MapRenderer.ClientCamera);
                 this.ParticleRenderer.RenderFake();
                 this.ParticleRenderer.RenderAll();
-                this.MapRenderer.DrawingRenderer.Render(this.MapRenderer.ClientCamera);
                 this.GuiRenderer.Render(time);
                 this.SelectionManager.RenderGui(time);
                 this.SkyRenderer.Render(time);

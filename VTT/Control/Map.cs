@@ -7,6 +7,7 @@
     using System.IO;
     using System.Linq;
     using System.Numerics;
+    using VTT.Network;
     using VTT.Util;
 
     public class Map : ISerializable
@@ -75,6 +76,10 @@
                 obj.IsServer = this.IsServer;
                 this.ObjectsByID[obj.ID] = obj;
                 this.NeedsSave = true;
+                if (!this.IsServer)
+                {
+                    obj.Particles.UploadAllConainers();
+                }
             }
         }
 

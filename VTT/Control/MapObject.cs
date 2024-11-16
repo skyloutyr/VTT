@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
+    using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Network;
     using VTT.Util;
@@ -110,12 +111,16 @@
 
         public AABox ClientRaycastBox { get; set; }
 
-        public AABox CameraCullerBox { get; set; }
+        public AABox CameraCullerBox { get; set; } = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+        public FrustumCullingSphere cameraCullerSphere = new FrustumCullingSphere(Vector3.Zero, 0.5f);
         public bool ClientAssignedModelBounds { get; set; }
 
         public bool ClientRenderedThisFrame { get; set; }
         public bool ClientGuiOverlayDrawnThisFrame { get; set; }
-        public bool ClientDeferredRejectThisFrame { get; set; }
+        public float CameraDistanceToThisFrameForDeferredRejects { get; set; }
+        public AssetStatus DeferredAssetStatusThisFrame { get; set; }
+        public Asset DeferredAssetObjectThisFrame { get; set; }
+        public bool DeferredAssetReadinessThisFrame { get; set; }
         public Vector3 ClientDragMoveResetInitialPosition { get; set; }
         public Vector3 ClientDragMoveAccumulatedPosition { get; set; }
 
@@ -316,6 +321,7 @@
         {
             this.ClientCachedModelMatrix = Matrix4x4.CreateScale(this.scale) * Matrix4x4.CreateFromQuaternion(this.rotation) * Matrix4x4.CreateTranslation(this.position);
             this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).Bounds;
+            this.cameraCullerSphere = new FrustumCullingSphere(this.CameraCullerBox.Center + this.Position, this.CameraCullerBox.Size.Length() * 0.5f);
         }
 
         public void Update() // Client-only

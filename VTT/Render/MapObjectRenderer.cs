@@ -851,6 +851,13 @@
         }
 
         private readonly List<MapObject> _crossedOutObjects = new List<MapObject>();
+        private readonly List<MapObject>[] _forwardLists = new List<MapObject>[5] { 
+            new List<MapObject>(),
+            new List<MapObject>(),
+            new List<MapObject>(),
+            new List<MapObject>(),
+            new List<MapObject>()
+        };
 
         private void RenderDeferred(Map m, double delta)
         {
@@ -864,38 +871,40 @@
             FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
             this._crossedOutObjects.Clear();
-            for (int i = -2; i <= 0; ++i)
+            int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
+            for (int i = -2; i <= maxLayer; ++i)
             {
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && a.ModelGlReady)
+                    bool assetReady = status == AssetStatus.Return && a.ModelGlReady;
+                    if (assetReady)
                     {
                         if (!mo.ClientAssignedModelBounds)
                         {
                             mo.ClientBoundingBox = mo.ClientRaycastBox = a.Model.GLMdl.RaycastBounds;
                             mo.ClientAssignedModelBounds = true;
                         }
+                    }
 
-                        if (a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon) || !mo.ShaderID.IsEmpty())
-                        {
-                            mo.ClientDeferredRejectThisFrame = true;
-                            continue;
-                        }
+                    if (!(mo.ClientRenderedThisFrame = Client.Instance.Frontend.Renderer.MapRenderer.IsMapObjectInFrustum(mo)))
+                    {
+                        continue;
+                    }
 
-                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
-                        {
-                            mo.ClientRenderedThisFrame = false;
-                            continue;
-                        }
+                    if (mo.IsCrossedOut)
+                    {
+                        this._crossedOutObjects.Add(mo);
+                    }
 
-                        mo.ClientRenderedThisFrame = true;
-                        mo.ClientDeferredRejectThisFrame = false;
-                        if (mo.DoNotRender)
-                        {
-                            continue;
-                        }
+                    if (mo.DoNotRender)
+                    {
+                        continue;
+                    }
 
+                    if (assetReady && i <= 0 && !(a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon) || !mo.ShaderID.IsEmpty()))
+                    {
+                        // Suitable for deferred
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
                         shader.Essentials.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
@@ -905,7 +914,12 @@
                     }
                     else
                     {
-                        mo.ClientDeferredRejectThisFrame = true;
+                        // Rejected to forward pass
+                        mo.DeferredAssetObjectThisFrame = a;
+                        mo.DeferredAssetReadinessThisFrame = assetReady;
+                        mo.DeferredAssetStatusThisFrame = status;
+                        mo.CameraDistanceToThisFrameForDeferredRejects = this.GetCameraDistanceTo(mo, cam);
+                        this._forwardLists[i + 2].Add(mo);
                     }
                 }
             }
@@ -916,7 +930,6 @@
 
             FastAccessShader forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
-            int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
             GL.Enable(Capability.Blend);
             GL.EnableIndexed(IndexedCapability.Blend, 0);
             GL.DisableIndexed(IndexedCapability.Blend, 1);
@@ -925,8 +938,13 @@
             GL.DisableIndexed(IndexedCapability.Blend, 4);
             GL.DisableIndexed(IndexedCapability.Blend, 5);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            for (int i = -2; i <= maxLayer; ++i)
+            for (int i = -2; i <= maxLayer; ++i) // Still have to iterate from -2 to max layer for better shader uniforms and correct ordering for layers
             {
+                if (this._forwardLists[i + 2].Count == 0)
+                {
+                    continue;
+                }
+
                 shader = forwardShader;
                 shader.Program.Bind();
                 if (i <= 0)
@@ -943,65 +961,39 @@
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
                 shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
-                foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
+                this._forwardLists[i + 2].Sort((l, r) => r.CameraDistanceToThisFrameForDeferredRejects.CompareTo(l.CameraDistanceToThisFrameForDeferredRejects));
+                foreach (MapObject mo in this._forwardLists[i + 2])
                 {
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    bool assetReady = status == AssetStatus.Return && a.ModelGlReady;
-                    if (i > 0 || mo.ClientDeferredRejectThisFrame)
+                    Asset a = mo.DeferredAssetObjectThisFrame;
+                    bool assetReady = mo.DeferredAssetReadinessThisFrame;
+                    Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
+                    shader = forwardShader;
+                    this._passthroughData.TintColor = mo.TintColor.Vec4();
+                    shader.Essentials.TintColor.Set(this._passthroughData.TintColor);
+                    FastAccessShader customShader = null;
+                    bool hadCustomRenderShader = !mo.ShaderID.IsEmpty() && CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out customShader);
+                    if (hadCustomRenderShader)
                     {
-                        if (assetReady)
+                        if (i <= 0)
                         {
-                            if (!mo.ClientAssignedModelBounds)
-                            {
-                                mo.ClientBoundingBox = mo.ClientRaycastBox = a.Model.GLMdl.RaycastBounds;
-                                mo.ClientAssignedModelBounds = true;
-                            }
-
-                            if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
-                            {
-                                mo.ClientRenderedThisFrame = false;
-                                continue;
-                            }
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
                         }
-
-                        mo.ClientRenderedThisFrame = true;
-                        if (mo.DoNotRender)
+                        else
                         {
-                            continue;
-                        }
-
-                        Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-
-                        shader = forwardShader;
-                        this._passthroughData.TintColor = mo.TintColor.Vec4();
-                        shader.Essentials.TintColor.Set(this._passthroughData.TintColor);
-                        bool hadCustomRenderShader = CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out FastAccessShader customShader);
-                        if (hadCustomRenderShader)
-                        {
-                            if (i <= 0)
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
-                            }
-                            else
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
-                            }
-                        }
-
-                        GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
-                        mo.LastRenderModel = mdl;
-                        mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
-                        if (hadCustomRenderShader)
-                        {
-                            forwardShader.Program.Bind();
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
                         }
                     }
 
-                    if (mo.IsCrossedOut && mo.ClientRenderedThisFrame)
+                    GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
+                    mo.LastRenderModel = mdl;
+                    mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                    if (hadCustomRenderShader)
                     {
-                        this._crossedOutObjects.Add(mo);
+                        forwardShader.Program.Bind();
                     }
                 }
+
+                this._forwardLists[i + 2].Clear();
             }
 
             GL.Disable(Capability.Blend);

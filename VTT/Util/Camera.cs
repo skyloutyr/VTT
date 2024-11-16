@@ -144,6 +144,35 @@
             return true;
         }
 
+        public virtual bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere)
+        {
+            if (sphere.cachedPlane != -1)
+            {
+                Plane p = this.Frustrum[sphere.cachedPlane];
+                if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                {
+                    return false;
+                }
+            }
+
+            for (int i = this.Frustrum.Length - 1; i >= 0; --i)
+            {
+                if (i == sphere.cachedPlane)
+                {
+                    continue;
+                }
+
+                Plane p = this.Frustrum[i];
+                if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                {
+                    sphere.cachedPlane = i;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public virtual bool IsAABoxInFrustrum(AABox box, Vector3 point = default)
         {
             box += point;

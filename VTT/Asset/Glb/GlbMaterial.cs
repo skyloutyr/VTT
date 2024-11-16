@@ -46,6 +46,13 @@
                 (this.OcclusionMetallicRoughnessTexture?.IsAsyncReady ?? true);
         }
 
+        public static void ResetState()
+        {
+            lastMaterial = null;
+            lastAnimationFrameIndex = 0;
+            lastProgram = 0;
+        }
+
         public void Uniform(FastAccessShader shader, double textureAnimationFrameIndex)
         {
             if (SunShadowRenderer.ShadowPass)

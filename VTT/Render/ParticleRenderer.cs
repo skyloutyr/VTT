@@ -122,6 +122,7 @@
             }
 
             GL.ActiveTexture(0);
+            GlbMaterial.ResetState();
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
             GL.Disable(Capability.Blend);
             GL.BindFramebuffer(FramebufferTarget.All, 0);
@@ -304,6 +305,7 @@
             GL.ActiveTexture(2);
             Client.Instance.Frontend.Renderer.Black.Bind();
             GL.ActiveTexture(0);
+            GlbMaterial.ResetState();
             foreach (ParticleContainer pc in this._containers.OrderByDescending(x => this.GetCameraDistanceTo(x, cam, m)))
             {
                 if (pc.Container != null && (pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin) && pc.IsActive)

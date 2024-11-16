@@ -1522,6 +1522,7 @@
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
             GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
 
+            GlbMaterial.ResetState();
             this.Render(shader, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0, null);
 
             GL.ActiveTexture(0);

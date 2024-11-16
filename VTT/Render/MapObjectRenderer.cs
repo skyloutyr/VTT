@@ -359,7 +359,7 @@
                 this._cachedSunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
                 this._cachedAmbientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
                 this._cachedSkyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
-
+                GlbMaterial.ResetState();
                 this.DirectionalLightRenderer.Render(m, delta);
                 this.UpdateUBO(m, delta);
                 this.RenderDeferred(m, delta);

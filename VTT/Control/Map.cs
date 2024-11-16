@@ -76,6 +76,7 @@
                 obj.IsServer = this.IsServer;
                 this.ObjectsByID[obj.ID] = obj;
                 this.NeedsSave = true;
+                obj.IsRemoved = false;
                 if (!this.IsServer)
                 {
                     obj.Particles.UploadAllConainers();
@@ -91,6 +92,7 @@
                 this.Objects.Remove(obj);
                 obj.Container = null;
                 obj.MapID = Guid.Empty;
+                obj.IsRemoved = true;
                 this.ObjectsByID.Remove(obj.ID);
                 this.NeedsSave = true;
             }

@@ -82,7 +82,6 @@
             this.CPUTimer = new Stopwatch();
         }
 
-        private readonly int[] viewport = new int[4];
         public void RenderFake()
         {
             if (this.CurrentlyEditedSystemInstance == null)
@@ -90,13 +89,12 @@
                 return;
             }
 
-            uint fboID = (uint)GL.GetInteger(GLPropertyName.FramebufferBinding)[0];
-            GL.GetInteger(GLPropertyName.Viewport).CopyTo(this.viewport);
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
             GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
             Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.Render(0, this._cam, null, false);
+            GL.DepthMask(false);
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, null, this._cam, false, true, out _))
@@ -126,8 +124,9 @@
             GL.ActiveTexture(0);
             this.CurrentlyEditedSystemInstance.Render(this.ParticleShader, this._cam.Position, this._cam);
             GL.Disable(Capability.Blend);
-            GL.BindFramebuffer(FramebufferTarget.All, fboID);
-            GL.Viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
+            GL.BindFramebuffer(FramebufferTarget.All, 0);
+            GL.DepthMask(true);
+            GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
         }
 
         private static readonly EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
@@ -245,6 +244,8 @@
                 particleSecondaryMutex.Set();
             }
         }
+
+        public void Terminate() => this._freed = true;
 
         public void UpdateForward()
         {

@@ -2,7 +2,6 @@
 {
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections.Generic;
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.GLFW;

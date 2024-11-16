@@ -1,7 +1,6 @@
 ﻿namespace VTT.Network
 {
     using System;
-    using System.Runtime.InteropServices;
     using VTT.Util;
 
     public class NetworkMonitor

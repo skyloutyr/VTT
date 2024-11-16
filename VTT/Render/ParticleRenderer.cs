@@ -64,7 +64,7 @@
             FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
             if (fec != FramebufferStatus.Complete)
             {
-                throw new System.Exception("Framebuffer could not be completed - " + fec);
+                throw new Exception("Framebuffer could not be completed - " + fec);
             }
 
             this._cam = new VectorCamera(new Vector3(5, 5, 5), new Vector3(-5, -5, -5).Normalized());

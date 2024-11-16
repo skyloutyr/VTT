@@ -10,7 +10,6 @@
     using System.Runtime.InteropServices;
     using VTT.Asset.Glb;
     using VTT.Control;
-    using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render;
@@ -190,22 +189,22 @@
         {
             this.EmissionType = br.ReadEnumSmall<EmissionMode>();
             this.EmissionRadius = br.ReadSingle();
-            this.EmissionVolume = br.ReadGlVec3();
+            this.EmissionVolume = br.ReadVec3();
             this.EmissionChance = br.ReadSingle();
             this.EmissionAmount = new RangeInt(br.ReadInt32(), br.ReadInt32());
             this.EmissionCooldown = new RangeInt(br.ReadInt32(), br.ReadInt32());
             this.Lifetime = new RangeInt(br.ReadInt32(), br.ReadInt32());
             this.ScaleVariation = new RangeSingle(br.ReadSingle(), br.ReadSingle());
             this.MaxParticles = br.ReadInt32();
-            this.InitialVelocity = new RangeVector3(br.ReadGlVec3(), br.ReadGlVec3());
+            this.InitialVelocity = new RangeVector3(br.ReadVec3(), br.ReadVec3());
             this.InitialVelocityRandomAngle = br.ReadSingle();
-            this.Gravity = br.ReadGlVec3();
+            this.Gravity = br.ReadVec3();
             this.VelocityDampenFactor = br.ReadSingle();
             int c = br.ReadInt32();
             this.ColorOverLifetime = new Gradient<Vector4>();
             while (c-- > 0)
             {
-                this.ColorOverLifetime[br.ReadSingle()] = br.ReadGlVec4();
+                this.ColorOverLifetime[br.ReadSingle()] = br.ReadVec4();
             }
 
             c = br.ReadInt32();

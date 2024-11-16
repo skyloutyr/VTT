@@ -480,8 +480,8 @@
                                     foreach (ParticleContainer pc in mo.Particles.GetAllContainers())
                                     {
                                         ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                                        var imScreenPos = ImGui.GetCursorScreenPos();
-                                        var rectEnd = imScreenPos + new Vector2(320, 24);
+                                        Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+                                        Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
                                         bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                                         uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                                         drawList.AddRect(imScreenPos, rectEnd, bClr);
@@ -966,8 +966,8 @@
             unsafe bool DrawObjectAssetRecepticle(MapObject mo, Guid aId, Func<bool> assetEval, GL.Texture iconTex = null)
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                var imScreenPos = ImGui.GetCursorScreenPos();
-                var rectEnd = imScreenPos + new Vector2(320, 24);
+                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+                Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                 uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                 drawList.AddRect(imScreenPos, rectEnd, bClr);

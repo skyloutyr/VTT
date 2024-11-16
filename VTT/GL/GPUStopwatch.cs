@@ -1,7 +1,7 @@
 ﻿namespace VTT.GL
 {
     using VTT.GL.Bindings;
-    using OGL = VTT.GL.Bindings.GL;
+    using OGL = Bindings.GL;
 
     public class GPUStopwatch
     {
@@ -30,7 +30,7 @@
             }
             else
             {
-                GL.BeginQuery(QueryTarget.TimeElapsed, this._id);
+                OGL.BeginQuery(QueryTarget.TimeElapsed, this._id);
                 this._started = true;
                 this._wasEverStarted = true;
             }
@@ -40,7 +40,7 @@
         {
             if (this._started)
             {
-                GL.EndQuery(QueryTarget.TimeElapsed);
+                OGL.EndQuery(QueryTarget.TimeElapsed);
                 this._started = false;
             }
         }

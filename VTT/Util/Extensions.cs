@@ -260,12 +260,9 @@
             return ret;
         }
 
-        public static SVec2 ReadGlVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
-        public static SVec3 ReadGlVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static SVec4 ReadGlVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static SVec2 ReadSysVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
-        public static SVec3 ReadSysVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        public static SVec4 ReadSysVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static SVec2 ReadVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
+        public static SVec3 ReadVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static SVec4 ReadVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
 
         public static Matrix4x4 ClearRotation(this Matrix4x4 self)
         {

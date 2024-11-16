@@ -32,7 +32,7 @@
         {
             this.SystemID = br.ReadGuid();
             this.NumParticles = br.ReadInt32();
-            this.Location = br.ReadSysVec3();
+            this.Location = br.ReadVec3();
         }
 
         public override void Encode(BinaryWriter bw)

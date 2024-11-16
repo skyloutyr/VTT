@@ -5,7 +5,6 @@
     using System.Collections.Generic;
     using System.Numerics;
     using VTT.Control;
-    using VTT.GL;
     using VTT.Render;
     using VTT.Util;
     using Camera = glTFLoader.Schema.Camera;

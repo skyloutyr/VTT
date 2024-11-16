@@ -98,7 +98,7 @@
             this.Tooltip = br.ReadString();
             this.Color = Extensions.FromArgb(br.ReadUInt32());
             this.Type = (RulerType)br.ReadByte();
-            this.Points = br.ReadArray(x => x.ReadGlVec3());
+            this.Points = br.ReadArray(x => x.ReadVec3());
             this.ExtraInfo = br.ReadSingle();
             this.NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500; // Expect a packet ~every 500ms, leave space for 750ms ping (both ways)
             this.IsDead = br.ReadBoolean();

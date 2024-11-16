@@ -7,7 +7,7 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
-    using GL = VTT.GL.Bindings.GL;
+    using GL = GL.Bindings.GL;
 
     public static class CustomShaderRenderer
     {

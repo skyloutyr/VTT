@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Runtime.InteropServices;
     using VTT.Network;
     using VTT.Sound.Bindings;
     using VTT.Util;

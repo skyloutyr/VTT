@@ -1,9 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Runtime.InteropServices;
 
     public unsafe class UnsafeArray<T> : IEnumerable<T> where T : unmanaged
     {

@@ -1,8 +1,7 @@
 ﻿namespace VTT.GL
 {
-    using System;
     using VTT.GL.Bindings;
-    using GL = VTT.GL.Bindings.GL;
+    using GL = Bindings.GL;
 
     public class ShaderProgram
     {

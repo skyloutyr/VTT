@@ -71,7 +71,7 @@
 
                 if (packet_size > packet_read && size > offset)
                 {
-                    var packet_open = packet_size - packet_read;
+                    long packet_open = packet_size - packet_read;
 
                     if (offset + packet_open > size)
                     {

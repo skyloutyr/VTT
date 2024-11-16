@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using System.Numerics;
     using VTT.GL.Bindings;
-    using GL = VTT.GL.Bindings.GL;
+    using GL = Bindings.GL;
 
     public readonly struct UniformManager
     {

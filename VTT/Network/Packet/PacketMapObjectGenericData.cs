@@ -264,7 +264,7 @@
                     case DataType.Shadow2DViewportData:
                     case DataType.Shadow2DLightSourceData:
                     {
-                        o = br.ReadSysVec2();
+                        o = br.ReadVec2();
                         break;
                     }
 

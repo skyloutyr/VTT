@@ -12,7 +12,6 @@
     using VTT.GL;
     using VTT.Network;
     using VTT.Render.Chat;
-    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ChatLine

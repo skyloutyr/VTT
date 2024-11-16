@@ -802,8 +802,8 @@
         unsafe bool DrawAssetRecepticle(Guid aId, SimpleLanguage lang, Func<bool> assetEval, Texture iconTex = null)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            var imScreenPos = ImGui.GetCursorScreenPos();
-            var rectEnd = imScreenPos + new SVec2(320, 24);
+            SVec2 imScreenPos = ImGui.GetCursorScreenPos();
+            SVec2 rectEnd = imScreenPos + new SVec2(320, 24);
             bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
             uint bClr = mouseOver ? GuiRenderer.Instance.DraggedAssetReference != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
             drawList.AddRect(imScreenPos, rectEnd, bClr);
@@ -816,7 +816,7 @@
                 mdlTxt += aRef.Name;
                 if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                 {
-                    VTT.GL.Texture tex = ap.GetGLTexture();
+                    Texture tex = ap.GetGLTexture();
                     if (tex != null)
                     {
                         drawList.AddImage(tex, imScreenPos + new SVec2(20, 4), imScreenPos + new SVec2(36, 20));

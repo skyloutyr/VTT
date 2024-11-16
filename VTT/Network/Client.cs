@@ -14,7 +14,6 @@
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
-    using VTT.GL;
     using VTT.Network.Packet;
     using VTT.Network.VSCC;
     using VTT.Render;

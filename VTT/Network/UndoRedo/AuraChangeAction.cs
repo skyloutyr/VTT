@@ -1,7 +1,6 @@
 ﻿namespace VTT.Network.UndoRedo
 {
     using SixLabors.ImageSharp;
-    using System;
     using VTT.Control;
     using VTT.Network.Packet;
 

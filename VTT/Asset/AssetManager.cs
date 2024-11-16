@@ -1,13 +1,11 @@
 ﻿namespace VTT.Asset
 {
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.Formats.Gif;
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;

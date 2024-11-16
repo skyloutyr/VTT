@@ -1,7 +1,7 @@
 ﻿namespace VTT.GL
 {
     using VTT.GL.Bindings;
-    using GL = VTT.GL.Bindings.GL;
+    using GL = Bindings.GL;
     using System.Runtime.InteropServices;
 
     public class VertexArray

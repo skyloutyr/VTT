@@ -63,7 +63,7 @@ void main()
             ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
             ImGui.GetIO().ConfigWindowsResizeFromEdges = true;
             ImGui.GetIO().ConfigDockingWithShift = true;
-            ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2(1, 1);
+            ImGui.GetIO().DisplayFramebufferScale = new Vector2(1, 1);
             this.SetupGl();
             ImGui.LoadIniSettingsFromDisk(Path.Combine(IOVTT.AppDir, "imgui.ini"));
         }
@@ -255,7 +255,7 @@ void main()
         {
             try
             {
-                var fonts = ImGui.GetIO().Fonts;
+                ImFontAtlasPtr fonts = ImGui.GetIO().Fonts;
 
                 string temp = Path.Combine(IOVTT.ClientDir, "unifont.ttf");
                 if (!File.Exists(temp))
@@ -354,10 +354,10 @@ void main()
             ClientWindow cw = Client.Instance.Frontend;
             int ww = cw.GlfwWidth;
             int wh = cw.GlfwHeight;
-            ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(cw.Width, cw.Height);
+            ImGui.GetIO().DisplaySize = new Vector2(cw.Width, cw.Height);
             if (ww != 0 && wh != 0)
             {
-                ImGui.GetIO().DisplayFramebufferScale = new System.Numerics.Vector2((float)cw.Width / ww, (float)cw.Height / wh);
+                ImGui.GetIO().DisplayFramebufferScale = new Vector2((float)cw.Width / ww, (float)cw.Height / wh);
             }
 
             double now = Glfw.GetTime();
@@ -371,7 +371,7 @@ void main()
             ImGui.NewFrame();
         }
 
-        public void Resize(int w, int h) => ImGui.GetIO().DisplaySize = new System.Numerics.Vector2(w, h);
+        public void Resize(int w, int h) => ImGui.GetIO().DisplaySize = new Vector2(w, h);
 
         void SetupRenderState(ImDrawDataPtr drawData, int fbWidth, int fbHeight)
         {
@@ -383,10 +383,10 @@ void main()
 
             _shader.Bind();
 
-            var left = drawData.DisplayPos.X;
-            var right = drawData.DisplayPos.X + drawData.DisplaySize.X;
-            var top = drawData.DisplayPos.Y;
-            var bottom = drawData.DisplayPos.Y + drawData.DisplaySize.Y;
+            float left = drawData.DisplayPos.X;
+            float right = drawData.DisplayPos.X + drawData.DisplaySize.X;
+            float top = drawData.DisplayPos.Y;
+            float bottom = drawData.DisplayPos.Y + drawData.DisplaySize.Y;
 
             _shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
         }
@@ -402,28 +402,28 @@ void main()
             }
 
             // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-            var fbWidth = (int)(drawData.DisplaySize.X * drawData.FramebufferScale.X);
-            var fbHeight = (int)(drawData.DisplaySize.Y * drawData.FramebufferScale.Y);
+            int fbWidth = (int)(drawData.DisplaySize.X * drawData.FramebufferScale.X);
+            int fbHeight = (int)(drawData.DisplaySize.Y * drawData.FramebufferScale.Y);
             if (fbWidth <= 0 || fbHeight <= 0)
                 return;
 
             this.CPUTimer.Restart();
             SetupRenderState(drawData, fbWidth, fbHeight);
 
-            var clipOffset = drawData.DisplayPos;
-            var clipScale = drawData.FramebufferScale;
+            Vector2 clipOffset = drawData.DisplayPos;
+            Vector2 clipScale = drawData.FramebufferScale;
 
             drawData.ScaleClipRects(clipScale);
 
-            var lastTexId = ImGui.GetIO().Fonts.TexID;
+            IntPtr lastTexId = ImGui.GetIO().Fonts.TexID;
             GL.BindTexture(TextureTarget.Texture2D, (uint)lastTexId);
 
-            var drawVertSize = Marshal.SizeOf<ImDrawVert>();
-            var drawIdxSize = sizeof(ushort);
+            int drawVertSize = Marshal.SizeOf<ImDrawVert>();
+            int drawIdxSize = sizeof(ushort);
 
-            for (var n = 0; n < drawData.CmdListsCount; n++)
+            for (int n = 0; n < drawData.CmdListsCount; n++)
             {
-                var cmdList = drawData.CmdLists[n];
+                ImDrawListPtr cmdList = drawData.CmdLists[n];
 
                 this._vertexArrayObject.Bind();
                 // Upload vertex/index buffers
@@ -439,9 +439,9 @@ void main()
                 this._elementsHandle.SetData(IntPtr.Zero, this._maxEboSize);
                 this._elementsHandle.SetSubData(cmdList.IdxBuffer.Data, eS, 0);
 
-                for (var cmd_i = 0; cmd_i < cmdList.CmdBuffer.Size; cmd_i++)
+                for (int cmd_i = 0; cmd_i < cmdList.CmdBuffer.Size; cmd_i++)
                 {
-                    var pcmd = cmdList.CmdBuffer[cmd_i];
+                    ImDrawCmdPtr pcmd = cmdList.CmdBuffer[cmd_i];
                     if (pcmd.UserCallback != IntPtr.Zero)
                     {
                         Marshal.GetDelegateForFunctionPointer<ImDrawCallback>(pcmd.UserCallback)(pcmd, drawIdxSize, fbWidth, fbHeight);
@@ -449,7 +449,7 @@ void main()
                     else
                     {
                         // Project scissor/clipping rectangles into framebuffer space
-                        var clip_rect = pcmd.ClipRect;
+                        Vector4 clip_rect = pcmd.ClipRect;
 
                         clip_rect.X = pcmd.ClipRect.X - clipOffset.X;
                         clip_rect.Y = pcmd.ClipRect.Y - clipOffset.Y;
@@ -499,7 +499,7 @@ void main()
 
     public static class ImGuiHelper
     {
-        public static System.Numerics.Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? System.Numerics.Vector2.Zero : ImGui.CalcTextSize(tIn);
+        public static Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? System.Numerics.Vector2.Zero : ImGui.CalcTextSize(tIn);
 
         public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
     }

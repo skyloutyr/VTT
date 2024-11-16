@@ -3,7 +3,6 @@
     using System.Numerics;
     using System;
     using VTT.Asset;
-    using VTT.GL;
     using VTT.Network;
     using VTT.Util;
     using VTT.Render;

@@ -1,6 +1,5 @@
 ﻿namespace VTT.Sound.Bindings
 {
-    using System;
     using System.Runtime.InteropServices;
 
     public static unsafe class ALLoader

@@ -12,7 +12,6 @@
     using System.Linq;
     using System.Numerics;
     using System.Text;
-    using System.Threading;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
@@ -849,8 +848,8 @@
                     ImGui.SameLine();
                     ImGui.Image(this.Search, new Vector2(24, 24));
 
-                    var winPadding = ImGui.GetStyle().WindowPadding;
-                    var framePadding = ImGui.GetStyle().FramePadding;
+                    Vector2 winPadding = ImGui.GetStyle().WindowPadding;
+                    Vector2 framePadding = ImGui.GetStyle().FramePadding;
 
                     ImGui.Columns(2);
                     ImGui.SetColumnWidth(0, 240);
@@ -1016,7 +1015,7 @@
                         bool hover = ImGui.IsWindowHovered();
                         bool clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
 
-                        var cursorCurrent = ImGui.GetCursorScreenPos();
+                        Vector2 cursorCurrent = ImGui.GetCursorScreenPos();
                         ImDrawListPtr idlp = ImGui.GetWindowDrawList();
 
                         if (a == AssetStatus.Await)

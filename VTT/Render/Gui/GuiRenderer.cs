@@ -467,7 +467,7 @@
                             {
                                 float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
                                 string text = len.ToString("0.00");
-                                var tLen = ImGuiHelper.CalcTextSize(text);
+                                Vector2 tLen = ImGuiHelper.CalcTextSize(text);
                                 ImGui.SetNextWindowPos(halfScreen.Xy() - (tLen / 2));
                                 ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
                                 if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))

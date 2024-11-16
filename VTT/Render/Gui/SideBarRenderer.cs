@@ -620,8 +620,8 @@
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
 
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                var imScreenPos = ImGui.GetCursorScreenPos();
-                var rectEnd = imScreenPos + new Vector2(320, 24);
+                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+                Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                 uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
                 drawList.AddRect(imScreenPos, rectEnd, bClr);
@@ -634,7 +634,7 @@
                     mdlTxt += aRef.Name;
                     if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._fxToEmitParticleSystemID, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                     {
-                        GL.Texture tex = ap.GetGLTexture();
+                        Texture tex = ap.GetGLTexture();
                         if (tex != null)
                         {
                             drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));

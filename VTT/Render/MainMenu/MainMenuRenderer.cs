@@ -13,7 +13,6 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.GL;
-    using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Render.Gui;
@@ -533,7 +532,7 @@
                     ImGui.Text(lang.Translate("menu.settings.uframes"));
                     if (ImGui.Combo("##UFrames", ref unfocusedFramerateIndex, unfocusedFramerate, unfocusedFramerate.Length))
                     {
-                        ClientSettings.UnfocusedFramerateCap newMode = (ClientSettings.UnfocusedFramerateCap)unfocusedFramerateIndex;
+                        UnfocusedFramerateCap newMode = (UnfocusedFramerateCap)unfocusedFramerateIndex;
                         Client.Instance.Settings.UnfocusedFramerate = newMode;
                         Client.Instance.Settings.Save();
                     }
@@ -590,7 +589,7 @@
                     ImGui.Text(lang.Translate("menu.settings.sound_compression"));
                     if (ImGui.Combo("##Sound Compression Mode", ref sSCPolicyIndex, soundCompressions, 3))
                     {
-                        ClientSettings.AudioCompressionPolicy nVal = (ClientSettings.AudioCompressionPolicy)sSCPolicyIndex;
+                        AudioCompressionPolicy nVal = (AudioCompressionPolicy)sSCPolicyIndex;
                         Client.Instance.Settings.SoundCompressionPolicy = nVal;
                         Client.Instance.Settings.Save();
                     }
@@ -713,7 +712,7 @@
                     ImGui.Text(lang.Translate("menu.settings.point_shadow_quality"));
                     if (ImGui.Combo("##Point Shadows Quality", ref sQualIndex, shadowQuality, 4))
                     {
-                        ClientSettings.GraphicsSetting nVal = (ClientSettings.GraphicsSetting)sQualIndex;
+                        GraphicsSetting nVal = (GraphicsSetting)sQualIndex;
                         Client.Instance.Settings.PointShadowsQuality = nVal;
                         int r = 128 * (1 << sQualIndex);
                         Client.Instance.Frontend.Renderer.PointLightsRenderer?.ResizeShadowMaps(r);
@@ -808,7 +807,7 @@
                     ImGui.Text(lang.Translate("menu.settings.msaa"));
                     if (ImGui.Combo("##MSAA", ref msaaIndex, msaa, msaa.Length))
                     {
-                        ClientSettings.MSAAMode newMode = (ClientSettings.MSAAMode)msaaIndex;
+                        MSAAMode newMode = (MSAAMode)msaaIndex;
                         Client.Instance.Settings.MSAA = newMode;
                         Client.Instance.Settings.Save();
                     }
@@ -837,7 +836,7 @@
                     ImGui.Text(lang.Translate("menu.settings.compression"));
                     if (ImGui.Combo("##TextureCompression", ref tcompressionIndex, tcompression, tcompression.Length))
                     {
-                        ClientSettings.TextureCompressionPreference newMode = (ClientSettings.TextureCompressionPreference)tcompressionIndex;
+                        TextureCompressionPreference newMode = (TextureCompressionPreference)tcompressionIndex;
                         Client.Instance.Settings.CompressionPreference = newMode;
                         Client.Instance.Settings.Save();
                         OpenGLUtil.DetermineCompressedFormats();
@@ -878,7 +877,7 @@
                     ImGui.Text(lang.Translate("menu.settings.drawings.performance"));
                     if (ImGui.Combo("##Drawings Restrictions", ref dPerfIndex, drawingsPerformance, 6))
                     {
-                        ClientSettings.DrawingsResourceAllocationMode nVal = (ClientSettings.DrawingsResourceAllocationMode)dPerfIndex;
+                        DrawingsResourceAllocationMode nVal = (DrawingsResourceAllocationMode)dPerfIndex;
                         Client.Instance.Settings.DrawingsPerformance = nVal;
                         Client.Instance.Settings.Save();
                     }
@@ -1133,13 +1132,13 @@
                         Client.Instance.Settings.Save();
                     }
 
-                    ClientSettings.UISkin dSkin = Client.Instance.Settings.InterfaceSkin;
-                    string[] skins = Enum.GetNames(typeof(ClientSettings.UISkin)).Select(s => lang.Translate("menu.settings.ui_skin." + s.ToLowerInvariant())).ToArray();
+                    UISkin dSkin = Client.Instance.Settings.InterfaceSkin;
+                    string[] skins = Enum.GetNames(typeof(UISkin)).Select(s => lang.Translate("menu.settings.ui_skin." + s.ToLowerInvariant())).ToArray();
                     int sIdx = (int)dSkin;
                     ImGui.Text(lang.Translate("menu.settings.ui_skin"));
                     if (ImGui.Combo("##UISkinSelector", ref sIdx, skins, skins.Length))
                     {
-                        Client.Instance.Settings.InterfaceSkin = dSkin = (ClientSettings.UISkin)sIdx;
+                        Client.Instance.Settings.InterfaceSkin = dSkin = (UISkin)sIdx;
                         Client.Instance.Settings.Save();
                         Client.Instance.Frontend.GuiWrapper.ChangeSkin(dSkin);
                     }
@@ -1183,7 +1182,7 @@
                     int cmtpc = (int)Client.Instance.Settings.RaycastMultithreading;
                     if (ImGui.Combo("##RaycastMultithreading", ref cmtpc, mtpcs, 4))
                     {
-                        Client.Instance.Settings.RaycastMultithreading = (ClientSettings.RaycastMultithreadingType)cmtpc;
+                        Client.Instance.Settings.RaycastMultithreading = (RaycastMultithreadingType)cmtpc;
                         Client.Instance.Settings.Save();
                     }
 
@@ -1275,7 +1274,7 @@
                     int glpv = (int)Client.Instance.Settings.ContextHandlingMode;
                     if (ImGui.Combo("##GLContextPolicy", ref glpv, glps, 3))
                     {
-                        Client.Instance.Settings.ContextHandlingMode = (ClientSettings.GLContextHandlingMode)glpv;
+                        Client.Instance.Settings.ContextHandlingMode = (GLContextHandlingMode)glpv;
                         Client.Instance.Settings.Save();
                     }
 

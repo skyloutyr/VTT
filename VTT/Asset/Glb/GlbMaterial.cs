@@ -4,7 +4,6 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Numerics;
-    using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render;

@@ -28,10 +28,10 @@
 
         private static bool LineSegmentsIntersect(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2)
         {
-            var dx = p2.X - p1.X;
-            var dy = p2.Y - p1.Y;
-            var da = q2.X - q1.X;
-            var db = q2.Y - q1.Y;
+            float dx = p2.X - p1.X;
+            float dy = p2.Y - p1.Y;
+            float da = q2.X - q1.X;
+            float db = q2.Y - q1.Y;
 
             // segments are parallel
             if (((da * dy) - (db * dx)) == 0)
@@ -39,8 +39,8 @@
                 return false;
             }
 
-            var s = ((dx * (q1.Y - p1.Y)) + (dy * (p1.X - q1.X))) / ((da * dy) - (db * dx));
-            var t = ((da * (p1.Y - q1.Y)) + (db * (q1.X - p1.X))) / ((db * dx) - (da * dy));
+            float s = ((dx * (q1.Y - p1.Y)) + (dy * (p1.X - q1.X))) / ((da * dy) - (db * dx));
+            float t = ((da * (p1.Y - q1.Y)) + (db * (q1.X - p1.X))) / ((db * dx) - (da * dy));
 
             return (s >= 0 && s <= 1 && t >= 0 && t <= 1);
         }
@@ -313,13 +313,13 @@
 
         private static Vector2 GetIntersectionPoint(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2, float delta = float.Epsilon)
         {
-            var a1 = p2.Y - p1.Y;
-            var b1 = p1.X - p2.X;
-            var c1 = (a1 * p1.X) + (b1 * p1.Y);
-            var a2 = q2.Y - q1.Y;
-            var b2 = q1.X - q2.X;
-            var c2 = (a2 * q1.X) + (b2 * q1.Y);
-            var det = (a1 * b2) - (a2 * b1);
+            float a1 = p2.Y - p1.Y;
+            float b1 = p1.X - p2.X;
+            float c1 = (a1 * p1.X) + (b1 * p1.Y);
+            float a2 = q2.Y - q1.Y;
+            float b2 = q1.X - q2.X;
+            float c2 = (a2 * q1.X) + (b2 * q1.Y);
+            float det = (a1 * b2) - (a2 * b1);
             return !FloatEquals(det, 0, delta) ? new Vector2(((b2 * c1) - (b1 * c2)) / det, ((a1 * c2) - (a2 * c1)) / det) : Vector2.Zero;
         }
 
@@ -358,7 +358,7 @@
                 return result.ToArray();
             }
 
-            for (var i = 0; i < polygon.Length; ++i)
+            for (int i = 0; i < polygon.Length; ++i)
             {
                 if (IsReflex(poly, i))
                 {
@@ -366,7 +366,7 @@
                     float lowerDist;
                     float upperDist = lowerDist = float.MaxValue;
                     float d;
-                    for (var j = 0; j < polygon.Length; ++j)
+                    for (int j = 0; j < polygon.Length; ++j)
                     {
                         if (IsLeft(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, j)) && IsRightOn(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, j - 1)))
                         { // if line intersects with an edge
@@ -452,7 +452,7 @@
                             return result.ToArray();
                         }
 
-                        for (var j = lowerIndex; j <= upperIndex; ++j)
+                        for (int j = lowerIndex; j <= upperIndex; ++j)
                         {
                             if (
                                 IsLeftOn(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, j)) &&
@@ -512,9 +512,9 @@
 
         public static int RemoveCollinearPoints(ref Vector2[] polygon, float precision)
         {
-            var num = 0;
+            int num = 0;
             List<Vector2> poly = new List<Vector2>(polygon);
-            for (var i = poly.Count - 1; poly.Count > 3 && i >= 0; --i)
+            for (int i = poly.Count - 1; poly.Count > 3 && i >= 0; --i)
             {
                 if (Collinear(PolygonAt(poly, i - 1), PolygonAt(poly, i), PolygonAt(poly, i + 1), precision))
                 {
@@ -536,10 +536,10 @@
         public static void RemoveDuplicatePoints(ref Vector2[] polygon, float precision)
         {
             List<Vector2> poly = new List<Vector2>(polygon);
-            for (var i = poly.Count - 1; i >= 1; --i)
+            for (int i = poly.Count - 1; i >= 1; --i)
             {
-                var pi = poly[i];
-                for (var j = i - 1; j >= 0; --j)
+                Vector2 pi = poly[i];
+                for (int j = i - 1; j >= 0; --j)
                 {
                     if (PointsEquals(pi, poly[j], precision))
                     {

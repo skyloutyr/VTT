@@ -741,7 +741,7 @@
             if (ImGui.BeginChild("asset_recepticle_" + text, new Vector2(320, 24), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY))
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                var imScreenPos = ImGui.GetCursorScreenPos();
+                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
                 Vector2 contentSize = Vector2.Min(new Vector2(320, 24), ImGui.GetContentRegionAvail());
                 Vector2 rectEnd = imScreenPos + contentSize;
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);

@@ -14,7 +14,7 @@
     using VTT.Network.Packet;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
-    using OGL = VTT.GL.Bindings.GL;
+    using OGL = GL.Bindings.GL;
 
     public class DrawingRenderer
     {

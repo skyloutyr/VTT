@@ -11,7 +11,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Util;
-    using OGL = VTT.GL.Bindings.GL;
+    using OGL = Bindings.GL;
 
     public unsafe class AsyncTextureUploader
     {

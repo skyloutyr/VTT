@@ -253,13 +253,13 @@
 
         public static void DeepHell()
         {
-            var style = ImGui.GetStyle();
+            ImGuiStylePtr style = ImGui.GetStyle();
             style.FrameRounding = 4.0f;
             style.WindowBorderSize = 0.0f;
             style.PopupBorderSize = 0.0f;
             style.GrabRounding = 4.0f;
 
-            var colors = style.Colors;
+            RangeAccessor<Vector4> colors = style.Colors;
             colors[(int)ImGuiCol.Text] = new Vector4(1.00f, 1.00f, 1.00f, 1.00f);
             colors[(int)ImGuiCol.TextDisabled] = new Vector4(0.73f, 0.75f, 0.74f, 1.00f);
             colors[(int)ImGuiCol.WindowBg] = new Vector4(0.09f, 0.09f, 0.09f, 0.94f);

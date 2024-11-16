@@ -40,7 +40,7 @@
                     try
                     {
                         bool haveDebug = ArgsManager.TryGetValue<bool>("debug", out _); // if debug is present always show
-                        bool haveConsole = ArgsManager.TryGetValue<bool>("console", out bool bfConsole);
+                        bool haveConsole = ArgsManager.TryGetValue("console", out bool bfConsole);
 
                         if ((!haveDebug && !haveConsole) || (haveConsole && !bfConsole)) // Hide console if we are not in debug and console arg not present or if the arg is present and explicitly set to false
                         {

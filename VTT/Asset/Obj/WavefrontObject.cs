@@ -16,7 +16,7 @@
         private readonly GPUBuffer? _ebo;
         private readonly int _numElements;
 
-        public System.Numerics.Vector3[] triangles;
+        public Vector3[] triangles;
 
         public WavefrontObject(string[] lines, VertexFormat desiredFormat)
         {
@@ -79,7 +79,7 @@
 
             if (faces.Count % 3 != 0)
             {
-                throw new System.Exception("Model not triangulated!");
+                throw new Exception("Model not triangulated!");
             }
 
             if (desiredFormat == VertexFormat.Pos)
@@ -279,7 +279,7 @@
 
             if (faces.Count % 3 != 0)
             {
-                throw new System.Exception("Model not triangulated!");
+                throw new Exception("Model not triangulated!");
             }
 
             // If asking for position only we can use EBOs

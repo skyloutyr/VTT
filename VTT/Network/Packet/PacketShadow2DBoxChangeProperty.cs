@@ -110,7 +110,7 @@
             {
                 case PropertyType.Position:
                 {
-                    this.Property = br.ReadSysVec4();
+                    this.Property = br.ReadVec4();
                     break;
                 }
 

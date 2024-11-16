@@ -5,7 +5,6 @@
     using System;
     using System.Collections.Generic;
     using System.Numerics;
-    using System.Reflection;
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Util;

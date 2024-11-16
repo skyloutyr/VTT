@@ -17,7 +17,7 @@
         }
 
         public static void* AllocateBytes(nuint nBytes) => Allocate<byte>(nBytes);
-        public static void* ReallocateBytes(void* oldPtr, nuint nBytes) => Reallocate<byte>((byte*)oldPtr, nBytes);
+        public static void* ReallocateBytes(void* oldPtr, nuint nBytes) => Reallocate((byte*)oldPtr, nBytes);
         public static void* StringToPointerAnsi(in string s, out int strlen)
         {
             // VTT is designed for GL 3, which by spec doesn't support UTF-8 encoded shader data

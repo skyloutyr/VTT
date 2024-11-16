@@ -7,7 +7,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Util;
-    using OGL = VTT.GL.Bindings.GL;
+    using OGL = GL.Bindings.GL;
 
     public class DrawingPointContainer : ISerializable
     {

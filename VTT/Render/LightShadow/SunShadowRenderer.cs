@@ -62,7 +62,7 @@
             FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
             if (fec != FramebufferStatus.Complete)
             {
-                throw new System.Exception("Sun framebuffer not complete!");
+                throw new Exception("Sun framebuffer not complete!");
             }
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);

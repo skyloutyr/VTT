@@ -5,9 +5,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
-    using System.Diagnostics;
     using System.IO;
-    using System.Runtime.InteropServices;
     using System.Text;
     using VTT.Network;
     using VTT.Util;

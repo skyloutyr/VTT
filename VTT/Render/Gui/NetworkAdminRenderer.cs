@@ -120,7 +120,7 @@
                     }
 
                     ImGui.Text(lang.Translate("ui.network.id_client_mappings"));
-                    if (ImGui.BeginTable("TableClientMapping", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new System.Numerics.Vector2(0, 0), 100))
+                    if (ImGui.BeginTable("TableClientMapping", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.PreciseWidths | ImGuiTableFlags.NoHostExtendX, new Vector2(0, 0), 100))
                     {
                         ImGui.TableHeadersRow();
                         ImGui.TableSetColumnIndex(0);
@@ -148,7 +148,7 @@
 
                             ImGui.TableNextRow();
                             ImGui.TableSetColumnIndex(0);
-                            ImGui.ColorButton("##ClrClient_" + ci.ID, ((System.Numerics.Vector4)ci.Color));
+                            ImGui.ColorButton("##ClrClient_" + ci.ID, ((Vector4)ci.Color));
                             ImGui.TableSetColumnIndex(1);
                             ImGui.Text(ci.ID.ToString());
                             ImGui.TableSetColumnIndex(2);
@@ -156,11 +156,11 @@
                             ImGui.TableSetColumnIndex(3);
                             if (ci.IsLoggedOn)
                             {
-                                ImGui.TextColored(((System.Numerics.Vector4)Color.Green), lang.Translate("ui.network.online"));
+                                ImGui.TextColored(((Vector4)Color.Green), lang.Translate("ui.network.online"));
                             }
                             else
                             {
-                                ImGui.TextColored(((System.Numerics.Vector4)Color.Gray), lang.Translate("ui.network.offline"));
+                                ImGui.TextColored(((Vector4)Color.Gray), lang.Translate("ui.network.offline"));
                             }
 
                             ImGui.TableSetColumnIndex(4);

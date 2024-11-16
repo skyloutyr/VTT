@@ -117,7 +117,7 @@
             this.Materials.Add(mat);
             this.DefaultMaterial = mat;
 
-            glTFLoader.Schema.Camera glbCam = new glTFLoader.Schema.Camera() { Name = "camera", Type = glTFLoader.Schema.Camera.TypeEnum.perspective, Perspective = new glTFLoader.Schema.CameraPerspective() { AspectRatio = 1, Yfov = 60 * MathF.PI / 180, Znear = 0.0001f, Zfar = 10f } };
+            glTFLoader.Schema.Camera glbCam = new glTFLoader.Schema.Camera() { Name = "camera", Type = glTFLoader.Schema.Camera.TypeEnum.perspective, Perspective = new CameraPerspective() { AspectRatio = 1, Yfov = 60 * MathF.PI / 180, Znear = 0.0001f, Zfar = 10f } };
             camera.Camera = glbCam;
             camera.Name = "camera";
             camera.Type = GlbObjectType.Camera;

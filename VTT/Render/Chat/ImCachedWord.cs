@@ -1,5 +1,6 @@
 ﻿namespace VTT.Render.Chat
 {
+    using System.Numerics;
     using VTT.Control;
 
     public readonly struct ImCachedWord
@@ -14,7 +15,7 @@
         {
             this.Owner = owner;
             this.Text = text;
-            var systemSize = ImGuiHelper.CalcTextSize(this.Text);
+            Vector2 systemSize = ImGuiHelper.CalcTextSize(this.Text);
             this.IsExpression = owner.Type.HasFlag(ChatBlockType.Expression);
             this.Width = systemSize.X + (this.IsExpression ? 8 : 0);
             this.Height = systemSize.Y + (this.IsExpression ? 8 : 0);

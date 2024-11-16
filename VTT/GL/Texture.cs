@@ -5,7 +5,6 @@
     using System;
     using System.Buffers;
     using System.Collections.Concurrent;
-    using System.Runtime.InteropServices;
     using VTT.GL.Bindings;
     using VTT.Util;
 

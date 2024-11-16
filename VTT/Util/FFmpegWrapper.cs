@@ -389,7 +389,7 @@
             public VideoStreamDecoder(string url, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
             {
                 _pFormatContext = ffmpeg.avformat_alloc_context();
-                var pFormatContext = _pFormatContext;
+                AVFormatContext* pFormatContext = _pFormatContext;
                 AVCodec* codec = ffmpeg.avcodec_find_decoder_by_name("libvpx-vp9");
                 pFormatContext->video_codec_id = AVCodecID.AV_CODEC_ID_VP9;
                 pFormatContext->video_codec = codec;
@@ -420,14 +420,14 @@
 
             public void Dispose()
             {
-                var pFrame = _pFrame;
+                AVFrame* pFrame = _pFrame;
                 ffmpeg.av_frame_free(&pFrame);
 
-                var pPacket = _pPacket;
+                AVPacket* pPacket = _pPacket;
                 ffmpeg.av_packet_free(&pPacket);
 
                 ffmpeg.avcodec_close(_pCodecContext);
-                var pFormatContext = _pFormatContext;
+                AVFormatContext* pFormatContext = _pFormatContext;
                 ffmpeg.avformat_close_input(&pFormatContext);
             }
 
@@ -558,9 +558,9 @@
                     _dstData,
                     _dstLinesize);
 
-                var data = new byte_ptrArray8();
+                byte_ptrArray8 data = new byte_ptrArray8();
                 data.UpdateFrom(_dstData);
-                var linesize = new int_array8();
+                int_array8 linesize = new int_array8();
                 linesize.UpdateFrom(_dstLinesize);
 
                 return new AVFrame
@@ -575,10 +575,10 @@
 
         public static unsafe string GetAVError(int error)
         {
-            var bufferSize = 1024;
-            var buffer = stackalloc byte[bufferSize];
+            int bufferSize = 1024;
+            byte* buffer = stackalloc byte[bufferSize];
             ffmpeg.av_strerror(error, buffer, (ulong)bufferSize);
-            var message = Marshal.PtrToStringAnsi((IntPtr)buffer);
+            string message = Marshal.PtrToStringAnsi((IntPtr)buffer);
             return message;
         }
 

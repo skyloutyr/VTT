@@ -140,7 +140,7 @@
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Fatal, "Could not compile shader!");
                 l.Log(LogLevel.Fatal, err);
-                throw new System.Exception("Could not compile shader " + name + "! Shader error was " + err);
+                throw new Exception("Could not compile shader " + name + "! Shader error was " + err);
             }
 
             return sp;

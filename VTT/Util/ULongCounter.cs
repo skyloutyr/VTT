@@ -17,5 +17,7 @@
         public static explicit operator long(ULongCounter v) => (long)(v._val & long.MaxValue);
         public static explicit operator uint(ULongCounter v) => (uint)(v._val & uint.MaxValue);
         public static explicit operator int(ULongCounter v) => (int)(v._val & int.MaxValue);
+
+        public override string ToString() => this._val.ToString();
     }
 }

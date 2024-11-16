@@ -651,22 +651,7 @@ public static unsafe class StbDxt
 
     public static CompressedMipmapData CompressImageWithMipmaps(Image<Rgba32> img, bool multithread, bool actuallyMip)
     {
-        int minWH = Math.Min(img.Width, img.Height);
-        int numMipmaps = 1;
-        if (actuallyMip)
-        {
-            while (true)
-            {
-                minWH >>= 1;
-                if (minWH < 4) // Normally would do a <0 comparison here but it doesn't make sense to compress less than block size anyway
-                {
-                    break;
-                }
-
-                numMipmaps += 1;
-            }
-        }
-
+        int numMipmaps = actuallyMip ? OpenGLUtil.GetMaxMipmapAmount(img.Size, 4) : 1;
         IntPtr[] ret = new IntPtr[numMipmaps];
         int[] sizes = new int[numMipmaps];
         Size[] szs = new Size[numMipmaps];
@@ -682,12 +667,11 @@ public static unsafe class StbDxt
             }
             else
             {
-                int lmW = mW >> i;
-                int lmH = mH >> i;
-                Image<Rgba32> mipped = img.Clone(x => x.Resize(lmW, lmH, KnownResamplers.Box));
+                Size msz = OpenGLUtil.GetMipmapSize(img.Size, i);
+                Image<Rgba32> mipped = img.Clone(x => x.Resize(msz, KnownResamplers.Box, false));
                 ret[i] = (IntPtr)CompressImage(mipped, multithread, out int lnBytesMip);
                 sizes[i] = lnBytesMip;
-                szs[i] = new Size(lmW, lmH);
+                szs[i] = msz;
                 mipped.Dispose();
             }
         }

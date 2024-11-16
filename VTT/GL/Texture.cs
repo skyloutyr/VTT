@@ -248,6 +248,7 @@
             if (this._glId > 0)
             {
                 GL.DeleteTexture(this._glId);
+                _textureProtection.TryRemove(this._glId, out _);
             }
 
             if (!IntPtr.Zero.Equals(this.AsyncFenceID))

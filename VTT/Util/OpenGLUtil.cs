@@ -183,5 +183,31 @@
             tex.SetImage(img, format);
             return tex;
         }
+
+        public static Size GetMipmapSize(Size imgSize, int mipLevel)
+        {
+            float div = 1 << mipLevel;
+            int nW = (int)Math.Floor(Math.Max(1, imgSize.Width / div));
+            int nH = (int)Math.Floor(Math.Max(1, imgSize.Height / div));
+            return new Size(nW, nH);
+        }
+
+        public static int GetMaxMipmapAmount(Size imgSize, int minSize = 1)
+        {
+            int l = 0;
+            int minSz = Math.Min(imgSize.Width, imgSize.Height);
+            while (true)
+            {
+                float d = 1 << l++;
+                int s = (int)Math.Floor(minSz / d);
+                if (s < minSize)
+                {
+                    l--;
+                    break;
+                }
+            }
+
+            return l;
+        }
     }
 }

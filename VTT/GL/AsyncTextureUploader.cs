@@ -20,7 +20,7 @@
         private readonly uint _pbo;
         private int _pboSize;
 
-        public AsyncTextureUploader(int nPixels = 2560000)
+        public AsyncTextureUploader(int nPixels = 256 * 256)
         {
             this._pbo = OGL.GenBuffer();
             this.CheckBufferSize(sizeof(Bgra32) * nPixels);
@@ -265,37 +265,17 @@
 
         private int DeterminePossibleMipMaps(Size imgSize, int desired, out Size[] imgSizes, out int neededBytes)
         {
-            if (desired <= 0)
-            {
-                desired = 1;
-            }
-
-            int i = 1;
-            int m = Math.Min(imgSize.Width, imgSize.Height);
-            int wS = imgSize.Width;
-            int hS = imgSize.Height;
+            desired = Math.Max(1, desired);
             neededBytes = 0;
-            while (true)
+            int nMips = Math.Min(desired, OpenGLUtil.GetMaxMipmapAmount(imgSize));
+            imgSizes = new Size[nMips];
+            for (int j = 0; j < nMips; ++j)
             {
-                if (m <= 4)
-                {
-                    break;
-                }
-
-                m >>= 1;
-                i += 1;
+                Size sz = imgSizes[j] = OpenGLUtil.GetMipmapSize(imgSize, j);
+                neededBytes += sizeof(Rgba32) * sz.Width * sz.Height;
             }
 
-            imgSizes = new Size[i];
-            for (int j = 0; j < i; ++j)
-            {
-                imgSizes[j] = new Size(wS, hS);
-                neededBytes += sizeof(Rgba32) * wS * hS;
-                wS /= 2;
-                hS /= 2;
-            }
-
-            return Math.Min(desired, i);
+            return nMips;
         }
     }
 

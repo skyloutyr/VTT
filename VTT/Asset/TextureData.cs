@@ -239,17 +239,13 @@
                                         {
                                             GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BaseLevel, 0);
                                             GL.TexParameter(TextureTarget.Texture2D, TextureProperty.MaxLevel, nMips - 1);
-                                            int dw = imgS.Width;
-                                            int dh = imgS.Height;
                                             for (int i = 0; i < nMips; ++i)
                                             {
+                                                Size mipSz = mipArray.sizes[i];
                                                 unsafe
                                                 {
-                                                    GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, dw, dh, mipArray.dataLength[i], (void*)mipArray.data[i]);
+                                                    GL.CompressedTexImage2D(TextureTarget.Texture2D, i, glif, mipSz.Width, mipSz.Height, mipArray.dataLength[i], (void*)mipArray.data[i]);
                                                 }
-
-                                                dw >>= 1;
-                                                dh >>= 1;
                                             }
                                         }
                                         else
@@ -281,7 +277,7 @@
                 {
                     pif = OpenGLUtil.MapCompressedFormat(pif);
                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
-                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? 7 : 0, (d, r) => d.Image.Dispose()))
+                    if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? int.MaxValue : 0, (d, r) => d.Image.Dispose()))
                     {
                         this._glTex.SetImage(img, pif);
                         if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))

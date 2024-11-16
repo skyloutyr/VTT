@@ -720,6 +720,15 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool AsyncAssetLoading { get; set; } = false;
 
+        [DefaultValue(GLContextHandlingMode.Explicit)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public GLContextHandlingMode AudioContextHandlingMode { get; set; } = GLContextHandlingMode.Explicit;
+
+        [DefaultValue(3)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int NumAsyncTextureBuffers { get; set; } = 3;
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -785,7 +794,9 @@
                 Shadow2DPrecision = Shadow2DResolution.Medium,
                 TurnTrackerSize = 6,
                 TurnTrackerScale = TurnTrackerScaling.Medium,
-                AsyncAssetLoading = false
+                AsyncAssetLoading = false,
+                AudioContextHandlingMode = GLContextHandlingMode.Explicit,
+                NumAsyncTextureBuffers = 3
             };
 
             ret.Save();

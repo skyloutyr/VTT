@@ -17,27 +17,69 @@
     {
         public const int MaxPBOSize = 1024 * 1024 * 1024;
 
-        private readonly uint _pbo;
-        private int _pboSize;
+        private readonly uint[] _pbo;
+        private readonly int[] _pboSize = new int[3];
+        private int _pboIndex;
 
-        public AsyncTextureUploader(int nPixels = 256 * 256)
+        public AsyncTextureUploader(int nPixels = 256)
         {
-            this._pbo = OGL.GenBuffer();
-            this.CheckBufferSize(sizeof(Bgra32) * nPixels);
+            this._pbo = OGL.GenBuffers(3).ToArray();
+            this.CheckBufferSize(sizeof(Bgra32) * nPixels, 0);
+            this.CheckBufferSize(sizeof(Bgra32) * nPixels, 1);
+            this.CheckBufferSize(sizeof(Bgra32) * nPixels, 2);
             new Thread(this.WorkSecondary) { IsBackground = true }.Start();
         }
 
         public void Kill() => this._shutdown = true;
 
-        private void CheckBufferSize(int bytesNeeded)
+        private void CheckBufferSize(int bytesNeeded, int index = -1)
         {
-            if (bytesNeeded > this._pboSize)
+            bool doNotWarn = true;
+            if (index == -1)
             {
-                this._pboSize = bytesNeeded;
-                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
-                OGL.BufferData(BufferTarget.PixelUnpack, this._pboSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+                index = this._pboIndex;
+                doNotWarn = false;
+            }
+
+            if (bytesNeeded > this._pboSize[index])
+            {
+                if (!doNotWarn)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Warn, $"Async Texture Uploader had to resize the PBO {index} from {ConvertBytesToText(this._pboSize[index])} to {ConvertBytesToText(bytesNeeded)}!");
+                }
+
+                this._pboSize[index] = bytesNeeded;
+                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo[index]);
+                OGL.BufferData(BufferTarget.PixelUnpack, this._pboSize[index], IntPtr.Zero, BufferUsage.DynamicDraw);
                 OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
             }
+        }
+
+        private static readonly string[] suffixes = { 
+            "B",
+            "KB",
+            "MB",
+            "GB",
+            "impossible value"
+        };
+
+        private static string ConvertBytesToText(int nBytes)
+        {
+            string suffix = "B";
+            if (nBytes < 1024)
+            {
+                return nBytes.ToString() + suffix;
+            }
+
+            float v = nBytes;
+            int i = 0;
+            while (v > 1024)
+            {
+                v = v / 1024;
+                suffix = suffixes[++i];
+            }
+
+            return v.ToString("0.00") + suffix;
         }
 
         private readonly EventWaitHandle _waitHandleSecondary = new EventWaitHandle(false, EventResetMode.AutoReset);
@@ -111,11 +153,18 @@
             }
         }
 
+        private readonly (Texture, Guid)[] _pboTextures = new (Texture, Guid)[3];
+        private bool IsNextPBOAvailable()
+        {
+            (Texture, Guid) checkedTex = this._pboTextures[this._pboIndex];
+            return checkedTex.Item1 == null || !checkedTex.Item1.CheckUniqueID(checkedTex.Item2) || checkedTex.Item1.IsAsyncReady;
+        }
+
         public void ProcessPrimary()
         {
             if (!this._tasks.IsEmpty)
             {
-                if (!this._hasWorkForSecondary && !this._hasWorkForPrimary && this._tasks.TryDequeue(out AsyncTextureUploadRequest request))
+                if (!this._hasWorkForSecondary && !this._hasWorkForPrimary && this.IsNextPBOAvailable() && this._tasks.TryDequeue(out AsyncTextureUploadRequest request))
                 {
                     int actualMips;
                     Size[] imgSizes;
@@ -134,10 +183,10 @@
                     request.MipmapAmount = actualMips;
                     request.MipmapSizes = imgSizes;
                     request.MipmapDataByteSize = neededBytes;
+                    request.PBOIndex = this._pboIndex;
                     this.CheckBufferSize(neededBytes);
-                    OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
-                    OGL.BufferData(BufferTarget.PixelUnpack, this._pboSize, IntPtr.Zero, BufferUsage.DynamicDraw);
-                    this._mappedPtr = (IntPtr)OGL.MapBuffer(BufferTarget.PixelUnpack, BufferAccess.WriteOnly);
+                    OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo[this._pboIndex]);
+                    this._mappedPtr = (IntPtr)OGL.MapBufferRange(BufferTarget.PixelUnpack, 0, this._pboSize[this._pboIndex], BufferRangeAccessMask.Write | BufferRangeAccessMask.Unsynchronized | BufferRangeAccessMask.InvalidateBuffer); 
                     if (this._mappedPtr.Equals(IntPtr.Zero))
                     {
                         Client.Instance.Settings.AsyncTextureUploading = false;
@@ -148,14 +197,16 @@
                     OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
                     this._requestWorkedWith = request;
                     request.Texture.AsyncState = AsyncLoadState.Processing;
+                    this._pboTextures[this._pboIndex] = (request.Texture, request.Texture.GetUniqueID());
                     this._hasWorkForSecondary = true;
                     this._waitHandleSecondary.Set();
+                    this._pboIndex = Client.Instance.Settings.NumAsyncTextureBuffers == 1 ? 0 : (this._pboIndex + 1) % Client.Instance.Settings.NumAsyncTextureBuffers;
                 }
             }
 
             if (this._hasWorkForPrimary)
             {
-                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo);
+                OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo[this._requestWorkedWith.PBOIndex]);
                 OGL.UnmapBuffer(BufferTarget.PixelUnpack);
                 this._texturesEnqueued.Remove(this._requestWorkedWith);
                 if (this._requestWorkedWith.CheckTextureStatus())
@@ -292,6 +343,7 @@
 
         internal Size[] MipmapSizes { get; set; }
         internal int MipmapDataByteSize { get; set; }
+        internal int PBOIndex { get; set; }
 
         public bool CheckTextureStatus() => OGL.IsTexture(this.Texture) && this.Texture.CheckUniqueID(this.TextureID);
 

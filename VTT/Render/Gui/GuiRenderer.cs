@@ -653,33 +653,33 @@
             {
                 if (this._inspectedObject != null)
                 {
+                    Vector2 winSize = ImGui.GetWindowSize();
+                    Vector2 screenPos = ImGui.GetCursorScreenPos();
+
+                    Vector4 winBack = *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg);
+                    Vector4 winBorder = *ImGui.GetStyleColorVec4(ImGuiCol.Border);
+
+                    ImDrawListPtr drawList = ImGui.GetForegroundDrawList();
+                    screenPos -= new Vector2((-winSize.X / 2) + 52, 32);
+                    drawList.AddQuadFilled(
+                        screenPos,
+                        screenPos + new Vector2(96, 0),
+                        screenPos + new Vector2(96, 96),
+                        screenPos + new Vector2(0, 96),
+                        Extensions.FromVec4(winBack).Abgr()
+                    );
+
+                    drawList.AddQuad(
+                        screenPos,
+                        screenPos + new Vector2(96, 0),
+                        screenPos + new Vector2(96, 96),
+                        screenPos + new Vector2(0, 96),
+                        Extensions.FromVec4(winBorder).Abgr()
+                    );
+
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(this._inspectedObject.AssetID, AssetType.Model, out AssetPreview ap);
                     if (status == AssetStatus.Return && ap != null)
                     {
-                        Vector2 winSize = ImGui.GetWindowSize();
-                        Vector2 screenPos = ImGui.GetCursorScreenPos();
-
-                        Vector4 winBack = *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg);
-                        Vector4 winBorder = *ImGui.GetStyleColorVec4(ImGuiCol.Border);
-
-                        ImDrawListPtr drawList = ImGui.GetForegroundDrawList();
-                        screenPos -= new Vector2((-winSize.X / 2) + 52, 32);
-                        drawList.AddQuadFilled(
-                            screenPos,
-                            screenPos + new Vector2(96, 0),
-                            screenPos + new Vector2(96, 96),
-                            screenPos + new Vector2(0, 96),
-                            Extensions.FromVec4(winBack).Abgr()
-                        );
-
-                        drawList.AddQuad(
-                           screenPos,
-                           screenPos + new Vector2(96, 0),
-                           screenPos + new Vector2(96, 96),
-                           screenPos + new Vector2(0, 96),
-                           Extensions.FromVec4(winBorder).Abgr()
-                        );
-
                         Texture glTex = ap.GetGLTexture();
                         if (glTex != null)
                         {
@@ -717,62 +717,62 @@
                                 drawList.AddImage(glTex, screenPos + posCorrection, screenPos + new Vector2(96, 96) - posCorrection, Vector2.Zero, Vector2.One, this._inspectedObject.TintColor.Abgr());
                             }
                         }
+                    }
 
-                        Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
-                        ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
-                        ImGui.SetCursorPosY(72);
+                    Vector2 tSize = ImGuiHelper.CalcTextSize(this._inspectedObject.Name);
+                    ImGui.SetCursorPosX((winSize.X / 2) - (tSize.X / 2));
+                    ImGui.SetCursorPosY(72);
 
-                        uint nClr = this._inspectedObject.NameColor.Abgr();
-                        if (this._inspectedObject.NameColor.Alpha() < 0.5f)
+                    uint nClr = this._inspectedObject.NameColor.Abgr();
+                    if (this._inspectedObject.NameColor.Alpha() < 0.5f)
+                    {
+                        nClr = ImGui.GetColorU32(ImGuiCol.Text);
+                    }
+
+                    ImGui.PushStyleColor(ImGuiCol.Text, nClr);
+                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
+                    ImGui.PopStyleColor();
+
+                    if (ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
+                    {
+                        if (this._inspectedObject.UseMarkdownForDescription)
                         {
-                            nClr = ImGui.GetColorU32(ImGuiCol.Text);
-                        }
-
-                        ImGui.PushStyleColor(ImGuiCol.Text, nClr);
-                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
-                        ImGui.PopStyleColor();
-
-                        if (ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
-                        {
-                            if (this._inspectedObject.UseMarkdownForDescription)
+                            try
                             {
-                                try
-                                {
-                                    ImGuiMarkdown.Markdown(this._inspectedObject.Description, ImGuiMarkdown.MarkdownConfig.Default);
-                                }
-                                catch (Exception e)
-                                {
-                                    this._inspectedObject.UseMarkdownForDescription = false;
-                                    Client.Instance.Logger.Log(LogLevel.Error, $"Object markdown corrupted or invalid! Unable to draw markdown for object {this._inspectedObject.ID}({this._inspectedObject.Name})!");
-                                    Client.Instance.Logger.Log(LogLevel.Error, $"Object was marked as non-markdown but this is a severe error that probably corrupted internal UI state!");
-                                    Client.Instance.Logger.Log(LogLevel.Error, $"Please report this issue to your server administrator!");
-                                    Client.Instance.Logger.Exception(LogLevel.Error, e);
-                                }
+                                ImGuiMarkdown.Markdown(this._inspectedObject.Description, ImGuiMarkdown.MarkdownConfig.Default);
                             }
-                            else
+                            catch (Exception e)
                             {
-                                ImGui.PushTextWrapPos();
-                                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
-                                ImGui.PopTextWrapPos();
-                            }
-
-                            if (ImGui.BeginPopupContextItem())
-                            {
-                                if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
-                                {
-                                    ImGui.SetClipboardText(this._inspectedObject.Description);
-                                }
-
-                                ImGui.EndPopup();
+                                this._inspectedObject.UseMarkdownForDescription = false;
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Object markdown corrupted or invalid! Unable to draw markdown for object {this._inspectedObject.ID}({this._inspectedObject.Name})!");
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Object was marked as non-markdown but this is a severe error that probably corrupted internal UI state!");
+                                Client.Instance.Logger.Log(LogLevel.Error, $"Please report this issue to your server administrator!");
+                                Client.Instance.Logger.Exception(LogLevel.Error, e);
                             }
                         }
-
-                        ImGui.EndChild();
-
-                        if (ImGui.Button(close + "###Close", new Vector2(284, 36)))
+                        else
                         {
-                            ImGui.CloseCurrentPopup();
+                            ImGui.PushTextWrapPos();
+                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
+                            ImGui.PopTextWrapPos();
                         }
+
+                        if (ImGui.BeginPopupContextItem())
+                        {
+                            if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
+                            {
+                                ImGui.SetClipboardText(this._inspectedObject.Description);
+                            }
+
+                            ImGui.EndPopup();
+                        }
+                    }
+
+                    ImGui.EndChild();
+
+                    if (ImGui.Button(close + "###Close", new Vector2(284, 36)))
+                    {
+                        ImGui.CloseCurrentPopup();
                     }
                 }
 

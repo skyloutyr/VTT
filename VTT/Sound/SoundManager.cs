@@ -215,7 +215,7 @@
             if (this.IsAvailable)
             {
                 Map m = Client.Instance.CurrentMap;
-                switch (Client.Instance.Settings.ContextHandlingMode)
+                switch (Client.Instance.Settings.AudioContextHandlingMode)
                 {
                     case ClientSettings.GLContextHandlingMode.Explicit:
                     {

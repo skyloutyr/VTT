@@ -871,6 +871,22 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.async_texture_upload.tt"));
                     }
 
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.async_texture_upload.buffers"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.async_texture_upload.buffers.tt"));
+                    }
+
+                    int asyncTNumBuffers = Client.Instance.Settings.NumAsyncTextureBuffers - 1;
+                    string[] asyncTNumBuffersText = { lang.Translate("menu.settings.async_texture_upload.buffers.single"), lang.Translate("menu.settings.async_texture_upload.buffers.double"), lang.Translate("menu.settings.async_texture_upload.buffers.triple") };
+                    if (ImGui.Combo("##NumAsyncTexturePBOs", ref asyncTNumBuffers, asyncTNumBuffersText, asyncTNumBuffersText.Length))
+                    {
+                        asyncTNumBuffers = Math.Clamp(asyncTNumBuffers, 0, 2);
+                        asyncTNumBuffers += 1;
+                        Client.Instance.Settings.NumAsyncTextureBuffers = asyncTNumBuffers;
+                        Client.Instance.Settings.Save();
+                    }
+
                     string[] drawingsPerformance = { lang.Translate("menu.settings.drawings.none"), lang.Translate("menu.settings.drawings.minimum"), lang.Translate("menu.settings.drawings.limited"), lang.Translate("menu.settings.drawings.standard"), lang.Translate("menu.settings.drawings.extra"), lang.Translate("menu.settings.drawings.unlimited") };
                     int dPerfIndex = (int)Client.Instance.Settings.DrawingsPerformance;
 
@@ -1275,6 +1291,21 @@
                     if (ImGui.Combo("##GLContextPolicy", ref glpv, glps, 3))
                     {
                         Client.Instance.Settings.ContextHandlingMode = (GLContextHandlingMode)glpv;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    ImGui.Text(lang.Translate("menu.settings.al_context_policy"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.al_context_policy.tt"));
+                    }
+
+                    // Note that gl_context_policy.xxxxxxx here is not a typo, context mode text matches
+                    string[] alps = { lang.Translate("menu.settings.gl_context_policy.implicit"), lang.Translate("menu.settings.gl_context_policy.checked"), lang.Translate("menu.settings.gl_context_policy.explicit") };
+                    int alpv = (int)Client.Instance.Settings.AudioContextHandlingMode;
+                    if (ImGui.Combo("##ALContextPolicy", ref alpv, alps, 3))
+                    {
+                        Client.Instance.Settings.AudioContextHandlingMode = (GLContextHandlingMode)alpv;
                         Client.Instance.Settings.Save();
                     }
 

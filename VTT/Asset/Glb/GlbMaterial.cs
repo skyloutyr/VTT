@@ -39,11 +39,11 @@
 
         public bool GetTexturesAsyncStatus()
         {
-            return 
-                (this.BaseColorTexture?.IsAsyncReady ?? true) &&
-                (this.EmissionTexture?.IsAsyncReady ?? true) && 
-                (this.NormalTexture?.IsAsyncReady ?? true) &&
-                (this.OcclusionMetallicRoughnessTexture?.IsAsyncReady ?? true);
+            return
+                this.BaseColorTexture.IsAsyncReady &&
+                this.EmissionTexture.IsAsyncReady &&
+                this.NormalTexture.IsAsyncReady &&
+                this.OcclusionMetallicRoughnessTexture.IsAsyncReady;
         }
 
         public static void ResetState()

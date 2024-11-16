@@ -23,7 +23,7 @@
         private Texture _glTex;
         private TextureAnimation _cachedAnim;
 
-        public volatile bool glReady;
+        public bool glReady;
 
         public GlbScene ToGlbModel() => new GlbScene(this);
 
@@ -190,9 +190,11 @@
         {
             if (this._glTex == null)
             {
-                Image<Rgba32> img = this.CompoundImage();
-
                 this._glTex = new Texture(TextureTarget.Texture2D);
+
+                // We will at least notify others of (potential) async compression
+                // If we determine the texture to be non-async it will be reset to non-async anyway
+                this._glTex.AsyncState = AsyncLoadState.Queued;
                 this._glTex.Bind();
                 SizedInternalFormat pif =
                     this.Meta.Compress ?
@@ -207,11 +209,11 @@
                 bool useDXTCompression = OpenGLUtil.UsingDXTCompression;
                 bool useHWCompression = Client.Instance.Settings.AsyncDXTCompression;
                 bool haveMips = this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest;
+                Image<Rgba32> img = this.CompoundImage();
+                Guid protectedID = this._glTex.GetUniqueID();
 
                 if (useDXTCompression && this.Meta.Compress && useHWCompression)
                 {
-                    Guid protectedID = this._glTex.GetUniqueID();
-
                     // Load DXT async.
                     ThreadPool.QueueUserWorkItem(x =>
                     {
@@ -223,9 +225,9 @@
                             Texture gTex = this._glTex;
                             if (gTex != null)
                             {
-                                bool isTexture = GL.IsTexture(gTex); // Test that the texture still exists. This is GL thread so no race conditions.
+                                // Do not need to query GL.IsTexture here as the ID protection system already takes care of that - disposed textures will drop their ID
                                 bool sameID = gTex.CheckUniqueID(protectedID); // ID protection system to prevent accidental texture overrides.
-                                if (isTexture && sameID)
+                                if (sameID)
                                 {
                                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
                                     SizedInternalFormat glif = this.Meta.GammaCorrect ? SizedInternalFormat.CompressedSrgbAlphaS3TCDxt5Ext : SizedInternalFormat.CompressedRgbaS3TCDxt5Ext;
@@ -279,6 +281,7 @@
                     AsyncTextureUploader atu = Client.Instance.Frontend.TextureUploader;
                     if (!Client.Instance.Settings.AsyncTextureUploading || forceSync || !atu.FireAsyncTextureUpload(this._glTex, this._glTex.GetUniqueID(), pif, img, this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest ? int.MaxValue : 0, (d, r) => d.Image.Dispose()))
                     {
+                        this._glTex.AsyncState = AsyncLoadState.NonAsync;
                         this._glTex.SetImage(img, pif);
                         if ((this.Meta.FilterMin is FilterParam.LinearMipmapLinear or FilterParam.LinearMipmapNearest))
                         {

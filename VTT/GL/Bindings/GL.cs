@@ -298,6 +298,7 @@
         }
 
         public static void* MapBuffer(BufferTarget target, BufferAccess access) => mapBufferO((uint)target, (uint)access);
+        public static void* MapBufferRange(BufferTarget target, nint offset, nint length, BufferRangeAccessMask access) => mapBufferRangeO((uint)target, offset, length, (uint)access);
         public static bool UnmapBuffer(BufferTarget target) => unmapBufferO((uint)target);
         public static void CompressedTexImage2D(TextureTarget target, int level, SizedInternalFormat internalFormat, int w, int h, int imageSize, void* data) => compressedTexImage2DO((uint)target, level, (uint)internalFormat, w, h, 0, imageSize, data);
         public static void* GenFenceSync() => fenceSyncO(0x9117, 0);
@@ -316,9 +317,13 @@
         {
             int i = 0;
             int j = 0;
-            getSyncivO(sync, (uint)pname, sizeof(int), &j, &i);
+            getSyncivO(sync, (uint)pname, 1, &j, &i);
             return i;
         }
+
+        public static void WaitSync(void* sync) => waitSyncO(sync, 0, 0xFFFFFFFFFFFFFFFFul); // GL_TIMEOUT_IGNORED
+
+        public static SyncStatus ClientWaitSync(void* sync, bool flushCommands, ulong timeout) => (SyncStatus)clientWaitSyncO(sync, flushCommands ? 0x00000001u : 0, timeout); // GL_SYNC_FLUSH_COMMANDS_BIT 
 
         public static void DeleteSync(void* sync) => deleteSyncO(sync);
         public static int GetTexLevelParameter(TextureTarget target, int level, TextureLevelPropertyGetter prop)
@@ -542,5 +547,20 @@
         // TODO properties starting from GL_BLEND_DST_ALPHA
 
         TextureBinding2D = 0x8069
+    }
+
+    [Flags]
+    public enum BufferRangeAccessMask
+    {
+        Read = 0x0001,
+        Write = 0x0002,
+        InvalidateRange = 0x0004,
+        InvalidateBuffer = 0x0008,
+        FlushExplicit = 0x0010,
+        Unsynchronized = 0x0020,
+
+        // GL 4.4
+        Persistent = 0x0040,
+        Coherent = 0x0080,
     }
 }

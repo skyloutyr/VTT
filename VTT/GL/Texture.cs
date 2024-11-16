@@ -6,6 +6,7 @@
     using System.Buffers;
     using System.Collections.Concurrent;
     using VTT.GL.Bindings;
+    using VTT.Network;
     using VTT.Util;
 
     public class Texture
@@ -32,8 +33,8 @@
                         {
                             unsafe
                             {
-                                int vals = GL.GetSync((void*)this.AsyncFenceID, SyncProperty.SyncStatus);
-                                if (vals == (int)SyncStatus.Signaled)
+                                SyncStatus status = GL.ClientWaitSync((void*)this.AsyncFenceID, false, 0ul);
+                                if (status == SyncStatus.AlreadySignaled)
                                 {
                                     GL.DeleteSync((void*)this.AsyncFenceID);
                                     this.AsyncFenceID = IntPtr.Zero;

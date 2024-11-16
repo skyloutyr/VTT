@@ -853,6 +853,14 @@
             new List<MapObject>()
         };
 
+        private readonly float[] _alphaForLayerDelta = new float[5] { 
+            1.0f,
+            0.75f,
+            0.5f,
+            0.25f,
+            0.125f
+        };
+
         private void RenderDeferred(Map m, double delta)
         {
             this.CPUTimerDeferred.Restart();
@@ -951,7 +959,7 @@
                 }
 
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
-                this._passthroughData.Alpha = i > 0 && i > cLayer ? 0.75f - (0.25f * (i - cLayer)) : 1.0f;
+                this._passthroughData.Alpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
                 shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);

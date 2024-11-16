@@ -830,7 +830,7 @@
                     }
 
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
+                    if (status == AssetStatus.Return && a.ModelGlReady)
                     {
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         plr.ProcessScene(modelMatrix, a.Model.GLMdl, mo);
@@ -851,6 +851,7 @@
         }
 
         private readonly List<MapObject> _crossedOutObjects = new List<MapObject>();
+
         private void RenderDeferred(Map m, double delta)
         {
             this.CPUTimerDeferred.Restart();
@@ -868,8 +869,7 @@
                 foreach (MapObject mo in m.IterateObjects(i))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    bool ready = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
-                    if (ready)
+                    if (status == AssetStatus.Return && a.ModelGlReady)
                     {
                         if (!mo.ClientAssignedModelBounds)
                         {
@@ -877,15 +877,15 @@
                             mo.ClientAssignedModelBounds = true;
                         }
 
-                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
-                        {
-                            mo.ClientRenderedThisFrame = false;
-                            continue;
-                        }
-
                         if (a.Model.GLMdl.HasTransparency || mo.TintColor.Alpha() < (1.0f - float.Epsilon) || !mo.ShaderID.IsEmpty())
                         {
                             mo.ClientDeferredRejectThisFrame = true;
+                            continue;
+                        }
+
+                        if (!Client.Instance.Frontend.Renderer.MapRenderer.IsAABoxInFrustrum(mo.CameraCullerBox, mo.Position))
+                        {
+                            mo.ClientRenderedThisFrame = false;
                             continue;
                         }
 
@@ -925,11 +925,6 @@
             GL.DisableIndexed(IndexedCapability.Blend, 4);
             GL.DisableIndexed(IndexedCapability.Blend, 5);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Enable(Capability.SampleAlphaToCoverage);
-            }
-
             for (int i = -2; i <= maxLayer; ++i)
             {
                 shader = forwardShader;
@@ -951,8 +946,7 @@
                 foreach (MapObject mo in m.IterateObjects(i).OrderByDescending(x => this.GetCameraDistanceTo(x, cam)))
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    bool assetReady = status == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false);
-                    bool haveAssetButNoMTTextures = !assetReady && !(a?.Model?.GLMdl?.MaterialsGlReady ?? true);
+                    bool assetReady = status == AssetStatus.Return && a.ModelGlReady;
                     if (i > 0 || mo.ClientDeferredRejectThisFrame)
                     {
                         if (assetReady)
@@ -971,7 +965,7 @@
                         }
 
                         mo.ClientRenderedThisFrame = true;
-                        if (mo.DoNotRender || haveAssetButNoMTTextures)
+                        if (mo.DoNotRender)
                         {
                             continue;
                         }
@@ -1010,13 +1004,7 @@
                 }
             }
 
-            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
-            {
-                GL.Disable(Capability.SampleAlphaToCoverage);
-            }
-
             GL.Disable(Capability.Blend);
-
             this.CPUTimerMain.Stop();
             this.FastLightRenderer.Render(m);
             this.Shadow2DRenderer.Render(m);

@@ -41,7 +41,7 @@
         public bool HasTransparency { get; set; }
         public bool IsAnimated { get; set; }
 
-        public volatile bool glReady;
+        private bool _glReady;
 
         private readonly bool _createdOnGlThread;
         private volatile int _glRequestsTodo;
@@ -51,7 +51,7 @@
         private readonly object _lock = new object();
         private readonly Action<GlbScene> _glCompleteCallback;
 
-        public bool GlReady => this.glReady && this.MaterialsGlReady;
+        public bool GlReady => this._glReady && this.MaterialsGlReady;
 
         public bool MaterialsGlReady
         {
@@ -77,8 +77,188 @@
             }
         }
 
-        public GlbScene()
+        public GlbScene(TextureData tData, Action<GlbScene> glCompletenessCallback = null)
         {
+            if (!Client.Instance.Frontend.CheckThread())
+            {
+                throw new Exception("A GLB scene cannot be created from texture data on a non-gl thread!");
+            }
+
+            GlbObject camera = new GlbObject(null);
+            GlbObject sun = new GlbObject(null);
+            GlbObject mesh = new GlbObject(null);
+
+            GlbMaterial mat = new GlbMaterial();
+            mat.AlphaMode = tData.Meta.EnableBlending ? Material.AlphaModeEnum.BLEND : Material.AlphaModeEnum.OPAQUE;
+            mat.NormalTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0.5f, 0.5f, 1f, 1f));
+            mat.NormalAnimation = new TextureAnimation(null);
+            mat.OcclusionMetallicRoughnessTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(1f, 0, 1f, 1f));
+            mat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
+            mat.RoughnessFactor = 1f;
+            mat.AlphaCutoff = 0f;
+            mat.BaseColorTexture = tData.GetOrCreateGLTexture(false, out TextureAnimation dta);
+            mat.BaseColorAnimation = dta;
+            if (tData.Meta.AlbedoIsEmissive)
+            {
+                mat.EmissionTexture = tData.GetOrCreateGLTexture(false, out dta);
+                mat.EmissionAnimation = dta;
+            }
+            else
+            {
+                mat.EmissionTexture = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 0));
+                mat.EmissionAnimation = new TextureAnimation(null);
+            }
+
+            mat.BaseColorFactor = Vector4.One;
+            mat.CullFace = true;
+            mat.MetallicFactor = 0f;
+            mat.Name = "converted_texture_material";
+
+            this.Materials.Add(mat);
+            this.DefaultMaterial = mat;
+
+            glTFLoader.Schema.Camera glbCam = new glTFLoader.Schema.Camera() { Name = "camera", Type = glTFLoader.Schema.Camera.TypeEnum.perspective, Perspective = new glTFLoader.Schema.CameraPerspective() { AspectRatio = 1, Yfov = 60 * MathF.PI / 180, Znear = 0.0001f, Zfar = 10f } };
+            camera.Camera = glbCam;
+            camera.Name = "camera";
+            camera.Type = GlbObjectType.Camera;
+            camera.Position = Vector3.UnitZ;
+            camera.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, 179 * MathF.PI / 180);
+            camera.Scale = Vector3.One;
+            this.Camera = camera;
+            this.PortraitCamera = camera;
+            this.RootObjects.Add(camera);
+
+            GlbMesh glbm = new GlbMesh();
+            List<Vector3> positions = new List<Vector3>();
+            List<Vector2> uvs = new List<Vector2>();
+            List<Vector3> normals = new List<Vector3>();
+            List<Vector4> tangents = new List<Vector4>();
+            List<Vector4> bitangents = new List<Vector4>();
+            List<Vector4> colors = new List<Vector4>();
+
+            int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
+            positions.Add(new Vector3(-0.5f, -0.5f, 0f));
+            positions.Add(new Vector3(0.5f, -0.5f, 0f));
+            positions.Add(new Vector3(0.5f, 0.5f, 0f));
+            positions.Add(new Vector3(-0.5f, 0.5f, 0f));
+            uvs.Add(new Vector2(0, 1));
+            uvs.Add(new Vector2(1, 1));
+            uvs.Add(new Vector2(1, 0));
+            uvs.Add(new Vector2(0, 0));
+            normals.Add(Vector3.UnitZ);
+            normals.Add(Vector3.UnitZ);
+            normals.Add(Vector3.UnitZ);
+            normals.Add(Vector3.UnitZ);
+            tangents.Add(Vector4.UnitX);
+            tangents.Add(Vector4.UnitX);
+            tangents.Add(Vector4.UnitX);
+            tangents.Add(Vector4.UnitX);
+            bitangents.Add(Vector4.UnitY);
+            bitangents.Add(Vector4.UnitY);
+            bitangents.Add(Vector4.UnitY);
+            bitangents.Add(Vector4.UnitY);
+            colors.Add(Vector4.One);
+            colors.Add(Vector4.One);
+            colors.Add(Vector4.One);
+            colors.Add(Vector4.One);
+            uint[] indices = new uint[] { 0, 1, 2, 0, 2, 3 };
+            float[] vBuffer = new float[positions.Count * vertexSize];
+            int vBufIndex = 0;
+            for (int j = 0; j < positions.Count; ++j)
+            {
+                Vector3 pos = positions[j];
+                Vector2 uv = uvs[j];
+                Vector3 norm = normals[j];
+                Vector3 tan = tangents[j].Xyz();
+                Vector3 bitan = bitangents[j].Xyz();
+                Vector4 color = colors[j];
+                vBuffer[vBufIndex++] = pos.X;
+                vBuffer[vBufIndex++] = pos.Y;
+                vBuffer[vBufIndex++] = pos.Z;
+                vBuffer[vBufIndex++] = uv.X;
+                vBuffer[vBufIndex++] = uv.Y;
+                vBuffer[vBufIndex++] = norm.X;
+                vBuffer[vBufIndex++] = norm.Y;
+                vBuffer[vBufIndex++] = norm.Z;
+                vBuffer[vBufIndex++] = tan.X;
+                vBuffer[vBufIndex++] = tan.Y;
+                vBuffer[vBufIndex++] = tan.Z;
+                vBuffer[vBufIndex++] = bitan.X;
+                vBuffer[vBufIndex++] = bitan.Y;
+                vBuffer[vBufIndex++] = bitan.Z;
+                vBuffer[vBufIndex++] = color.X;
+                vBuffer[vBufIndex++] = color.Y;
+                vBuffer[vBufIndex++] = color.Z;
+                vBuffer[vBufIndex++] = color.W;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+            }
+
+            List<Vector3> simplifiedTriangles = new List<Vector3>();
+            List<float> areaSums = new List<float>();
+            float areaSum = 0;
+            for (int j = 0; j < indices.Length; j += 3)
+            {
+                int index0 = (int)indices[j + 0];
+                int index1 = (int)indices[j + 1];
+                int index2 = (int)indices[j + 2];
+                Vector3 a = positions[index0];
+                Vector3 b = positions[index1];
+                Vector3 c = positions[index2];
+                simplifiedTriangles.Add(a);
+                simplifiedTriangles.Add(b);
+                simplifiedTriangles.Add(c);
+                Vector3 ab = b - a;
+                Vector3 ac = c - a;
+                float l = Vector3.Cross(ab, ac).Length() * 0.5f;
+                if (!float.IsNaN(l)) // Degenerate triangle
+                {
+                    areaSum += l;
+                }
+
+                areaSums.Add(areaSum);
+            }
+
+            glbm.simplifiedTriangles = new(simplifiedTriangles);
+            glbm.areaSums = new(areaSums);
+            glbm.Bounds = new AABox(new Vector3(-0.5f, -0.5f, -0.01f), new Vector3(0.5f, 0.5f, 0.01f));
+            glbm.VertexBuffer = vBuffer;
+            glbm.IndexBuffer = indices;
+            glbm.AmountToRender = 6;
+            glbm.Material = mat;
+            glbm.CreateGl();
+
+            mesh.Position = Vector3.Zero;
+            mesh.Rotation = Quaternion.Identity;
+            mesh.Scale = Vector3.One;
+            mesh.GlobalTransform = Matrix4x4.Identity;
+            mesh.Bounds = glbm.Bounds;
+            mesh.Meshes.Add(glbm);
+            mesh.Name = "generated_mesh";
+            mesh.Type = GlbObjectType.Mesh;
+            this.Meshes.Add(mesh);
+            this.RenderedMeshes.Add(mesh);
+            this.RootObjects.Add(mesh);
+
+            GlbLight sunlight = new GlbLight(Vector4.One, 10, KhrLight.LightTypeEnum.Directional);
+            sun.Scale = Vector3.One;
+            sun.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, 179 * MathF.PI / 180);
+            sun.Position = Vector3.Zero;
+            sun.Light = sunlight;
+            sun.Name = "generated_sun";
+            sun.Type = GlbObjectType.Light;
+            this.DirectionalLight = sun;
+            this.Lights.Add(sun);
+            this.RootObjects.Add(sun);
+
+            this.CombinedBounds = this.RaycastBounds = glbm.Bounds;
+            this._glReady = true;
+            this.HasTransparency = tData.Meta.EnableBlending;
+            glCompletenessCallback?.Invoke(this);
         }
 
         public unsafe GlbScene(ModelData.Metadata meta, Stream modelStream, Action<GlbScene> glCompletenessCallback = null)
@@ -1259,11 +1439,6 @@
 
         public void Render(FastAccessShader shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
-            if (!this.GlReady)
-            {
-                return;
-            }
-
             foreach (GlbObject o in this.RenderedMeshes)
             {
                 o.Render(shader, baseMatrix, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
@@ -1474,7 +1649,7 @@
 
                 if (this._checkGlRequests && this._glRequestsTodo <= 0)
                 {
-                    this.glReady = true;
+                    this._glReady = true;
                     this._glCompleteCallback?.Invoke(this);
                 }
             }

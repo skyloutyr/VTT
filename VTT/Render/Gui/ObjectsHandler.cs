@@ -551,7 +551,7 @@
                                         ImGui.Text(lang.Translate("ui.particle_containers.attachment"));
                                         if (!mo.AssetID.Equals(Guid.Empty))
                                         {
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && (a?.Model?.GLMdl?.GlReady ?? false))
+                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && a.ModelGlReady)
                                             {
                                                 string[] arr = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
                                                 int idx = Array.IndexOf(arr, arr.FirstOrDefault(s => s.Equals(pc.AttachmentPoint), string.Empty));

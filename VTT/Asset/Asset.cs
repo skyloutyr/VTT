@@ -30,6 +30,9 @@
         public ParticleSystem ParticleSystem { get; set; }
         public GlslFragmentData GlslFragment { get; set; }
 
+        private bool _cachedModelGlReadiness;
+        public bool ModelGlReady => this._cachedModelGlReadiness || (this._cachedModelGlReadiness = (this.Model?.GLMdl?.GlReady ?? false));
+
         public void Dispose()
         {
             this.Texture?.Dispose();

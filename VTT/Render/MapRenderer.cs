@@ -195,7 +195,7 @@
             return this.ClientCamera.RayFromCursor();
         }
 
-        public bool IsAABoxInFrustrum(AABox box, Vector3 offset) => this.IsOrtho || this.ClientCamera.IsAABoxInFrustrum(box, offset);
+        public bool IsAABoxInFrustrum(AABox box, Vector3 offset) => this.ClientCamera.IsAABoxInFrustrum(box, offset);
 
         public void HandleKeys(KeyEventData args)
         {

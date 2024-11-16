@@ -266,13 +266,10 @@
         #region Asset Handling
         private void ValidateAsset(Guid id, AssetType requestedType, Asset a)
         {
-            if (a != null)
+            if (a.Type == AssetType.Texture && requestedType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
             {
-                if (a.Type == AssetType.Texture && requestedType == AssetType.Model && a.Model == null && a.Texture != null && a.Texture.glReady && Client.Instance.Frontend.CheckThread())
-                {
-                    Glb.GlbScene mdl = a.Texture.ToGlbModel();
-                    a.Model = new ModelData() { GLMdl = mdl };
-                }
+                GlbScene mdl = a.Texture.ToGlbModel();
+                a.Model = new ModelData() { GLMdl = mdl };
             }
         }
 
@@ -438,7 +435,7 @@
                             }
                         }
 
-                        if (a.Type == AssetType.Model && (a?.Model?.GLMdl?.GlReady ?? false))
+                        if (a.Type == AssetType.Model && a.ModelGlReady)
                         {
                             using Image<Rgba32> img = a.Model.GLMdl.CreatePreview(256, 256, new Vector4(0, 0, 0, 0), true);
                             Texture tex = new Texture(TextureTarget.Texture2D);

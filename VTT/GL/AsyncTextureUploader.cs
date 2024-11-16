@@ -149,6 +149,7 @@
                     this._requestWorkedWith = request;
                     request.Texture.AsyncState = AsyncLoadState.Processing;
                     this._hasWorkForSecondary = true;
+                    this._waitHandleSecondary.Set();
                 }
             }
 
@@ -199,8 +200,6 @@
 
                 OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
             }
-
-            this._waitHandleSecondary.Set();
         }
 
         public bool FireAsyncTextureUpload(Texture tex, Guid tId, SizedInternalFormat pif, Image<Rgba32> img, int nMips, Action<AsyncTextureUploadRequest, bool> callback)

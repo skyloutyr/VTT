@@ -16,39 +16,41 @@
                 System.Numerics.Vector2 wC = ImGui.GetWindowSize();
                 foreach (TextJournal tj in Client.Instance.Journals.Values)
                 {
-                    ImGui.BeginChild("journal_" + tj.SelfID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings);
-
-                    ImGui.TextUnformatted(tj.Title);
-                    ImGui.SameLine();
-                    ImGui.SetCursorPosX(wC.X - 32 - 28);
-                    if (!Client.Instance.IsAdmin && tj.OwnerID != Client.Instance.ID)
+                    if (ImGui.BeginChild("journal_" + tj.SelfID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings))
                     {
-                        ImGui.BeginDisabled();
+                        ImGui.TextUnformatted(tj.Title);
+                        ImGui.SameLine();
+                        ImGui.SetCursorPosX(wC.X - 32 - 28);
+                        if (!Client.Instance.IsAdmin && tj.OwnerID != Client.Instance.ID)
+                        {
+                            ImGui.BeginDisabled();
+                        }
+
+                        ImGui.PushID("BtnDeleteJournal_" + tj.SelfID.ToString());
+                        if (ImGui.ImageButton("BtnDeleteJournal_" + tj.SelfID.ToString(), this.DeleteIcon, Vec12x12))
+                        {
+                            new PacketDeleteJournal() { JournalID = tj.SelfID }.Send();
+                        }
+
+                        ImGui.PopID();
+                        if (!Client.Instance.IsAdmin && tj.OwnerID != Client.Instance.ID)
+                        {
+                            ImGui.EndDisabled();
+                        }
+
+                        ImGui.SameLine();
+                        ImGui.SetCursorPosX(wC.X - 32 - 56);
+                        ImGui.PushID("BtnEditJournal_" + tj.SelfID.ToString());
+                        if (ImGui.ImageButton("BtnEditJournal_" + tj.SelfID.ToString(), this.JournalEdit, Vec12x12))
+                        {
+                            state.journalPopup = true;
+                            this._editedJournal = tj;
+                            this._journalTextEdited = false;
+                        }
+
+                        ImGui.PopID();
                     }
 
-                    ImGui.PushID("BtnDeleteJournal_" + tj.SelfID.ToString());
-                    if (ImGui.ImageButton("BtnDeleteJournal_" + tj.SelfID.ToString(), this.DeleteIcon, Vec12x12))
-                    {
-                        new PacketDeleteJournal() { JournalID = tj.SelfID }.Send();
-                    }
-
-                    ImGui.PopID();
-                    if (!Client.Instance.IsAdmin && tj.OwnerID != Client.Instance.ID)
-                    {
-                        ImGui.EndDisabled();
-                    }
-
-                    ImGui.SameLine();
-                    ImGui.SetCursorPosX(wC.X - 32 - 56);
-                    ImGui.PushID("BtnEditJournal_" + tj.SelfID.ToString());
-                    if (ImGui.ImageButton("BtnEditJournal_" + tj.SelfID.ToString(), this.JournalEdit, Vec12x12))
-                    {
-                        state.journalPopup = true;
-                        this._editedJournal = tj;
-                        this._journalTextEdited = false;
-                    }
-
-                    ImGui.PopID();
                     ImGui.EndChild();
                     if (ImGui.IsItemHovered())
                     {

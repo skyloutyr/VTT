@@ -66,7 +66,7 @@
              * 
              */
 
-            // Objects are aligned in memory by their AssetID.
+            // Objects are aligned in memory by their AssetID (ideally). This will unfortunately fail for forward rendering.
             if (lastProgram != shader.Program || lastMaterial != this)
             {
                 shader.Material.DiffuseColor.Set(this.BaseColorFactor);
@@ -79,6 +79,26 @@
                 shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                 lastProgram = shader.Program;
                 lastMaterial = this;
+                lastAnimationFrameIndex = textureAnimationFrameIndex;
+
+                shader.Material.MaterialIndex.Set(this.Index);
+                GL.ActiveTexture(0);
+                this.BaseColorTexture.Bind();
+                GL.ActiveTexture(1);
+                this.NormalTexture.Bind();
+                GL.ActiveTexture(2);
+                this.EmissionTexture.Bind();
+                GL.ActiveTexture(3);
+                this.OcclusionMetallicRoughnessTexture.Bind();
+                if (this.CullFace)
+                {
+                    GL.Enable(Capability.CullFace);
+                    GL.CullFace(PolygonFaceMode.Back);
+                }
+                else
+                {
+                    GL.Disable(Capability.CullFace);
+                }
             }
             else
             {
@@ -90,30 +110,6 @@
                     shader.Material.EmissiveFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                     shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                 }
-            }
-
-            shader.Material.MaterialIndex.Set(this.Index);
-
-            GL.ActiveTexture(0);
-            this.BaseColorTexture.Bind();
-
-            GL.ActiveTexture(1);
-            this.NormalTexture.Bind();
-
-            GL.ActiveTexture(2);
-            this.EmissionTexture.Bind();
-
-            GL.ActiveTexture(3);
-            this.OcclusionMetallicRoughnessTexture.Bind();
-
-            if (this.CullFace)
-            {
-                GL.Enable(Capability.CullFace);
-                GL.CullFace(PolygonFaceMode.Back);
-            }
-            else
-            {
-                GL.Disable(Capability.CullFace);
             }
         }
 

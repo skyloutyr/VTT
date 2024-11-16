@@ -7,7 +7,6 @@
     using System.IO;
     using System.Linq;
     using System.Numerics;
-    using VTT.Network;
     using VTT.Util;
 
     public class Map : ISerializable
@@ -54,10 +53,11 @@
         public TurnTracker TurnTracker { get; set; }
         public Map2DShadowLayer ShadowLayer2D { get; } = new Map2DShadowLayer();
 
-        public List<MapObject> Objects { get; } = new List<MapObject>();
         public List<RulerInfo> PermanentMarks { get; } = new List<RulerInfo>();
         public List<DrawingPointContainer> Drawings { get; } = new List<DrawingPointContainer>();
-        public Dictionary<Guid, MapObject> ObjectsByID { get; } = new Dictionary<Guid, MapObject>();
+
+        private readonly List<MapObject> Objects = new List<MapObject>();
+        private readonly Dictionary<Guid, MapObject> ObjectsByID = new Dictionary<Guid, MapObject>();
 
         public Dictionary<Guid, (Guid, float)> DarkvisionData { get; } = new Dictionary<Guid, (Guid, float)>();
 
@@ -85,48 +85,23 @@
 
         public void RemoveObject(MapObject obj)
         {
-            if (this.IsServer)
+            lock (this.Lock)
             {
-                lock (this.Lock)
-                {
-                    this.Objects.Remove(obj);
-                    obj.Container = null;
-                    obj.MapID = Guid.Empty;
-                    this.ObjectsByID.Remove(obj.ID);
-                    this.NeedsSave = true;
-                }
-            }
-            else
-            {
-                obj.IsRemoved = true;
+                obj.Particles.MarkContainersForDestructionWithoutClearing();
+                this.Objects.Remove(obj);
+                obj.Container = null;
+                obj.MapID = Guid.Empty;
+                this.ObjectsByID.Remove(obj.ID);
+                this.NeedsSave = true;
             }
         }
 
         public bool GetObject(Guid id, out MapObject mo)
         {
-            MapObject ret = null;
             lock (this.Lock)
             {
-                if (this.ObjectsByID.ContainsKey(id))
-                {
-                    ret = this.ObjectsByID[id];
-                }
+                return this.ObjectsByID.TryGetValue(id, out mo);
             }
-
-            mo = ret;
-            return ret != null;
-        }
-
-        public bool GetObjectUnsafe(Guid id, out MapObject mo)
-        {
-            MapObject ret = null;
-            if (this.ObjectsByID.ContainsKey(id))
-            {
-                ret = this.ObjectsByID[id];
-            }
-
-            mo = ret;
-            return ret != null;
         }
 
         public IEnumerable<MapObject> IterateObjects(int? layer)
@@ -135,11 +110,6 @@
             {
                 for (int i = this.Objects.Count - 1; i >= 0; i--)
                 {
-                    if (i >= this.Objects.Count)
-                    {
-                        continue;
-                    }
-
                     MapObject mo = this.Objects[i];
                     if (!layer.HasValue || mo.MapLayer == layer.Value)
                     {
@@ -151,23 +121,49 @@
             yield break;
         }
 
-        public IEnumerable<MapObject> IterateObjectsUnsafe(int? layer)
+        public void MapObjects(int? layer, Action<int, MapObject> action)
         {
-            for (int i = this.Objects.Count - 1; i >= 0; i--)
+            lock (this.Lock)
             {
-                if (i >= this.Objects.Count)
+                for (int i = this.Objects.Count - 1; i >= 0; i--)
                 {
-                    continue;
-                }
-
-                MapObject mo = this.Objects[i];
-                if (!layer.HasValue || mo.MapLayer == layer.Value)
-                {
-                    yield return mo;
+                    MapObject mo = this.Objects[i];
+                    if (!layer.HasValue || mo.MapLayer == layer.Value)
+                    {
+                        action(i, mo);
+                    }
                 }
             }
+        }
 
-            yield break;
+        public int ObjectCountUnsafe => this.Objects.Count;
+
+        private int _turnTrackerPulseCounter;
+        public void Update()
+        {
+            this.ShadowLayer2D.Update(this);
+            if (++this._turnTrackerPulseCounter >= 60)
+            {
+                this._turnTrackerPulseCounter = 0;
+                this.TurnTracker.Pulse();
+            }
+
+            lock (this.Lock)
+            {
+                for (int i = this.Objects.Count - 1; i >= 0; i--)
+                {
+                    MapObject mo = this.Objects[i];
+                    if (!mo.IsRemoved)
+                    {
+                        mo.Update();
+                    }
+                    else
+                    {
+                        
+                        continue;
+                    }
+                }
+            }
         }
 
         public void Deserialize(DataElement e)

@@ -147,56 +147,58 @@
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Lerp(imDefault, darkGray, Client.Instance.Settings.ChatBackgroundBrightness));
-                ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
-
-                int clRendered = 0;
-                int lowestIndex = -1;
-                if (Client.Instance.Chat.Count > 0)
+                if (ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking))
                 {
-                    lock (Client.Instance.chatLock)
+                    int clRendered = 0;
+                    int lowestIndex = -1;
+                    if (Client.Instance.Chat.Count > 0)
                     {
-                        lowestIndex = Client.Instance.Chat[0].Index;
-                        foreach (ChatLine cl in Client.Instance.Chat)
+                        lock (Client.Instance.chatLock)
                         {
-                            if (chatChanged)
+                            lowestIndex = Client.Instance.Chat[0].Index;
+                            foreach (ChatLine cl in Client.Instance.Chat)
                             {
-                                cl.InvalidateCache();
-                            }
+                                if (chatChanged)
+                                {
+                                    cl.InvalidateCache();
+                                }
 
-                            if (cl.ImRender(new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
-                            {
-                                ImGui.Separator();
-                                ++clRendered;
+                                if (cl.ImRender(new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
+                                {
+                                    ImGui.Separator();
+                                    ++clRendered;
+                                }
                             }
                         }
                     }
-                }
 
-                if (ImGui.GetScrollY() / ImGui.GetScrollMaxY() <= float.Epsilon)
-                {
-                    long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    if (now - this._lastChatRequest > 2000) // can request chat
+                    if (ImGui.GetScrollY() / ImGui.GetScrollMaxY() <= float.Epsilon)
                     {
-                        this._lastChatRequest = now;
-                        if (lowestIndex > 0) // Have chat to request
+                        long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        if (now - this._lastChatRequest > 2000) // can request chat
                         {
-                            PacketChatRequest pcr = new PacketChatRequest() { Index = lowestIndex };
-                            pcr.Send();
+                            this._lastChatRequest = now;
+                            if (lowestIndex > 0) // Have chat to request
+                            {
+                                PacketChatRequest pcr = new PacketChatRequest() { Index = lowestIndex };
+                                pcr.Send();
+                            }
                         }
                     }
-                }
 
-                if (clRendered != this._lastChatLinesRendered || this.MoveChatToEnd)
-                {
-                    this._lastChatLinesRendered = clRendered;
-                    if (this._scrollYLast >= 0.99f || this.MoveChatToEnd)
+                    if (clRendered != this._lastChatLinesRendered || this.MoveChatToEnd)
                     {
-                        ImGui.SetScrollHereY(1.0f);
-                        this.MoveChatToEnd = false;
+                        this._lastChatLinesRendered = clRendered;
+                        if (this._scrollYLast >= 0.99f || this.MoveChatToEnd)
+                        {
+                            ImGui.SetScrollHereY(1.0f);
+                            this.MoveChatToEnd = false;
+                        }
                     }
+
+                    this._scrollYLast = ImGui.GetScrollY() / ImGui.GetScrollMaxY();
                 }
 
-                this._scrollYLast = ImGui.GetScrollY() / ImGui.GetScrollMaxY();
                 ImGui.EndChild();
                 ImGui.PopStyleColor();
             }

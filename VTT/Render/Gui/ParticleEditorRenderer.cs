@@ -64,23 +64,24 @@
                     ImGui.PopStyleVar();
                     ImGui.SetCursorPos(new Vector2(winSize.X - 328, 28));
                     bool focused = ImGui.IsWindowFocused();
-                    ImGui.BeginChild("##ParamsEditor", new Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar);
-                    if (doRender)
+                    if (ImGui.BeginChild("##ParamsEditor", new Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar))
                     {
-                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !_lmbDown && ImGui.IsWindowFocused())
+                        if (doRender)
                         {
-                            _lmbDown = true;
-                            npLbm = true;
-                        }
+                            if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !_lmbDown && ImGui.IsWindowFocused())
+                            {
+                                _lmbDown = true;
+                                npLbm = true;
+                            }
 
-                        if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && !_rmbDown && ImGui.IsWindowFocused())
-                        {
-                            _rmbDown = true;
-                            npRmb = true;
-                        }
+                            if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && !_rmbDown && ImGui.IsWindowFocused())
+                            {
+                                _rmbDown = true;
+                                npRmb = true;
+                            }
 
-                        ImGui.Text(lang.Translate("ui.particle.emission_type"));
-                        string[] emissionTypes = {
+                            ImGui.Text(lang.Translate("ui.particle.emission_type"));
+                            string[] emissionTypes = {
                         lang.Translate("ui.particle.emission.point"),
                         lang.Translate("ui.particle.emission.sphere"),
                         lang.Translate("ui.particle.emission.sphere_surface"),
@@ -95,343 +96,344 @@
                         lang.Translate("ui.particle.emission.mask"),
                     };
 
-                        int cEmissionType = (int)pr.CurrentlyEditedSystem.EmissionType;
-                        if (ImGui.Combo("##ParticleEmissionType", ref cEmissionType, emissionTypes, emissionTypes.Length))
-                        {
-                            pr.CurrentlyEditedSystem.EmissionType = (ParticleSystem.EmissionMode)cEmissionType;
-                        }
-
-                        if (cEmissionType is 1 or 2)
-                        {
-                            ImGui.Text(lang.Translate("ui.particle.emission_radius"));
-                            float cRad = pr.CurrentlyEditedSystem.EmissionRadius;
-                            if (ImGui.DragFloat("##ParticleRadius", ref cRad, 0.01f))
+                            int cEmissionType = (int)pr.CurrentlyEditedSystem.EmissionType;
+                            if (ImGui.Combo("##ParticleEmissionType", ref cEmissionType, emissionTypes, emissionTypes.Length))
                             {
-                                pr.CurrentlyEditedSystem.EmissionRadius = cRad;
+                                pr.CurrentlyEditedSystem.EmissionType = (ParticleSystem.EmissionMode)cEmissionType;
                             }
 
-                            ImGui.Text(lang.Translate("ui.particle.emission_volume_sphere"));
-                            Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
-                            if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
+                            if (cEmissionType is 1 or 2)
                             {
-                                pr.CurrentlyEditedSystem.EmissionVolume = v3;
-                            }
-                        }
+                                ImGui.Text(lang.Translate("ui.particle.emission_radius"));
+                                float cRad = pr.CurrentlyEditedSystem.EmissionRadius;
+                                if (ImGui.DragFloat("##ParticleRadius", ref cRad, 0.01f))
+                                {
+                                    pr.CurrentlyEditedSystem.EmissionRadius = cRad;
+                                }
 
-                        if (cEmissionType is (>= 3 and <= 8) or 11)
-                        {
-                            ImGui.Text(lang.Translate("ui.particle.emission_volume"));
-                            Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
-                            if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
+                                ImGui.Text(lang.Translate("ui.particle.emission_volume_sphere"));
+                                Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
+                                if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
+                                {
+                                    pr.CurrentlyEditedSystem.EmissionVolume = v3;
+                                }
+                            }
+
+                            if (cEmissionType is (>= 3 and <= 8) or 11)
                             {
-                                pr.CurrentlyEditedSystem.EmissionVolume = v3;
+                                ImGui.Text(lang.Translate("ui.particle.emission_volume"));
+                                Vector3 v3 = pr.CurrentlyEditedSystem.EmissionVolume;
+                                if (ImGui.DragFloat3("##ParticleVolume", ref v3, 0.01f))
+                                {
+                                    pr.CurrentlyEditedSystem.EmissionVolume = v3;
+                                }
                             }
-                        }
 
-                        if (cEmissionType == 11)
-                        {
-                            ImAssetRecepticle("ui.properties.custom_mask.tt", draggedRef, pr.CurrentlyEditedSystem.MaskID, state, pr.CurrentlyEditedSystem, 2);
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.emission_chance"));
-                        float eChance = pr.CurrentlyEditedSystem.EmissionChance;
-                        if (ImGui.SliderFloat("##ParticleEmissionChance", ref eChance, 0, 1))
-                        {
-                            pr.CurrentlyEditedSystem.EmissionChance = eChance;
-                        }
-
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.emission_chance.tt"));
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.emission_amount"));
-                        int min = pr.CurrentlyEditedSystem.EmissionAmount.Min;
-                        int max = pr.CurrentlyEditedSystem.EmissionAmount.Max;
-                        if (ImDragInt2("##EmissionNum", ref min, ref max, 0, 128))
-                        {
-                            pr.CurrentlyEditedSystem.EmissionAmount.Min = min;
-                            pr.CurrentlyEditedSystem.EmissionAmount.Max = max;
-                            pr.CurrentlyEditedSystemInstance.Resize();
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.emission_cooldown"));
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.emission_cooldown.tt"));
-                        }
-
-                        min = pr.CurrentlyEditedSystem.EmissionCooldown.Min;
-                        max = pr.CurrentlyEditedSystem.EmissionCooldown.Max;
-                        if (ImDragInt2("##EmissionCD", ref min, ref max, 0, ushort.MaxValue))
-                        {
-                            pr.CurrentlyEditedSystem.EmissionCooldown.Min = min;
-                            pr.CurrentlyEditedSystem.EmissionCooldown.Max = max;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.cluster_emission"));
-                        ImGui.SameLine();
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.cluster_emission.tt"));
-                        }
-
-                        bool pClusters = pr.CurrentlyEditedSystem.ClusterEmission;
-                        if (ImGui.Checkbox("##DoClusters", ref pClusters))
-                        {
-                            pr.CurrentlyEditedSystem.ClusterEmission = pClusters;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.lifetime"));
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.lifetime.tt"));
-                        }
-
-                        min = pr.CurrentlyEditedSystem.Lifetime.Min;
-                        max = pr.CurrentlyEditedSystem.Lifetime.Max;
-                        if (ImDragInt2("##Lifetime", ref min, ref max, 0, 600))
-                        {
-                            pr.CurrentlyEditedSystem.Lifetime.Min = min;
-                            pr.CurrentlyEditedSystem.Lifetime.Max = max;
-                            pr.CurrentlyEditedSystemInstance.Resize();
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.scale_mod"));
-                        float minF = pr.CurrentlyEditedSystem.ScaleVariation.Min;
-                        float maxF = pr.CurrentlyEditedSystem.ScaleVariation.Max;
-                        if (ImDragSingle2("##ScaleVariation", ref minF, ref maxF, 0, 100))
-                        {
-                            pr.CurrentlyEditedSystem.ScaleVariation.Min = minF;
-                            pr.CurrentlyEditedSystem.ScaleVariation.Max = maxF;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.max"));
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.max.tt"));
-                        }
-
-                        int pMax = pr.CurrentlyEditedSystem.MaxParticles;
-                        if (ImGui.DragInt("##MaxParticles", ref pMax, 1, 0, 20000))
-                        {
-                            pr.CurrentlyEditedSystem.MaxParticles = Math.Clamp(pMax, 0, 20000);
-                            pr.CurrentlyEditedSystemInstance.Resize();
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.billboard"));
-                        ImGui.SameLine();
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.billboard.tt"));
-                        }
-
-                        bool pBillboard = pr.CurrentlyEditedSystem.DoBillboard;
-                        if (ImGui.Checkbox("##DoBillboard", ref pBillboard))
-                        {
-                            pr.CurrentlyEditedSystem.DoBillboard = pBillboard;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.pixel_fow"));
-                        ImGui.SameLine();
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.pixel_fow.tt"));
-                        }
-
-                        bool pDoFow = pr.CurrentlyEditedSystem.DoFow;
-                        if (ImGui.Checkbox("##DoFow", ref pDoFow))
-                        {
-                            pr.CurrentlyEditedSystem.DoFow = pDoFow;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.velocity"));
-                        Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min;
-                        if (ImGui.DragFloat3("##VelMin", ref vVec, 0.01f))
-                        {
-                            pr.CurrentlyEditedSystem.InitialVelocity.Min = vVec;
-                        }
-
-                        ImGui.SameLine();
-                        ImGui.Text(lang.Translate("ui.generic.min"));
-                        vVec = pr.CurrentlyEditedSystem.InitialVelocity.Max;
-                        if (ImGui.DragFloat3("##VelMax", ref vVec, 0.01f))
-                        {
-                            pr.CurrentlyEditedSystem.InitialVelocity.Max = vVec;
-                        }
-
-                        ImGui.SameLine();
-                        ImGui.Text(lang.Translate("ui.generic.max"));
-                        ImGui.Text(lang.Translate("ui.particle.velocity_angle"));
-                        float fAng = pr.CurrentlyEditedSystem.InitialVelocityRandomAngle;
-                        if (ImGui.SliderAngle("##VelAngle", ref fAng))
-                        {
-                            pr.CurrentlyEditedSystem.InitialVelocityRandomAngle = fAng;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.gravity"));
-                        vVec = pr.CurrentlyEditedSystem.Gravity;
-                        if (ImGui.DragFloat3("##Grav", ref vVec, 0.01f))
-                        {
-                            pr.CurrentlyEditedSystem.Gravity = vVec;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.velocity_dampen"));
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.velocity_dampen.tt"));
-                        }
-
-                        float fVDamp = pr.CurrentlyEditedSystem.VelocityDampenFactor;
-                        if (ImGui.DragFloat("##VelDamp", ref fVDamp, 0.01f))
-                        {
-                            pr.CurrentlyEditedSystem.VelocityDampenFactor = fVDamp;
-                        }
-
-                        ImGui.Text(lang.Translate("ui.particle.color"));
-                        ImGradient(pr.CurrentlyEditedSystem.ColorOverLifetime, ref npLbm, ref npRmb);
-
-                        ImGui.Text(lang.Translate("ui.particle.scale"));
-                        ImGradientSingle(pr.CurrentlyEditedSystem.ScaleOverLifetime, ref npLbm, ref npRmb);
-
-                        float f = _editedValueSingle?.Color ?? 0f;
-                        if (ImGui.DragFloat("##DragFloatEditedValue", ref f, 0.01f))
-                        {
-                            if (_editedValueSingle.HasValue)
+                            if (cEmissionType == 11)
                             {
-                                pr.CurrentlyEditedSystem.ScaleOverLifetime.Remove(_editedValueSingle.Value.Key);
-                                _editedValueSingle = new GradientPoint<float>(_editedValueSingle.Value.Key, f);
-                                pr.CurrentlyEditedSystem.ScaleOverLifetime.Add(_editedValueSingle.Value);
+                                ImAssetRecepticle("ui.properties.custom_mask.tt", draggedRef, pr.CurrentlyEditedSystem.MaskID, state, pr.CurrentlyEditedSystem, 2);
                             }
-                        }
 
-                        ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem, 1);
-                        ImAssetRecepticle("ui.properties.custom_shader.tt", draggedRef, pr.CurrentlyEditedSystem.CustomShaderID, state, pr.CurrentlyEditedSystem, 0);
-                        if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
-                        {
-                            pr.CurrentlyEditedSystem.CustomShaderID = Guid.Empty;
+                            ImGui.Text(lang.Translate("ui.particle.emission_chance"));
+                            float eChance = pr.CurrentlyEditedSystem.EmissionChance;
+                            if (ImGui.SliderFloat("##ParticleEmissionChance", ref eChance, 0, 1))
+                            {
+                                pr.CurrentlyEditedSystem.EmissionChance = eChance;
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.emission_chance.tt"));
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.emission_amount"));
+                            int min = pr.CurrentlyEditedSystem.EmissionAmount.Min;
+                            int max = pr.CurrentlyEditedSystem.EmissionAmount.Max;
+                            if (ImDragInt2("##EmissionNum", ref min, ref max, 0, 128))
+                            {
+                                pr.CurrentlyEditedSystem.EmissionAmount.Min = min;
+                                pr.CurrentlyEditedSystem.EmissionAmount.Max = max;
+                                pr.CurrentlyEditedSystemInstance.Resize();
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.emission_cooldown"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.emission_cooldown.tt"));
+                            }
+
+                            min = pr.CurrentlyEditedSystem.EmissionCooldown.Min;
+                            max = pr.CurrentlyEditedSystem.EmissionCooldown.Max;
+                            if (ImDragInt2("##EmissionCD", ref min, ref max, 0, ushort.MaxValue))
+                            {
+                                pr.CurrentlyEditedSystem.EmissionCooldown.Min = min;
+                                pr.CurrentlyEditedSystem.EmissionCooldown.Max = max;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.cluster_emission"));
+                            ImGui.SameLine();
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.cluster_emission.tt"));
+                            }
+
+                            bool pClusters = pr.CurrentlyEditedSystem.ClusterEmission;
+                            if (ImGui.Checkbox("##DoClusters", ref pClusters))
+                            {
+                                pr.CurrentlyEditedSystem.ClusterEmission = pClusters;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.lifetime"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.lifetime.tt"));
+                            }
+
+                            min = pr.CurrentlyEditedSystem.Lifetime.Min;
+                            max = pr.CurrentlyEditedSystem.Lifetime.Max;
+                            if (ImDragInt2("##Lifetime", ref min, ref max, 0, 600))
+                            {
+                                pr.CurrentlyEditedSystem.Lifetime.Min = min;
+                                pr.CurrentlyEditedSystem.Lifetime.Max = max;
+                                pr.CurrentlyEditedSystemInstance.Resize();
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.scale_mod"));
+                            float minF = pr.CurrentlyEditedSystem.ScaleVariation.Min;
+                            float maxF = pr.CurrentlyEditedSystem.ScaleVariation.Max;
+                            if (ImDragSingle2("##ScaleVariation", ref minF, ref maxF, 0, 100))
+                            {
+                                pr.CurrentlyEditedSystem.ScaleVariation.Min = minF;
+                                pr.CurrentlyEditedSystem.ScaleVariation.Max = maxF;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.max"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.max.tt"));
+                            }
+
+                            int pMax = pr.CurrentlyEditedSystem.MaxParticles;
+                            if (ImGui.DragInt("##MaxParticles", ref pMax, 1, 0, 20000))
+                            {
+                                pr.CurrentlyEditedSystem.MaxParticles = Math.Clamp(pMax, 0, 20000);
+                                pr.CurrentlyEditedSystemInstance.Resize();
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.billboard"));
+                            ImGui.SameLine();
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.billboard.tt"));
+                            }
+
+                            bool pBillboard = pr.CurrentlyEditedSystem.DoBillboard;
+                            if (ImGui.Checkbox("##DoBillboard", ref pBillboard))
+                            {
+                                pr.CurrentlyEditedSystem.DoBillboard = pBillboard;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.pixel_fow"));
+                            ImGui.SameLine();
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.pixel_fow.tt"));
+                            }
+
+                            bool pDoFow = pr.CurrentlyEditedSystem.DoFow;
+                            if (ImGui.Checkbox("##DoFow", ref pDoFow))
+                            {
+                                pr.CurrentlyEditedSystem.DoFow = pDoFow;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.velocity"));
+                            Vector3 vVec = pr.CurrentlyEditedSystem.InitialVelocity.Min;
+                            if (ImGui.DragFloat3("##VelMin", ref vVec, 0.01f))
+                            {
+                                pr.CurrentlyEditedSystem.InitialVelocity.Min = vVec;
+                            }
+
+                            ImGui.SameLine();
+                            ImGui.Text(lang.Translate("ui.generic.min"));
+                            vVec = pr.CurrentlyEditedSystem.InitialVelocity.Max;
+                            if (ImGui.DragFloat3("##VelMax", ref vVec, 0.01f))
+                            {
+                                pr.CurrentlyEditedSystem.InitialVelocity.Max = vVec;
+                            }
+
+                            ImGui.SameLine();
+                            ImGui.Text(lang.Translate("ui.generic.max"));
+                            ImGui.Text(lang.Translate("ui.particle.velocity_angle"));
+                            float fAng = pr.CurrentlyEditedSystem.InitialVelocityRandomAngle;
+                            if (ImGui.SliderAngle("##VelAngle", ref fAng))
+                            {
+                                pr.CurrentlyEditedSystem.InitialVelocityRandomAngle = fAng;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.gravity"));
+                            vVec = pr.CurrentlyEditedSystem.Gravity;
+                            if (ImGui.DragFloat3("##Grav", ref vVec, 0.01f))
+                            {
+                                pr.CurrentlyEditedSystem.Gravity = vVec;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.velocity_dampen"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.velocity_dampen.tt"));
+                            }
+
+                            float fVDamp = pr.CurrentlyEditedSystem.VelocityDampenFactor;
+                            if (ImGui.DragFloat("##VelDamp", ref fVDamp, 0.01f))
+                            {
+                                pr.CurrentlyEditedSystem.VelocityDampenFactor = fVDamp;
+                            }
+
+                            ImGui.Text(lang.Translate("ui.particle.color"));
+                            ImGradient(pr.CurrentlyEditedSystem.ColorOverLifetime, ref npLbm, ref npRmb);
+
+                            ImGui.Text(lang.Translate("ui.particle.scale"));
+                            ImGradientSingle(pr.CurrentlyEditedSystem.ScaleOverLifetime, ref npLbm, ref npRmb);
+
+                            float f = _editedValueSingle?.Color ?? 0f;
+                            if (ImGui.DragFloat("##DragFloatEditedValue", ref f, 0.01f))
+                            {
+                                if (_editedValueSingle.HasValue)
+                                {
+                                    pr.CurrentlyEditedSystem.ScaleOverLifetime.Remove(_editedValueSingle.Value.Key);
+                                    _editedValueSingle = new GradientPoint<float>(_editedValueSingle.Value.Key, f);
+                                    pr.CurrentlyEditedSystem.ScaleOverLifetime.Add(_editedValueSingle.Value);
+                                }
+                            }
+
+                            ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem, 1);
+                            ImAssetRecepticle("ui.properties.custom_shader.tt", draggedRef, pr.CurrentlyEditedSystem.CustomShaderID, state, pr.CurrentlyEditedSystem, 0);
+                            if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
+                            {
+                                pr.CurrentlyEditedSystem.CustomShaderID = Guid.Empty;
+                            }
+
+                            ImGui.Spacing();
+                            bool isSS = pr.CurrentlyEditedSystem.IsSpriteSheet;
+                            if (ImGui.Checkbox(lang.Translate("ui.particle.is_sprite_sheet") + "###IsSpriteSheet", ref isSS))
+                            {
+                                pr.CurrentlyEditedSystem.IsSpriteSheet = isSS;
+                                if (isSS)
+                                {
+                                    pr.CurrentlyEditedSystem.SpriteData.Init();
+                                }
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.particle.is_sprite_sheet.tt"));
+                            }
+
+                            if (isSS)
+                            {
+                                if (ImGui.TreeNode(lang.Translate("ui.particle.sprite_sheet_data") + "###SpriteSheetData"))
+                                {
+                                    int iSSNC = pr.CurrentlyEditedSystem.SpriteData.NumColumns;
+                                    int iSSNR = pr.CurrentlyEditedSystem.SpriteData.NumRows;
+                                    if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_columns") + "###SheetColumns", ref iSSNC))
+                                    {
+                                        pr.CurrentlyEditedSystem.SpriteData.NumColumns = iSSNC;
+                                        pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
+                                        pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                    }
+
+                                    if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_rows") + "###SheetRows", ref iSSNR))
+                                    {
+                                        pr.CurrentlyEditedSystem.SpriteData.NumRows = iSSNR;
+                                        pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
+                                        pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                    }
+
+                                    int iSSNS = pr.CurrentlyEditedSystem.SpriteData.NumSprites;
+                                    ImGui.Text(lang.Translate("ui.particle.sprite_size_num_sprites"));
+                                    if (ImGui.SliderInt("###NumSprites", ref iSSNS, 0, iSSNR * iSSNC))
+                                    {
+                                        pr.CurrentlyEditedSystem.SpriteData.NumSprites = iSSNS;
+                                        pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
+                                    }
+
+                                    int cM = (int)pr.CurrentlyEditedSystem.SpriteData.Selection;
+                                    string[] modeNames = new string[] { lang.Translate("ui.particle.sprite_selection_mode.progressive"), lang.Translate("ui.particle.sprite_selection_mode.regressive"), lang.Translate("ui.particle.sprite_selection_mode.random"), lang.Translate("ui.particle.sprite_selection_mode.first") };
+                                    ImGui.Text(lang.Translate("ui.particle.sprite_selection_mode"));
+                                    if (ImGui.Combo("##SpriteSelectionMode", ref cM, modeNames, 4))
+                                    {
+                                        pr.CurrentlyEditedSystem.SpriteData.Selection = (ParticleSystem.SpriteSheetData.SelectionMode)cM;
+                                    }
+
+                                    if (pr.CurrentlyEditedSystem.SpriteData.Selection == ParticleSystem.SpriteSheetData.SelectionMode.Random)
+                                    {
+                                        ImGui.Text(lang.Translate("ui.particle.sprite_selection_weights"));
+                                        if (ImGui.IsItemHovered())
+                                        {
+                                            ImGui.SetTooltip(lang.Translate("ui.particle.sprite_selection_weights.tt"));
+                                        }
+
+                                        for (int i = 0; i < pr.CurrentlyEditedSystem.SpriteData.NumSprites; ++i)
+                                        {
+                                            int vF = pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i];
+                                            if (ImGui.DragInt(lang.Translate("ui.particle.sprite_selection_weight_indexed", i) + "###SpriteSelectionWeight_" + i, ref vF))
+                                            {
+                                                pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i] = vF;
+                                                pr.CurrentlyEditedSystem.SpriteData.SelectionWeightsList[i] = new WeightedItem<int>(i, vF);
+                                            }
+                                        }
+                                    }
+
+                                    bool issA = pr.CurrentlyEditedSystem.SpriteSheetIsAnimation;
+                                    if (ImGui.Checkbox(lang.Translate("ui.particle.sprite_sheet_is_animation") + "###SpriteSheetIsAnimation", ref issA))
+                                    {
+                                        pr.CurrentlyEditedSystem.SpriteSheetIsAnimation = issA;
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.particle.sprite_sheet_is_animation.tt"));
+                                    }
+
+                                    ImGui.TreePop();
+                                }
+                            }
                         }
 
                         ImGui.Spacing();
-                        bool isSS = pr.CurrentlyEditedSystem.IsSpriteSheet;
-                        if (ImGui.Checkbox(lang.Translate("ui.particle.is_sprite_sheet") + "###IsSpriteSheet", ref isSS))
+                        bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
+                        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 24);
+                        bool bo = ImGui.Button(lang.Translate("ui.generic.ok"));
+                        if (bo)
                         {
-                            pr.CurrentlyEditedSystem.IsSpriteSheet = isSS;
-                            if (isSS)
+                            AssetRef aRef = Client.Instance.AssetManager.FindRefForAsset(a);
+                            using MemoryStream ms = new MemoryStream();
+                            using BinaryWriter bw = new BinaryWriter(ms);
+                            pr.CurrentlyEditedSystem.WriteV2(bw);
+                            byte[] abin = a.ToBinary(ms.ToArray());
+                            pr.RenderTexture.Bind();
+                            using Image<Rgba32> img = pr.RenderTexture.GetImage<Rgba32>();
+                            img.Mutate(x => x.Resize(256, 256));
+                            img.Mutate(x => x.Flip(FlipMode.Vertical));
+                            using MemoryStream ms2 = new MemoryStream();
+                            img.SaveAsPng(ms2);
+                            byte[] pbin = ms2.ToArray();
+                            if (aRef != null && aRef.Meta.Version == 1)
                             {
-                                pr.CurrentlyEditedSystem.SpriteData.Init();
+                                aRef.Meta.Version = 2;
+                                new PacketChangeAssetMetadata() { AssetID = a.ID, RefID = aRef.AssetID, NewMeta = aRef.Meta }.Send();
                             }
+
+                            new PacketAssetUpdate() { AssetID = a.ID, NewBinary = abin, NewPreviewBinary = pbin }.Send();
                         }
 
-                        if (ImGui.IsItemHovered())
+                        if (bo || bc)
                         {
-                            ImGui.SetTooltip(lang.Translate("ui.particle.is_sprite_sheet.tt"));
+                            popupState = false;
+                            pr.CurrentlyEditedSystem = null;
+                            pr.CurrentlyEditedSystemInstance.Free();
+                            pr.CurrentlyEditedSystemInstance = null;
                         }
-
-                        if (isSS)
-                        {
-                            if (ImGui.TreeNode(lang.Translate("ui.particle.sprite_sheet_data") + "###SpriteSheetData"))
-                            {
-                                int iSSNC = pr.CurrentlyEditedSystem.SpriteData.NumColumns;
-                                int iSSNR = pr.CurrentlyEditedSystem.SpriteData.NumRows;
-                                if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_columns") + "###SheetColumns", ref iSSNC))
-                                {
-                                    pr.CurrentlyEditedSystem.SpriteData.NumColumns = iSSNC;
-                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
-                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
-                                }
-
-                                if (ImGui.InputInt(lang.Translate("ui.particle.sprite_size_num_rows") + "###SheetRows", ref iSSNR))
-                                {
-                                    pr.CurrentlyEditedSystem.SpriteData.NumRows = iSSNR;
-                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = Math.Min(pr.CurrentlyEditedSystem.SpriteData.NumSprites, iSSNR * iSSNC);
-                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
-                                }
-
-                                int iSSNS = pr.CurrentlyEditedSystem.SpriteData.NumSprites;
-                                ImGui.Text(lang.Translate("ui.particle.sprite_size_num_sprites"));
-                                if (ImGui.SliderInt("###NumSprites", ref iSSNS, 0, iSSNR * iSSNC))
-                                {
-                                    pr.CurrentlyEditedSystem.SpriteData.NumSprites = iSSNS;
-                                    pr.CurrentlyEditedSystem.SpriteData.ReallocateSelectionWeights();
-                                }
-
-                                int cM = (int)pr.CurrentlyEditedSystem.SpriteData.Selection;
-                                string[] modeNames = new string[] { lang.Translate("ui.particle.sprite_selection_mode.progressive"), lang.Translate("ui.particle.sprite_selection_mode.regressive"), lang.Translate("ui.particle.sprite_selection_mode.random"), lang.Translate("ui.particle.sprite_selection_mode.first") };
-                                ImGui.Text(lang.Translate("ui.particle.sprite_selection_mode"));
-                                if (ImGui.Combo("##SpriteSelectionMode", ref cM, modeNames, 4))
-                                {
-                                    pr.CurrentlyEditedSystem.SpriteData.Selection = (ParticleSystem.SpriteSheetData.SelectionMode)cM;
-                                }
-
-                                if (pr.CurrentlyEditedSystem.SpriteData.Selection == ParticleSystem.SpriteSheetData.SelectionMode.Random)
-                                {
-                                    ImGui.Text(lang.Translate("ui.particle.sprite_selection_weights"));
-                                    if (ImGui.IsItemHovered())
-                                    {
-                                        ImGui.SetTooltip(lang.Translate("ui.particle.sprite_selection_weights.tt"));
-                                    }
-
-                                    for (int i = 0; i < pr.CurrentlyEditedSystem.SpriteData.NumSprites; ++i)
-                                    {
-                                        int vF = pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i];
-                                        if (ImGui.DragInt(lang.Translate("ui.particle.sprite_selection_weight_indexed", i) + "###SpriteSelectionWeight_" + i, ref vF))
-                                        {
-                                            pr.CurrentlyEditedSystem.SpriteData.SelectionWeights[i] = vF;
-                                            pr.CurrentlyEditedSystem.SpriteData.SelectionWeightsList[i] = new WeightedItem<int>(i, vF);
-                                        }
-                                    }
-                                }
-
-                                bool issA = pr.CurrentlyEditedSystem.SpriteSheetIsAnimation;
-                                if (ImGui.Checkbox(lang.Translate("ui.particle.sprite_sheet_is_animation") + "###SpriteSheetIsAnimation", ref issA))
-                                {
-                                    pr.CurrentlyEditedSystem.SpriteSheetIsAnimation = issA;
-                                }
-
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.particle.sprite_sheet_is_animation.tt"));
-                                }
-
-                                ImGui.TreePop();
-                            }
-                        }
-                    }
-
-                    ImGui.Spacing();
-                    bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
-                    ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 24);
-                    bool bo = ImGui.Button(lang.Translate("ui.generic.ok"));
-                    if (bo)
-                    {
-                        AssetRef aRef = Client.Instance.AssetManager.FindRefForAsset(a);
-                        using MemoryStream ms = new MemoryStream();
-                        using BinaryWriter bw = new BinaryWriter(ms);
-                        pr.CurrentlyEditedSystem.WriteV2(bw);
-                        byte[] abin = a.ToBinary(ms.ToArray());
-                        pr.RenderTexture.Bind();
-                        using Image<Rgba32> img = pr.RenderTexture.GetImage<Rgba32>();
-                        img.Mutate(x => x.Resize(256, 256));
-                        img.Mutate(x => x.Flip(FlipMode.Vertical));
-                        using MemoryStream ms2 = new MemoryStream();
-                        img.SaveAsPng(ms2);
-                        byte[] pbin = ms2.ToArray();
-                        if (aRef != null && aRef.Meta.Version == 1)
-                        {
-                            aRef.Meta.Version = 2;
-                            new PacketChangeAssetMetadata() { AssetID = a.ID, RefID = aRef.AssetID, NewMeta = aRef.Meta }.Send();
-                        }
-
-                        new PacketAssetUpdate() { AssetID = a.ID, NewBinary = abin, NewPreviewBinary = pbin }.Send();
-                    }
-
-                    if (bo || bc)
-                    {
-                        popupState = false;
-                        pr.CurrentlyEditedSystem = null;
-                        pr.CurrentlyEditedSystemInstance.Free();
-                        pr.CurrentlyEditedSystemInstance = null;
                     }
 
                     ImGui.EndChild();

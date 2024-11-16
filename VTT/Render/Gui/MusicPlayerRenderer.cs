@@ -193,157 +193,158 @@
                         }
 
                         ImGui.NewLine();
-                        ImGui.BeginChild("MusicPlayerTracks", new Vector2(390, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking);
-                        i = 0;
-
-                        Vector4 clrInactiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg);
-                        Vector4 clrActiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive);
-                        clrActiveV = Vector4.Lerp(clrInactiveV, clrActiveV, MathF.Abs(MathF.Sin(
-                            ((int)Client.Instance.Frontend.UpdatesExisted + (float)delta) % 360f * MathF.PI / 180.0f
-                        )));
-
-                        uint clrInactive = new Color(clrInactiveV).Abgr();
-                        uint clrActive = new Color(clrActiveV).Abgr();
-                        int idxToRemove = -1;
-                        lock (mp.@lock)
+                        if (ImGui.BeginChild("MusicPlayerTracks", new Vector2(390, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking))
                         {
-                            foreach ((Guid, float) track in mp.Tracks)
+                            i = 0;
+                            Vector4 clrInactiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg);
+                            Vector4 clrActiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive);
+                            clrActiveV = Vector4.Lerp(clrInactiveV, clrActiveV, MathF.Abs(MathF.Sin(
+                                ((int)Client.Instance.Frontend.UpdatesExisted + (float)delta) % 360f * MathF.PI / 180.0f
+                            )));
+
+                            uint clrInactive = new Color(clrInactiveV).Abgr();
+                            uint clrActive = new Color(clrActiveV).Abgr();
+                            int idxToRemove = -1;
+                            lock (mp.@lock)
                             {
-                                Guid aId = track.Item1;
-                                AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(aId, AssetType.Sound, out a);
-                                string soundName = lang.Translate("ui.music_player.name_unknown", track.Item1);
-                                GL.Texture icon = this.AssetMusicIcon;
-                                GL.Texture assetTypeIcon = this.AssetMusicIcon;
-                                if (status == AssetStatus.Return)
+                                foreach ((Guid, float) track in mp.Tracks)
                                 {
-                                    AssetRef aref = Client.Instance.AssetManager.FindRefForAsset(a);
-                                    if (aref != null)
+                                    Guid aId = track.Item1;
+                                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(aId, AssetType.Sound, out a);
+                                    string soundName = lang.Translate("ui.music_player.name_unknown", track.Item1);
+                                    GL.Texture icon = this.AssetMusicIcon;
+                                    GL.Texture assetTypeIcon = this.AssetMusicIcon;
+                                    if (status == AssetStatus.Return)
                                     {
-                                        soundName = aref.Name;
-                                        if (aref.Meta.SoundInfo != null)
+                                        AssetRef aref = Client.Instance.AssetManager.FindRefForAsset(a);
+                                        if (aref != null)
                                         {
-                                            assetTypeIcon =
-                                                aref.Meta.SoundInfo.IsFullData ? this.AssetSoundIcon :
-                                                aref.Meta.SoundInfo.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
-                                                this.AssetMusicIcon;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
-                                        {
-                                            soundName = a.Sound.Meta.SoundAssetName;
-                                        }
-
-                                        if (a?.Sound?.Meta != null)
-                                        {
-                                            assetTypeIcon =
-                                                a.Sound.Meta.IsFullData ? this.AssetSoundIcon :
-                                                a.Sound.Meta.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
-                                                this.AssetMusicIcon;
-                                        }
-                                    }
-
-                                    status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview preview);
-                                    if (status == AssetStatus.Return && preview != null)
-                                    {
-                                        icon = preview.GetGLTexture();
-                                    }
-                                }
-
-                                ImDrawListPtr idlp = ImGui.GetWindowDrawList();
-                                Vector2 cPos = ImGui.GetCursorScreenPos();
-                                bool hover = ImGui.IsMouseHoveringRect(cPos, cPos + new Vector2(360, 32));
-                                bool selected = this._lastSelectedTrackIndex == i;
-                                bool playing = mp.CurrentTrackPosition == i;
-
-                                idlp.AddRectFilledMultiColor(
-                                    cPos, cPos + new Vector2(360, 32),
-                                    clrInactive, clrInactive,
-                                    playing ? clrActive : clrInactive, playing ? clrActive : clrInactive
-                                );
-
-                                idlp.AddRect(cPos, cPos + new Vector2(360, 32), ImGui.GetColorU32(
-                                    hover ? ImGuiCol.ButtonHovered :
-                                    selected ? ImGuiCol.ButtonActive :
-                                    ImGuiCol.Button
-                                ));
-
-                                idlp.PushClipRect(cPos, cPos + new Vector2(360, 32));
-                                idlp.AddImage(icon, cPos + new Vector2(4, 4), cPos + new Vector2(28, 28));
-                                idlp.AddImage(assetTypeIcon, cPos + new Vector2(20, 20), cPos + new Vector2(32, 32));
-                                DrawScrollingText(idlp, cPos + new Vector2(32, 0), new Vector2(360 - 32, 32), soundName, false);
-                                idlp.PopClipRect();
-
-                                if (this._isDraggingTrack && hover)
-                                {
-                                    float deltaY = cPos.Y + 16 - ImGui.GetMousePos().Y;
-                                    uint clrOrange = Color.Orange.Abgr();
-                                    if (deltaY > 0)
-                                    {
-                                        idlp.AddLine(cPos - new Vector2(0, 2), cPos + new Vector2(380, -2), clrOrange);
-                                    }
-                                    else
-                                    {
-                                        idlp.AddLine(cPos + new Vector2(0, 33), cPos + new Vector2(380, 33), clrOrange);
-                                    }
-
-                                    if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
-                                    {
-                                        int idxTo = deltaY > 0 ? i : i + 1;
-                                        if (idxTo != this._draggedTrackData.Item2)
-                                        {
-                                            new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.Move, IndexMain = this._draggedTrackData.Item2, IndexMoveTo = idxTo, Data = (this._draggedTrackData.Item1, 1) }.Send();
-                                            this._dragLmbStatus = false;
-                                            this._dragMouseStartingPos = default;
-                                            this._draggedTrackData = default;
-                                            this._isDraggingTrack = false;
-                                        }
-                                    }
-                                }
-
-                                if (hover && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                                {
-                                    this._lastSelectedTrackIndex = i;
-                                }
-
-                                if (hover && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
-                                {
-                                    idxToRemove = i;
-                                }
-
-                                if (hover && !this._isDraggingTrack)
-                                {
-                                    ImGui.SetTooltip(soundName);
-                                    if (!this._isDraggingTrack && ImGui.IsMouseDown(ImGuiMouseButton.Left))
-                                    {
-                                        cPos = ImGui.GetMousePos();
-                                        if (!this._dragLmbStatus)
-                                        {
-                                            this._dragLmbStatus = true;
-                                            this._dragMouseStartingPos = cPos;
+                                            soundName = aref.Name;
+                                            if (aref.Meta.SoundInfo != null)
+                                            {
+                                                assetTypeIcon =
+                                                    aref.Meta.SoundInfo.IsFullData ? this.AssetSoundIcon :
+                                                    aref.Meta.SoundInfo.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
+                                                    this.AssetMusicIcon;
+                                            }
                                         }
                                         else
                                         {
-                                            if ((cPos - this._dragMouseStartingPos).Length() >= 4)
+                                            if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
                                             {
-                                                this._isDraggingTrack = true;
-                                                this._draggedTrackData = (aId, i, soundName);
+                                                soundName = a.Sound.Meta.SoundAssetName;
+                                            }
+
+                                            if (a?.Sound?.Meta != null)
+                                            {
+                                                assetTypeIcon =
+                                                    a.Sound.Meta.IsFullData ? this.AssetSoundIcon :
+                                                    a.Sound.Meta.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon :
+                                                    this.AssetMusicIcon;
+                                            }
+                                        }
+
+                                        status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview preview);
+                                        if (status == AssetStatus.Return && preview != null)
+                                        {
+                                            icon = preview.GetGLTexture();
+                                        }
+                                    }
+
+                                    ImDrawListPtr idlp = ImGui.GetWindowDrawList();
+                                    Vector2 cPos = ImGui.GetCursorScreenPos();
+                                    bool hover = ImGui.IsMouseHoveringRect(cPos, cPos + new Vector2(360, 32));
+                                    bool selected = this._lastSelectedTrackIndex == i;
+                                    bool playing = mp.CurrentTrackPosition == i;
+
+                                    idlp.AddRectFilledMultiColor(
+                                        cPos, cPos + new Vector2(360, 32),
+                                        clrInactive, clrInactive,
+                                        playing ? clrActive : clrInactive, playing ? clrActive : clrInactive
+                                    );
+
+                                    idlp.AddRect(cPos, cPos + new Vector2(360, 32), ImGui.GetColorU32(
+                                        hover ? ImGuiCol.ButtonHovered :
+                                        selected ? ImGuiCol.ButtonActive :
+                                        ImGuiCol.Button
+                                    ));
+
+                                    idlp.PushClipRect(cPos, cPos + new Vector2(360, 32));
+                                    idlp.AddImage(icon, cPos + new Vector2(4, 4), cPos + new Vector2(28, 28));
+                                    idlp.AddImage(assetTypeIcon, cPos + new Vector2(20, 20), cPos + new Vector2(32, 32));
+                                    DrawScrollingText(idlp, cPos + new Vector2(32, 0), new Vector2(360 - 32, 32), soundName, false);
+                                    idlp.PopClipRect();
+
+                                    if (this._isDraggingTrack && hover)
+                                    {
+                                        float deltaY = cPos.Y + 16 - ImGui.GetMousePos().Y;
+                                        uint clrOrange = Color.Orange.Abgr();
+                                        if (deltaY > 0)
+                                        {
+                                            idlp.AddLine(cPos - new Vector2(0, 2), cPos + new Vector2(380, -2), clrOrange);
+                                        }
+                                        else
+                                        {
+                                            idlp.AddLine(cPos + new Vector2(0, 33), cPos + new Vector2(380, 33), clrOrange);
+                                        }
+
+                                        if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
+                                        {
+                                            int idxTo = deltaY > 0 ? i : i + 1;
+                                            if (idxTo != this._draggedTrackData.Item2)
+                                            {
+                                                new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.Move, IndexMain = this._draggedTrackData.Item2, IndexMoveTo = idxTo, Data = (this._draggedTrackData.Item1, 1) }.Send();
+                                                this._dragLmbStatus = false;
+                                                this._dragMouseStartingPos = default;
+                                                this._draggedTrackData = default;
+                                                this._isDraggingTrack = false;
                                             }
                                         }
                                     }
+
+                                    if (hover && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                    {
+                                        this._lastSelectedTrackIndex = i;
+                                    }
+
+                                    if (hover && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                                    {
+                                        idxToRemove = i;
+                                    }
+
+                                    if (hover && !this._isDraggingTrack)
+                                    {
+                                        ImGui.SetTooltip(soundName);
+                                        if (!this._isDraggingTrack && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+                                        {
+                                            cPos = ImGui.GetMousePos();
+                                            if (!this._dragLmbStatus)
+                                            {
+                                                this._dragLmbStatus = true;
+                                                this._dragMouseStartingPos = cPos;
+                                            }
+                                            else
+                                            {
+                                                if ((cPos - this._dragMouseStartingPos).Length() >= 4)
+                                                {
+                                                    this._isDraggingTrack = true;
+                                                    this._draggedTrackData = (aId, i, soundName);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    ImGui.Dummy(new Vector2(380, 32));
+
+                                    ++i;
                                 }
-
-                                ImGui.Dummy(new Vector2(380, 32));
-
-                                ++i;
                             }
-                        }
 
-                        if (idxToRemove != -1)
-                        {
-                            new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.Remove, IndexMain = idxToRemove }.Send();
-                            idxToRemove = -1;
+                            if (idxToRemove != -1)
+                            {
+                                new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.Remove, IndexMain = idxToRemove }.Send();
+                                idxToRemove = -1;
+                            }
                         }
 
                         ImGui.EndChild();

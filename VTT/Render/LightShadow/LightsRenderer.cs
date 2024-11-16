@@ -257,7 +257,7 @@
                         continue; // Can't draw data without owner
                     }
 
-                    foreach (MapObject mo in m.Objects)
+                    foreach (MapObject mo in m.IterateObjects(null))
                     {
                         if (!mo.CastsShadow)
                         {

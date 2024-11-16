@@ -63,7 +63,6 @@
             this.Black = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 1f));
         }
 
-        private int _mapTrackerUpdateCounter;
         private bool _windowNeedsDrawing;
         public void Update()
         {
@@ -78,34 +77,7 @@
             this.ParticleRenderer?.CurrentlyEditedSystemInstance?.UpdateBufferState();
             if (m != null)
             {
-                m.ShadowLayer2D.Update(m);
-                if (++this._mapTrackerUpdateCounter >= 60)
-                {
-                    this._mapTrackerUpdateCounter = 0;
-                    m.TurnTracker.Pulse();
-                }
-
-                lock (m.Lock)
-                {
-                    for (int i = m.Objects.Count - 1; i >= 0; i--)
-                    {
-                        MapObject mo = m.Objects[i];
-                        if (!mo.IsRemoved)
-                        {
-                            mo.Update();
-                        }
-                        else
-                        {
-                            mo.Particles.ClearContainers();
-                            mo.Container = null;
-                            mo.MapID = Guid.Empty;
-                            m.Objects.Remove(mo);
-                            m.ObjectsByID.Remove(mo.ID);
-                            continue;
-                        }
-                    }
-                }
-
+                m.Update();
                 this.ParticleRenderer?.Update();
             }
         }

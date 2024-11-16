@@ -23,20 +23,7 @@
 
         public static RaycastResut Raycast(Ray r, Map env, Predicate<MapObject> selector = null)
         {
-            IEnumerable<MapObject> mEnv()
-            {
-                lock (env.Lock)
-                {
-                    foreach (MapObject mo in env.Objects)
-                    {
-                        yield return mo;
-                    }
-                }
-
-                yield break;
-            };
-
-            return Raycast(r, mEnv(), selector);
+            return Raycast(r, env.IterateObjects(null), selector);
         }
 
         private static readonly List<(MapObject, Asset.Asset)> hitsBroad = new List<(MapObject, Asset.Asset)>();

@@ -820,33 +820,28 @@
                 }
             }
 
-            lock (m.Lock)
+            foreach (MapObject mo in m.IterateObjects(null))
             {
-                foreach (MapObject mo in m.Objects)
+                if (mo.MapLayer > 0 || (!mo.LightsEnabled && !mo.ID.Equals(selfDarkvision)))
                 {
-                    if (mo == null || mo.MapLayer > 0 || (!mo.LightsEnabled && !mo.ID.Equals(selfDarkvision)))
-                    {
-                        continue;
-                    }
-
-                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
-                    if (status == AssetStatus.Return && a.ModelGlReady)
-                    {
-                        Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                        plr.ProcessScene(modelMatrix, a.Model.GLMdl, mo);
-
-                        if (mo.ID.Equals(selfDarkvision))
-                        {
-                            plr.AddLightCandidate(new PointLight(
-                                mo.Position + (a?.Model.GLMdl?.CombinedBounds.Center ?? Vector3.Zero),
-                                Vector3.One, 0, mo, true, false, new GlbLight(Vector4.One, dvLuma, KhrLight.LightTypeEnum.Point)));
-                        }
-                    }
+                    continue;
                 }
 
-                plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
+                AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
+                if (status == AssetStatus.Return && a.ModelGlReady)
+                {
+                    Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
+                    plr.ProcessScene(modelMatrix, a.Model.GLMdl, mo);
+                    if (mo.ID.Equals(selfDarkvision))
+                    {
+                        plr.AddLightCandidate(new PointLight(
+                            mo.Position + (a?.Model.GLMdl?.CombinedBounds.Center ?? Vector3.Zero),
+                            Vector3.One, 0, mo, true, false, new GlbLight(Vector4.One, dvLuma, KhrLight.LightTypeEnum.Point)));
+                    }
+                }
             }
 
+            plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
             this.CPUTimerLights.Stop();
         }
 

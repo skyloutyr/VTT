@@ -167,7 +167,8 @@
         private MapObject _mouseOverWhenClicked;
 
         private string[] _teams = Array.Empty<string>();
-        private string[] _objects = Array.Empty<string>();
+        private string[] _darkvisionObjectNames = Array.Empty<string>();
+        private Guid[] _darkvisionObjectIds = Array.Empty<Guid>();
 
         private string _imgUrl = string.Empty;
         private int _imgWidth = 340;
@@ -731,37 +732,39 @@
                         ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
                         ImGui.PopStyleColor();
 
-                        ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
-                        if (this._inspectedObject.UseMarkdownForDescription)
+                        if (ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
                         {
-                            try
+                            if (this._inspectedObject.UseMarkdownForDescription)
                             {
-                                ImGuiMarkdown.Markdown(this._inspectedObject.Description, ImGuiMarkdown.MarkdownConfig.Default);
+                                try
+                                {
+                                    ImGuiMarkdown.Markdown(this._inspectedObject.Description, ImGuiMarkdown.MarkdownConfig.Default);
+                                }
+                                catch (Exception e)
+                                {
+                                    this._inspectedObject.UseMarkdownForDescription = false;
+                                    Client.Instance.Logger.Log(LogLevel.Error, $"Object markdown corrupted or invalid! Unable to draw markdown for object {this._inspectedObject.ID}({this._inspectedObject.Name})!");
+                                    Client.Instance.Logger.Log(LogLevel.Error, $"Object was marked as non-markdown but this is a severe error that probably corrupted internal UI state!");
+                                    Client.Instance.Logger.Log(LogLevel.Error, $"Please report this issue to your server administrator!");
+                                    Client.Instance.Logger.Exception(LogLevel.Error, e);
+                                }
                             }
-                            catch (Exception e)
+                            else
                             {
-                                this._inspectedObject.UseMarkdownForDescription = false;
-                                Client.Instance.Logger.Log(LogLevel.Error, $"Object markdown corrupted or invalid! Unable to draw markdown for object {this._inspectedObject.ID}({this._inspectedObject.Name})!");
-                                Client.Instance.Logger.Log(LogLevel.Error, $"Object was marked as non-markdown but this is a severe error that probably corrupted internal UI state!");
-                                Client.Instance.Logger.Log(LogLevel.Error, $"Please report this issue to your server administrator!");
-                                Client.Instance.Logger.Exception(LogLevel.Error, e);
-                            }
-                        }
-                        else
-                        {
-                            ImGui.PushTextWrapPos();
-                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
-                            ImGui.PopTextWrapPos();
-                        }
-
-                        if (ImGui.BeginPopupContextItem())
-                        {
-                            if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
-                            {
-                                ImGui.SetClipboardText(this._inspectedObject.Description);
+                                ImGui.PushTextWrapPos();
+                                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Description));
+                                ImGui.PopTextWrapPos();
                             }
 
-                            ImGui.EndPopup();
+                            if (ImGui.BeginPopupContextItem())
+                            {
+                                if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
+                                {
+                                    ImGui.SetClipboardText(this._inspectedObject.Description);
+                                }
+
+                                ImGui.EndPopup();
+                            }
                         }
 
                         ImGui.EndChild();

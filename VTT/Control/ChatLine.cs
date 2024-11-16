@@ -115,26 +115,13 @@
                         Map m = Client.Instance.CurrentMap;
                         if (m != null)
                         {
-                            MapObject mo;
-                            if (m.ObjectsByID.ContainsKey(this.PortraitID))
+                            if (m.GetObject(this.PortraitID, out MapObject mo))
                             {
-                                try
+                                AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(mo.AssetID, AssetType.Model, out AssetPreview ap);
+                                if (a == AssetStatus.Return)
                                 {
-                                    mo = m.ObjectsByID[this.PortraitID];
-                                }
-                                catch
-                                {
-                                    mo = null;
-                                }
-
-                                if (mo != null)
-                                {
-                                    AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(mo.AssetID, AssetType.Model, out AssetPreview ap);
-                                    if (a == AssetStatus.Return)
-                                    {
-                                        this._portraitTex.preview = ap;
-                                        this._portraitTex.ready = true;
-                                    }
+                                    this._portraitTex.preview = ap;
+                                    this._portraitTex.ready = true;
                                 }
                             }
                         }

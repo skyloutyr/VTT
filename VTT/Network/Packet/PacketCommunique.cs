@@ -31,9 +31,8 @@
                             }
                             else // Send object datas
                             {
-                                for (int i = m.Objects.Count - 1; i >= 0; i--)
+                                foreach (MapObject mo in m.IterateObjects(null))
                                 {
-                                    MapObject mo = m.Objects[i];
                                     PacketMapObject mop = new PacketMapObject() { Obj = mo, Session = sessionID, IsServer = isServer };
                                     mop.Send(sc);
                                     l.Log(LogLevel.Debug, "Sent a object packet to client for object " + mo.ID);

@@ -466,6 +466,11 @@
                             ImGui.TreePop();
                         }
 
+                        if (!canEdit)
+                        {
+                            ImGui.EndDisabled();
+                        }
+
                         if (Client.Instance.IsAdmin)
                         {
                             if (ImGui.TreeNode(lang.Translate("ui.particle_containers")))
@@ -862,6 +867,11 @@
 
                         }
 
+                        if (!canEdit)
+                        {
+                            ImGui.BeginDisabled();
+                        }
+
                         bool mIsDescMarkdown = mo.UseMarkdownForDescription;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.markdown") + "###IsMarkdown", ref mIsDescMarkdown))
                         {
@@ -905,38 +915,40 @@
                             }
                         }
 
-                        ImGui.BeginChild("##Statuses", new Vector2(v.X - 16, 256), ImGuiChildFlags.Border, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings);
-                        int cX = 0;
-                        int cY = 0;
-                        float aW = ImGui.GetWindowWidth();
-
-                        Vector2 cursorNow = ImGui.GetCursorPos();
-
-                        lock (mo.Lock)
+                        if (ImGui.BeginChild("##Statuses", new Vector2(v.X - 16, 256), ImGuiChildFlags.Border, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
                         {
-                            foreach (KeyValuePair<string, (float, float)> kv in mo.StatusEffects)
-                            {
-                                ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
-                                Vector2 st = new Vector2(kv.Value.Item1, kv.Value.Item2);
-                                if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new Vector2(this._statusStepX, this._statusStepY)))
-                                {
-                                    new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = mo.ID, EffectName = kv.Key, Remove = true }.Send();
-                                }
+                            int cX = 0;
+                            int cY = 0;
+                            float aW = ImGui.GetWindowWidth();
 
-                                cX += 40;
-                                if (cX + 40 > aW)
+                            Vector2 cursorNow = ImGui.GetCursorPos();
+
+                            lock (mo.Lock)
+                            {
+                                foreach (KeyValuePair<string, (float, float)> kv in mo.StatusEffects)
                                 {
-                                    cX = 0;
-                                    cY += 40;
+                                    ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
+                                    Vector2 st = new Vector2(kv.Value.Item1, kv.Value.Item2);
+                                    if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new Vector2(this._statusStepX, this._statusStepY)))
+                                    {
+                                        new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = mo.ID, EffectName = kv.Key, Remove = true }.Send();
+                                    }
+
+                                    cX += 40;
+                                    if (cX + 40 > aW)
+                                    {
+                                        cX = 0;
+                                        cY += 40;
+                                    }
                                 }
                             }
-                        }
 
-                        ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
-                        if (ImGui.ImageButton("##BtnAddStatus", this.AddIcon, Vec24x24))
-                        {
-                            this._editedMapObject = mo;
-                            state.newStatusEffectPopup = true;
+                            ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
+                            if (ImGui.ImageButton("##BtnAddStatus", this.AddIcon, Vec24x24))
+                            {
+                                this._editedMapObject = mo;
+                                state.newStatusEffectPopup = true;
+                            }
                         }
 
                         ImGui.EndChild();

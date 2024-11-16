@@ -133,35 +133,37 @@
                 }
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 128, 300));
-                ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration);
-                if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
+                if (ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                 {
-                    this.CurrentMenuMode = MenuMode.Join;
-                }
+                    if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
+                    {
+                        this.CurrentMenuMode = MenuMode.Join;
+                    }
 
-                if (ImGui.Button(lang.Translate("menu.host") + "###Host", new Vector2(240, 32)))
-                {
-                    this.CurrentMenuMode = MenuMode.Host;
-                }
+                    if (ImGui.Button(lang.Translate("menu.host") + "###Host", new Vector2(240, 32)))
+                    {
+                        this.CurrentMenuMode = MenuMode.Host;
+                    }
 
-                if (ImGui.Button(lang.Translate("menu.settings") + "###Settings", new Vector2(240, 32)))
-                {
-                    this.CurrentMenuMode = MenuMode.Settings;
-                }
+                    if (ImGui.Button(lang.Translate("menu.settings") + "###Settings", new Vector2(240, 32)))
+                    {
+                        this.CurrentMenuMode = MenuMode.Settings;
+                    }
 
-                if (ImGui.Button(lang.Translate("menu.credits") + "###Credits", new Vector2(240, 32)))
-                {
-                    this.CurrentMenuMode = MenuMode.Credits;
-                }
+                    if (ImGui.Button(lang.Translate("menu.credits") + "###Credits", new Vector2(240, 32)))
+                    {
+                        this.CurrentMenuMode = MenuMode.Credits;
+                    }
 
-                if (ImGui.Button(lang.Translate("menu.changelog") + "###Changelog", new Vector2(240, 32)))
-                {
-                    this.CurrentMenuMode = MenuMode.Changelog;
-                }
+                    if (ImGui.Button(lang.Translate("menu.changelog") + "###Changelog", new Vector2(240, 32)))
+                    {
+                        this.CurrentMenuMode = MenuMode.Changelog;
+                    }
 
-                if (ImGui.Button(lang.Translate("menu.quit") + "###Quit", new Vector2(240, 32)))
-                {
-                    Client.Instance.Frontend.GameHandle.Close();
+                    if (ImGui.Button(lang.Translate("menu.quit") + "###Quit", new Vector2(240, 32)))
+                    {
+                        Client.Instance.Frontend.GameHandle.Close();
+                    }
                 }
 
                 ImGui.EndChild();

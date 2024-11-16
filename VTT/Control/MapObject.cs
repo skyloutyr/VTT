@@ -450,6 +450,20 @@
                 }
             }
 
+            public void MarkContainersForDestructionWithoutClearing()
+            {
+                if (!this.Container.IsServer)
+                {
+                    lock (this._lock)
+                    {
+                        foreach (KeyValuePair<Guid, ParticleContainer> kv in this._containers)
+                        {
+                            Client.Instance.Frontend.Renderer?.ParticleRenderer?.RemoveEmitter(kv.Value);
+                        }
+                    }
+                }
+            }
+
             public void UploadAllConainers()
             {
                 lock (this._lock)

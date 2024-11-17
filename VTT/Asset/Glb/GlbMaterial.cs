@@ -210,13 +210,24 @@
 
         public class Frame
         {
-            public RectangleF Location { get; set; }
-            public Vector4 LocationUniform => new Vector4(this.Location.X, this.Location.Y, this.Location.Width, this.Location.Height);
+            public RectangleF Location
+            {
+                get => this._location;
+                set
+                {
+                    this._location = value;
+                    this._locationUniform = new Vector4(this.Location.X, this.Location.Y, this.Location.Width, this.Location.Height);
+                }
+            }
+
+            public Vector4 LocationUniform => this._locationUniform;
             public uint Duration { get; set; }
             public uint Index { get; set; }
 
             internal double _allPrevElementsWeight;
             internal double _allPrevElementsWeightNoSelf;
+            private RectangleF _location;
+            private Vector4 _locationUniform;
         }
     }
 }

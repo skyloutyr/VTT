@@ -97,7 +97,6 @@
             mat.RoughnessFactor = 1f;
             mat.AlphaCutoff = 0f;
             mat.BaseColorTexture = tData.GetOrCreateGLTexture(false, out TextureAnimation dta);
-            Console.WriteLine(mat.BaseColorTexture.AsyncState);
             mat.BaseColorAnimation = dta;
             if (tData.Meta.AlbedoIsEmissive)
             {

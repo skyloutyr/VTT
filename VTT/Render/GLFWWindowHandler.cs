@@ -119,7 +119,7 @@
 
             Glfw.MakeContextCurrent(w);
             Glfw.SetWindowIcon(w, nws.Icon);
-            VTT.GL.Bindings.MiniGLLoader.Load(GLFWLoader.glfwGetProcAddress);
+            GL.Bindings.MiniGLLoader.Load(GLFWLoader.glfwGetProcAddress);
             this._haveVTearExt = Glfw.ExtensionSupported("WGL_EXT_swap_control_tear") || Glfw.ExtensionSupported("GLX_EXT_swap_control_tear");
             this.MinSwapInterval = 0;
             Glfw.SwapInterval(this.MinSwapInterval);

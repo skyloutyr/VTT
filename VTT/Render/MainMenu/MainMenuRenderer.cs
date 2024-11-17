@@ -478,8 +478,8 @@
                 {
                     string[] wMode = { lang.Translate("menu.settings.screen_mode.normal"), lang.Translate("menu.settings.screen_mode.fullscreen"), lang.Translate("menu.settings.screen_mode.borderless") };
                     int wModeIndex =
-                        Client.Instance.Settings.ScreenMode == ClientSettings.FullscreenMode.Normal ? 0 :
-                        Client.Instance.Settings.ScreenMode == ClientSettings.FullscreenMode.Fullscreen ? 1 : 2;
+                        Client.Instance.Settings.ScreenMode == FullscreenMode.Normal ? 0 :
+                        Client.Instance.Settings.ScreenMode == FullscreenMode.Fullscreen ? 1 : 2;
 
                     ImGui.Text(lang.Translate("menu.settings.screen_mode"));
                     if (ImGui.Combo("##Screen Mode", ref wModeIndex, wMode, 3))
@@ -488,19 +488,19 @@
                         {
                             case 0:
                             {
-                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Normal);
+                                Client.Instance.Frontend.SwitchFullscreen(FullscreenMode.Normal);
                                 break;
                             }
 
                             case 1:
                             {
-                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Fullscreen);
+                                Client.Instance.Frontend.SwitchFullscreen(FullscreenMode.Fullscreen);
                                 break;
                             }
 
                             case 2:
                             {
-                                Client.Instance.Frontend.SwitchFullscreen(ClientSettings.FullscreenMode.Borderless);
+                                Client.Instance.Frontend.SwitchFullscreen(FullscreenMode.Borderless);
                                 break;
                             }
                         }

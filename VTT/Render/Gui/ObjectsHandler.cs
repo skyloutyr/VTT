@@ -1157,8 +1157,8 @@
 
                         ImGui.SetNextWindowSize(new Vector2(nW, nH));
                         ImGui.SetNextWindowPos(new Vector2(screen.X - (nW / 2), screen.Y));
-                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
-                        ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, System.Numerics.Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.Zero);
                         ImGui.Begin("OverlayEffects_" + mo.ID.ToString(), ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings);
                         ImDrawListPtr imDrawList = ImGui.GetWindowDrawList();
                         Vector2 imCursor = ImGui.GetCursorScreenPos();
@@ -1231,7 +1231,7 @@
                     if (hasNp)
                     {
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
-                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, System.Numerics.Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
                     }
 
                     ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
@@ -1311,7 +1311,7 @@
                                 ImGui.PopStyleColor();
                                 ImGui.SetCursorPosY(cYPreBar - 4);
                                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
-                                ImGui.PushStyleColor(ImGuiCol.Text, System.Numerics.Vector4.One);
+                                ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
                                 ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
                                 ImGui.PopStyleColor();
                                 ImGui.SetCursorPosY(cYPreBar + 16);

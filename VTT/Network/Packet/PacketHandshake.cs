@@ -17,12 +17,12 @@
         {
             if (isServer)
             {
-                server.Logger.Log(Util.LogLevel.Debug, "Client handshake initiated for " + this.ClientID);
+                server.Logger.Log(LogLevel.Debug, "Client handshake initiated for " + this.ClientID);
                 ServerClient sc = (ServerClient)server.FindSession(sessionID);
 
                 if (ClientID.Equals(Guid.Empty))
                 {
-                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ", illegal client ID!");
+                    server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ", illegal client ID!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.IllegalOperation }.Send(sc);
                     sc.Disconnect();
                     return;
@@ -33,7 +33,7 @@
 
                 if (!server.ClientsByID.TryAdd(sc.ID, sc))
                 {
-                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ", it is likely that a client with the same ID already exists!");
+                    server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ", it is likely that a client with the same ID already exists!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.AlreadyConnected }.Send(sc);
                     sc.Disconnect();
                     return;
@@ -41,7 +41,7 @@
 
                 if (Program.GetVersionBytes() != this.ClientVersion)
                 {
-                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client-Server version mismatch!");
+                    server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client-Server version mismatch!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
                     sc.Disconnect();
                     return;
@@ -49,7 +49,7 @@
 
                 if (this.ClientSecret == null)
                 {
-                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret not specified!");
+                    server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret not specified!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
                     sc.Disconnect();
                     return;
@@ -57,7 +57,7 @@
 
                 if (ci.IsBanned)
                 {
-                    server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client is banned on this server!");
+                    server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client is banned on this server!");
                     new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(sc);
                     sc.Disconnect();
                     return;
@@ -67,7 +67,7 @@
                 {
                     if (ci.Secret.Length != 32 || this.ClientSecret.Length != 32)
                     {
-                        server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret format incorrect!");
+                        server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret format incorrect!");
                         new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
                         sc.Disconnect();
                         return;
@@ -77,7 +77,7 @@
                     {
                         if (ci.Secret[i] != this.ClientSecret[i])
                         {
-                            server.Logger.Log(Util.LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret mismatch!");
+                            server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret mismatch!");
                             new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
                             sc.Disconnect();
                             return;
@@ -99,7 +99,7 @@
                 PacketClientInfo pci = new PacketClientInfo() { IsAdmin = sc.IsAdmin, IsObserver = sc.IsObserver, Session = sessionID, IsServer = isServer };
                 pci.Send(sc);
                 new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(sc);
-                server.Logger.Log(Util.LogLevel.Debug, "Client handshake completion sent");
+                server.Logger.Log(LogLevel.Debug, "Client handshake completion sent");
                 if (!server.TryGetMap(sc.ClientMapID, out Map m))
                 {
                     sc.ClientMapID = server.Settings.DefaultMapID;
@@ -111,7 +111,7 @@
                 mp.Send(sc); // Send the client current map information, wait for MapAck packet
                 sc.ClientMapID = m.ID;
                 sc.SaveClientData();
-                server.Logger.Log(Util.LogLevel.Debug, "Client map changed to " + m.ID);
+                server.Logger.Log(LogLevel.Debug, "Client map changed to " + m.ID);
 
                 if (server.ServerChat.Count > 0)
                 {
@@ -134,7 +134,7 @@
                 {
                     PacketAssetDef pad = new PacketAssetDef() { ActionType = AssetDefActionType.Initialize, Dir = server.AssetManager.Root };
                     pad.Send(sc);
-                    server.Logger.Log(Util.LogLevel.Debug, "AssetRef data sent");
+                    server.Logger.Log(LogLevel.Debug, "AssetRef data sent");
                     PacketMapPointer pmp = new PacketMapPointer() { Data = server.EnumerateMapData().Select(x => (x.MapID, x.MapFolder, x.MapName)).ToList(), IsServer = true, Remove = false, Session = sessionID };
                     pmp.Send(sc);
                     new PacketSetDefaultMap() { MapID = server.Settings.DefaultMapID }.Send(sc);

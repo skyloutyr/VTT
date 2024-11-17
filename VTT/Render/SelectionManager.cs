@@ -491,7 +491,7 @@
                 if (!this._fxHandlerLmbDown && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left))
                 {
                     this._fxHandlerLmbDown = true;
-                    if (!Guid.Equals(Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID, Guid.Empty))
+                    if (!Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID.IsEmpty())
                     {
                         Vector3 cursorLoc = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
                         new PacketAddFXParticle() { Location = cursorLoc, NumParticles = Client.Instance.Frontend.Renderer.GuiRenderer.FXNumToEmit, SystemID = Client.Instance.Frontend.Renderer.GuiRenderer.FXToEmitParticleSystemID }.Send();
@@ -1005,7 +1005,7 @@
                 ImGui.PushStyleColor(ImGuiCol.Border, ((Vector4)Color.RoyalBlue));
                 ImGui.SetNextWindowPos(new Vector2(minX, minY));
                 ImGui.SetNextWindowSize(new Vector2(maxX - minX, maxY - minY));
-                ImGui.SetNextWindowSizeConstraints(System.Numerics.Vector2.Zero, new Vector2(float.PositiveInfinity, float.PositiveInfinity));
+                ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(float.PositiveInfinity, float.PositiveInfinity));
                 ImGui.Begin("SelectBox", window_flags);
                 ImGui.End();
                 ImGui.PopStyleVar();

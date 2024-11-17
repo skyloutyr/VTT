@@ -707,7 +707,7 @@
                             {
                                 Vec4 colorDark = new Vec4(0.234f, 0, 0.4f, 1.0f);
                                 Vec4 colorBright = new Vec4(0.862f, 0, 0.292f, 1.0f);
-                                Vec4 borderColor = System.Numerics.Vector4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin((int)Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
+                                Vec4 borderColor = Vec4.Lerp(colorDark, colorBright, (1.0f + MathF.Sin((int)Client.Instance.Frontend.UpdatesExisted * MathF.PI / 180.0f)) / 2f);
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 

@@ -227,7 +227,7 @@
                     }
                     else
                     {
-                        Client.Instance.Logger.Log(Util.LogLevel.Warn, $"Unknown chunk {id} in riff/wave audio file, skipping!");
+                        Client.Instance.Logger.Log(LogLevel.Warn, $"Unknown chunk {id} in riff/wave audio file, skipping!");
                     }
                 }
 

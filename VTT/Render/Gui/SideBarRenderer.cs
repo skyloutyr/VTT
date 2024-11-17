@@ -643,7 +643,7 @@
                     }
                 }
 
-                if (Guid.Equals(Guid.Empty, this._fxToEmitParticleSystemID))
+                if (this._fxToEmitParticleSystemID.IsEmpty())
                 {
                     mdlTxt = lang.Translate("generic.none");
                 }

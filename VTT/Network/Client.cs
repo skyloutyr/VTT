@@ -675,7 +675,7 @@
         [DefaultValue(AudioCompressionPolicy.Always)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public AudioCompressionPolicy SoundCompressionPolicy { get; set; } = ClientSettings.AudioCompressionPolicy.Always;
+        public AudioCompressionPolicy SoundCompressionPolicy { get; set; } = AudioCompressionPolicy.Always;
 
         [DefaultValue(true)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]

@@ -499,7 +499,7 @@ void main()
 
     public static class ImGuiHelper
     {
-        public static Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? System.Numerics.Vector2.Zero : ImGui.CalcTextSize(tIn);
+        public static Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? Vector2.Zero : ImGui.CalcTextSize(tIn);
 
         public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
     }

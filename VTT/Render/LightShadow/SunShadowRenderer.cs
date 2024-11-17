@@ -52,7 +52,7 @@
             GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)Version30.CompareRefToTexture);
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)Version10.Less);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.DepthComponent24, ShadowMapResolution, ShadowMapResolution, PixelDataFormat.DepthComponent, PixelDataType.Float, System.IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.DepthComponent24, ShadowMapResolution, ShadowMapResolution, PixelDataFormat.DepthComponent, PixelDataType.Float, IntPtr.Zero);
 
             this._sunFbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this._sunFbo);

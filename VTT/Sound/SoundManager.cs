@@ -392,6 +392,12 @@
                 {
                     this.MusicPlayer.ClientUpdate(this);
                 }
+
+                ALError err;
+                while ((err = AL.GetError()) != ALError.NoError)
+                {
+                    Client.Instance.Logger.Log(LogLevel.Error, $"OpenAL Error - {err}!");
+                }
             }
         }
 

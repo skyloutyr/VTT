@@ -156,6 +156,7 @@
                     this.Stopped = true;
                     AL.DeleteSource((uint)this._srcId);
                     this._srcId = -1;
+                    return;
                 }
 
                 float vS = AL.GetSource((uint)this._srcId, SourceFloatProperty.SecOffset);

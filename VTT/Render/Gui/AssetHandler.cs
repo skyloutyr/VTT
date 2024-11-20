@@ -1220,7 +1220,23 @@
                             ImGui.TextUnformatted(aRef.AssetID.ToString());
                             ImGui.PopStyleColor();
 
-                            ImGui.TextUnformatted(aRef.Name);
+                            if (aRef?.Type == AssetType.Sound)
+                            {
+                                float sMax = (float)(aRef.Meta?.SoundInfo?.TotalDuration ?? float.NaN);
+                                if (!float.IsNaN(sMax))
+                                {
+                                    ImGui.TextUnformatted($"{aRef.Name} - ({TimeSpan.FromSeconds(sMax):hh\\:mm\\:ss})");
+                                }
+                                else
+                                {
+                                    ImGui.TextUnformatted(aRef.Name);
+                                }
+                            }
+                            else
+                            {
+                                ImGui.TextUnformatted(aRef.Name);
+                            }
+
                             ImGui.TextUnformatted(lang.Translate("ui.asset_type." + aRef.Type.ToString().ToLower()));
                             if (aRef?.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg)
                             {

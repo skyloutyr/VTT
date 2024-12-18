@@ -1,5 +1,6 @@
 ﻿namespace VTT.Render
 {
+    using ImGuiNET;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
@@ -11,6 +12,7 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class FOWRenderer
@@ -36,6 +38,10 @@
         private VertexArray _vao;
         private GPUBuffer _vbo;
         private GPUBuffer _ebo;
+        private VertexArray _polyOutlineVao;
+        private GPUBuffer _polyOutlineVbo;
+        private GPUBuffer _polyOutlineEbo;
+
         private float[] _data;
         private int _numVertices;
         private Vector2 _inverseFowScale = Vector2.One;
@@ -74,6 +80,15 @@
             }
 
             this._brushRenderIndices.Add(1);
+
+            this._polyOutlineVao = new VertexArray();
+            this._polyOutlineVbo = new GPUBuffer(BufferTarget.Array, BufferUsage.DynamicDraw);
+            this._polyOutlineEbo = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.DynamicDraw);
+            this._polyOutlineVao.Bind();
+            this._polyOutlineVbo.Bind();
+            this._polyOutlineEbo.Bind();
+            this._polyOutlineVao.SetVertexSize<float>(3);
+            this._polyOutlineVao.PushElement(ElementType.Vec3);
         }
 
 
@@ -366,6 +381,7 @@
         private readonly List<Vector3> _brushRenderData = new List<Vector3>();
         private readonly List<uint> _brushRenderIndices = new List<uint>();
         private bool _couldTriangulate;
+        private int _numOutlinePoints;
 
         public void Render(double time)
         {
@@ -428,6 +444,8 @@
 
                                 this.UploadData(v3p, this._indicesList);
                             }
+
+                            this.UploadPolyOutline(this.FowSelectionPoints);
                         }
                     }
                 }
@@ -484,7 +502,7 @@
                 }
                 else
                 {
-                    if (this.FowSelectionPoints.Count >= 3)
+                    if (this.FowSelectionPoints.Count > 0)
                     {
                         GL.Disable(Capability.DepthTest);
                         GL.Disable(Capability.CullFace);
@@ -498,13 +516,23 @@
                         shader["projection"].Set(cam.Projection);
                         shader["model"].Set(Matrix4x4.Identity);
                         shader["u_color"].Set((this._couldTriangulate ? Color.RoyalBlue.Vec4() : Color.Crimson.Vec4()) * new Vector4(1, 1, 1, 0.35f));
-                        this._vao.Bind();
 
-                        GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        // Draw triangulated polygon if it is possible
+                        if (this.FowSelectionPoints.Count >= 3)
+                        {
+                            this._vao.Bind();
+                            GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        }
+
+                        // Once done, draw the outline
+                        this._polyOutlineVao.Bind();
+                        GL.DrawElements(PrimitiveType.Triangles, this._numOutlinePoints, ElementsType.UnsignedInt, IntPtr.Zero);
+
                         GL.Disable(Capability.Blend);
                         GL.Enable(Capability.CullFace);
                         GL.Enable(Capability.DepthTest);
                     }
+                    
                 }
             }
 
@@ -606,6 +634,92 @@
             {
                 this._escapePressed = false;
             }
+        }
+
+        private void UploadPolyOutline(List<Vector3> v3p)
+        {
+            List<float> data = new List<float>(v3p.Count * 3);
+            List<uint> indices = new List<uint>(v3p.Count * 3 * 12);
+
+            // Points
+            for (int i = 0; i < v3p.Count; ++i)
+            {
+                uint startIndex = (uint)(i << 3);
+                Vector3 p = v3p[i];
+                for (int j = 0; j < 8; ++j)
+                {
+                    float addX = MathF.Sin(j * MathF.PI * 0.25f) * 0.1f;
+                    float addY = MathF.Cos(j * MathF.PI * 0.25f) * 0.1f;
+                    data.Add(p.X + addX);
+                    data.Add(p.Y + addY);
+                    data.Add(p.Z);
+                }
+
+                indices.Add(startIndex + 7);
+                indices.Add(startIndex + 1);
+                indices.Add(startIndex + 3);
+
+                indices.Add(startIndex + 7);
+                indices.Add(startIndex + 3);
+                indices.Add(startIndex + 5);
+
+                indices.Add(startIndex + 7);
+                indices.Add(startIndex + 0);
+                indices.Add(startIndex + 1);
+
+                indices.Add(startIndex + 1);
+                indices.Add(startIndex + 2);
+                indices.Add(startIndex + 3);
+
+                indices.Add(startIndex + 3);
+                indices.Add(startIndex + 4);
+                indices.Add(startIndex + 5);
+
+                indices.Add(startIndex + 5);
+                indices.Add(startIndex + 6);
+                indices.Add(startIndex + 7);
+            }
+
+            // Lines
+            for (int i = 0; i < v3p.Count; ++i)
+            {
+                uint startIndex = (uint)(data.Count / 3);
+                Vector3 start = v3p[i];
+                Vector3 end = v3p[i == v3p.Count - 1 ? 0 : i + 1];
+                Vector3 normal = Vector3.Normalize(end - start);
+                Vector3 right = new Vector3(-normal.Y, normal.X, normal.Z) * 0.05f; // Assume no Z change
+                Vector3 p1 = start - right;
+                Vector3 p2 = start + right;
+                Vector3 p3 = end - right;
+                Vector3 p4 = end + right;
+                data.Add(p1.X);
+                data.Add(p1.Y);
+                data.Add(p1.Z);
+                data.Add(p2.X);
+                data.Add(p2.Y);
+                data.Add(p2.Z);
+                data.Add(p3.X);
+                data.Add(p3.Y);
+                data.Add(p3.Z);
+                data.Add(p4.X);
+                data.Add(p4.Y);
+                data.Add(p4.Z);
+
+                indices.Add(startIndex + 0);
+                indices.Add(startIndex + 2);
+                indices.Add(startIndex + 1);
+
+                indices.Add(startIndex + 2);
+                indices.Add(startIndex + 3);
+                indices.Add(startIndex + 1);
+            }
+
+            this._polyOutlineVao.Bind();
+            this._polyOutlineVbo.Bind();
+            this._polyOutlineEbo.Bind();
+            this._polyOutlineVbo.SetData(data.ToArray());
+            this._polyOutlineEbo.SetData(indices.ToArray());
+            this._numOutlinePoints = indices.Count;
         }
 
         private static bool ApproximatelyEquivalent(float f1, float f2, float eps = 1e-7f) => MathF.Abs(f1 - f2) <= eps;

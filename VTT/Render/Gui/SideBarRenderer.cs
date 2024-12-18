@@ -696,7 +696,7 @@
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
 
                 Shadow2DControlMode currentMode = renderer.ControlMode;
-                for (int i = 0; i < 7; ++i)
+                for (int i = 0; i < 9; ++i)
                 {
                     bool selected = (Shadow2DControlMode)i == currentMode;
                     if (ImImageButton("##Shadow2DModeBtn_" + i, Client.Instance.Frontend.Renderer.GuiRenderer.Shadow2DControlModeTextures[i], Vec32x32, selected))

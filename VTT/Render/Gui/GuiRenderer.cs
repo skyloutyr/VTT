@@ -110,7 +110,9 @@
         public Texture Shadow2D { get; set; }
         public Texture OpenDoor { get; set; }
         public Texture Shadow2DAddBlocker { get; set; }
+        public Texture Shadow2DAddBlockerPoints { get; set; }
         public Texture Shadow2DAddSunlight { get; set; }
+        public Texture Shadow2DAddSunlightPoints { get; set; }
 
         public int LoadingSpinnerFrames { get; set; }
         #endregion
@@ -294,10 +296,12 @@
             this.OpenDoor = OpenGLUtil.LoadUIImage("icons8-door-40");
             this.Shadow2DAddBlocker = OpenGLUtil.LoadUIImage("icons8-newblocker-40");
             this.Shadow2DAddSunlight = OpenGLUtil.LoadUIImage("icons8-newillumination-40");
+            this.Shadow2DAddBlockerPoints = OpenGLUtil.LoadUIImage("icons8-newblocker-points-40");
+            this.Shadow2DAddSunlightPoints = OpenGLUtil.LoadUIImage("icons8-newillumination-points-40");
 
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
-            this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddSunlight, this.DeleteIcon };
+            this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
             this._moveModeTextures = new Texture[] { this.MoveGizmo, this.MeasureModePolyline, this.MoveArrows };
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
 
@@ -786,6 +790,7 @@
 
             Client.Instance.Frontend.Renderer.PingRenderer.RenderUI();
 
+            this._escapeCapturedThisFrame = false;
             this.Timer.Stop();
         }
 
@@ -818,5 +823,11 @@
         }
 
         public void Update() => this.UpdateTurnTrackerParticles();
+
+        private bool _escapeCapturedThisFrame;
+        public void NotifyOfEscapeCaptureThisFrame()
+        {
+            this._escapeCapturedThisFrame = true;
+        }
     }
 }

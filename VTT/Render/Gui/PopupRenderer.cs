@@ -949,7 +949,7 @@
                     Client.Instance.Frontend?.Renderer?.MapRenderer?.FOWRenderer?.PaintMode == FOWRenderer.SelectionMode.Polygon && 
                     Client.Instance.Frontend?.Renderer?.ObjectRenderer?.EditMode == EditMode.FOW;
 
-                state.menu = !manipulatingFowPolygonNow;
+                state.menu = !manipulatingFowPolygonNow && !this._escapeCapturedThisFrame;
                 this._escDown = true;
             }
 

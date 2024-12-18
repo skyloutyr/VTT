@@ -3,11 +3,13 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
+    using System.Runtime.ConstrainedExecution;
     using System.Text;
     using VTT.Control;
     using VTT.GL;
@@ -16,6 +18,7 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using static Antlr4.Runtime.Atn.SemanticContext;
 
     public class Shadow2DRenderer
     {
@@ -275,6 +278,13 @@
                             break;
                         }
 
+                        case Shadow2DControlMode.AddBlockerPoints:
+                        case Shadow2DControlMode.AddSunlightPoints:
+                        {
+                            // This is handled in the render method as this needs to check every frame for input events to not miss them
+                            break;
+                        }
+
                         case Shadow2DControlMode.Delete:
                         {
                             Shadow2DBox box = this._boxMouseOver ?? bmover;
@@ -389,14 +399,164 @@
             this._boxMouseOver = bmover;
         }
 
+        private int _numQuadDrawPoints;
+        private readonly Vector2[] _shadowSelectionPointsArray = new Vector2[4];
+
+        private void AddQuadDrawPoint(Map m, Vector2 cursorWorld)
+        {
+            this._shadowSelectionPointsArray[this._numQuadDrawPoints++] = cursorWorld;
+            if (this._numQuadDrawPoints == 4)
+            {
+                Shadow2DBox.ShadowBoxType btype = this.ControlMode == Shadow2DControlMode.AddBlockerPoints ? Shadow2DBox.ShadowBoxType.Blocker : Shadow2DBox.ShadowBoxType.Sunlight;
+
+                // Step 1 - find convex hull
+                List<Vector2> polygon = new List<Vector2>(this._shadowSelectionPointsArray);
+                polygon.Sort(static (l, r) => l.X != r.X ? Comparer<float>.Default.Compare(l.X, r.X) : Comparer<float>.Default.Compare(l.Y, r.Y));
+
+                List<Vector2> upper = new List<Vector2>();
+                List<Vector2> lower = new List<Vector2>();
+                foreach (Vector2 v in polygon)
+                {
+                    while (upper.Count > 1)
+                    {
+                        Vector2 q = upper[^1];
+                        Vector2 r = upper[^2];
+                        if ((q.X - r.X) * (v.Y - r.Y) >= (q.Y - r.Y) * (v.X - r.X))
+                        {
+                            upper.RemoveAt(upper.Count - 1);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    upper.Add(v);
+                }
+
+                upper.RemoveAt(upper.Count - 1);
+                for (int i = polygon.Count - 1; i >= 0; --i)
+                {
+                    Vector2 v = polygon[i];
+                    while (lower.Count > 1)
+                    {
+                        Vector2 q = lower[^1];
+                        Vector2 r = lower[^2];
+                        if ((q.X - r.X) * (v.Y - r.Y) >= (q.Y - r.Y) * (v.X - r.X))
+                        {
+                            lower.RemoveAt(lower.Count - 1);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    lower.Add(v);
+                }
+
+                lower.RemoveAt(lower.Count - 1);
+                if (!(upper.Count == 1 && upper.SequenceEqual(lower)))
+                {
+                    upper.AddRange(lower);
+                }
+
+                polygon = upper;
+                // Step 2 - use the rotating calipers algorithm to find the OBB
+                Vector2 center = polygon.Aggregate(static (l, r) => l + r) / polygon.Count;
+                Shadow2DBox[] potentialOOBs = new Shadow2DBox[polygon.Count];
+                static void Rotate(List<Vector2> polygon, float angleRad, Vector2 pivot)
+                {
+                    for (int i = 0; i < polygon.Count; ++i)
+                    {
+                        Vector2 v = polygon[i];
+                        float x = v.X;
+                        float y = v.Y;
+                        x -= pivot.X;
+                        y -= pivot.Y;
+                        float tx = x;
+                        float sin = MathF.Sin(angleRad);
+                        float cos = MathF.Cos(angleRad);
+                        x = (x * cos) - (y * sin);
+                        y = (tx * sin) + (y * cos);
+                        x += pivot.X;
+                        y += pivot.Y;
+                        polygon[i] = new Vector2(x, y);
+                    }
+                }
+
+                static Vector2 EdgeAt(List<Vector2> polygon, int index)
+                {
+                    int n = index == polygon.Count - 1 ? 0 : index + 1;
+                    return polygon[n] - polygon[index];
+                }
+
+                static (Vector2, Vector2) GetAABB(List<Vector2> polygon)
+                {
+                    float minX = float.MaxValue;
+                    float minY = float.MaxValue;
+                    float maxX = float.MinValue;
+                    float maxY = float.MinValue;
+                    foreach (Vector2 v in polygon)
+                    {
+                        minX = MathF.Min(minX, v.X);
+                        maxX = MathF.Max(maxX, v.X);
+                        minY = MathF.Min(minY, v.Y);
+                        maxY = MathF.Max(maxY, v.Y);
+                    }
+
+                    return (new Vector2(minX, minY), new Vector2(maxX, maxY));
+                }
+
+                for (int i = 0; i < polygon.Count; ++i)
+                {
+                    Vector2 edge = EdgeAt(polygon, i);
+                    float angle = MathF.Acos(edge.Normalized().Y);
+                    Rotate(polygon, angle, center);
+                    (Vector2, Vector2) aabb = GetAABB(polygon);
+                    potentialOOBs[i] = new Shadow2DBox()
+                    {
+                        BoxID = Guid.NewGuid(),
+                        BoxType = btype,
+                        IsActive = true,
+                        Rotation = angle,
+                        Start = aabb.Item1,
+                        End = aabb.Item2
+                    };
+
+                    Rotate(polygon, -angle, center);
+                }
+
+                float minArea = float.MaxValue;
+                Shadow2DBox box = potentialOOBs[0];
+                foreach (Shadow2DBox b in potentialOOBs)
+                {
+                    float area = b.Area;
+                    if (area < minArea)
+                    {
+                        minArea = area;
+                        box = b;
+                    }
+                }
+
+                // Finally have our box!
+                new PacketAddShadow2DBox() { MapID = m.ID, Box = box }.Send();
+                this._numQuadDrawPoints = 0;
+            }
+        }
+
         private readonly List<MapObject> _cursorCandidates = new List<MapObject>();
         private readonly List<MapObject> _nonAdminOwnedCursorCandidates = new List<MapObject>();
         private UnsafeArray<Shadow2DLightSource> _lights;
+
+        private bool _renderLmbDown;
+        private bool _renderEscDown;
         public void Render(Map m)
         {
             this.CPUTimer.Restart();
             this._cursorCandidates.Clear();
             this._nonAdminOwnedCursorCandidates.Clear();
+
             if (m != null)
             {
                 if (m.Has2DShadows && m.Is2D)
@@ -646,8 +806,47 @@
         public void RenderBoxesOverlay(Map m)
         {
             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
-            if (m != null && Client.Instance.IsAdmin && em == EditMode.Shadows2D && m.Is2D)
+
+            bool lmbState = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left);
+            bool handleLmbStateNow = false;
+            if (lmbState && !this._renderLmbDown && !ImGui.GetIO().WantCaptureMouse)
             {
+                this._renderLmbDown = true;
+                handleLmbStateNow = true;
+            }
+
+            if (!lmbState && this._renderLmbDown)
+            {
+                this._renderLmbDown = false;
+            }
+
+            bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
+            if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
+            {
+                this._renderEscDown = true;
+                this._numQuadDrawPoints = 0;
+                Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
+            }
+
+            if (!escState && this._renderEscDown)
+            {
+                this._renderEscDown = false;
+            }
+
+            if (Client.Instance.IsAdmin && em == EditMode.Shadows2D && m.Is2D)
+            {
+                if (this.ControlMode is Shadow2DControlMode.AddBlockerPoints or Shadow2DControlMode.AddSunlightPoints)
+                {
+                    if (handleLmbStateNow)
+                    {
+                        this.AddQuadDrawPoint(m, Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView().Xy());
+                    }
+                }
+                else
+                {
+                    this._numQuadDrawPoints = 0; // Reset if we are not drawing points
+                }
+
                 ShaderProgram overlayShader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
@@ -676,7 +875,7 @@
                     overlayShader["model"].Set(transform);
                     overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, box == this._boxSelected ? 0.85f : box.IsMouseOver ? 0.75f : 0.5f));
                     this.CreateRectangle(halfExtent);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 6 * 5);
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
                 if (this._isBoxDragging)
@@ -688,20 +887,59 @@
 
                     bool allowed = end.X - start.X >= 0.01f && end.Y - start.Y >= 0.01f;
 
-                    Color clr = !allowed ? Color.Red : this.ControlMode == Shadow2DControlMode.AddBlocker ? Color.SlateBlue : Color.LightCyan;
+                    Color clr = !allowed ? Color.Red : this.ControlMode is Shadow2DControlMode.AddBlocker or Shadow2DControlMode.AddBlockerPoints ? Color.SlateBlue : Color.LightCyan;
 
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateTranslation(new Vector3(c, 0));
                     Vector2 halfExtent = (end - start) * 0.5f;
                     overlayShader["model"].Set(transform);
                     overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, 0.85f));
                     this.CreateRectangle(halfExtent);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 6 * 5);
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                }
+
+                if (this._numQuadDrawPoints > 0)
+                {
+                    this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 3 * 6 * 5);
+                    int idx = 0;
+                    for (int i = 0; i < this._numQuadDrawPoints; ++i)
+                    {
+                        float s1 = MathF.Sin(2 * MathF.PI / 5) * 0.05f;
+                        float c1 = MathF.Cos(2 * MathF.PI / 5) * 0.05f;
+                        float s2 = MathF.Sin(4 * MathF.PI / 5) * 0.05f;
+                        float c2 = MathF.Cos(MathF.PI / 5) * 0.05f;
+
+                        Vector2 center = this._shadowSelectionPointsArray[i];
+
+                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X + s2, center.Y - c2, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X + s1, center.Y + c1, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X - s2, center.Y - c2, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X + s2, center.Y - c2, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X - s1, center.Y + c1, 0);
+                        this._reusedBuffer[idx++] = new Vector3(center.X - s2, center.Y - c2, 0);
+                    }
+
+                    unsafe
+                    {
+                        this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 3 * 3 * 3 * this._numQuadDrawPoints, 0);
+                    }
+
+                    overlayShader["model"].Set(Matrix4x4.Identity);
+                    Color clr = this.ControlMode is Shadow2DControlMode.AddBlockerPoints ? Color.SlateBlue : Color.LightCyan;
+                    overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, 0.85f));
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
                 }
 
                 GL.DepthMask(true);
                 GL.Disable(Capability.Blend);
                 GL.Enable(Capability.DepthTest);
                 GL.Disable(Capability.CullFace);
+            }
+            else
+            {
+                this._numQuadDrawPoints = 0; // Reset if we are not the active mode
             }
         }
 
@@ -748,7 +986,9 @@
         Rotate,
         Toggle,
         AddBlocker,
+        AddBlockerPoints,
         AddSunlight,
+        AddSunlightPoints,
         Delete
     }
 }

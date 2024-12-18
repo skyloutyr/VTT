@@ -766,3 +766,5 @@ menu.settings.async_texture_upload.buffers.tt=Controls the buffering mode of asy
 menu.settings.async_texture_upload.buffers.single=Direct
 menu.settings.async_texture_upload.buffers.double=Double Buffered
 menu.settings.async_texture_upload.buffers.triple=Triple Buffered
+ui.shadow2d.mode_addblockerpoints.tt=Add Blocker from Points\nAdds a new blocking box to the map.\nClick the left mouse button four times to denote the four corners of the box.
+ui.shadow2d.mode_addsunlightpoints.tt=Add Illumination from Points\nAdds a new illumination box to the map.\nAll viewers within illumination boxes will have maximum vision ranges.\nUseful for marking sunlit areas.

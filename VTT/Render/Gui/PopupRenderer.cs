@@ -944,7 +944,12 @@
 
             if (!ImGui.GetIO().WantCaptureKeyboard && ImGui.IsKeyDown(ImGuiKey.Escape) && !this._escDown)
             {
-                state.menu = true;
+                bool manipulatingFowPolygonNow = 
+                    Client.Instance.Frontend?.Renderer?.MapRenderer?.FOWRenderer?.FowSelectionPoints?.Count > 0 && 
+                    Client.Instance.Frontend?.Renderer?.MapRenderer?.FOWRenderer?.PaintMode == FOWRenderer.SelectionMode.Polygon && 
+                    Client.Instance.Frontend?.Renderer?.ObjectRenderer?.EditMode == EditMode.FOW;
+
+                state.menu = !manipulatingFowPolygonNow;
                 this._escDown = true;
             }
 

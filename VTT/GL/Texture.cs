@@ -6,7 +6,6 @@
     using System.Buffers;
     using System.Collections.Concurrent;
     using VTT.GL.Bindings;
-    using VTT.Network;
     using VTT.Util;
 
     public class Texture

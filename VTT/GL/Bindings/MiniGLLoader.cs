@@ -2,7 +2,6 @@
 {
     using System;
     using System.Runtime.InteropServices;
-    using static VTT.GL.Bindings.MiniGLLoader;
 
     public static unsafe class MiniGLLoader
     {

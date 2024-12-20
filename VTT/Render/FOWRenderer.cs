@@ -1,6 +1,5 @@
 ﻿namespace VTT.Render
 {
-    using ImGuiNET;
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
@@ -12,7 +11,6 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
-    using VTT.Render.Gui;
     using VTT.Util;
 
     public class FOWRenderer

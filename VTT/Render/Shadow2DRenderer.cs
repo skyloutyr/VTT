@@ -3,13 +3,11 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
-    using System.Runtime.ConstrainedExecution;
     using System.Text;
     using VTT.Control;
     using VTT.GL;
@@ -18,7 +16,6 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
-    using static Antlr4.Runtime.Atn.SemanticContext;
 
     public class Shadow2DRenderer
     {

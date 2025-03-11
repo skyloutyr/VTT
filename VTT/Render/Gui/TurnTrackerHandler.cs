@@ -256,17 +256,17 @@
                                                 }
                                             }
                                         }
-
-                                        pen.X += sz.X + 2;
-                                        if (e == last)
-                                        {
-                                            idl.AddImage(this.TurnTrackerSeparator, cursor + pen, cursor + pen + separatorSize);
-                                            pen.X += lastEntrySeparatorPaddingX;
-                                        }
                                     }
                                     else
                                     {
                                         idl.AddImage(this.TurnTrackerBackgroundNoObject, cursor + pen, cursor + pen + sz, Vec2.Zero, Vec2.One, tColor.Abgr());
+                                    }
+
+                                    pen.X += sz.X + 2;
+                                    if (e == last)
+                                    {
+                                        idl.AddImage(this.TurnTrackerSeparator, cursor + pen, cursor + pen + separatorSize);
+                                        pen.X += lastEntrySeparatorPaddingX;
                                     }
                                 }
 

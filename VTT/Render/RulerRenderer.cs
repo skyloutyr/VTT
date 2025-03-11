@@ -508,7 +508,7 @@
                 {
                     case RulerType.Circle:
                     {
-                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length());
+                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length(), m.Is2D ? 0.075f : 0.2f);
                         this.UploadBuffers();
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this._vao.Bind();
@@ -776,7 +776,7 @@
             AddHorizontalLine(v6, v7);
         }
 
-        public void CreateCircle(Vector3 start, float radius)
+        public void CreateCircle(Vector3 start, float radius, float outlineThickness)
         {
             float zHeight = start.Z;
             zHeight += 1.0f * MathF.Sign(zHeight);
@@ -793,7 +793,7 @@
 
             zHeight += rEffect;
             start *= new Vector3(1, 1, 0); // Discard Z component
-            int numSegments = (int)(12 * MathF.Max(1, (radius / 2.5f)));
+            int numSegments = Math.Min((int)(36 * MathF.Max(1, (radius / 2.5f))), 120);
             float angleStep = 360.0f / numSegments * MathF.PI / 180;
             float cos = MathF.Cos(angleStep);
             float sin = MathF.Sin(angleStep);
@@ -840,10 +840,10 @@
                 Vector2 l2 = p2c.PerpendicularRight();
                 Vector2 l = Vector2.Lerp(l1, l2, 0.5f).Normalized();
 
-                Vector3 v1 = start + new Vector3(current.X, current.Y, 0) + (new Vector3(l.X, l.Y, 0) * 0.2f);
-                Vector3 v2 = start + new Vector3(current.X, current.Y, 0) - (new Vector3(l.X, l.Y, 0) * 0.2f);
-                Vector3 v3 = start + new Vector3(current.X, current.Y, zHeight) + (new Vector3(l.X, l.Y, 0) * 0.2f);
-                Vector3 v4 = start + new Vector3(current.X, current.Y, zHeight) - (new Vector3(l.X, l.Y, 0) * 0.2f);
+                Vector3 v1 = start + new Vector3(current.X, current.Y, 0) + (new Vector3(l.X, l.Y, 0) * outlineThickness);
+                Vector3 v2 = start + new Vector3(current.X, current.Y, 0) - (new Vector3(l.X, l.Y, 0) * outlineThickness);
+                Vector3 v3 = start + new Vector3(current.X, current.Y, zHeight) + (new Vector3(l.X, l.Y, 0) * outlineThickness);
+                Vector3 v4 = start + new Vector3(current.X, current.Y, zHeight) - (new Vector3(l.X, l.Y, 0) * outlineThickness);
 
                 this.AddVertices(v1, v2, v3, v4);
 

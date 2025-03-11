@@ -804,6 +804,7 @@
         {
             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
 
+            bool emState = em == EditMode.Shadows2D;
             bool lmbState = Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left);
             bool handleLmbStateNow = false;
             if (lmbState && !this._renderLmbDown && !ImGui.GetIO().WantCaptureMouse)
@@ -817,19 +818,6 @@
                 this._renderLmbDown = false;
             }
 
-            bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
-            if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
-            {
-                this._renderEscDown = true;
-                this._numQuadDrawPoints = 0;
-                Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
-            }
-
-            if (!escState && this._renderEscDown)
-            {
-                this._renderEscDown = false;
-            }
-
             if (Client.Instance.IsAdmin && em == EditMode.Shadows2D && m.Is2D)
             {
                 if (this.ControlMode is Shadow2DControlMode.AddBlockerPoints or Shadow2DControlMode.AddSunlightPoints)
@@ -837,6 +825,19 @@
                     if (handleLmbStateNow)
                     {
                         this.AddQuadDrawPoint(m, Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView().Xy());
+                    }
+
+                    bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
+                    if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
+                    {
+                        this._renderEscDown = true;
+                        this._numQuadDrawPoints = 0;
+                        Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
+                    }
+
+                    if (!escState && this._renderEscDown)
+                    {
+                        this._renderEscDown = false;
                     }
                 }
                 else

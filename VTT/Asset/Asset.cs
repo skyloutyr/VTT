@@ -199,7 +199,7 @@
                 ret.SetInt("Channels", this.NumChannels);
                 ret.SetDouble("Duration", this.TotalDuration);
                 ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.SetLong(n, v));
-                ret.SetString("Name", " ");
+                ret.SetString("Name", this.SoundAssetName);
                 return ret;
             }
 

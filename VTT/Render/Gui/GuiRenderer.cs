@@ -618,13 +618,37 @@
                         ImGui.EndMenu();
                     }
 
-                    if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.add_turn") + "###Add Turn"))
+                    if (ImGui.BeginMenu(lang.Translate("ui.popup.object_actions.add_turn") + "###Add Turn"))
                     {
-                        for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count; i++)
+                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.add_turn.team_generic") + "###Unknown"))
                         {
-                            MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[i];
-                            new PacketAddTurnEntry() { AdditionIndex = -1, ObjectID = mo.ID, Value = 0, TeamName = string.Empty }.Send();
+                            for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count; i++)
+                            {
+                                MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[i];
+                                new PacketAddTurnEntry() { AdditionIndex = -1, ObjectID = mo.ID, Value = 0, TeamName = string.Empty }.Send();
+                            }
                         }
+
+                        if (cMap?.TurnTracker?.Teams?.Count > 0)
+                        {
+                            for (int i1 = 0; i1 < cMap.TurnTracker.Teams.Count; i1++)
+                            {
+                                TurnTracker.Team t = cMap.TurnTracker.Teams[i1];
+                                if (!string.IsNullOrWhiteSpace(t.Name))
+                                {
+                                    if (ImGui.MenuItem($"{t.Name}###TurnToTeam_{i1}"))
+                                    {
+                                        for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count; i++)
+                                        {
+                                            MapObject mo = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[i];
+                                            new PacketAddTurnEntry() { AdditionIndex = -1, ObjectID = mo.ID, Value = 0, TeamName = t.Name }.Send();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        ImGui.EndMenu();
                     }
 
                     if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.delete") + "###Delete"))

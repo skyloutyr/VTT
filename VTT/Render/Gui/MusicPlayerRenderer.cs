@@ -67,7 +67,6 @@
                             if (aref != null)
                             {
                                 musicName = aref.Name;
-                                sMax = (float)(aref.Meta?.SoundInfo?.TotalDuration ?? float.NaN);
                             }
                             else
                             {
@@ -75,6 +74,8 @@
                                     ? a.Sound.Meta.SoundAssetName
                                     : lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
                             }
+
+                            sMax = (float)(aref.Meta?.SoundInfo?.TotalDuration ?? float.NaN);
                         }
                         else
                         {

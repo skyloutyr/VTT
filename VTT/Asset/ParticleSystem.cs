@@ -851,12 +851,12 @@
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }
 
-                                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !a.ModelGlReady)
+                                if (this.Container.IsFXEmitter)
                                 {
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }
 
-                                if (this.Container.IsFXEmitter)
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !a.ModelGlReady)
                                 {
                                     goto case ParticleSystem.EmissionMode.Point;
                                 }

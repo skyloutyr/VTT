@@ -308,11 +308,10 @@
             GlbMaterial.ResetState();
             foreach (ParticleContainer pc in this._containers.OrderByDescending(x => this.GetCameraDistanceTo(x, cam, m)))
             {
-                if (pc.Container != null && (pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin) && pc.IsActive)
+                bool shouldRender = pc.IsActive && (pc.Container == null || pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin);
+                if (shouldRender)
                 {
                     this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
-
-                    // TODO FX particles not working bc pc.Container is null for them!
                     pc.Render(shader, cam);
                 }
             }

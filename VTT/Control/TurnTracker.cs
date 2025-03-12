@@ -27,7 +27,17 @@
             this.Teams.Add(new Team() { Name = string.Empty, Color = Color.White });
         }
 
-        public void Sort() => this.Entries.Sort((l, r) => r.NumericValue.CompareTo(l.NumericValue));
+        public void Sort()
+        {
+            bool hadEntry = this.TryGetAtSafe(this.EntryIndex, out Entry e);
+            this.Entries.Sort((l, r) => r.NumericValue.CompareTo(l.NumericValue));
+            if (hadEntry && this.Entries[this.EntryIndex] != e) // Safe to compare for if index was valid pre-sort it is still valid after
+            {
+                int nIdx = this.Entries.FindIndex(x => x == e);
+                this.EntryIndex = nIdx == -1 ? 0 : nIdx; // -1 should be impossible but sanity check
+            }
+        }
+
         public int Add(Entry e, int idx)
         {
             if (idx <= this.EntryIndex)
@@ -95,6 +105,18 @@
             }
 
             return this.Entries[idx % this.Entries.Count];
+        }
+
+        public bool TryGetAtSafe(int idx, out Entry e)
+        {
+            if (idx < 0 || idx >= this.Entries.Count)
+            {
+                e = null;
+                return false;
+            }
+
+            e = this.Entries[idx];
+            return true;
         }
 
         public Entry GetContextAwareEntry(int idx, Guid refID)

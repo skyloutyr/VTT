@@ -122,9 +122,11 @@
                 this.Container.GuiWrapper.Render(time);
                 this.ObjectRenderer.RenderLatest(m, time);
                 this.MapRenderer.FOWRenderer?.Render(time);
-
-                Client.Instance.Frontend.GameHandle.SwapBuffers();
             }
+
+            // Have to swap buffers here to still adhere to vsync even when minimized
+            // With vsync disabled (swapInterval == 0) we are burning cpu, but w/e as swap of 0 does that anyway
+            Client.Instance.Frontend.GameHandle.SwapBuffers();
         }
 
         public void Resize(int w, int h)

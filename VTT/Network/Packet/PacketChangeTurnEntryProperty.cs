@@ -78,10 +78,11 @@
                     {
                         if (ChatParser.TryParseTextAsExpression(this.NewTeam, true, out double d))
                         {
-                            e.NumericValue = (float)d;
+                            this.NewValue = e.NumericValue = (float)d;
                         }
                         else
                         {
+                            this.NewValue = e.NumericValue;
                             l.Log(LogLevel.Error, "Expression passed as turn tracker new value could not be evaluated!");
                         }
 
@@ -92,6 +93,12 @@
                 if (isServer)
                 {
                     m.NeedsSave = true;
+                    if (this.Type == ChangeType.ValueExpression)
+                    {
+                        this.Type = ChangeType.Value;
+                        this.NewTeam = string.Empty;
+                    }
+
                     this.Broadcast(c => c.ClientMapID.Equals(m.ID));
                 }
             }

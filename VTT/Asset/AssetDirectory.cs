@@ -11,6 +11,7 @@
         public AssetDirectory Parent { get; set; }
         public List<AssetDirectory> Directories { get; } = new List<AssetDirectory>();
         public List<AssetRef> Refs { get; } = new List<AssetRef>();
+        public readonly object @lock = new object();
 
         public string GetPath()
         {

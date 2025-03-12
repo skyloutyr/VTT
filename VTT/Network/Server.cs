@@ -182,19 +182,38 @@
             this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH:mm:ss GMT"));
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;
             this.Settings = ServerSettings.Load();
-            this.AssetManager.Load();
             this.OptionNoDelay = true;
             this.OptionKeepAlive = true;
-            this.LoadAllClients();
-            this.LoadAllMaps();
-            this.LoadChat();
-            this.LoadJournals();
-            this.LoadMusicPlayer();
+            this.LoadAllAsync();
             this.Logger.Log(LogLevel.Info, "Server creation complete");
             this.running = true;
             new Thread(this.RunWorker) { IsBackground = true, Priority = ThreadPriority.Lowest }.Start();
             this.Start();
             this.WaitHandle = wh;
+        }
+
+        private void LoadAllAsync()
+        {
+            var vhAssets = this.AssetManager.LoadAsync();
+            var vhClients = this.LoadAllClientsAsync();
+            var vhMaps = this.LoadAllMapsAsync();
+            var vhChat = this.LoadChatAsync();
+            var vhJournals = this.LoadJournalsAsync();
+            var vhMusicPlayer = this.LoadMusicPlayerAsync();
+
+            vhAssets.WaitOne();
+            vhClients.WaitOne();
+            vhMaps.WaitOne();
+            vhChat.WaitOne();
+            vhJournals.WaitOne();
+            vhMusicPlayer.WaitOne();
+
+            vhMusicPlayer.Dispose();
+            vhJournals.Dispose();
+            vhChat.Dispose();
+            vhMaps.Dispose();
+            vhClients.Dispose();
+            vhAssets.Dispose();
         }
 
         private Logger.FileLogListener _fll;
@@ -214,7 +233,7 @@
             }
         }
 
-        private void LoadJournals()
+        public void LoadJournals()
         {
             string loc = Path.Combine(IOVTT.ServerDir, "Journals");
             Directory.CreateDirectory(loc);
@@ -240,7 +259,19 @@
             }
         }
 
-        private void LoadMusicPlayer()
+        public WaitHandle LoadJournalsAsync()
+        {
+            ManualResetEvent hnd = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.LoadJournals();
+                ((ManualResetEvent)x).Set();
+            }, hnd);
+
+            return hnd;
+        }
+
+        public void LoadMusicPlayer()
         {
             string fLoc = Path.Combine(IOVTT.ServerDir, "music_player.ued");
             if (File.Exists(fLoc))
@@ -250,6 +281,18 @@
                 DataElement de = new DataElement(br);
                 this.MusicPlayer.Deserialize(de);
             }
+        }
+
+        public WaitHandle LoadMusicPlayerAsync()
+        {
+            ManualResetEvent hnd = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.LoadMusicPlayer();
+                ((ManualResetEvent)x).Set();
+            }, hnd);
+
+            return hnd;
         }
 
         private readonly Stack<TextJournal> _deletions = new Stack<TextJournal>();
@@ -418,7 +461,6 @@
         public void LoadAllClients()
         {
             string clientsLoc = Path.Combine(IOVTT.ServerDir, "Clients");
-            this.ClientInfos[Guid.Empty] = ClientInfo.Empty;
 
             if (Directory.Exists(clientsLoc))
             {
@@ -431,6 +473,21 @@
                 }
             }
         }
+
+        public WaitHandle LoadAllClientsAsync()
+        {
+            this.SetDefaultClient();
+            ManualResetEvent hnd = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.LoadAllClients();
+                ((ManualResetEvent)x).Set();
+            }, hnd);
+
+            return hnd;
+        }
+
+        private void SetDefaultClient() => this.ClientInfos[Guid.Empty] = ClientInfo.Empty;
 
         public Guid GetAnyAdmin()
         {
@@ -516,6 +573,18 @@
                     }
                 }
             }
+        }
+
+        public WaitHandle LoadChatAsync()
+        {
+            ManualResetEvent hnd = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.LoadChat();
+                ((ManualResetEvent)x).Set();
+            }, hnd);
+
+            return hnd;
         }
 
         public void SaveChat()
@@ -664,7 +733,27 @@
                     }
                 }
             });
+        }
 
+        public WaitHandle LoadAllMapsAsync()
+        {
+            ManualResetEvent hnd = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.LoadAllMaps();
+                lock (this.mapsLock)
+                {
+                    this.LoadDefaultMap();
+                }
+
+                ((ManualResetEvent)x).Set();
+            }, hnd);
+
+            return hnd;
+        }
+
+        private void LoadDefaultMap()
+        {
             if (!this.Maps.TryGetValue(this.Settings.DefaultMapID, out ServerMapPointer defaultMapPtr)) // Have a default map setup, but no such map exists, setup a default one
             {
                 this.Logger.Log(LogLevel.Warn, "Default map ID exists, but no map was found, creating empty");

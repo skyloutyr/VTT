@@ -177,13 +177,29 @@
                         }
                     }
 
-                    x.assetDir.Refs.Add(aRef);
+                    lock (x.assetDir.@lock)
+                    {
+                        x.assetDir.Refs.Add(aRef);
+                    }
+
                     lock (localRefLock)
                     {
-                        Refs.Add(aId, aRef);
+                        this.Refs.Add(aId, aRef);
                     }
                 }
             });
+        }
+
+        public WaitHandle LoadAsync()
+        {
+            ManualResetEvent evt = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(x =>
+            {
+                this.Load();
+                ((ManualResetEvent)x).Set();
+            }, evt);
+
+            return evt;
         }
 
         public void ScanServerDir(string dir, AssetDirectory assetDir, List<(AssetDirectory assetDir, string file)> paths) // Recursive directory iteration

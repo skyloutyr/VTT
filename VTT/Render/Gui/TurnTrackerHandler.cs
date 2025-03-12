@@ -782,8 +782,6 @@
                                 ImGui.InputText("##ValueText" + e.ObjectID, ref vStr, 255, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll | ImGuiInputTextFlags.ElideLeft);
                                 if (ImGui.IsItemDeactivatedAfterEdit())
                                 {
-                                    Console.WriteLine(ImGui.IsKeyPressed(ImGuiKey.Escape));
-                                    Console.WriteLine(ImGui.IsKeyDown(ImGuiKey.Escape));
                                     if (ImGui.IsKeyPressed(ImGuiKey.Escape))
                                     {
                                         this.NotifyOfEscapeCaptureThisFrame();

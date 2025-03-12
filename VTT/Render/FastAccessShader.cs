@@ -130,16 +130,6 @@
                     this._uniform.Set(f);
                 }
             }
-
-            public void SetWithLogging(float f)
-            {
-                if (f != this._state)
-                {
-                    Console.WriteLine($"State changed from {this._state} to {f}.");
-                    this._state = f;
-                    this._uniform.Set(f);
-                }
-            }
         }
 
         public class Vector4UniformWrapper

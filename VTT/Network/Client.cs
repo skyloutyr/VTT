@@ -68,12 +68,12 @@
         public Client()
         {
             Instance = this;
-            if (!ArgsManager.TryGetValue("loglevel", out LogLevel ll))
+            if (!ArgsManager.TryGetValue(LaunchArgumentKey.LoggingLevel, out LogLevel ll))
             {
                 ll = LogLevel.Off;
             }
 
-            if (ArgsManager.TryGetValue("timeout", out long ti))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.NetworkTimeoutSpan, out long ti))
             {
                 this.TimeoutInterval = ti;
             }
@@ -81,7 +81,11 @@
             AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Client", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
-            this.Logger.OnLog += Logger.Debug;
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.EnableDebuggerLogging, out bool debuggerLogging) && debuggerLogging)
+            {
+                this.Logger.OnLog += Logger.Debug;
+            }
+
             Logger.FileLogListener fll = this._fll = new Logger.FileLogListener(IOVTT.OpenLogFile(false));
             this.Logger.OnLog += fll.WriteLine;
             this.Logger.OnLog += VTTLogListener.Instance.WriteLine;

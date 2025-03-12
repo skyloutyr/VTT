@@ -64,7 +64,7 @@
             }
 
             GLFWimage[] windowIcon = this.LoadIcon(postfix);
-            bool dbg = ArgsManager.TryGetValue<string>("gldebug", out _);
+            bool dbg = ArgsManager.TryGetValue<string>(LaunchArgumentKey.GLDebugMode, out _);
             if (Client.Instance.Settings.Resolution.Width <= 0 || Client.Instance.Settings.Resolution.Height <= 0)
             {
                 Client.Instance.Settings.Resolution = new Size(1366, 768);
@@ -385,7 +385,7 @@
             this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();
             this.Renderer.Create();
-            if (ArgsManager.TryGetValue("gldebug", out string val))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.GLDebugMode, out string val))
             {
                 this._debugProc = this.GL_DebugCallback;
                 GL.DebugMessageCallback(Marshal.GetFunctionPointerForDelegate(this._debugProc), IntPtr.Zero);

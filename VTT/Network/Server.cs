@@ -145,17 +145,17 @@
         {
             ID = Guid.NewGuid();
             LogLevel ll = LogLevel.Off;
-            if (!ArgsManager.TryGetValue("loglevel", out ll))
+            if (!ArgsManager.TryGetValue(LaunchArgumentKey.LoggingLevel, out ll))
             {
                 ll = LogLevel.Off;
             }
 
-            if (ArgsManager.TryGetValue("timeout", out long ti))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.NetworkTimeoutSpan, out long ti))
             {
                 this.TimeoutInterval = ti;
             }
 
-            if (ArgsManager.TryGetValue("servercache", out long sc))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.ServerCacheSize, out long sc))
             {
                 if (sc == -1)
                 {
@@ -168,7 +168,7 @@
                 }
             }
 
-            if (ArgsManager.TryGetValue("serverpersistance", out bool b))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.ExplicitServerDataPersistance, out bool b))
             {
                 this.NonPersistent = !b;
             }
@@ -176,7 +176,11 @@
             AppDomain.CurrentDomain.ProcessExit += this.Cleanup;
             this.Logger = new Logger() { Prefix = "Server", TimeFormat = "HH:mm:ss.fff", ActiveLevel = ll };
             this.Logger.OnLog += Logger.Console;
-            this.Logger.OnLog += Logger.Debug;
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.EnableDebuggerLogging, out bool enableDebugLog) && enableDebugLog)
+            {
+                this.Logger.OnLog += Logger.Debug;
+            }
+
             Logger.FileLogListener fll = this._fll = new Logger.FileLogListener(IOVTT.OpenLogFile(true));
             this.Logger.OnLog += fll.WriteLine;
             this.Logger.Log(LogLevel.Info, DateTime.Now.ToString("ddd, dd MMM yyy HH:mm:ss GMT"));

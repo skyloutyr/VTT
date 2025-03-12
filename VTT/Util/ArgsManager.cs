@@ -7,7 +7,7 @@
 
     public static class ArgsManager
     {
-        private static readonly Dictionary<string, object> args = new Dictionary<string, object>();
+        private static readonly Dictionary<LaunchArgumentKey, object> args = new Dictionary<LaunchArgumentKey, object>();
 
         public static void Parse(string[] args)
         {
@@ -20,7 +20,7 @@
             }
         }
 
-        public static bool TryGetValue<T>(string key, out T value)
+        public static bool TryGetValue<T>(LaunchArgumentKey key, out T value)
         {
             if (args.ContainsKey(key))
             {
@@ -50,7 +50,7 @@
                         }
                     }
 
-                    args["debug"] = b;
+                    args[LaunchArgumentKey.DebugMode] = b;
                     break;
                 }
 
@@ -64,7 +64,7 @@
                         }
                     }
 
-                    args["console"] = b;
+                    args[LaunchArgumentKey.ShowConsole] = b;
                     break;
                 }
 
@@ -72,7 +72,7 @@
                 {
                     if (int.TryParse(value, out int i))
                     {
-                        args["server"] = i;
+                        args[LaunchArgumentKey.HeadlessServerPort] = i;
                     }
 
                     break;
@@ -88,7 +88,35 @@
                         }
                     }
 
-                    args["quick"] = b;
+                    args[LaunchArgumentKey.DoQuickLaunch] = b;
+                    break;
+                }
+
+                case "-debuggerlogging":
+                {
+                    if (!bool.TryParse(value, out bool b))
+                    {
+                        if (int.TryParse(value, out int i))
+                        {
+                            b = i > 0;
+                        }
+                    }
+
+                    args[LaunchArgumentKey.EnableDebuggerLogging] = b;
+                    break;
+                }
+
+                case "-serverpersistance":
+                {
+                    if (!bool.TryParse(value, out bool b))
+                    {
+                        if (int.TryParse(value, out int i))
+                        {
+                            b = i > 0;
+                        }
+                    }
+
+                    args[LaunchArgumentKey.ExplicitServerDataPersistance] = b;
                     break;
                 }
 
@@ -96,7 +124,7 @@
                 {
                     if (IPEndPoint.TryParse(value, out IPEndPoint ep) && ep != null)
                     {
-                        args["connect"] = ep;
+                        args[LaunchArgumentKey.ConnectToEndPoint] = ep;
                     }
 
                     break;
@@ -106,7 +134,7 @@
                 {
                     if (Enum.TryParse(value, out LogLevel level))
                     {
-                        args["loglevel"] = level;
+                        args[LaunchArgumentKey.LoggingLevel] = level;
                     }
 
                     break;
@@ -114,19 +142,19 @@
 
                 case "-gldebug":
                 {
-                    args["gldebug"] = value;
+                    args[LaunchArgumentKey.GLDebugMode] = value;
                     break;
                 }
 
                 case "-nocache":
                 {
-                    args["servercache"] = -1L;
+                    args[LaunchArgumentKey.ServerCacheSize] = -1L;
                     break;
                 }
 
                 case "-servercache":
                 {
-                    if (args.TryGetValue("servercache", out object val) && val is long l && l == -1)
+                    if (args.TryGetValue(LaunchArgumentKey.ServerCacheSize, out object val) && val is long l && l == -1)
                     {
                         break;
                     }
@@ -182,11 +210,11 @@
                         }
 
                         num *= mul;
-                        args["servercache"] = num;
+                        args[LaunchArgumentKey.ServerCacheSize] = num;
                     }
                     catch
                     {
-                        args["servercache"] = 1024 * 1024 * 1024;
+                        args[LaunchArgumentKey.ServerCacheSize] = 1024L * 1024L * 1024L;
                     }
 
                     break;
@@ -235,11 +263,11 @@
                         }
 
                         num *= mul;
-                        args["timeout"] = num;
+                        args[LaunchArgumentKey.NetworkTimeoutSpan] = num;
                     }
                     catch
                     {
-                        args["timeout"] = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
+                        args[LaunchArgumentKey.NetworkTimeoutSpan] = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
                     }
 
                     break;
@@ -247,42 +275,33 @@
 
                 case "-serverstorage":
                 {
-                    args["serverstorage"] = value;
+                    args[LaunchArgumentKey.ServerStorage] = value;
                     break;
                 }
 
                 case "-clientstorage":
                 {
-                    args["clientstorage"] = value;
+                    args[LaunchArgumentKey.ClientStorage] = value;
                     break;
                 }
             }
         }
     }
 
-    public readonly struct BaseArgsData
+    public enum LaunchArgumentKey
     {
-        public string Key { get; }
-        public object Value { get; }
-
-        public BaseArgsData(string key, object value)
-        {
-            this.Key = key;
-            this.Value = value;
-        }
-
-        public static ArgsData<T> ToData<T>(BaseArgsData self) => new ArgsData<T>(self.Key, (T)self.Value);
-    }
-
-    public readonly struct ArgsData<T>
-    {
-        public string Key { get; }
-        public T Value { get; }
-
-        public ArgsData(string key, T value)
-        {
-            this.Key = key;
-            this.Value = value;
-        }
+        DebugMode,
+        ShowConsole,
+        HeadlessServerPort,
+        DoQuickLaunch,
+        EnableDebuggerLogging,
+        ConnectToEndPoint,
+        LoggingLevel,
+        GLDebugMode,
+        ServerCacheSize,
+        NetworkTimeoutSpan,
+        ServerStorage,
+        ClientStorage,
+        ExplicitServerDataPersistance
     }
 }

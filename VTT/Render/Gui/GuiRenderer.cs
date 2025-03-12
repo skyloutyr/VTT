@@ -310,7 +310,7 @@
             this.ParticleEditorRenderer = new ParticleEditorRenderer();
             this.ShaderEditorRenderer = new ShaderGraphEditorRenderer();
             this.ShaderEditorRenderer.Create();
-            this.DebugEnabled = ArgsManager.TryGetValue<bool>("debug", out _);
+            this.DebugEnabled = ArgsManager.TryGetValue<bool>(LaunchArgumentKey.DebugMode, out _);
             this.LoadStatuses();
         }
 

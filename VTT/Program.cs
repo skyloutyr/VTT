@@ -1,5 +1,6 @@
 ﻿namespace VTT
 {
+    using Antlr4.Runtime.Misc;
     using System;
     using System.Diagnostics;
     using System.Globalization;
@@ -19,69 +20,12 @@
         public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            void Run()
-            {
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
-                Code = Assembly.GetExecutingAssembly();
-                Console.Clear();
-                Version = new Version(1, 2, 23);
-                ArgsManager.Parse(args);
-                IOVTT.LoadLocations();
-                if (ArgsManager.TryGetValue("server", out int port))
-                {
-                    Server s = new Server(IPAddress.Any, port);
-                    AutoResetEvent are = new AutoResetEvent(false);
-                    s.Create(are);
-                    are.WaitOne();
-                    s.Dispose();
-                }
-                else
-                {
-                    try
-                    {
-                        bool haveDebug = ArgsManager.TryGetValue<bool>("debug", out _); // if debug is present always show
-                        bool haveConsole = ArgsManager.TryGetValue("console", out bool bfConsole);
-
-                        if ((!haveDebug && !haveConsole) || (haveConsole && !bfConsole)) // Hide console if we are not in debug and console arg not present or if the arg is present and explicitly set to false
-                        {
-                            W32ConsoleInterlop.ShowConsole(false);
-                        }
-                        else
-                        {
-                            W32ConsoleInterlop.ShowConsole(true);
-                        }
-                    }
-                    catch
-                    {
-                        // NOOP
-                    }
-
-                    Client c = new Client();
-                    if (ArgsManager.TryGetValue("connect", out IPEndPoint ip))
-                    {
-                        c.Connect(ip);
-                    }
-                    else
-                    {
-                        if (ArgsManager.TryGetValue("quick", out bool b) && b)
-                        {
-                            int sport = 23551;
-                            Server s = new Server(IPAddress.Any, sport);
-                            s.LocalAdminID = c.ID;
-                            s.Create();
-                            c.Connect(new IPEndPoint(IPAddress.Loopback, sport));
-                        }
-                    }
-
-                    c.Frontend.Run();
-                }
-            }
 #if DEBUG
-            Run();
+            Run(args);
 #else
             try
             {
-                Run();
+                Run(args);
             }
             catch (Exception e)
             {
@@ -106,6 +50,64 @@
                 throw;
             }
 #endif
+        }
+
+        private static void Run(string[] args)
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
+            Code = Assembly.GetExecutingAssembly();
+            Console.Clear();
+            Version = new Version(1, 2, 23);
+            ArgsManager.Parse(args);
+            IOVTT.LoadLocations();
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.HeadlessServerPort, out int port))
+            {
+                Server s = new Server(IPAddress.Any, port);
+                AutoResetEvent are = new AutoResetEvent(false);
+                s.Create(are);
+                are.WaitOne();
+                s.Dispose();
+            }
+            else
+            {
+                try
+                {
+                    bool haveDebug = ArgsManager.TryGetValue<bool>(LaunchArgumentKey.DebugMode, out _); // if debug is present always show
+                    bool haveConsole = ArgsManager.TryGetValue(LaunchArgumentKey.ShowConsole, out bool bfConsole);
+
+                    if ((!haveDebug && !haveConsole) || (haveConsole && !bfConsole)) // Hide console if we are not in debug and console arg not present or if the arg is present and explicitly set to false
+                    {
+                        W32ConsoleInterlop.ShowConsole(false);
+                    }
+                    else
+                    {
+                        W32ConsoleInterlop.ShowConsole(true);
+                    }
+                }
+                catch
+                {
+                    // NOOP
+                }
+
+                Client c = new Client();
+                if (ArgsManager.TryGetValue(LaunchArgumentKey.ConnectToEndPoint, out IPEndPoint ip))
+                {
+                    c.Connect(ip);
+                }
+                else
+                {
+                    if (ArgsManager.TryGetValue(LaunchArgumentKey.DoQuickLaunch, out bool b) && b)
+                    {
+                        int sport = 23551;
+                        Server s = new Server(IPAddress.Any, sport);
+                        s.LocalAdminID = c.ID;
+                        s.Create();
+                        c.Connect(new IPEndPoint(IPAddress.Loopback, sport));
+                    }
+                }
+
+                c.Frontend.Run();
+            }
         }
 
         private static void WriteCrashreport(Exception e)
@@ -133,7 +135,7 @@
                 WriteCrashreport(e.ExceptionObject as Exception);
                 Client.Instance?.CloseLogger();
                 Server.Instance?.CloseLogger();
-                if (ArgsManager.TryGetValue("debug", out bool b) && !Debugger.IsAttached)
+                if (ArgsManager.TryGetValue(LaunchArgumentKey.DebugMode, out bool b) && !Debugger.IsAttached)
                 {
                     try
                     {

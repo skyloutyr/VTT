@@ -20,7 +20,7 @@
             ServerDir = Path.Combine(CommonDir, "Server");
             ClientDir = Path.Combine(CommonDir, "Client");
 
-            if (ArgsManager.TryGetValue("serverstorage", out string serverloc))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.ServerStorage, out string serverloc))
             {
                 try
                 {
@@ -40,7 +40,7 @@
                 }
             }
 
-            if (ArgsManager.TryGetValue("clientstorage", out string clientloc))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.ClientStorage, out string clientloc))
             {
                 try
                 {

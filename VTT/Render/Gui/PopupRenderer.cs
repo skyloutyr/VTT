@@ -22,7 +22,7 @@
             {
                 ImGui.InputText(lang.Translate("ui.popup.new_folder.name") + "###Folder Name", ref this._newFolderNameString, 255);
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -43,7 +43,7 @@
             {
                 ImGui.InputText(lang.Translate("ui.popup.rename_folder.name") + "###Folder Name", ref this._newFolderNameString, 255);
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -64,7 +64,7 @@
             {
                 ImGui.TextWrapped(lang.Translate("ui.popup.confirm_delete.text"));
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -86,7 +86,7 @@
                 DisplayBar db = this._editedMapObject.Bars[this._editedBarIndex];
                 ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedBarColor);
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -138,7 +138,7 @@
                 }
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
                 if (bo || bc)
                 {
@@ -170,7 +170,7 @@
             {
                 ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Map Team", ref this._editedTeamColor);
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
                 if (bo || bc)
                 {
@@ -195,7 +195,7 @@
                 }
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -221,7 +221,7 @@
                 }
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -249,7 +249,7 @@
                     (float, Color) aDat = this._editedMapObject.Auras[this._editedBarIndex];
                     ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedBarColor);
                     bool bc = ImGui.Button(cancel);
-                    ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                     bool bo = ImGui.Button(ok);
 
                     if (bo || bc)
@@ -279,7 +279,7 @@
                     ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedBarColor);
                     aDat.LightColor = this._editedBarColor.Xyz();
                     bool bc = ImGui.Button(cancel);
-                    ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                     bool bo = ImGui.Button(ok);
 
                     if (bo || bc)
@@ -306,7 +306,7 @@
             {
                 ImGui.TextWrapped(lang.Translate("ui.popup.delete_map.text"));
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -329,12 +329,8 @@
                 string resultingRolls = string.Empty;
                 if (ImGui.BeginTable("##DiceRollTable", 3))
                 {
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
                     ImGui.TableSetupColumn("Singular Die");
-                    ImGui.TableSetColumnIndex(1);
                     ImGui.TableSetupColumn("Dice");
-                    ImGui.TableSetColumnIndex(2);
                     ImGui.TableSetupColumn("Separate Dice");
 
                     ImGui.TableNextRow();
@@ -494,10 +490,10 @@
                 }
 
                 ImGui.TextUnformatted(lang.Translate("ui.popup.link_image.tooltip"));
-                ImGui.InputTextMultiline("##ImageTooltip", ref this._imgTooltip, ushort.MaxValue, new Vector2(ImGui.GetContentRegionMax().X - 32, 300));
+                ImGui.InputTextMultiline("##ImageTooltip", ref this._imgTooltip, ushort.MaxValue, new Vector2(ImGui.GetContentRegionAvail().X - 32, 300));
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -590,7 +586,7 @@
             {
                 ImGui.InputText(lang.Translate("ui.popup.rename_asset.name") + "###Asset Name", ref this._newFolderNameString, 255);
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -610,7 +606,7 @@
             {
                 ImGui.TextWrapped(lang.Translate("ui.popup.confirm_delete_asset.text"));
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -678,7 +674,7 @@
             bool open = true;
             ImGui.SetNextWindowBgAlpha(0.35f);
             ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetWorkCenter() - (new Vector2(136, 200) / 2), ImGuiCond.Appearing);
-            if (ImGui.BeginPopupModal(lang.Translate("ui.menu") + "###Menu", ref open, ImGuiWindowFlags.NavFlattened | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking))
+            if (ImGui.BeginPopupModal(lang.Translate("ui.menu") + "###Menu", ref open, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking))
             {
                 if (ImGui.Button(lang.Translate("ui.menu.disconnect") + "###Disconnect", new Vector2(128, 32)))
                 {
@@ -806,7 +802,7 @@
                 }
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)
@@ -857,7 +853,7 @@
                 }
 
                 bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
 
                 if (bo || bc)

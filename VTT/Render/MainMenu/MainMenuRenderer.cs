@@ -132,7 +132,7 @@
                 }
 
                 ImGui.SetCursorPos(new Vector2((width / 2) - 128, 300));
-                if (ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
+                if (ImGui.BeginChild("Main Menu Entry", new Vector2(256, 224), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                 {
                     if (ImGui.Button(lang.Translate("menu.join") + "###Join", new Vector2(240, 32)))
                     {
@@ -172,7 +172,7 @@
                     case MenuMode.Join:
                     {
                         ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
-                        if (ImGui.BeginChild("Main Menu Connect", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
+                        if (ImGui.BeginChild("Main Menu Connect", new Vector2(256, 158), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                         {
                             ImGui.InputText(lang.Translate("menu.connect.address") + "###Address", ref this._connectAddress, 15);
                             if (ImGui.IsItemHovered())
@@ -234,7 +234,7 @@
                     case MenuMode.Host:
                     {
                         ImGui.SetCursorPos(new Vector2((width / 2) - 128, 532));
-                        if (ImGui.BeginChild("Main Menu Host", new Vector2(256, 158), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
+                        if (ImGui.BeginChild("Main Menu Host", new Vector2(256, 158), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoDecoration))
                         {
                             ImGui.InputText(lang.Translate("menu.host.port") + "###Server Port", ref this._hostPort, 5);
                             if (ImGui.IsItemHovered())
@@ -280,7 +280,7 @@
                         if (Client.Instance.ClientVersion != null)
                         {
                             ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
-                            if (ImGui.BeginChild("Main Menu Changelog", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                            if (ImGui.BeginChild("Main Menu Changelog", new Vector2(512, 300), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
                             {
                                 foreach ((Version, string) kv in Client.Instance.ClientVersion.EnumerateChangelogData())
                                 {
@@ -310,7 +310,7 @@
                     case MenuMode.Credits:
                     {
                         ImGui.SetCursorPos(new Vector2((width / 2) - 256, 532));
-                        if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+                        if (ImGui.BeginChild("Main Menu Credits", new Vector2(512, 300), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
                         {
                             string sp = "    ";
                             ImGui.Text(lang.Translate("credits.dependencies"));
@@ -449,7 +449,7 @@
 
         private void ImLink(string text, string url)
         {
-            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.ButtonHovered));
             ImGui.PushStyleColor(ImGuiCol.Button, 0);
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
@@ -472,7 +472,7 @@
 
         public static unsafe void DrawSettings(SimpleLanguage lang, GuiState state)
         {
-            if (ImGui.BeginChild("Main Menu Setting", new Vector2(400, 300), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
+            if (ImGui.BeginChild("Main Menu Setting", new Vector2(400, 300), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | (ImGuiWindowFlags.NoDecoration & ~ImGuiWindowFlags.NoScrollbar)))
             {
                 if (ImGui.TreeNode(lang.Translate("menu.settings.category.display") + "###Display"))
                 {

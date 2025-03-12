@@ -16,7 +16,7 @@
                 System.Numerics.Vector2 wC = ImGui.GetWindowSize();
                 foreach (TextJournal tj in Client.Instance.Journals.Values)
                 {
-                    if (ImGui.BeginChild("journal_" + tj.SelfID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings))
+                    if (ImGui.BeginChild("journal_" + tj.SelfID.ToString(), new System.Numerics.Vector2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings))
                     {
                         ImGui.TextUnformatted(tj.Title);
                         ImGui.SameLine();

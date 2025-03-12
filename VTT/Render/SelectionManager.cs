@@ -997,7 +997,7 @@
                 int maxY = Math.Max(this._initialLmbY, (int)Client.Instance.Frontend.MouseY);
                 ImGuiWindowFlags window_flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove;
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 1f);
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0, 0));
                 ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(0, 0));
                 ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));

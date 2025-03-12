@@ -311,6 +311,8 @@
                 if (pc.Container != null && (pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin) && pc.IsActive)
                 {
                     this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
+
+                    // TODO FX particles not working bc pc.Container is null for them!
                     pc.Render(shader, cam);
                 }
             }

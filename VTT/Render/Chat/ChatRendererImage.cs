@@ -22,7 +22,7 @@
         {
             try
             {
-                Vector2 max = ImGui.GetContentRegionMax();
+                Vector2 max = ImGui.GetContentRegionAvail();
                 int w = int.Parse(this.Container.Blocks[0].Text);
                 int h = int.Parse(this.Container.Blocks[1].Text);
                 float baseAR = (float)w / h;
@@ -51,7 +51,7 @@
 
         public override void Render()
         {
-            Vector2 max = ImGui.GetContentRegionMax();
+            Vector2 max = ImGui.GetContentRegionAvail();
             int w = int.Parse(this.Container.Blocks[0].Text);
             int h = int.Parse(this.Container.Blocks[1].Text);
             float baseAR = (float)w / h;

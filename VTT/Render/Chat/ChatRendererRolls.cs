@@ -23,7 +23,7 @@
             Vector2 imSeparatorSize = ImGuiHelper.CalcTextSize(" + ");
             float cX = 8;
             float cY = 8;
-            float maxX = ImGui.GetWindowContentRegionMax().X - imPadding.X - 24;
+            float maxX = ImGui.GetContentRegionAvail().X - imPadding.X - 24;
             float mWidth = 0;
             List<RollContainer> rollContainers = new List<RollContainer>();
             int result = 0;

@@ -36,7 +36,7 @@
                     }
 
                     bool selected = (int)mor.EditMode == i;
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                     ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
                     if (selected)
                     {
@@ -70,7 +70,7 @@
                 if (Client.Instance.IsAdmin)
                 {
                     ImGui.NewLine();
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                     ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
                     if (this._showingTurnOrder)
                     {
@@ -140,7 +140,7 @@
                 ImGui.Begin("##FOWControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 bool selected = fowr.CanvasMode == FOWRenderer.RevealMode.Reveal;
                 if (selected)
@@ -283,7 +283,7 @@
                 ImGui.Begin("##MeasureControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 for (int i = 0; i < 9; ++i)
                 {
@@ -386,7 +386,7 @@
                 ImGui.SetNextWindowPos(Vec56x70);
                 ImGui.Begin("##TranslateControls", window_flags);
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                 for (int i = 0; i < 3; ++i)
                 {
                     TranslationMode tMode = (TranslationMode)i;
@@ -435,7 +435,7 @@
                 ImGui.Begin("##CameraMoveControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 CameraControlMode ccm = Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode;
                 if (ccm == CameraControlMode.Standard)
@@ -522,7 +522,7 @@
                 ImGui.Begin("##DrawControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 bool selected = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing;
                 if (ImImageButton("##DrawModeBtnDraw", this.FOWModeBrush, Vec32x32, selected))
@@ -617,7 +617,7 @@
                 ImGui.Begin("##FXControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                 Vector2 imScreenPos = ImGui.GetCursorScreenPos();
@@ -655,7 +655,7 @@
                 drawList.PushClipRect(imScreenPos, rectEnd);
                 drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                 drawList.PopClipRect();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                ImGui.Dummy(new Vector2(0, 28));
                 if (mouseOver)
                 {
                     state.movingParticleAssetOverFXRecepticle = true;
@@ -693,7 +693,7 @@
                 ImGui.Begin("##Shadow2DControls", window_flags);
 
                 ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
 
                 Shadow2DControlMode currentMode = renderer.ControlMode;
                 for (int i = 0; i < 9; ++i)

@@ -695,7 +695,7 @@ namespace VTT.Render
                     if (IsCharInsideWord(text[endLineIndex]))
                     {
                         // see if we can do a better cut.
-                        float widthNextLine = ImGui.GetContentRegionMax().X;
+                        float widthNextLine = ImGui.GetContentRegionAvail().X;
                         int endNextLineIndex = TextWrapFromFont(ImGui.GetFont(), scale, text, widthNextLine, out string endNextLine);
                         if (endNextLineIndex >= text.Length - 1 || (endNextLineIndex <= text.Length - 1 && !IsCharInsideWord(text[endNextLineIndex])))
                         {

@@ -13,6 +13,12 @@
         public Guid EntryRefID { get; set; }
 
         public string NewTeam { get; set; }
+        public string ValueExpression
+        {
+            get => this.NewTeam;
+            set => this.NewTeam = value;
+        }
+
         public float NewValue { get; set; }
         public override uint PacketID => 19;
 
@@ -30,20 +36,56 @@
             TurnTracker.Entry e = m.TurnTracker.GetContextAwareEntry(this.EntryIndex, this.EntryRefID);
             if (e != null)
             {
-                if (this.Type == ChangeType.Value)
+                if (isServer)
                 {
-                    e.NumericValue = this.NewValue;
-                }
-                else
-                {
-                    TurnTracker.Team t = m.TurnTracker.Teams.Find(p => p.Name.Equals(this.NewTeam));
-                    if (t != null)
+                    bool canEditMo = this.Sender.IsAdmin;
+                    if (m.GetObject(e.ObjectID, out MapObject mo))
                     {
-                        e.Team = t;
+                        canEditMo &= mo.CanEdit(this.Sender.ID);
                     }
-                    else
+
+                    if (!canEditMo)
                     {
-                        l.Log(LogLevel.Warn, "Could not find team specified!");
+                        l.Log(LogLevel.Warn, "Client tried to edit a turn tracker entry property without permissions!");
+                        return;
+                    }
+                }
+
+                switch (this.Type)
+                {
+                    case ChangeType.Value:
+                    {
+                        e.NumericValue = this.NewValue;
+                        break;
+                    }
+
+                    case ChangeType.Team:
+                    {
+                        TurnTracker.Team t = m.TurnTracker.Teams.Find(p => p.Name.Equals(this.NewTeam));
+                        if (t != null)
+                        {
+                            e.Team = t;
+                        }
+                        else
+                        {
+                            l.Log(LogLevel.Warn, "Could not find team specified!");
+                        }
+
+                        break;
+                    }
+
+                    case ChangeType.ValueExpression:
+                    {
+                        if (ChatParser.TryParseTextAsExpression(this.NewTeam, true, out double d))
+                        {
+                            e.NumericValue = (float)d;
+                        }
+                        else
+                        {
+                            l.Log(LogLevel.Error, "Expression passed as turn tracker new value could not be evaluated!");
+                        }
+
+                        break;
                     }
                 }
 
@@ -64,7 +106,7 @@
             this.Type = (ChangeType)br.ReadByte();
             this.EntryIndex = br.ReadInt32();
             this.EntryRefID = new Guid(br.ReadBytes(16));
-            if (this.Type == ChangeType.Team)
+            if (this.Type is ChangeType.Team or ChangeType.ValueExpression)
             {
                 this.NewTeam = br.ReadString();
             }
@@ -79,7 +121,7 @@
             bw.Write((byte)this.Type);
             bw.Write(this.EntryIndex);
             bw.Write(this.EntryRefID.ToByteArray());
-            if (this.Type == ChangeType.Team)
+            if (this.Type is ChangeType.Team or ChangeType.ValueExpression)
             {
                 bw.Write(this.NewTeam);
             }
@@ -92,7 +134,8 @@
         public enum ChangeType
         {
             Team,
-            Value
+            Value,
+            ValueExpression
         }
     }
 }

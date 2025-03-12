@@ -41,9 +41,7 @@
                 cSize = ImGui.GetContentRegionAvail();
                 chatChanged = !Equals(this._chatClientRect, cSize);
                 loseFocus = false;
-                Vector2 cwSize = ImGui.GetWindowContentRegionMax();
-                Vector2 cwB = ImGui.GetWindowContentRegionMin();
-                ImGui.SetCursorPosY(cwSize.Y - 128);
+                ImGui.SetCursorPosY(cSize.Y - 100);
                 sendSignal = false;
                 string inputCopy = this._chatString;
                 if (this._needsRefocusChat)
@@ -52,7 +50,7 @@
                     this._needsRefocusChat = false;
                 }
 
-                bool b = ImGui.InputTextMultiline("##ChatInput", ref inputCopy, ushort.MaxValue, new Vector2(cwSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
+                bool b = ImGui.InputTextMultiline("##ChatInput", ref inputCopy, ushort.MaxValue, new Vector2(cSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
                 {
                     if (data != null) // null ptr check
                     {
@@ -128,26 +126,28 @@
 
                 ImGui.SameLine();
                 float bscX = ImGui.GetCursorPosX();
+                ImGui.SetCursorPosX(bscX);
+                ImGui.SetCursorPosY(cSize.Y - 100);
                 if (ImGui.ImageButton("btnChatLinkImage", this.ChatLinkImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
                 {
                     state.linkPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cwSize.Y - 86);
+                ImGui.SetCursorPosY(cSize.Y - 56);
                 if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
                 {
                     state.rollPopup = true;
                 }
 
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cwSize.Y - 44);
+                ImGui.SetCursorPosY(cSize.Y - 12);
                 sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f));
-                ImGui.SetCursorPosY(cwB.Y);
+                ImGui.SetCursorPosY(32);
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Lerp(imDefault, darkGray, Client.Instance.Settings.ChatBackgroundBrightness));
-                if (ImGui.BeginChild("ChatWindow", new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking))
+                if (ImGui.BeginChild("ChatWindow", new Vector2(cSize.X, cSize.Y - 140), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking))
                 {
                     int clRendered = 0;
                     int lowestIndex = -1;
@@ -163,7 +163,7 @@
                                     cl.InvalidateCache();
                                 }
 
-                                if (cl.ImRender(new Vector2(cwSize.X - 8, cwSize.Y - 128 - cwB.Y - 8), cwSize.Y - 128 - cwB.Y - 8, cl.Index, lang))
+                                if (cl.ImRender(new Vector2(cSize.X - 8, cSize.Y - 128), cSize.Y - 128, cl.Index, lang))
                                 {
                                     ImGui.Separator();
                                     ++clRendered;

@@ -59,12 +59,12 @@
                     bool npLbm = false;
                     bool npRmb = false;
 
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                     ImGui.Image(pr.RenderTexture, texSize, new Vector2(0, 1), new Vector2(1, 0));
                     ImGui.PopStyleVar();
                     ImGui.SetCursorPos(new Vector2(winSize.X - 328, 28));
                     bool focused = ImGui.IsWindowFocused();
-                    if (ImGui.BeginChild("##ParamsEditor", new Vector2(320, winSize.Y - 36), ImGuiChildFlags.Border, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar))
+                    if (ImGui.BeginChild("##ParamsEditor", new Vector2(320, winSize.Y - 36), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar))
                     {
                         if (doRender)
                         {
@@ -402,7 +402,7 @@
 
                         ImGui.Spacing();
                         bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
-                        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 24);
+                        ImGui.SameLine(ImGui.GetContentRegionAvail().X - 24);
                         bool bo = ImGui.Button(lang.Translate("ui.generic.ok"));
                         if (bo)
                         {
@@ -471,7 +471,7 @@
                 }
 
                 bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
-                ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - 20);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(lang.Translate("ui.generic.ok"));
 
                 if (bo || bc)
@@ -738,11 +738,12 @@
 
         private void ImAssetRecepticle(string text, AssetRef draggedRef, Guid aId, GuiState state, ParticleSystem ps, int type)
         {
-            if (ImGui.BeginChild("asset_recepticle_" + text, new Vector2(320, 24), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY))
+            float w = ImGui.GetContentRegionAvail().X;
+            if (ImGui.BeginChild("asset_recepticle_" + text, new Vector2(w, 24), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
                 Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                Vector2 contentSize = Vector2.Min(new Vector2(320, 24), ImGui.GetContentRegionAvail());
+                Vector2 contentSize = Vector2.Min(new Vector2(w, 24), ImGui.GetContentRegionAvail());
                 Vector2 rectEnd = imScreenPos + contentSize;
                 bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
                 bool acceptShader = type == 0 && draggedRef != null && draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader;
@@ -775,7 +776,7 @@
 
                 mdlTxt += " (" + aId.ToString() + ")\0";
                 drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                ImGui.Dummy(new Vector2(w, 28));
                 if (mouseOver && draggedRef != null && acceptModel)
                 {
                     state.particleModelHovered = ps;

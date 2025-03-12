@@ -45,6 +45,8 @@
                 }
             }
 
+            Vector2 winContentRegion = ImGui.GetContentRegionAvail();
+            float paddingX = ImGui.GetStyle().FramePadding.X;
             if (ImGui.Begin(lang.Translate("ui.music_player") + "###MusicPlayer"))
             {
                 MusicPlayer mp = Client.Instance.Frontend?.Sound?.MusicPlayer;
@@ -128,9 +130,9 @@
                     }
 
                     DrawScrollingText(ImGui.GetWindowDrawList(), ImGui.GetCursorScreenPos(), new Vector2(390, 32), musicName, true);
-                    ImGui.ProgressBar(musicDurationPercentage, new Vector2(390, 16), " ");
+                    ImGui.ProgressBar(musicDurationPercentage, new Vector2(winContentRegion.X - paddingX, 16), " ");
                     Vector2 musicNameSize = ImGuiHelper.CalcTextSize(musicDuration);
-                    ImGui.SetCursorPosX(195 - (musicNameSize.X / 2));
+                    ImGui.SetCursorPosX(winContentRegion.X / 2 - (musicNameSize.X / 2));
                     ImGui.TextUnformatted(musicDuration);
                     if (Client.Instance.IsAdmin)
                     {
@@ -184,7 +186,7 @@
                         string volumeText = lang.Translate("ui.music_player.volume");
                         ImGui.TextUnformatted(volumeText);
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(390 - ImGuiHelper.CalcTextSize(volumeText).X - 16);
+                        ImGui.SetNextItemWidth(winContentRegion.X - paddingX - ImGuiHelper.CalcTextSize(volumeText).X - 16);
                         float fPV = mp.Volume;
                         if (ImGui.SliderFloat("###MusicPlayerVolumeSlider", ref fPV, 0, 1))
                         {
@@ -194,7 +196,7 @@
                         }
 
                         ImGui.NewLine();
-                        if (ImGui.BeginChild("MusicPlayerTracks", new Vector2(390, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking))
+                        if (ImGui.BeginChild("MusicPlayerTracks", new Vector2(winContentRegion.X - paddingX, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking))
                         {
                             i = 0;
                             Vector4 clrInactiveV = *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg);
@@ -406,7 +408,7 @@
                         drawList.PushClipRect(imScreenPos, rectEnd);
                         drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                         drawList.PopClipRect();
-                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                        ImGui.Dummy(new Vector2(0, 28));
                         return mouseOver;
                     }
                 }

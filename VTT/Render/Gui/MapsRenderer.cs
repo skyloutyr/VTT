@@ -21,7 +21,7 @@
                 Vector2 origPos = ImGui.GetCursorPos();
                 if (state.clientMap != null)
                 {
-                    ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
+                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 64);
                     if (ImGui.Button(lang.Translate("ui.maps.cam_snap") + "###Cam Snap"))
                     {
                         Vector3 cPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
@@ -42,7 +42,7 @@
 
                 if (Client.Instance.IsAdmin && state.clientMap != null)
                 {
-                    ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
+                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 64);
                     if (ImGui.Button(lang.Translate("ui.maps.cam_set") + "###Set Cam"))
                     {
                         Vector3 cPos = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.Position;
@@ -65,7 +65,7 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.cam_set.tt"));
                     }
 
-                    ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
+                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 64);
                     if (ImGui.Button(lang.Translate("ui.maps.clear_marks") + "###Clear Marks"))
                     {
                         new PacketClearMarks().Send();
@@ -76,7 +76,7 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.clear_marks.tt"));
                     }
 
-                    ImGui.SetCursorPosX(ImGui.GetWindowContentRegionMax().X - 64);
+                    ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - 64);
                     if (ImGui.Button(lang.Translate("ui.maps.clear_drawings") + "###Clear Drawings"))
                     {
                         new PacketRemoveAllDrawings() { MapID = Client.Instance.CurrentMap.ID }.Send();
@@ -272,7 +272,8 @@
                         ImGui.BeginDisabled();
                     }
 
-                    if (ImGui.InputInt(lang.Translate("ui.maps.fow_size") + "###FOW size", ref fowSizeX, 32, 32, ImGuiInputTextFlags.EnterReturnsTrue))
+                    ImGui.InputInt(lang.Translate("ui.maps.fow_size") + "###FOW size", ref fowSizeX, 32, 32);
+                    if (ImGui.IsItemDeactivatedAfterEdit())
                     {
                         if (fowSizeX is >= 32 and <= 4096)
                         {
@@ -554,7 +555,7 @@
                         drawList.PushClipRect(imScreenPos, rectEnd);
                         drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
                         drawList.PopClipRect();
-                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+                        ImGui.Dummy(new Vector2(0, 28));
                         return mouseOver;
                     }
 
@@ -593,7 +594,7 @@
                         int j = 0;
                         foreach (KeyValuePair<Guid, (Guid, float)> darkvisionData in cMap.DarkvisionData)
                         {
-                            if (ImGui.BeginChild("dvEntry" + darkvisionData.Key, new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse))
+                            if (ImGui.BeginChild("dvEntry" + darkvisionData.Key, new Vector2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse))
                             {
                                 Client.Instance.TryGetClientNamesArray(darkvisionData.Key, out int pIdx, out string[] cNames, out Guid[] cIds);
                                 int oIdx = 0;
@@ -623,7 +624,8 @@
                                 }
 
                                 ImGui.SameLine();
-                                if (ImGui.InputFloat("##DarkvisionValue_" + j, ref v, 0, 0, "%.3f", ImGuiInputTextFlags.EnterReturnsTrue))
+                                ImGui.InputFloat("##DarkvisionValue_" + j, ref v, 0, 0, "%.3f");
+                                if (ImGui.IsItemDeactivatedAfterEdit())
                                 {
                                     new PacketDarkvisionData() { Deletion = false, MapID = state.clientMap.ID, ObjectID = darkvisionData.Value.Item1, PlayerID = darkvisionData.Key, Value = v }.Send();
                                 }
@@ -673,7 +675,7 @@
                                 }
 
                                 bool hadTT = false;
-                                if (ImGui.BeginChild("mapNav_" + d.MapID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+                                if (ImGui.BeginChild("mapNav_" + d.MapID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
                                 {
                                     if (selected)
                                     {

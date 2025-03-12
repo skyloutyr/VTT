@@ -35,7 +35,7 @@
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             Vector2 localPos = ImGui.GetCursorPos();
             Vector2 pos = ImGui.GetCursorScreenPos();
-            Vector2 size = ImGui.GetContentRegionMax();
+            Vector2 size = ImGui.GetContentRegionAvail();
             uint gold = Color.Gold.Abgr();
             uint nothing = Color.Transparent.Abgr();
             float h = 24 + ImGui.GetTextLineHeightWithSpacing();

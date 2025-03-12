@@ -132,6 +132,27 @@
             });
         }
 
+        public static bool TryParseTextAsExpression(string exp, bool autoCorrextXdY, out double result)
+        {
+            if (autoCorrextXdY)
+            {
+                exp = FixXdY(exp);
+            }
+
+            try
+            {
+                Expression e = new Expression(exp);
+                e.EvaluateFunction += RollFunction;
+                result = Convert.ToDouble(e.Evaluate());
+                return true;
+            }
+            catch
+            {
+                result = double.NaN;
+                return false;
+            }
+        }
+
         public static ChatBlock ParseExpression(string exp)
         {
             string bContent = exp;
@@ -168,7 +189,7 @@
 
             StringBuilder sb = new StringBuilder();
             bool isBlock = false;
-            int blockMode = -1;
+            BlockMode blockMode = BlockMode.Text;
             int brackets = 0;
             while (true)
             {
@@ -193,22 +214,22 @@
                             {
                                 if (!MoveNext(text, ref idx, out c) || !MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 1;
+                                blockMode = BlockMode.ColorSpecifier;
                                 if (c == 'u')
                                 {
                                     color = userColor;
-                                    blockMode = 2;
+                                    blockMode = BlockMode.Skip;
                                     continue;
                                 }
 
                                 if (c == 'r')
                                 {
                                     color = Extensions.FromAbgr(0);
-                                    blockMode = 2;
+                                    blockMode = BlockMode.Skip;
                                     continue;
                                 }
 
@@ -220,11 +241,11 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 3;
+                                blockMode = BlockMode.TooltipSpecifier;
                                 continue;
                             }
 
@@ -236,7 +257,7 @@
                                     break;
                                 }
 
-                                blockMode = 4;
+                                blockMode = BlockMode.RenderModeSpecifier;
                                 continue;
                             }
 
@@ -244,11 +265,11 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 6;
+                                blockMode = BlockMode.Passthrough;
                                 continue;
                             }
 
@@ -256,13 +277,13 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
                                 if (c == ':')
                                 {
-                                    blockMode = 7;
+                                    blockMode = BlockMode.Recursive;
                                     continue;
                                 }
                                 else
@@ -277,11 +298,11 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 8;
+                                blockMode = BlockMode.DestinationSpecifier;
                                 continue;
                             }
 
@@ -289,11 +310,11 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 9;
+                                blockMode = BlockMode.SenderNameSpecifier;
                                 continue;
                             }
 
@@ -301,18 +322,18 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
-                                blockMode = 10;
+                                blockMode = BlockMode.SenderPortraitSpecifier;
                                 continue;
                             }
 
                         expr:
                             --idx;
                             // Expression
-                            blockMode = 5;
+                            blockMode = BlockMode.Expression;
                             continue;
                         }
                         else
@@ -323,7 +344,7 @@
                     }
                     else
                     {
-                        if (blockMode == 7)
+                        if (blockMode == BlockMode.Recursive)
                         {
                             brackets += 1;
                         }
@@ -351,7 +372,7 @@
                 }
             }
 
-            if (blockMode == -1)
+            if (blockMode == BlockMode.Text)
             {
                 string bContent = sb.ToString();
                 if (!string.IsNullOrEmpty(bContent))
@@ -367,13 +388,13 @@
                 return true;
             }
 
-            if (blockMode == 0)
+            if (blockMode == BlockMode.Error)
             {
                 cb = new ChatBlock() { Color = Color.Red, Text = sb.ToString(), Tooltip = "An exception occured while parsing this text!", Type = ChatBlockType.TextError };
                 return true;
             }
 
-            if (blockMode == 1)
+            if (blockMode == BlockMode.ColorSpecifier)
             {
                 string bContent = sb.ToString();
                 if (bContent.StartsWith("0x"))
@@ -390,20 +411,20 @@
                 return true;
             }
 
-            if (blockMode == 2)
+            if (blockMode == BlockMode.Skip)
             {
                 cb = null;
                 return true;
             }
 
-            if (blockMode == 3)
+            if (blockMode == BlockMode.TooltipSpecifier)
             {
                 tooltip = sb.ToString();
                 cb = null;
                 return true;
             }
 
-            if (blockMode == 4)
+            if (blockMode == BlockMode.RenderModeSpecifier)
             {
                 if (Enum.TryParse(sb.ToString(), out ChatLine.RenderType result))
                 {
@@ -414,7 +435,7 @@
                 return true;
             }
 
-            if (blockMode == 5)
+            if (blockMode == BlockMode.Expression)
             {
                 string bContent = sb.ToString();
                 try
@@ -442,13 +463,13 @@
                 }
             }
 
-            if (blockMode == 6)
+            if (blockMode == BlockMode.Passthrough)
             {
                 cb = new ChatBlock() { Color = color, Text = sb.ToString(), Tooltip = tooltip, Type = ChatBlockType.Text };
                 return true;
             }
 
-            if (blockMode == 7)
+            if (blockMode == BlockMode.Recursive)
             {
                 string t = sb.ToString();
 
@@ -471,7 +492,7 @@
                 return true;
             }
 
-            if (blockMode == 8)
+            if (blockMode == BlockMode.DestinationSpecifier)
             {
                 string t = sb.ToString();
                 Guid id = Guid.Empty;
@@ -517,7 +538,7 @@
                 return true;
             }
 
-            if (blockMode == 9)
+            if (blockMode == BlockMode.SenderNameSpecifier)
             {
                 string t = sb.ToString();
                 if (!string.IsNullOrEmpty(t))
@@ -529,7 +550,7 @@
                 return true;
             }
 
-            if (blockMode == 10)
+            if (blockMode == BlockMode.SenderPortraitSpecifier)
             {
                 string t = sb.ToString();
                 if (Guid.TryParse(t, out Guid id))
@@ -646,5 +667,22 @@
         }
 
         public static bool IsEscaped(string s, int idx) => idx != 0 && s[idx - 1] == '\\';
+
+        public enum BlockMode
+        { 
+            Text = -1,
+            Error = 0,
+            ColorSpecifier = 1,
+            Skip = 2,
+            TooltipSpecifier = 3,
+            RenderModeSpecifier = 4,
+            Expression = 5,
+            Passthrough = 6,
+            Recursive = 7,
+            DestinationSpecifier = 8,
+            SenderNameSpecifier = 9,
+            SenderPortraitSpecifier = 10
+
+        }
     }
 }

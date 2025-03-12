@@ -973,7 +973,7 @@
                     ImGui.NextColumn();
                     cw = ImGui.GetColumnWidth();
                     ImGui.BeginChild(ImGui.GetID("AssetsView"), new Vector2(cw, winSize.Y - 24 - (winPadding.Y * 2) - (framePadding.Y * 2) - 20));
-                    this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenOverlappedByWindow | ImGuiHoveredFlags.AllowWhenOverlappedByItem | ImGuiHoveredFlags.ChildWindows);
+                    this._mouseOverAssets = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
                     IOrderedEnumerable<AssetRef> assetEnumeration;
                     switch (this._sortOption)
                     {
@@ -1008,7 +1008,7 @@
 
                         float cursorXBeforeElement = ImGui.GetCursorPosX();
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
-                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, Vector2.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
                         ImGui.BeginChild(ImGui.GetID("Asset_" + aRef.AssetID), new Vector2(96, 112));
                         AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aRef.AssetID, AssetType.Texture, out AssetPreview ap);
 

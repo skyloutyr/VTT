@@ -761,7 +761,7 @@
                     ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this._inspectedObject.Name));
                     ImGui.PopStyleColor();
 
-                    if (ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
+                    if (ImGui.BeginChild("ObjectMouseOverDesc", new Vector2(284, 260), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoSavedSettings))
                     {
                         if (this._inspectedObject.UseMarkdownForDescription)
                         {
@@ -785,7 +785,7 @@
                             ImGui.PopTextWrapPos();
                         }
 
-                        if (ImGui.BeginPopupContextItem())
+                        if (ImGui.BeginPopupContextItem("##PopupCtxCopyObjectDesc_" + this._inspectedObject.ID))
                         {
                             if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
                             {

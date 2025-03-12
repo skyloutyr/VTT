@@ -5,7 +5,6 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Control;
@@ -441,29 +440,36 @@
 
                 ImGui.SetNextWindowPos(new Vec2(ww + windowSize.X, -12));
                 ImGui.SetNextWindowBgAlpha(0.0f);
-                ImGui.Begin("##TurnTrackerCollapseContainer", window_flags | ImGuiWindowFlags.NoBackground);
-                ImGui.PushItemWidth(48);
-                if (ImGui.ArrowButton("##TurnTrackerCollapseButton", this._turnTrackerCollapsed ? ImGuiDir.Down : ImGuiDir.Up))
+                if (ImGui.Begin("##TurnTrackerCollapseContainer", window_flags | ImGuiWindowFlags.NoBackground))
                 {
-                    this._turnTrackerCollapsed = !this._turnTrackerCollapsed;
-                }
-
-                ImGui.PopItemWidth();
-
-                if (!this._turnTrackerCollapsed && this._ttOffset != 0)
-                {
-                    ImGui.SetNextWindowPos(new Vec2(ww - 24, -12));
-                    ImGui.SetNextWindowBgAlpha(0.0f);
-                    ImGui.Begin("##TurnTrackerResetContainer", window_flags | ImGuiWindowFlags.NoBackground);
                     ImGui.PushItemWidth(48);
-                    if (ImGui.Button("↻###TurnTrackerResetButton", new Vec2(24, 24)))
+                    if (ImGui.ArrowButton("##TurnTrackerCollapseButton", this._turnTrackerCollapsed ? ImGuiDir.Down : ImGuiDir.Up))
                     {
-                        this._ttOffset = 0;
+                        this._turnTrackerCollapsed = !this._turnTrackerCollapsed;
                     }
 
                     ImGui.PopItemWidth();
-                    ImGui.End();
+
+                    if (!this._turnTrackerCollapsed && this._ttOffset != 0)
+                    {
+                        ImGui.SetNextWindowPos(new Vec2(ww - 24, -12));
+                        ImGui.SetNextWindowBgAlpha(0.0f);
+                        if (ImGui.Begin("##TurnTrackerResetContainer", window_flags | ImGuiWindowFlags.NoBackground))
+                        {
+                            ImGui.PushItemWidth(48);
+                            if (ImGui.Button("↻###TurnTrackerResetButton", new Vec2(24, 24)))
+                            {
+                                this._ttOffset = 0;
+                            }
+
+                            ImGui.PopItemWidth();
+                        }
+
+                        ImGui.End();
+                    }
                 }
+
+                ImGui.End();
             }
 
             this._scrollDYChange = 0;
@@ -597,7 +603,7 @@
                     if (ImGui.Begin(lang.Translate("ui.turn_tracker") + "###Turn Tracker Controls"))
                     {
                         bool ttVisible = cMap.TurnTracker.Visible;
-                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1.0f);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                         if (ttVisible)
                         {
                             ImGui.PushStyleColor(ImGuiCol.Border, (Vec4)Color.RoyalBlue);
@@ -692,7 +698,7 @@
                             if (haveObject)
                             {
                                 oName = mo.Name;
-                                if (Debugger.IsAttached)
+                                if (this.DebugEnabled)
                                 {
                                     oName += " (" + mo.ID + ")";
                                 }
@@ -711,7 +717,7 @@
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 
-                            if (ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings))
+                            if (ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings))
                             {
                                 if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                                 {
@@ -771,12 +777,38 @@
                                 }
 
                                 float v = e.NumericValue;
+                                string vStr = v.ToString();
                                 ImGui.PushItemWidth(100);
+                                ImGui.InputText("##ValueText" + e.ObjectID, ref vStr, 255, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll | ImGuiInputTextFlags.ElideLeft);
+                                if (ImGui.IsItemDeactivatedAfterEdit())
+                                {
+                                    Console.WriteLine(ImGui.IsKeyPressed(ImGuiKey.Escape));
+                                    Console.WriteLine(ImGui.IsKeyDown(ImGuiKey.Escape));
+                                    if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+                                    {
+                                        this.NotifyOfEscapeCaptureThisFrame();
+                                    }
+                                    else
+                                    {
+                                        if (float.TryParse(vStr, out v))
+                                        {
+                                            e.NumericValue = v;
+                                            new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewValue = v, Type = PacketChangeTurnEntryProperty.ChangeType.Value }.Send();
+                                        }
+                                        else
+                                        {
+                                            new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, ValueExpression = vStr, Type = PacketChangeTurnEntryProperty.ChangeType.ValueExpression }.Send();
+                                        }
+                                    }
+                                }
+
+                                /*
                                 if (ImGui.InputFloat("##Value" + e.ObjectID, ref v, 0, 0, "%.3f"))
                                 {
                                     e.NumericValue = v;
                                     new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, NewValue = v, Type = PacketChangeTurnEntryProperty.ChangeType.Value }.Send();
                                 }
+                                */
 
                                 ImGui.PopItemWidth();
                                 ImGui.SameLine();

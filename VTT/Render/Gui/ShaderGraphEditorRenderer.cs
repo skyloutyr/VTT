@@ -83,7 +83,7 @@
                             ImGui.SetCursorPosY(20);
                             if (this._extraTexturesOpen)
                             {
-                                if (ImGui.BeginChild("ui.shader.extratextures", new(320, wH - 40), ImGuiChildFlags.Border))
+                                if (ImGui.BeginChild("ui.shader.extratextures", new(320, wH - 40), ImGuiChildFlags.Borders))
                                 {
                                     float oY = 0;
                                     int i = 0;
@@ -837,7 +837,7 @@
             drawList.PushClipRect(imScreenPos, rectEnd);
             drawList.AddText(imScreenPos + new SVec2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
             drawList.PopClipRect();
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
+            ImGui.Dummy(new(0, 28));
             return mouseOver;
         }
 

@@ -434,13 +434,14 @@
             shader["projection"].Set(cam.Projection);
             Matrix4x4 model;
             Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
+            bool inMeasureMode = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure;
 
             foreach (RulerInfo ri in this.ActiveInfos)
             {
                 model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(ri.Start);
                 shader["model"].Set(model);
                 Vector4 riClr = ri.Color.Vec4();
-                if (this.CurrentMode == RulerType.Eraser && tHit.HasValue)
+                if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
                 {
                     bool inRange = ri.Type == RulerType.Polyline ? ri.Points.Any(x => (x - tHit.Value).Length() <= this.CurrentExtraValue) : (ri.Start - tHit.Value).Length() <= this.CurrentExtraValue;
                     if (inRange)
@@ -616,7 +617,7 @@
                 GL.Enable(Capability.CullFace);
             }
 
-            if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
+            if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
             {
                 model = Matrix4x4.CreateScale(this.CurrentExtraValue * 2) * Matrix4x4.CreateTranslation(tHit.Value);
                 shader["model"].Set(model);

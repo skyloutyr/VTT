@@ -41,7 +41,7 @@
                     bool canEditMo = this.Sender.IsAdmin;
                     if (m.GetObject(e.ObjectID, out MapObject mo))
                     {
-                        canEditMo &= mo.CanEdit(this.Sender.ID);
+                        canEditMo |= mo.CanEdit(this.Sender.ID);
                     }
 
                     if (!canEditMo)

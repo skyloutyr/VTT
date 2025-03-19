@@ -139,14 +139,12 @@
                 exp = FixXdY(exp);
             }
 
-            try
+            if (TryRunExpression(exp, out object res, out _, out _))
             {
-                Expression e = new Expression(exp);
-                e.EvaluateFunction += RollFunction;
-                result = Convert.ToDouble(e.Evaluate());
+                result = Convert.ToDouble(res);
                 return true;
             }
-            catch
+            else
             {
                 result = double.NaN;
                 return false;
@@ -155,27 +153,22 @@
 
         public static ChatBlock ParseExpression(string exp)
         {
-            string bContent = exp;
-            try
+            if (TryRunExpression(exp, out object result, out RollResultFlags resultFlags, out Dictionary<string, List<string>> results))
             {
-                Expression e = new Expression(bContent);
-                e.EvaluateFunction += RollFunction;
-                string r = e.Evaluate().ToString();
-
-                Color rollColor = Color.White;
-                if (hadRollColorChange)
+                Color rollColor = resultFlags switch
                 {
-                    rollColor = hadRollMax && hadRollMin ? Color.LightBlue : hadRollMax ? Color.LightGreen : Color.Red;
-                    hadRollColorChange = hadRollMax = hadRollMin = false;
-                }
+                    RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
+                    RollResultFlags.HadMaximumValue => Color.LightGreen,
+                    RollResultFlags.HadMinimumValue => Color.Red,
+                    _ => Color.White
+                };
 
-                PrepareRollsTooltip(ref bContent);
-                return new ChatBlock() { Color = rollColor, Text = r, Tooltip = bContent + " = " + r, Type = ChatBlockType.Expression };
+                PrepareRollsTooltip(ref exp, results);
+                return new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{exp} = {result}", Type = ChatBlockType.Expression };
             }
-            catch
+            else
             {
-                hadRollColorChange = hadRollMax = hadRollMin = false;
-                return new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError };
+                return new ChatBlock() { Color = Color.Red, Text = exp, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError };
             }
         }
 
@@ -253,7 +246,7 @@
                             {
                                 if (!MoveNext(text, ref idx, out c))
                                 {
-                                    blockMode = 0;
+                                    blockMode = BlockMode.Error;
                                     break;
                                 }
 
@@ -438,27 +431,23 @@
             if (blockMode == BlockMode.Expression)
             {
                 string bContent = sb.ToString();
-                try
+                if (TryRunExpression(bContent, out object result, out RollResultFlags resultFlags, out Dictionary<string, List<string>> results))
                 {
-                    Expression e = new Expression(bContent);
-                    e.EvaluateFunction += RollFunction;
-                    string r = e.Evaluate().ToString();
-
-                    Color rollColor = Color.White;
-                    if (hadRollColorChange)
+                    Color rollColor = resultFlags switch
                     {
-                        rollColor = hadRollMax && hadRollMin ? Color.LightBlue : hadRollMax ? Color.LightGreen : Color.Red;
-                        hadRollColorChange = hadRollMax = hadRollMin = false;
-                    }
+                        RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
+                        RollResultFlags.HadMaximumValue => Color.LightGreen,
+                        RollResultFlags.HadMinimumValue => Color.Red,
+                        _ => Color.White
+                    };
 
-                    PrepareRollsTooltip(ref bContent);
-                    cb = new ChatBlock() { Color = rollColor, Text = r, Tooltip = bContent + " = " + r, Type = ChatBlockType.Expression };
+                    PrepareRollsTooltip(ref bContent, results);
+                    cb = new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{bContent} = {result}", Type = ChatBlockType.Expression };
                     return true;
                 }
-                catch
+                else
                 {
                     cb = new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError };
-                    hadRollColorChange = hadRollMax = hadRollMin = false;
                     return true;
                 }
             }
@@ -566,63 +555,17 @@
             return false;
         }
 
-        private static bool hadRollColorChange;
-        private static bool hadRollMax;
-        private static bool hadRollMin;
-        private static readonly Dictionary<string, List<string>> rollResults = new Dictionary<string, List<string>>();
-
-        private static void RollFunction(string name, FunctionArgs args)
+        public static bool TryRunExpression(string expr, out object result, out RollResultFlags results, out Dictionary<string, List<string>> rollResults)
         {
-            if (name.Equals("roll"))
-            {
-                try
-                {
-                    int num = Math.Min((int)args.Parameters[0].Evaluate(), 10000000);
-                    int side = (int)args.Parameters[1].Evaluate();
-                    string accumStr = string.Empty;
-                    int accumInt = 0;
-                    for (int i = 0; i < num; ++i)
-                    {
-                        int r = RandomNumberGenerator.GetInt32(side) + 1;
-                        if (r == 1)
-                        {
-                            hadRollColorChange = true;
-                            hadRollMin = true;
-                        }
-
-                        if (r == side)
-                        {
-                            hadRollColorChange = true;
-                            hadRollMax = true;
-                        }
-
-                        accumStr += r.ToString() + (i != num - 1 ? ',' : "");
-                        accumInt += r;
-                    }
-
-                    args.HasResult = true;
-                    args.Result = accumInt;
-                    AddRollResult($"{name}({num}, {side})", accumStr);
-                }
-                catch
-                {
-                    args.HasResult = false;
-                    args.Result = 0;
-                }
-            }
+            // The reason statics switch to instanced here is to avoid race conditions on evaluations from multiple threads
+            RollExpressionEvaluator evaluator = new RollExpressionEvaluator(expr);
+            bool ret = evaluator.TryRun(out result);
+            results = evaluator.ResultFlags;
+            rollResults = evaluator.RollResults;
+            return ret;
         }
 
-        private static void AddRollResult(string expr, string val)
-        {
-            if (!rollResults.ContainsKey(expr))
-            {
-                rollResults.Add(expr, new List<string>());
-            }
-
-            rollResults[expr].Add(val);
-        }
-
-        private static void PrepareRollsTooltip(ref string expr)
+        private static void PrepareRollsTooltip(ref string expr, Dictionary<string, List<string>> rollResults)
         {
             try
             {
@@ -650,8 +593,6 @@
             {
                 // NOOP
             }
-
-            rollResults.Clear();
         }
 
         private static bool MoveNext(string s, ref int idx, out char c)
@@ -668,6 +609,84 @@
 
         public static bool IsEscaped(string s, int idx) => idx != 0 && s[idx - 1] == '\\';
 
+        private sealed class RollExpressionEvaluator
+        {
+            private readonly Expression _expression;
+
+            public RollResultFlags ResultFlags { get; set; } = RollResultFlags.None;
+            public Dictionary<string, List<string>> RollResults { get; } = new Dictionary<string, List<string>>();
+            public object EvaluationResult { get; set; } = null;
+
+            public RollExpressionEvaluator(string expr)
+            {
+                this._expression = new Expression(expr);
+                this._expression.EvaluateFunction += this.RollFunction;
+            }
+
+            public bool TryRun(out object result)
+            {
+                try
+                {
+                    this.EvaluationResult = result = this._expression.Evaluate();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    this.EvaluationResult = result = e;
+                    return false;
+                }
+            }
+
+            private void RollFunction(string name, FunctionArgs args)
+            {
+                if (name.Equals("roll"))
+                {
+                    try
+                    {
+                        int num = Math.Min((int)args.Parameters[0].Evaluate(), 10000000);
+                        int side = (int)args.Parameters[1].Evaluate();
+                        string accumStr = string.Empty;
+                        int accumInt = 0;
+                        for (int i = 0; i < num; ++i)
+                        {
+                            int r = RandomNumberGenerator.GetInt32(side) + 1;
+                            if (r == 1)
+                            {
+                                this.ResultFlags |= RollResultFlags.HadMinimumValue;
+                            }
+
+                            if (r == side)
+                            {
+                                this.ResultFlags |= RollResultFlags.HadMaximumValue;
+                            }
+
+                            accumStr += r.ToString() + (i != num - 1 ? ',' : "");
+                            accumInt += r;
+                        }
+
+                        args.HasResult = true;
+                        args.Result = accumInt;
+                        this.AddRollResult($"{name}({num}, {side})", accumStr);
+                    }
+                    catch
+                    {
+                        args.HasResult = false;
+                        args.Result = 0;
+                    }
+                }
+            }
+
+            private void AddRollResult(string expr, string val)
+            {
+                if (!this.RollResults.TryGetValue(expr, out List<string> results))
+                {
+                    this.RollResults[expr] = results = new List<string>();
+                }
+
+                results.Add(val);
+            }
+        }
+
         public enum BlockMode
         { 
             Text = -1,
@@ -682,7 +701,15 @@
             DestinationSpecifier = 8,
             SenderNameSpecifier = 9,
             SenderPortraitSpecifier = 10
+        }
 
+        [Flags]
+        public enum RollResultFlags
+        { 
+            None = 0,
+            HadMaximumValue = 0b01,
+            HadMinimumValue = 0b10,
+            HadMaximumAndMinimumValue = HadMaximumValue | HadMinimumValue
         }
     }
 }

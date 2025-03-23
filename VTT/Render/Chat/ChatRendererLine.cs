@@ -36,7 +36,7 @@
             void AddWord(string text, ChatBlock cb)
             {
                 bool addedWord = false;
-                ImCachedWord icw = new ImCachedWord(cb, text);
+                ImCachedWord icw = new ImCachedWord(cb, text, cb.Type.HasFlag(ChatBlockType.Expression) ? 24 : 0);
                 cW += icw.Width;
                 if (cW > maxX)
                 {
@@ -111,7 +111,7 @@
             }
 
             this._cachedLines = lines.ToArray();
-            height = MathF.Max(lines.Sum(l => l.Height), ssize.Y);
+            height = MathF.Max(lines.Sum(l => l.Height + 2), ssize.Y);
             width = wMax;
         }
 
@@ -138,11 +138,9 @@
             return ret;
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            uint cell = Extensions.FromHex("202020").Abgr();
-            uint cellOutline;
             float ipX = ImGui.GetCursorPosX();
 
             if (this._cachedLines.Length == 0)
@@ -166,40 +164,28 @@
                             float cY = vBase.Y;
                             float w = icw.Width;
                             float h = icw.Height;
-                            bool overRect = ImGui.IsMouseHoveringRect(new(cX, cY), new(cX + w, cY + h));
-                            cellOutline = overRect ? Color.DarkGoldenrod.Abgr() : Color.Gray.Abgr();
-                            drawList.AddQuadFilled(
-                                new(cX, cY),
-                                new(cX + w, cY),
-                                new(cX + w, cY + h),
-                                new(cX, cY + h),
-                                cell
-                            );
-
-                            drawList.AddQuad(
-                                new(cX, cY),
-                                new(cX + w, cY),
-                                new(cX + w, cY + h),
-                                new(cX, cY + h),
-                                cellOutline
-                            );
+                            this.AddTooltipBlock(drawList, new RectangleF(cX, cY - 3, w, h), icw.Text, icw.TextSize, icw.Owner.Tooltip, icw.Owner.RollContents, icw.Owner.Color.Abgr(), senderColorAbgr);
+                            ImGui.Dummy(new Vector2(w, h));
+                        }
+                        else
+                        {
+                            ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color.Abgr());
+                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Text));
+                            ImGui.PopStyleColor();
+                            Vector2 vEnd = ImGui.GetCursorScreenPos() + new Vector2(0, icl.Height);
+                            if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
+                            {
+                                ImGui.BeginTooltip();
+                                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Owner.Tooltip));
+                                ImGui.EndTooltip();
+                            }
                         }
 
-                        ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color.Abgr());
-                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Text));
-                        ImGui.PopStyleColor();
                         pX += icw.Width + (i == icl.Words.Length - 1 ? 0 : this._spacebarWidth);
                         ImGui.SetCursorPos(new(pX, pY));
-                        Vector2 vEnd = ImGui.GetCursorScreenPos() + new Vector2(0, icl.Height);
-                        if (!string.IsNullOrEmpty(icw.Owner.Tooltip) && ImGui.IsMouseHoveringRect(vBase, vEnd))
-                        {
-                            ImGui.BeginTooltip();
-                            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Owner.Tooltip));
-                            ImGui.EndTooltip();
-                        }
                     }
 
-                    pY += icl.Height;
+                    pY += icl.Height + 2;
                     ImGui.SetCursorPos(new(ipX, pY));
                 }
             }

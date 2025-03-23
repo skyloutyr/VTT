@@ -80,7 +80,25 @@
             return null;
         }
 
-        public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : Extensions.FromAbgr(0), Text = text, Tooltip = tt, Type = type };
+        public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text, ChatBlockExpressionRollContents rollConents = ChatBlockExpressionRollContents.None) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : Extensions.FromAbgr(0), Text = text, Tooltip = tt, Type = type, RollContents = rollConents };
+
+        public bool TryGetBlockAt(int index, out ChatBlock block)
+        {
+            block = index < this.Blocks.Count ? this.Blocks[index] : null;
+            return block != null;
+        }
+
+        public string GetBlockTextOrEmpty(int index)
+        {
+            if (this.TryGetBlockAt(index, out ChatBlock cb))
+            {
+                return cb.Text;
+            }
+
+            return " "; // Can't be string.Empty due to ImGui not accepting empty strings
+        }
+
+        public Color GetBlockColorOr(int index, Color defaultValue) => this.TryGetBlockAt(index, out ChatBlock cb) ? cb.Color : defaultValue;
 
         public bool ImRender(Vector2 winSize, float h, int idx, SimpleLanguage lang)
         {
@@ -93,19 +111,28 @@
             {
                 float scrollMin = ImGui.GetScrollY();
                 float scrollMax = scrollMin + h;
-                if (ImGui.GetCursorPosY() + this._cachedHeight + 22 < scrollMin)
+                if (ImGui.GetCursorPosY() + this._cachedHeight + 30 < scrollMin)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 22);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 30);
                     return true;
                 }
 
                 if (scrollMax > float.Epsilon && ImGui.GetCursorPosY() > scrollMax)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 22);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 30);
                     return true;
                 }
 
+                Vector2 cNow = ImGui.GetCursorPos();
+                unsafe
+                {
+                    ImGui.Image(Client.Instance.Frontend.Renderer.White, new Vector2(winSize.X, 24), Vector2.Zero, Vector2.One, *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg) * new Vector4(0.85f, 0.85f, 0.85f, 1f));
+                }
+
+                ImGui.SetCursorPos(cNow);
+
                 Vector2 sV = ImGui.GetCursorScreenPos();
+                Vector2 avatarSize = new Vector2(24, 24);
                 if (!this.PortraitID.Equals(Guid.Empty))
                 {
                     if (this._portraitTex == null)
@@ -140,11 +167,11 @@
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;
                                 float tE = tS + (frame.Height / tH);
-                                ImGui.Image(glTex, new Vector2(16, 16), new Vector2(sS, tS), new Vector2(sE, tE));
+                                ImGui.Image(glTex, avatarSize, new Vector2(sS, tS), new Vector2(sE, tE));
                             }
                             else
                             {
-                                ImGui.Image(glTex, new Vector2(16, 16));
+                                ImGui.Image(glTex, avatarSize);
                             }
 
                             ImGui.SameLine();
@@ -153,11 +180,8 @@
                 }
                 else
                 {
-                    if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(this.SenderID, out (Texture, bool) val) && val.Item2)
-                    {
-                        ImGui.Image(val.Item1, new Vector2(16, 16));
-                        ImGui.SameLine();
-                    }
+                    AddAvatar(ImGui.GetWindowDrawList(), this.SenderID);
+                    ImGui.SameLine();
                 }
 
                 if (!this.SendTime.Equals(DateTime.UnixEpoch))
@@ -175,6 +199,13 @@
                     ImGui.SetCursorPosX(ocpx);
                 }
 
+                cNow = ImGui.GetCursorPos();
+                ImGui.Dummy(new Vector2(1, 1));
+                ImGui.SetCursorPos(cNow + Vector2.One);
+                ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
+                ImGui.TextUnformatted(this.SenderDisplayName);
+                ImGui.PopStyleColor();
+                ImGui.SetCursorPos(cNow);
                 ImGui.PushStyleColor(ImGuiCol.Text, this.SenderColor.Abgr());
                 ImGui.TextUnformatted(this.SenderDisplayName);
                 ImGui.PopStyleColor();
@@ -183,20 +214,24 @@
                 ImGui.SameLine();
                 if (!this.DestID.IsEmpty())
                 {
-                    if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(this.DestID, out (Texture, bool) val) && val.Item2)
-                    {
-                        ImGui.Image(val.Item1, new Vector2(16, 16));
-                        ImGui.SameLine();
-                    }
+                    AddAvatar(ImGui.GetWindowDrawList(), this.DestID);
+                    ImGui.SameLine();
                 }
 
+                cNow = ImGui.GetCursorPos();
+                ImGui.Dummy(new Vector2(1, 1));
+                ImGui.SetCursorPos(cNow + Vector2.One);
+                ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
+                ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
+                ImGui.PopStyleColor();
+                ImGui.SetCursorPos(cNow);
                 ImGui.PushStyleColor(ImGuiCol.Text, this.DestColor.Abgr());
                 ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
                 ImGui.PopStyleColor();
                 float eY = ImGui.GetCursorScreenPos().Y;
                 ImGui.SameLine();
                 Vector2 eV = new Vector2(ImGui.GetCursorScreenPos().X, eY);
-                ImGui.NewLine();
+                ImGui.Dummy(new Vector2(0, 24));
                 if (ImGui.IsMouseHoveringRect(sV, eV))
                 {
                     ImGui.BeginTooltip();
@@ -209,7 +244,7 @@
                     ImGui.EndTooltip();
                 }
 
-                this.Renderer?.Render();
+                this.Renderer?.Render(this.SenderID, this.SenderColor.Abgr());
                 if (ImGui.IsMouseHoveringRect(sV, new Vector2(ImGui.GetCursorScreenPos().X + 350, ImGui.GetCursorScreenPos().Y)))
                 {
                     if (ImGui.BeginPopupContextItem("chat_line_popup_" + idx))
@@ -240,6 +275,55 @@
             this.Renderer?.ClearCache();
         }
 
+        private static readonly Vector2 avatarSize = new Vector2(24, 24);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "VS 2022 Community bug - erroneous warning generated")]
+        public static bool AddAvatar(ImDrawListPtr drawList, Guid clientId, bool injectDummy = true, bool drawMissing = true)
+        {
+            IntPtr avatarImageIndex = IntPtr.Zero;
+            bool ret = true;
+            uint avatarOverrideColor = 0xffffffff;
+            if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(clientId, out (Texture, bool) val) && val.Item2)
+            {
+                avatarImageIndex = val.Item1;
+            }
+            else
+            {
+                if (!drawMissing)
+                {
+                    return false;
+                }
+                else
+                {
+                    avatarImageIndex = Client.Instance.Frontend.Renderer.GuiRenderer.ChatMissingAvatar;
+                    ret = false;
+                }
+            }
+
+            Vector2 cHere = ImGui.GetCursorScreenPos();
+            bool online = false;
+            if (Client.Instance.ClientInfos.TryGetValue(clientId, out ClientInfo localCI))
+            {
+                online = localCI.IsLoggedOn;
+                if (!ret)
+                {
+                    avatarOverrideColor = localCI.Color.Abgr();
+                }
+            }
+
+            drawList.AddImageRounded(avatarImageIndex, cHere, cHere + avatarSize, Vector2.Zero, Vector2.One, avatarOverrideColor, 15f);
+            if (online)
+            {
+                drawList.AddRect(cHere, cHere + avatarSize, Color.RoyalBlue.Abgr(), 15f);
+            }
+
+            if (injectDummy)
+            {
+                ImGui.Dummy(avatarSize);
+            }
+
+            return ret;
+        }
+
         public void BuildCache(Vector2 windowSize)
         {
             if (this.Renderer == null)
@@ -266,7 +350,7 @@
 
         public void Write(BinaryWriter bw)
         {
-            bw.Write((byte)2);
+            bw.Write((byte)3);
             bw.Write(this.SenderID.ToByteArray());
             bw.Write(this.DestID.ToByteArray());
             bw.Write(this.PortraitID.ToByteArray());
@@ -282,7 +366,7 @@
             {
                 if (!cb.DoNotPersist)
                 {
-                    cb.Write(bw);
+                    cb.WriteV2(bw);
                 }
             }
         }
@@ -299,7 +383,7 @@
             this.Type = (RenderType)br.ReadByte();
             this.SenderColor = Extensions.FromArgb(br.ReadUInt32());
             this.DestColor = Extensions.FromArgb(br.ReadUInt32());
-            if (version == 2) // have time data
+            if (version >= 2) // have time data
             {
                 this.SendTime = DateTime.FromBinary(br.ReadInt64());
             }
@@ -308,8 +392,25 @@
             int c = br.ReadInt32();
             for (int i = 0; i < c; ++i)
             {
-                this.Blocks.Add(new ChatBlock());
-                this.Blocks[i].Read(br);
+                ChatBlock chatBlock = new ChatBlock();
+                this.Blocks.Add(chatBlock);
+                switch (version)
+                {
+                    case 3:
+                    {
+                        chatBlock.ReadV2(br);
+                        break;
+                    }
+
+                    case 1:
+                    case 2:
+                    default:
+                    {
+                        chatBlock.ReadV1(br);
+                        chatBlock.TryGuessExpressionRollContents();
+                        break;
+                    }
+                }
             }
         }
 

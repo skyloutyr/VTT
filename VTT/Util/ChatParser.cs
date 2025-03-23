@@ -139,7 +139,7 @@
                 exp = FixXdY(exp);
             }
 
-            if (TryRunExpression(exp, out object res, out _, out _))
+            if (TryRunExpression(exp, out object res, out _))
             {
                 result = Convert.ToDouble(res);
                 return true;
@@ -153,9 +153,9 @@
 
         public static ChatBlock ParseExpression(string exp)
         {
-            if (TryRunExpression(exp, out object result, out RollResultFlags resultFlags, out Dictionary<string, List<string>> results))
+            if (TryRunExpression(exp, out object result, out RollExpressionEvaluator evaluator))
             {
-                Color rollColor = resultFlags switch
+                Color rollColor = evaluator.ResultFlags switch
                 {
                     RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
                     RollResultFlags.HadMaximumValue => Color.LightGreen,
@@ -163,12 +163,12 @@
                     _ => Color.White
                 };
 
-                PrepareRollsTooltip(ref exp, results);
-                return new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{exp} = {result}", Type = ChatBlockType.Expression };
+                PrepareRollsTooltip(ref exp, evaluator.RollResults);
+                return new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{exp} = {result}", Type = ChatBlockType.Expression, RollContents = GetRollContents(evaluator.RollsMade) };
             }
             else
             {
-                return new ChatBlock() { Color = Color.Red, Text = exp, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError };
+                return new ChatBlock() { Color = Color.Red, Text = exp, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
             }
         }
 
@@ -370,7 +370,7 @@
                 string bContent = sb.ToString();
                 if (!string.IsNullOrEmpty(bContent))
                 {
-                    cb = new ChatBlock() { Color = color, Text = bContent, Tooltip = tooltip, Type = ChatBlockType.Text };
+                    cb = new ChatBlock() { Color = color, Text = bContent, Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
                     tooltip = string.Empty;
                 }
                 else
@@ -383,7 +383,7 @@
 
             if (blockMode == BlockMode.Error)
             {
-                cb = new ChatBlock() { Color = Color.Red, Text = sb.ToString(), Tooltip = "An exception occured while parsing this text!", Type = ChatBlockType.TextError };
+                cb = new ChatBlock() { Color = Color.Red, Text = sb.ToString(), Tooltip = "An exception occured while parsing this text!", Type = ChatBlockType.TextError, RollContents = ChatBlockExpressionRollContents.None };
                 return true;
             }
 
@@ -431,9 +431,9 @@
             if (blockMode == BlockMode.Expression)
             {
                 string bContent = sb.ToString();
-                if (TryRunExpression(bContent, out object result, out RollResultFlags resultFlags, out Dictionary<string, List<string>> results))
+                if (TryRunExpression(bContent, out object result, out RollExpressionEvaluator evaluator))
                 {
-                    Color rollColor = resultFlags switch
+                    Color rollColor = evaluator.ResultFlags switch
                     {
                         RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
                         RollResultFlags.HadMaximumValue => Color.LightGreen,
@@ -441,20 +441,20 @@
                         _ => Color.White
                     };
 
-                    PrepareRollsTooltip(ref bContent, results);
-                    cb = new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{bContent} = {result}", Type = ChatBlockType.Expression };
+                    PrepareRollsTooltip(ref bContent, evaluator.RollResults);
+                    cb = new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{bContent} = {result}", Type = ChatBlockType.Expression, RollContents = GetRollContents(evaluator.RollsMade) };
                     return true;
                 }
                 else
                 {
-                    cb = new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError };
+                    cb = new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
                     return true;
                 }
             }
 
             if (blockMode == BlockMode.Passthrough)
             {
-                cb = new ChatBlock() { Color = color, Text = sb.ToString(), Tooltip = tooltip, Type = ChatBlockType.Text };
+                cb = new ChatBlock() { Color = color, Text = sb.ToString(), Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
                 return true;
             }
 
@@ -468,16 +468,18 @@
                 string tt = string.Empty;
                 ChatLine.RenderType rRenderType = ChatLine.RenderType.Line;
                 string rline = string.Empty;
+                ChatBlockExpressionRollContents compoundContents = ChatBlockExpressionRollContents.None;
 
                 while (ParseBlock(t, userColor, ref c, ref descColor, ref tt, ref rIdx, ref username, ref destname, ref destID, ref portraitID, ref rRenderType, out ChatBlock rCb))
                 {
                     if (rCb != null)
                     {
                         rline += rCb.Text;
+                        compoundContents |= rCb.RollContents;
                     }
                 }
 
-                cb = new ChatBlock() { Color = color, Text = rline, Tooltip = sb.ToString(), Type = ChatBlockType.Compound };
+                cb = new ChatBlock() { Color = color, Text = rline, Tooltip = sb.ToString(), Type = ChatBlockType.Compound, RollContents = compoundContents };
                 return true;
             }
 
@@ -555,13 +557,11 @@
             return false;
         }
 
-        public static bool TryRunExpression(string expr, out object result, out RollResultFlags results, out Dictionary<string, List<string>> rollResults)
+        public static bool TryRunExpression(string expr, out object result, out RollExpressionEvaluator evaluator)
         {
             // The reason statics switch to instanced here is to avoid race conditions on evaluations from multiple threads
-            RollExpressionEvaluator evaluator = new RollExpressionEvaluator(expr);
+            evaluator = new RollExpressionEvaluator(expr);
             bool ret = evaluator.TryRun(out result);
-            results = evaluator.ResultFlags;
-            rollResults = evaluator.RollResults;
             return ret;
         }
 
@@ -595,6 +595,39 @@
             }
         }
 
+        private static ChatBlockExpressionRollContents GetRollContents(List<(int, int)> data)
+        {
+            ChatBlockExpressionRollContents rollContents = ChatBlockExpressionRollContents.None;
+            foreach ((int, int) roll in data)
+            {
+                if (roll.Item1 == 0)
+                {
+                    continue;
+                }
+
+                ChatBlockExpressionRollContents local = roll.Item2 switch
+                {
+                    4 => ChatBlockExpressionRollContents.SingleD4,
+                    6 => ChatBlockExpressionRollContents.SingleD6,
+                    8 => ChatBlockExpressionRollContents.SingleD8,
+                    10 => ChatBlockExpressionRollContents.SingleD10,
+                    12 => ChatBlockExpressionRollContents.SingleD12,
+                    20 => ChatBlockExpressionRollContents.SingleD20,
+                    100 => ChatBlockExpressionRollContents.SingleD100,
+                    _ => ChatBlockExpressionRollContents.SingleDUnknown
+                };
+
+                if (roll.Item1 > 1 || (local <= ChatBlockExpressionRollContents.SingleDUnknown && rollContents.HasFlag(local)))
+                {
+                    local = (ChatBlockExpressionRollContents)((int)local << 8);
+                }
+
+                rollContents |= local;
+            }
+
+            return rollContents;
+        }
+
         private static bool MoveNext(string s, ref int idx, out char c)
         {
             if (idx >= s.Length)
@@ -609,12 +642,13 @@
 
         public static bool IsEscaped(string s, int idx) => idx != 0 && s[idx - 1] == '\\';
 
-        private sealed class RollExpressionEvaluator
+        public sealed class RollExpressionEvaluator
         {
             private readonly Expression _expression;
 
             public RollResultFlags ResultFlags { get; set; } = RollResultFlags.None;
             public Dictionary<string, List<string>> RollResults { get; } = new Dictionary<string, List<string>>();
+            public List<(int, int)> RollsMade { get; } = new List<(int, int)>();
             public object EvaluationResult { get; set; } = null;
 
             public RollExpressionEvaluator(string expr)
@@ -667,6 +701,7 @@
                         args.HasResult = true;
                         args.Result = accumInt;
                         this.AddRollResult($"{name}({num}, {side})", accumStr);
+                        this.RollsMade.Add((num, side));
                     }
                     catch
                     {

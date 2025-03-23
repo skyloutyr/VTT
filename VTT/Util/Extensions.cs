@@ -113,6 +113,22 @@
                 return (br << 24) | (bg << 16) | (bb << 8) | ba;
             }
         }
+        public static uint Abgr(this SVec4 clrVec)
+        {
+            unchecked
+            {
+                uint br = (byte)(clrVec.X * 255);
+                uint bg = (byte)(clrVec.Y * 255);
+                uint bb = (byte)(clrVec.Z * 255);
+                uint ba = (byte)(clrVec.W * 255);
+                return (ba << 24) | (bb << 16) | (bg << 8) | br;
+            }
+        }
+
+        public static SVec4 Vec4FromAbgr(uint abgr) => Vec4FromArgb((byte)((abgr & 0xFF000000) >> 24), (byte)(abgr & 0xFF), (byte)((abgr & 0xFF00) >> 8), (byte)((abgr & 0xFF0000) >> 16));
+        public static SVec4 Vec4FromArgb(uint argb) => Vec4FromArgb((byte)((argb & 0xFF000000) >> 24), (byte)((argb & 0xFF0000) >> 16), (byte)((argb & 0xFF00) >> 8), (byte)(argb & 0xFF));
+        public static SVec4 Vec4FromArgb(byte a, byte r, byte g, byte b) => new SVec4(r / 255F, g / 255F, b / 255F, a / 255F);
+
         public static uint Rgba(this Color color) => ((uint)color.RedB() << 24) | ((uint)color.GreenB() << 16) | ((uint)color.Blue() << 8) | color.AlphaB();
         public static uint Abgr(this Color color) => ((uint)color.AlphaB() << 24) | ((uint)color.BlueB() << 16) | ((uint)color.GreenB() << 8) | color.RedB();
         public static uint Bgra(this Color color) => ((uint)color.BlueB() << 24) | ((uint)color.GreenB() << 16) | ((uint)color.RedB() << 8) | color.AlphaB();
@@ -306,5 +322,9 @@
         public static bool HasAnyNans(this SVec3 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z);
 
         public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);
+        public static uint ArgbToAbgr(this uint self)
+        {
+            return (self & 0xff00ff00) | ((self & 0x000000ff) << 16) | ((self & 0x00ff0000) >> 16);
+        }
     }
 }

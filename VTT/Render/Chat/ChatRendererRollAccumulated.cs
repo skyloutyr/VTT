@@ -30,18 +30,11 @@
                 : $"{this.Container.Blocks[0].Text}({RollSyntaxRegex.Replace(this.Container.Blocks[0].Tooltip, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[")})";
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
-            if (this.Container.Blocks.Count == 0)
-            {
-                return;
-            }
-
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             uint outline = Color.Gray.Abgr();
-            uint color = this.Container.Blocks[0].Color.Abgr();
-            uint cell = Extensions.FromHex("202020").Abgr();
-            uint cellOutline = Color.Gray.Abgr();
+            uint color = this.Container.GetBlockColorOr(0, Color.Black).Abgr();
 
             float cX = ImGui.GetCursorScreenPos().X;
             float w = 100;
@@ -54,7 +47,6 @@
             drawList.AddTriangleFilled(new(cX + w - 101, cY + 1), new(cX + w - 1, cY + 1), new(cX + w - 1, cY + 3), color);
             drawList.AddTriangleFilled(new(cX + w, cY + 1), new(cX + w, cY + 24), new(cX + w - 2, cY + 1), color);
 
-
             drawList.AddLine(new(cX + 94, cY + 32), new(cX, cY + 32), outline);
             drawList.AddLine(new(cX, cY + 6), new(cX, cY + 31), outline);
 
@@ -62,43 +54,19 @@
             drawList.AddTriangleFilled(new(cX + 2, cY + 31), new(cX + 1.5f, cY + 16), new(cX + 2, cY + 31), color);
 
             Vector2 padding = ImGui.GetStyle().CellPadding;
-            Vector2 tLen = ImGuiHelper.CalcTextSize(this.Container.Blocks[0].Text) + (padding * 2);
 
-            bool overRect = ImGui.IsMouseHoveringRect(new(cX + (w / 2) - (tLen.X / 2), cY + 16 - (tLen.Y / 2)), new(cX + (w / 2) + (tLen.X / 2), cY + 16 + (tLen.Y / 2)));
-            if (overRect)
+            if (this.Container.TryGetBlockAt(0, out ChatBlock blockRolls))
             {
-                cellOutline = Color.DarkGoldenrod.Abgr();
+                Vector2 tSize = ImGuiHelper.CalcTextSize(blockRolls.Text);
+                Vector2 tLen = tSize + (padding * 2);
+                this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tLen.X * 0.5f), cY + 16 - (tLen.Y * 0.5f), tLen.X, tLen.Y), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color.Abgr(), senderColorAbgr);
+                ImGui.SetCursorPosX(0);
+                ImGui.SetCursorPosY(ccY + 32);
             }
-
-            drawList.AddQuadFilled(
-                new(cX + (w / 2) - (tLen.X / 2), cY + 16 - (tLen.Y / 2)),
-                new(cX + (w / 2) + (tLen.X / 2), cY + 16 - (tLen.Y / 2)),
-                new(cX + (w / 2) + (tLen.X / 2), cY + 16 + (tLen.Y / 2)),
-                new(cX + (w / 2) - (tLen.X / 2), cY + 16 + (tLen.Y / 2)),
-                cell
-            );
-
-            drawList.AddQuad(
-               new(cX + (w / 2) - (tLen.X / 2), cY + 16 - (tLen.Y / 2)),
-               new(cX + (w / 2) + (tLen.X / 2), cY + 16 - (tLen.Y / 2)),
-               new(cX + (w / 2) + (tLen.X / 2), cY + 16 + (tLen.Y / 2)),
-               new(cX + (w / 2) - (tLen.X / 2), cY + 16 + (tLen.Y / 2)),
-               cellOutline
-           );
-
-            ImGui.SetCursorPos(new(ImGui.GetCursorPosX() + (w / 2) - (tLen.X / 2) + padding.X + 1, ccY + 16 - (tLen.Y / 2) + padding.Y));
-            ImGui.PushStyleColor(ImGuiCol.Text, this.Container.Blocks[0].Color.Abgr());
-            ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this.Container.Blocks[0].Text));
-            ImGui.PopStyleColor();
-            if (!string.IsNullOrEmpty(this.Container.Blocks[0].Tooltip) && overRect)
+            else
             {
-                ImGui.BeginTooltip();
-                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(this.Container.Blocks[0].Tooltip));
-                ImGui.EndTooltip();
+                ImGui.Dummy(new Vector2(32, 32));
             }
-
-            ImGui.SetCursorPosX(0);
-            ImGui.SetCursorPosY(ccY + 32);
         }
     }
 }

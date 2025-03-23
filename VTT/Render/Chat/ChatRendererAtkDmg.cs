@@ -28,39 +28,65 @@
 
         public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang)
         {
-            ChatBlock rname = this.Container.Blocks[0];
-            ChatBlock mod = this.Container.Blocks[1];
-            ChatBlock rcharname = this.Container.Blocks[2];
-            ChatBlock desc = this.Container.Blocks[3];
+            this.Container.TryGetBlockAt(0, out ChatBlock rname);
+            this.Container.TryGetBlockAt(2, out ChatBlock rcharname);
+            this.Container.TryGetBlockAt(3, out ChatBlock desc);
+            bool hasRolls = false;
+            bool hasCritR1 = false;
+            bool hasCritR2 = false;
+            uint colorMax = Color.LightGreen.Argb();
+            uint colorMaxAndMin = Color.LightBlue.Argb();
+            string r1Text = string.Empty;
+            string r1Tooltip = string.Empty;
+            string r2Text = string.Empty;
+            string r2Tooltip = string.Empty;
+            bool hasDmg = false;
+            if (this.Container.TryGetBlockAt(4, out ChatBlock r))
+            {
+                hasRolls = !string.IsNullOrEmpty(r.Text.Trim());
+                hasCritR1 = r.Color.Argb() == colorMax || r.Color.Argb() == colorMaxAndMin;
+                r1Text = r.Text;
+                r1Tooltip = r.Tooltip;
+            }
 
-            ChatBlock r1 = this.Container.Blocks[4];
-            ChatBlock r2 = this.Container.Blocks[5];
-            ChatBlock dmg1 = this.Container.Blocks[6];
-            ChatBlock dmg2 = this.Container.Blocks[7];
-            ChatBlock crit1 = this.Container.Blocks[8];
-            ChatBlock crit2 = this.Container.Blocks[9];
-            ChatBlock dmgtype = this.Container.Blocks[10];
+            if (this.Container.TryGetBlockAt(5, out r))
+            {
+                hasCritR2 = r.Color.Argb() == colorMax || r.Color.Argb() == colorMaxAndMin;
+                r2Text = r.Text;
+                r2Tooltip = r.Tooltip;
+            }
 
-            bool hasRolls = !string.IsNullOrEmpty(r1.Text.Trim());
-            bool hasDmg = !string.IsNullOrEmpty(dmg1.Text.Trim()); 
-            uint cArgb = Color.LightGreen.Argb();
-            uint cArgb2 = Color.LightBlue.Argb();
-            bool crit = r1.Color.Argb() == cArgb || r1.Color.Argb() == cArgb2 || r2.Color.Argb() == cArgb || r2.Color.Argb() == cArgb2;
+            if (this.Container.TryGetBlockAt(6, out ChatBlock dmg))
+            {
+                hasDmg = !string.IsNullOrEmpty(dmg.Text.Trim());
+            }
 
-            string rText = hasRolls ? $"{r1.Text}({r1.Tooltip}) {lang.Translate("generic.or")} {r2.Text}({r2.Tooltip})" : string.Empty;
+            if (this.Container.TryGetBlockAt(8, out ChatBlock crit1))
+            {
+                hasDmg = !string.IsNullOrEmpty(dmg.Text.Trim());
+            }
+
+            if (this.Container.TryGetBlockAt(10, out ChatBlock dmgtype))
+            {
+                hasDmg = !string.IsNullOrEmpty(dmg.Text.Trim());
+            }
+
+            bool crit = hasCritR1 || hasCritR2;
+
+            string rText = hasRolls ? $"{r1Text}({r1Tooltip}) {lang.Translate("generic.or")} {r2Text}({r2Tooltip})" : string.Empty;
             if (hasDmg && !string.IsNullOrEmpty(rText))
             {
                 rText += lang.Translate("generic.to_hit") + ",";
             }
 
             rText = RollSyntaxRegex.Replace(rText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");
-            string dText = hasDmg ? $"{dmg1.Text}({dmg1.Tooltip})" : string.Empty;
-            if (crit)
+            string dText = hasDmg ? $"{dmg?.Text}({dmg?.Tooltip})" : string.Empty;
+            if (crit && !string.IsNullOrEmpty(crit1?.Text))
             {
-                dText += $" + {crit1.Text}({crit1.Tooltip})";
+                dText += $" + {crit1?.Text}({crit1?.Tooltip})";
             }
 
-            if (!string.IsNullOrEmpty(dmgtype.Text?.Trim()))
+            if (!string.IsNullOrEmpty(dmgtype?.Text?.Trim()))
             {
                 dText += $" {dmgtype.Text}";
             }
@@ -70,13 +96,14 @@
             }
 
             dText = RollSyntaxRegex.Replace(dText, x => $"{x.Groups[1].Value}d{x.Groups[2].Value}[");
-            string rollText = $"{TextOrAlternative(rcharname.Text, lang.Translate("generic.character"))} {lang.Translate("generic.rolls")} {TextOrAlternative(rname.Text, lang.Translate("generic.attack"))}, {rText} {dText}";
+            string rollText = $"{TextOrAlternative(rcharname?.Text, lang.Translate("generic.character"))} {lang.Translate("generic.rolls")} {TextOrAlternative(rname?.Text, lang.Translate("generic.attack"))}, {rText} {dText}";
 
-            return $"{rollText}\n {desc.Text}";
+            return $"{rollText}\n {desc?.Text}";
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
+            // TODO better AtkDmg renderer for missing/incorrect blocks
             if (this.Container.Blocks.Count == 11)
             {
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
@@ -139,8 +166,8 @@
                 float cx = 340 * 0.25f;
                 if (hasRolls)
                 {
-                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx, 24), ImGuiHelper.TextOrEmpty(r1.Text), ImGuiHelper.TextOrEmpty(r1.Tooltip), r1.Color);
-                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx * 3, 24), ImGuiHelper.TextOrEmpty(r2.Text), ImGuiHelper.TextOrEmpty(r2.Tooltip), r2.Color);
+                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx, 24), ImGuiHelper.TextOrEmpty(r1.Text), ImGuiHelper.TextOrEmpty(r1.Tooltip), r1.Color, r1.RollContents, senderColorAbgr);
+                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx * 3, 24), ImGuiHelper.TextOrEmpty(r2.Text), ImGuiHelper.TextOrEmpty(r2.Tooltip), r2.Color, r2.RollContents, senderColorAbgr);
                     drawList.AddLine(cursorScreen + new Vector2(170, 0), cursorScreen + new Vector2(170, 48), this.Container.SenderColor.Abgr());
                     drawList.AddLine(cursorScreen + new Vector2(0, 48), cursorScreen + new Vector2(340, 48), this.Container.SenderColor.Abgr());
                 }
@@ -171,12 +198,12 @@
                     ots = dmgSize + (crit ? 44 + ImGuiHelper.CalcTextSize(crit1.Text).X : 0);
                     ots *= 0.5f;
                     ots -= dmgSize * 0.5f;
-                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg1.Text), ImGuiHelper.TextOrEmpty(dmg1.Tooltip), dmg1.Color);
+                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg1.Text), ImGuiHelper.TextOrEmpty(dmg1.Tooltip), dmg1.Color, dmg1.RollContents, senderColorAbgr);
                     if (crit)
                     {
                         ts = ImGuiHelper.CalcTextSize(dmg1.Text);
                         drawList.AddText(cursorScreen + new Vector2(cx + dmgSize + 8 - ots, 140 - (ts.Y * 0.5f) - 2 + cy), ImGui.GetColorU32(ImGuiCol.Text), "+");
-                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx + ts.X + 36 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit1.Text), ImGuiHelper.TextOrEmpty(crit1.Tooltip), crit1.Color);
+                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2(cx + ts.X + 36 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit1.Text), ImGuiHelper.TextOrEmpty(crit1.Tooltip), crit1.Color, crit1.RollContents, senderColorAbgr);
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
@@ -186,12 +213,12 @@
                     ots = dmgSize + (crit ? 44 + ImGuiHelper.CalcTextSize(crit2.Text).X : 0);
                     ots *= 0.5f;
                     ots -= dmgSize * 0.5f;
-                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 3) + 8 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg2.Text), ImGuiHelper.TextOrEmpty(dmg2.Tooltip), dmg2.Color);
+                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 3) + 8 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg2.Text), ImGuiHelper.TextOrEmpty(dmg2.Tooltip), dmg2.Color, dmg2.RollContents, senderColorAbgr);
                     if (crit)
                     {
                         ts = ImGuiHelper.CalcTextSize(dmg2.Text);
                         drawList.AddText(cursorScreen + new Vector2((cx * 3) + dmgSize + 8 - ots, 140 - (ts.Y * 0.5f) - 2 + cy), ImGui.GetColorU32(ImGuiCol.Text), "+");
-                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 3) + ts.X + 44 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit2.Text), ImGuiHelper.TextOrEmpty(crit2.Tooltip), crit2.Color);
+                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 3) + ts.X + 44 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit2.Text), ImGuiHelper.TextOrEmpty(crit2.Tooltip), crit2.Color, crit2.RollContents, senderColorAbgr);
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
@@ -204,12 +231,12 @@
                     ots = dmgSize + (crit ? 44 + ImGuiHelper.CalcTextSize(crit1.Text).X : 0);
                     ots *= 0.5f;
                     ots -= dmgSize * 0.5f;
-                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 2) - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg1.Text), ImGuiHelper.TextOrEmpty(dmg1.Tooltip), dmg1.Color);
+                    this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 2) - ots, 140 + cy), ImGuiHelper.TextOrEmpty(dmg1.Text), ImGuiHelper.TextOrEmpty(dmg1.Tooltip), dmg1.Color, dmg1.RollContents, senderColorAbgr);
                     if (crit)
                     {
                         ts = ImGuiHelper.CalcTextSize(dmg1.Text);
                         drawList.AddText(cursorScreen + new Vector2((cx * 2) + dmgSize + 8 - ots, 140 - (ts.Y * 0.5f) - 2 + cy), ImGui.GetColorU32(ImGuiCol.Text), "+");
-                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 2) + ts.X + 36 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit1.Text), ImGuiHelper.TextOrEmpty(crit1.Tooltip), crit1.Color);
+                        this.RenderTooltipBlock(drawList, cursorScreen + new Vector2((cx * 2) + ts.X + 36 - ots, 140 + cy), ImGuiHelper.TextOrEmpty(crit1.Text), ImGuiHelper.TextOrEmpty(crit1.Tooltip), crit1.Color, crit1.RollContents, senderColorAbgr);
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
@@ -231,45 +258,14 @@
             }
         }
 
-        public void RenderTooltipBlock(ImDrawListPtr drawList, Vector2 cursorScreen, string text, string tt, Color clr)
+        public void RenderTooltipBlock(ImDrawListPtr drawList, Vector2 cursorScreen, string text, string tt, Color clr, ChatBlockExpressionRollContents rollContents, uint senderColor)
         {
             Vector2 tSize = ImGuiHelper.CalcTextSize(text);
-            uint cell = Extensions.FromHex("202020").Abgr();
-            uint cellOutline = Color.Gray.Abgr();
             float w = tSize.X + 8;
             float h = tSize.Y + 8;
             w *= 0.5f;
             h *= 0.5f;
-            drawList.AddQuadFilled(
-                cursorScreen - new Vector2(w, h),
-                cursorScreen - new Vector2(-w, h),
-                cursorScreen - new Vector2(-w, -h),
-                cursorScreen - new Vector2(w, -h),
-                cell
-            );
-
-            bool hover = ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(-w, -h), cursorScreen + new Vector2(w, h));
-            if (hover)
-            {
-                cellOutline = Color.DarkGoldenrod.Abgr();
-            }
-
-            drawList.AddQuad(
-                cursorScreen - new Vector2(w, h),
-                cursorScreen - new Vector2(-w, h),
-                cursorScreen - new Vector2(-w, -h),
-                cursorScreen - new Vector2(w, -h),
-                cellOutline
-            );
-
-            drawList.AddText(cursorScreen - new Vector2(w - 4, h - 4), clr.Abgr(), text);
-
-            if (hover && !string.IsNullOrEmpty(tt))
-            {
-                ImGui.BeginTooltip();
-                ImGui.TextUnformatted(tt);
-                ImGui.EndTooltip();
-            }
+            this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X - w, cursorScreen.Y - h, w * 2, h * 2), text, tSize, tt, rollContents, clr.Abgr(), senderColor);
         }
     }
 }

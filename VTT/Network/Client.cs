@@ -733,6 +733,74 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int NumAsyncTextureBuffers { get; set; } = 3;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool ChatDiceEnabled { get; set; }
+
+        [DefaultValue(0xff7f7fff)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD4 { get; set; } = 0xff7f7fff;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD4 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xff9bffee)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD6 { get; set; } = 0xff9bffee;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD6 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xff97ff85)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD8 { get; set; } = 0xff97ff85;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD8 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xfffaff85)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD10 { get; set; } = 0xfffaff85;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD10 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xffd881ff)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD12 { get; set; } = 0xffd881ff;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD12 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xfffe7c71)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD20 { get; set; } = 0xfffe7c71;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD20 { get; set; } = ChatDiceColorMode.SetColor;
+
+        [DefaultValue(0xffffffff)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD100 { get; set; } = 0xffffffff;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD100 { get; set; } = ChatDiceColorMode.SetColor;
+
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -800,7 +868,22 @@
                 TurnTrackerScale = TurnTrackerScaling.Medium,
                 AsyncAssetLoading = false,
                 AudioContextHandlingMode = GLContextHandlingMode.Explicit,
-                NumAsyncTextureBuffers = 3
+                NumAsyncTextureBuffers = 3,
+                ChatDiceEnabled = true,
+                ColorD4 = 0xff7f7fff,
+                ColorModeD4 = ChatDiceColorMode.SetColor,
+                ColorD6 = 0xff9bffee,
+                ColorModeD6 = ChatDiceColorMode.SetColor,
+                ColorD8 = 0xff97ff85,
+                ColorModeD8 = ChatDiceColorMode.SetColor,
+                ColorD10 = 0xfffaff85,
+                ColorModeD10 = ChatDiceColorMode.SetColor,
+                ColorD12 = 0xffd881ff,
+                ColorModeD12 = ChatDiceColorMode.SetColor,
+                ColorD20 = 0xfffe7c71,
+                ColorModeD20 = ChatDiceColorMode.SetColor,
+                ColorD100 = 0xffffffff,
+                ColorModeD100 = ChatDiceColorMode.SetColor,
             };
 
             ret.Save();
@@ -923,6 +1006,13 @@
             Smaller,
             Medium,
             Larger
+        }
+
+        public enum ChatDiceColorMode
+        {
+            SetColor,
+            OwnColor,
+            SenderColor,
         }
     }
 

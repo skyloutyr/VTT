@@ -937,6 +937,81 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.shadow2dprecision.tt"));
                     }
 
+                    bool bChatDiceEnabled = Client.Instance.Settings.ChatDiceEnabled;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.chat_dice_enabled") + "##ChatDiceEnabled", ref bChatDiceEnabled))
+                    {
+                        Client.Instance.Settings.ChatDiceEnabled = bChatDiceEnabled;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.chat_dice_enabled.tt"));
+                    }
+
+                    uint clrD4 = Client.Instance.Settings.ColorD4;
+                    ChatDiceColorMode policyD4 = Client.Instance.Settings.ColorModeD4;
+                    if (ChatDieColorSetting(lang, ref clrD4, ref policyD4, 4))
+                    {
+                        Client.Instance.Settings.ColorD4 = clrD4;
+                        Client.Instance.Settings.ColorModeD4 = policyD4;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD6 = Client.Instance.Settings.ColorD6;
+                    ChatDiceColorMode policyD6 = Client.Instance.Settings.ColorModeD6;
+                    if (ChatDieColorSetting(lang, ref clrD6, ref policyD6, 6))
+                    {
+                        Client.Instance.Settings.ColorD6 = clrD6;
+                        Client.Instance.Settings.ColorModeD6 = policyD6;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD8 = Client.Instance.Settings.ColorD8;
+                    ChatDiceColorMode policyD8 = Client.Instance.Settings.ColorModeD8;
+                    if (ChatDieColorSetting(lang, ref clrD8, ref policyD8, 8))
+                    {
+                        Client.Instance.Settings.ColorD8 = clrD8;
+                        Client.Instance.Settings.ColorModeD8 = policyD8;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD10 = Client.Instance.Settings.ColorD10;
+                    ChatDiceColorMode policyD10 = Client.Instance.Settings.ColorModeD10;
+                    if (ChatDieColorSetting(lang, ref clrD10, ref policyD10, 10))
+                    {
+                        Client.Instance.Settings.ColorD10 = clrD10;
+                        Client.Instance.Settings.ColorModeD10 = policyD10;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD12 = Client.Instance.Settings.ColorD12;
+                    ChatDiceColorMode policyD12 = Client.Instance.Settings.ColorModeD12;
+                    if (ChatDieColorSetting(lang, ref clrD12, ref policyD12, 12))
+                    {
+                        Client.Instance.Settings.ColorD12 = clrD12;
+                        Client.Instance.Settings.ColorModeD12 = policyD12;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD20 = Client.Instance.Settings.ColorD20;
+                    ChatDiceColorMode policyD20 = Client.Instance.Settings.ColorModeD20;
+                    if (ChatDieColorSetting(lang, ref clrD20, ref policyD20, 20))
+                    {
+                        Client.Instance.Settings.ColorD20 = clrD20;
+                        Client.Instance.Settings.ColorModeD20 = policyD20;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    uint clrD100 = Client.Instance.Settings.ColorD100;
+                    ChatDiceColorMode policyD100 = Client.Instance.Settings.ColorModeD100;
+                    if (ChatDieColorSetting(lang, ref clrD100, ref policyD100, 100))
+                    {
+                        Client.Instance.Settings.ColorD100 = clrD100;
+                        Client.Instance.Settings.ColorModeD100 = policyD100;
+                        Client.Instance.Settings.Save();
+                    }
+
                     ImGui.TreePop();
                 }
 
@@ -1320,6 +1395,66 @@
             }
 
             ImGui.EndChild();
+        }
+
+        private static bool ChatDieColorSetting(SimpleLanguage lang, ref uint clr, ref ChatDiceColorMode mode, int die)
+        {
+            bool ret = false;
+            if (ImGui.TreeNode(lang.Translate($"menu.settings.die.{die}.color_settings") + $"###Die{die}ColorSettingsContextWindow"))
+            {
+                GuiRenderer uiRoot = Client.Instance.Frontend.Renderer.GuiRenderer;
+                IntPtr dieImage = die switch
+                {
+                    4 => uiRoot.ChatIconD4,
+                    6 => uiRoot.ChatIconD6,
+                    8 => uiRoot.ChatIconD8,
+                    10 => uiRoot.ChatIconD10,
+                    12 => uiRoot.ChatIconD12,
+                    20 => uiRoot.ChatIconD20,
+                    100 => uiRoot.ChatIconD10Primary,
+                    _ => uiRoot.ChatIconD20
+                };
+
+                Vector4 clrVec = Extensions.Vec4FromAbgr(clr);
+                ImGui.TextUnformatted(lang.Translate($"menu.settings.die.chat_color_policy"));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate($"menu.settings.die.chat_color_policy.tt"));
+                }
+
+                string[] modes = { lang.Translate("menu.settings.chat_die_color.set"), lang.Translate("menu.settings.chat_die_color.own"), lang.Translate("menu.settings.chat_die_color.sender") };
+                int mI = (int)mode;
+                if (ImGui.Combo($"##Die{die}ColorPolicy", ref mI, modes, modes.Length))
+                {
+                    mode = (ChatDiceColorMode)mI;
+                    ret = true;
+                }
+
+                Vector2 here = ImGui.GetCursorPos();
+                ImGui.Image(dieImage, new Vector2(24, 24), Vector2.Zero, Vector2.One, clrVec);
+                if (dieImage == uiRoot.ChatIconD10Primary)
+                {
+                    ImGui.SetCursorPos(here); 
+                    ImGui.Image(uiRoot.ChatIconD10Secondary, new Vector2(24, 24), Vector2.Zero, Vector2.One, clrVec);
+                }
+
+                ImGui.SameLine();
+                ImGui.TextUnformatted(lang.Translate($"menu.settings.die.chat_color"));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate($"menu.settings.die.chat_color.tt"));
+                }
+
+                if (ImGui.ColorPicker4($"##Die{die}ColorValue", ref clrVec, ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoOptions | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoTooltip))
+                {
+                    clr = clrVec.Abgr();
+                    ret = true;
+                }
+
+                ImGui.TreePop();
+            }
+
+            return ret;
         }
 
         // https://stackoverflow.com/questions/4580263/how-to-open-in-default-browser-in-c-sharp

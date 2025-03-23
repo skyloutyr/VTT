@@ -49,7 +49,7 @@
         {
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             Vector2 max = ImGui.GetContentRegionAvail();
             int w = int.Parse(this.Container.Blocks[0].Text);

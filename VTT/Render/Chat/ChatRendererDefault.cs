@@ -60,7 +60,7 @@
             return text;
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             Vector2 cursorScreen = ImGui.GetCursorScreenPos();

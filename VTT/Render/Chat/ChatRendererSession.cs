@@ -30,7 +30,7 @@
                 : this.Container.Blocks[1].Text + " " + this.Container.Blocks[0].Text;
         }
 
-        public override unsafe void Render()
+        public override unsafe void Render(Guid senderId, uint senderColorAbgr)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             Vector2 localPos = ImGui.GetCursorPos();

@@ -28,6 +28,7 @@
             List<RollContainer> rollContainers = new List<RollContainer>();
             int result = 0;
             string resString = "";
+            ChatBlockExpressionRollContents cumulativeContents = ChatBlockExpressionRollContents.None;
             for (int i = 0; i < this.Container.Blocks.Count; i++)
             {
                 ChatBlock block = this.Container.Blocks[i];
@@ -41,7 +42,7 @@
                     rollContainers.Clear();
                 }
 
-                RollContainer rc = new RollContainer(cX, imTextSize.X, cY, imTextSize.Y, block.Text, block.Tooltip, (Vector4)block.Color);
+                RollContainer rc = new RollContainer(cX, imTextSize.X, cY, imTextSize.Y, block.Text, block.Tooltip, (Vector4)block.Color, block.RollContents);
                 rollContainers.Add(rc);
                 if (int.TryParse(rc.text, out int res))
                 {
@@ -56,6 +57,7 @@
                     }
                 }
 
+                cumulativeContents |= block.RollContents;
                 cX += rc.w + imSeparatorSize.X;
             }
 
@@ -70,7 +72,7 @@
                 rollContainers.Clear();
             }
 
-            RollContainer rrc = new RollContainer(cX, imResultSize.X, cY, imResultSize.Y, result.ToString(), resString, (Vector4)Color.White);
+            RollContainer rrc = new RollContainer(cX, imResultSize.X, cY, imResultSize.Y, result.ToString(), resString, (Vector4)Color.White, cumulativeContents);
             rollContainers.Add(rrc);
 
             this._lines.Add(rollContainers.ToArray());
@@ -113,12 +115,11 @@
             return ret;
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             Vector2 imCursor = ImGui.GetCursorScreenPos();
             Vector2 imPadding = ImGui.GetStyle().CellPadding;
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            uint cell = Extensions.FromHex("202020").Abgr();
             float ocX = ImGui.GetCursorPosX();
             float ocY = ImGui.GetCursorPosY();
             float ccY = ImGui.GetCursorPosY();
@@ -140,28 +141,10 @@
                     mh = MathF.Max(mh, block.h);
                     float w = block.w;
                     float h = block.h;
-                    bool overRect = ImGui.IsMouseHoveringRect(new(cX, cY), new(cX + w, cY + h));
-                    uint cellOutline = overRect ? Color.DarkGoldenrod.Abgr() : Color.Gray.Abgr();
 
-                    drawList.AddQuadFilled(
-                        new(cX, cY),
-                        new(cX + w, cY),
-                        new(cX + w, cY + h),
-                        new(cX, cY + h),
-                        cell
-                    );
+                    this.AddTooltipBlock(drawList, new RectangleF(cX, cY, w, h), block.text, default, block.tooltip, block.rollContents, block.color.Abgr(), senderColorAbgr);
+                    ImGui.Dummy(new Vector2(w, h));
 
-                    drawList.AddQuad(
-                        new(cX, cY),
-                        new(cX + w, cY),
-                        new(cX + w, cY + h),
-                        new(cX, cY + h),
-                    cellOutline);
-
-                    ImGui.SetCursorPos(new(ccX + block.x + imPadding.X, ccY + block.y));
-                    ImGui.PushStyleColor(ImGuiCol.Text, block.color);
-                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(block.text));
-                    ImGui.PopStyleColor();
                     ImGui.SetCursorPos(new(ccX + block.x + block.w, ccY + block.y));
                     if (i != this._lines.Count - 1 || (i1 != line.Length - 2 && i1 != line.Length - 1))
                     {
@@ -173,13 +156,6 @@
                         {
                             ImGui.TextColored(Vector4.One, " = ");
                         }
-                    }
-
-                    if (!string.IsNullOrEmpty(block.tooltip) && overRect)
-                    {
-                        ImGui.BeginTooltip();
-                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(block.tooltip));
-                        ImGui.EndTooltip();
                     }
 
                     aW = block.x + block.w + ImGuiHelper.CalcTextSize(" + ").X;
@@ -223,8 +199,9 @@
             public readonly string text;
             public readonly string tooltip;
             public readonly Vector4 color;
+            public readonly ChatBlockExpressionRollContents rollContents;
 
-            public RollContainer(float x, float w, float y, float h, string text, string tooltip, Vector4 color)
+            public RollContainer(float x, float w, float y, float h, string text, string tooltip, Vector4 color, ChatBlockExpressionRollContents contents)
             {
                 this.x = x;
                 this.w = w;
@@ -233,6 +210,7 @@
                 this.text = text;
                 this.tooltip = tooltip;
                 this.color = color;
+                this.rollContents = contents;
             }
         }
     }

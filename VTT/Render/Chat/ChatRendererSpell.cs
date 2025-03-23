@@ -42,7 +42,7 @@
             return $"{cText} {lang.Translate("generic.casts")} {TextOrAlternative(name.Text, lang.Translate("generic.spell"))}: {desc.Text}";
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             Vector2 localPos = ImGui.GetCursorPos();
             Vector2 cursorScreen = ImGui.GetCursorScreenPos();

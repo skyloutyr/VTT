@@ -29,7 +29,7 @@
             this.Container.PopChatBlock(true);
         }
 
-        public override void Render() => this._lineRenderer.Render();
+        public override void Render(Guid senderId, uint senderColorAbgr) => this._lineRenderer.Render(senderId, senderColorAbgr);
 
         public override string ProvideTextForClipboard(DateTime dateTime, string senderName, SimpleLanguage lang) => this._lineRenderer.ProvideTextForClipboard(dateTime, senderName, lang);
     }

@@ -84,6 +84,44 @@
         public Texture ChatSendImage { get; set; }
         public Texture ChatLinkImage { get; set; }
         public Texture JournalEdit { get; set; }
+        public Texture ChatMissingAvatar { get; set; }
+
+        public Texture ChatIconD4 { get; set; }
+        public Texture ChatIconD6 { get; set; }
+        public Texture ChatIconD8 { get; set; }
+        public Texture ChatIconD10 { get; set; }
+        public Texture ChatIconD12 { get; set; }
+        public Texture ChatIconD20 { get; set; }
+        public Texture ChatIconD4Highlight { get; set; }
+        public Texture ChatIconD6Highlight { get; set; }
+        public Texture ChatIconD8Highlight { get; set; }
+        public Texture ChatIconD10Highlight { get; set; }
+        public Texture ChatIconD12Highlight { get; set; }
+        public Texture ChatIconD20Highlight { get; set; }
+        public Texture ChatIconD4Primary { get; set; }
+        public Texture ChatIconD6Primary { get; set; }
+        public Texture ChatIconD8Primary { get; set; }
+        public Texture ChatIconD10Primary { get; set; }
+        public Texture ChatIconD12Primary { get; set; }
+        public Texture ChatIconD20Primary { get; set; }
+        public Texture ChatIconD4Secondary { get; set; }
+        public Texture ChatIconD6Secondary { get; set; }
+        public Texture ChatIconD8Secondary { get; set; }
+        public Texture ChatIconD10Secondary { get; set; }
+        public Texture ChatIconD12Secondary { get; set; }
+        public Texture ChatIconD20Secondary { get; set; }
+        public Texture ChatIconD4PrimaryHighlight { get; set; }
+        public Texture ChatIconD6PrimaryHighlight { get; set; }
+        public Texture ChatIconD8PrimaryHighlight { get; set; }
+        public Texture ChatIconD10PrimaryHighlight { get; set; }
+        public Texture ChatIconD12PrimaryHighlight { get; set; }
+        public Texture ChatIconD20PrimaryHighlight { get; set; }
+        public Texture ChatIconD4SecondaryHighlight { get; set; }
+        public Texture ChatIconD6SecondaryHighlight { get; set; }
+        public Texture ChatIconD8SecondaryHighlight { get; set; }
+        public Texture ChatIconD10SecondaryHighlight { get; set; }
+        public Texture ChatIconD12SecondaryHighlight { get; set; }
+        public Texture ChatIconD20SecondaryHighlight { get; set; }
 
         public Texture PlayIcon { get; set; }
         public Texture PauseIcon { get; set; }
@@ -279,6 +317,44 @@
             this.ChatSendImage = OpenGLUtil.LoadUIImage("icons8-paper-plane-40");
             this.ChatLinkImage = OpenGLUtil.LoadUIImage("icons8-link-picture-40");
             this.JournalEdit = OpenGLUtil.LoadUIImage("icons8-edit-40");
+            this.ChatMissingAvatar = OpenGLUtil.LoadUIImage("avatar_missing");
+
+            this.ChatIconD4 = OpenGLUtil.LoadUIImage("icon-d4");
+            this.ChatIconD6 = OpenGLUtil.LoadUIImage("icon-d6");
+            this.ChatIconD8 = OpenGLUtil.LoadUIImage("icon-d8");
+            this.ChatIconD10 = OpenGLUtil.LoadUIImage("icon-d10");
+            this.ChatIconD12 = OpenGLUtil.LoadUIImage("icon-d12");
+            this.ChatIconD20 = OpenGLUtil.LoadUIImage("icon-d20");
+            this.ChatIconD4Highlight = OpenGLUtil.LoadUIImage("icon-d4-highlight");
+            this.ChatIconD6Highlight = OpenGLUtil.LoadUIImage("icon-d6-highlight");
+            this.ChatIconD8Highlight = OpenGLUtil.LoadUIImage("icon-d8-highlight");
+            this.ChatIconD10Highlight = OpenGLUtil.LoadUIImage("icon-d10-highlight");
+            this.ChatIconD12Highlight = OpenGLUtil.LoadUIImage("icon-d12-highlight");
+            this.ChatIconD20Highlight = OpenGLUtil.LoadUIImage("icon-d20-highlight");
+            this.ChatIconD4Primary = OpenGLUtil.LoadUIImage("icon-d4-primary");
+            this.ChatIconD6Primary = OpenGLUtil.LoadUIImage("icon-d6-primary");
+            this.ChatIconD8Primary = OpenGLUtil.LoadUIImage("icon-d8-primary");
+            this.ChatIconD10Primary = OpenGLUtil.LoadUIImage("icon-d10-primary");
+            this.ChatIconD12Primary = OpenGLUtil.LoadUIImage("icon-d12-primary");
+            this.ChatIconD20Primary = OpenGLUtil.LoadUIImage("icon-d20-primary");
+            this.ChatIconD4Secondary = OpenGLUtil.LoadUIImage("icon-d4-secondary");
+            this.ChatIconD6Secondary = OpenGLUtil.LoadUIImage("icon-d6-secondary");
+            this.ChatIconD8Secondary = OpenGLUtil.LoadUIImage("icon-d8-secondary");
+            this.ChatIconD10Secondary = OpenGLUtil.LoadUIImage("icon-d10-secondary");
+            this.ChatIconD12Secondary = OpenGLUtil.LoadUIImage("icon-d12-secondary");
+            this.ChatIconD20Secondary = OpenGLUtil.LoadUIImage("icon-d20-secondary");
+            this.ChatIconD4PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d4-primary-highlight");
+            this.ChatIconD6PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d6-primary-highlight");
+            this.ChatIconD8PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d8-primary-highlight");
+            this.ChatIconD10PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d10-primary-highlight");
+            this.ChatIconD12PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d12-primary-highlight");
+            this.ChatIconD20PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d20-primary-highlight");
+            this.ChatIconD4SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d4-secondary-highlight");
+            this.ChatIconD6SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d6-secondary-highlight");
+            this.ChatIconD8SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d8-secondary-highlight");
+            this.ChatIconD10SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d10-secondary-highlight");
+            this.ChatIconD12SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d12-secondary-highlight");
+            this.ChatIconD20SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d20-secondary-highlight");
 
             this.PlayIcon = OpenGLUtil.LoadUIImage("icons8-play-40");
             this.PauseIcon = OpenGLUtil.LoadUIImage("icons8-pause-40");

@@ -43,7 +43,7 @@
             return rollText;
         }
 
-        public override void Render()
+        public override void Render(Guid senderId, uint senderColorAbgr)
         {
             if (this.Container.Blocks.Count == 4)
             {
@@ -73,75 +73,10 @@
                 Vector2 sR1 = ImGuiHelper.CalcTextSize(tR1);
                 Vector2 sR2 = ImGuiHelper.CalcTextSize(tR2);
 
-                uint cell = Extensions.FromHex("202020").Abgr();
-                uint cellOutline = Color.Gray.Abgr();
-
-                drawList.AddQuadFilled(
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(sR1.X, sR1.Y) / 2) - new Vector2(4, 4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(-sR1.X, sR1.Y) / 2) - new Vector2(-4, 4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(-sR1.X, -sR1.Y) / 2) - new Vector2(-4, -4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(sR1.X, -sR1.Y) / 2) - new Vector2(4, -4),
-                    cell
-                );
-
-                bool overRect = ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(cXL, 24) - (new Vector2(sR1.X, sR1.Y) / 2) - new Vector2(4, 4), cursorScreen + new Vector2(cXL, 24) - (new Vector2(-sR1.X, -sR1.Y) / 2) - new Vector2(-4, -4));
-                if (overRect)
-                {
-                    cellOutline = Color.DarkGoldenrod.Abgr();
-                }
-
-                drawList.AddQuad(
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(sR1.X, sR1.Y) / 2) - new Vector2(4, 4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(-sR1.X, sR1.Y) / 2) - new Vector2(-4, 4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(-sR1.X, -sR1.Y) / 2) - new Vector2(-4, -4),
-                    cursorScreen + new Vector2(cXL, 24) - (new Vector2(sR1.X, -sR1.Y) / 2) - new Vector2(4, -4),
-                    cellOutline
-                );
-
-                ImGui.SetCursorPos(cursorLocal + new Vector2(cXL, 24) - (sR1 / 2));
-                ImGui.PushStyleColor(ImGuiCol.Text, r1.Color.Abgr());
-                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(tR1));
-                ImGui.PopStyleColor();
-                if (!string.IsNullOrEmpty(r1.Tooltip) && overRect)
-                {
-                    ImGui.BeginTooltip();
-                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(r1.Tooltip));
-                    ImGui.EndTooltip();
-                }
-
-                drawList.AddQuadFilled(
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(sR2.X, sR2.Y) / 2) - new Vector2(4, 4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(-sR2.X, sR2.Y) / 2) - new Vector2(-4, 4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(-sR2.X, -sR2.Y) / 2) - new Vector2(-4, -4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(sR2.X, -sR2.Y) / 2) - new Vector2(4, -4),
-                    cell
-                );
-
-                overRect = ImGui.IsMouseHoveringRect(cursorScreen + new Vector2(cXR, 24) - (new Vector2(sR2.X, sR2.Y) / 2) - new Vector2(4, 4), cursorScreen + new Vector2(cXR, 24) - (new Vector2(-sR2.X, -sR2.Y) / 2) - new Vector2(-4, -4));
-                cellOutline = Color.Gray.Abgr();
-                if (overRect)
-                {
-                    cellOutline = Color.DarkGoldenrod.Abgr();
-                }
-
-                drawList.AddQuad(
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(sR2.X, sR2.Y) / 2) - new Vector2(4, 4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(-sR2.X, sR2.Y) / 2) - new Vector2(-4, 4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(-sR2.X, -sR2.Y) / 2) - new Vector2(-4, -4),
-                    cursorScreen + new Vector2(cXR, 24) - (new Vector2(sR2.X, -sR2.Y) / 2) - new Vector2(4, -4),
-                    cellOutline
-                );
-
-                ImGui.SetCursorPos(cursorLocal + new Vector2(cXR, 24) - (sR2 / 2));
-                ImGui.PushStyleColor(ImGuiCol.Text, r2.Color.Abgr());
-                ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(tR2));
-                ImGui.PopStyleColor();
-                if (!string.IsNullOrEmpty(r2.Tooltip) && overRect)
-                {
-                    ImGui.BeginTooltip();
-                    ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(r2.Tooltip));
-                    ImGui.EndTooltip();
-                }
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXL - 4 - sR1.X / 2, cursorScreen.Y + 24 - 4 - sR1.Y / 2, sR1.X + 8, sR1.Y + 8), tR1, sR1, r1.Tooltip, r1.RollContents, r1.Color.Abgr(), senderColorAbgr);
+                ImGui.Dummy(new Vector2(sR1.X + 8, sR1.Y + 8));
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXR - 4 - sR2.X / 2, cursorScreen.Y + 24 - 4 - sR2.Y / 2, sR2.X + 8, sR2.Y + 8), tR2, sR2, r2.Tooltip, r2.RollContents, r2.Color.Abgr(), senderColorAbgr);
+                ImGui.Dummy(new Vector2(sR2.X + 8, sR2.Y + 8));
 
                 Vector2 sRn = ImGuiHelper.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));

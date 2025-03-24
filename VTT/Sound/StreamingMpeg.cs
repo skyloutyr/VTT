@@ -15,6 +15,8 @@
         private readonly float[] _buf;
         private readonly UnsafeResizeableArray<byte> _rArray;
         private int _maxBufferStep;
+        private readonly object _rArrayLock = new object();
+        private bool _rArrayFreed = false;
 
         public StreamingMpeg()
         {
@@ -77,21 +79,27 @@
                     break;
                 }
 
-                for (int i = 0; i < r; ++i)
+                lock (this._rArrayLock)
                 {
-                    float f = this._buf[i];
-                    int hr_i = (int)(float.IsNegative(f) ? f * 0x8000 : f * 0x7fff);
-
-                    // Clipping has to be done 1 byte under for both min and max for unknown reason.
-                    // If done to usual min/max (which is spec) causes audible crackling sounds in playback
-                    // If clipped 1 byte under all crackling sounds are eliminated
-                    // Interesting that this ONLY has to be done here, no such issue exists in WaveAudio's clipping implementation
-                    // Maybe bad ffmpeg encoding/scaling?
-                    short s = (short)Math.Clamp(hr_i, short.MinValue + 1, short.MaxValue - 1);
-                    unsafe
+                    for (int i = 0; i < r; ++i)
                     {
-                        ushort us = *(ushort*)&s;
-                        this._rArray.AddRange(BitConverter.GetBytes(us), 0, sizeof(ushort));
+                        float f = this._buf[i];
+                        int hr_i = (int)(float.IsNegative(f) ? f * 0x8000 : f * 0x7fff);
+
+                        // Clipping has to be done 1 byte under for both min and max for unknown reason.
+                        // If done to usual min/max (which is spec) causes audible crackling sounds in playback
+                        // If clipped 1 byte under all crackling sounds are eliminated
+                        // Interesting that this ONLY has to be done here, no such issue exists in WaveAudio's clipping implementation
+                        // Maybe bad ffmpeg encoding/scaling?
+                        short s = (short)Math.Clamp(hr_i, short.MinValue + 1, short.MaxValue - 1);
+                        unsafe
+                        {
+                            ushort us = *(ushort*)&s;
+                            if (!this._rArrayFreed)
+                            {
+                                this._rArray.AddRange(BitConverter.GetBytes(us), 0, sizeof(ushort));
+                            }
+                        }
                     }
                 }
 
@@ -108,8 +116,16 @@
                 }
             }
 
-            byte[] ret = this._rArray.ToBytes();
-            this._rArray.Reset();
+            byte[] ret = Array.Empty<byte>();
+            lock (this._rArrayLock)
+            {
+                if (!this._rArrayFreed)
+                {
+                    ret = this._rArray.ToBytes();
+                    this._rArray.Reset();
+                }
+            }
+
             this._lastReadIndex = (int)this._ms.Position;
             return ret;
         }
@@ -136,7 +152,11 @@
 
             try
             {
-                this._rArray.Free();
+                lock (this._rArrayLock)
+                {
+                    this._rArray.Free();
+                    this._rArrayFreed = true;
+                }
             }
             catch
             {

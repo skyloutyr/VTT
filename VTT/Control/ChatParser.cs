@@ -324,6 +324,18 @@
                                 continue;
                             }
 
+                            if (c == 'i') // Inline image
+                            {
+                                if (!MoveNext(text, ref idx, out c))
+                                {
+                                    blockMode = BlockMode.Error;
+                                    break;
+                                }
+
+                                blockMode = BlockMode.InlineImage;
+                                continue;
+                            }
+
                         expr:
                             --idx;
                             // Expression
@@ -366,196 +378,227 @@
                 }
             }
 
-            if (blockMode == BlockMode.Text)
+            switch (blockMode)
             {
-                string bContent = sb.ToString();
-                if (!string.IsNullOrEmpty(bContent))
+                case BlockMode.Text:
                 {
-                    cb = new ChatBlock() { Color = color, Text = bContent, Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
-                    tooltip = string.Empty;
-                }
-                else
-                {
-                    cb = null;
-                }
-
-                return true;
-            }
-
-            if (blockMode == BlockMode.Error)
-            {
-                cb = new ChatBlock() { Color = Color.Red, Text = sb.ToString(), Tooltip = "An exception occured while parsing this text!", Type = ChatBlockType.TextError, RollContents = ChatBlockExpressionRollContents.None };
-                return true;
-            }
-
-            if (blockMode == BlockMode.ColorSpecifier)
-            {
-                string bContent = sb.ToString();
-                if (bContent.StartsWith("0x"))
-                {
-                    bContent = bContent[2..];
-                }
-
-                if (uint.TryParse(bContent, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out uint i))
-                {
-                    color = Extensions.FromArgb(i);
-                }
-
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.Skip)
-            {
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.TooltipSpecifier)
-            {
-                tooltip = sb.ToString();
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.RenderModeSpecifier)
-            {
-                if (Enum.TryParse(sb.ToString(), out ChatLine.RenderType result))
-                {
-                    renderType = result;
-                }
-
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.Expression)
-            {
-                string bContent = sb.ToString();
-                if (TryRunExpression(bContent, out object result, out RollExpressionEvaluator evaluator))
-                {
-                    Color rollColor = evaluator.ResultFlags switch
+                    string bContent = sb.ToString();
+                    if (!string.IsNullOrEmpty(bContent))
                     {
-                        RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
-                        RollResultFlags.HadMaximumValue => Color.LightGreen,
-                        RollResultFlags.HadMinimumValue => Color.Red,
-                        _ => Color.White
-                    };
-
-                    PrepareRollsTooltip(ref bContent, evaluator.RollResults);
-                    cb = new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{bContent} = {result}", Type = ChatBlockType.Expression, RollContents = GetRollContents(evaluator.RollsMade) };
-                    return true;
-                }
-                else
-                {
-                    cb = new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
-                    return true;
-                }
-            }
-
-            if (blockMode == BlockMode.Passthrough)
-            {
-                cb = new ChatBlock() { Color = color, Text = sb.ToString(), Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
-                return true;
-            }
-
-            if (blockMode == BlockMode.Recursive)
-            {
-                string t = sb.ToString();
-
-                int rIdx = 0;
-                List<ChatBlock> blocks = new List<ChatBlock>();
-                Color c = color;
-                string tt = string.Empty;
-                ChatLine.RenderType rRenderType = ChatLine.RenderType.Line;
-                string rline = string.Empty;
-                ChatBlockExpressionRollContents compoundContents = ChatBlockExpressionRollContents.None;
-
-                while (ParseBlock(t, userColor, ref c, ref descColor, ref tt, ref rIdx, ref username, ref destname, ref destID, ref portraitID, ref rRenderType, out ChatBlock rCb))
-                {
-                    if (rCb != null)
-                    {
-                        rline += rCb.Text;
-                        compoundContents |= rCb.RollContents;
-                    }
-                }
-
-                cb = new ChatBlock() { Color = color, Text = rline, Tooltip = sb.ToString(), Type = ChatBlockType.Compound, RollContents = compoundContents };
-                return true;
-            }
-
-            if (blockMode == BlockMode.DestinationSpecifier)
-            {
-                string t = sb.ToString();
-                Guid id = Guid.Empty;
-                if (!Guid.TryParse(t, out id))
-                {
-                    if (t.ToLower().Equals("gm"))
-                    {
-                        id = Server.Instance.GetAnyAdmin();
+                        cb = new ChatBlock() { Color = color, Text = bContent, Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
+                        tooltip = string.Empty;
                     }
                     else
                     {
+                        cb = null;
+                    }
+
+                    return true;
+                }
+
+                case BlockMode.Error:
+                {
+                    cb = new ChatBlock() { Color = Color.Red, Text = sb.ToString(), Tooltip = "An exception occured while parsing this text!", Type = ChatBlockType.TextError, RollContents = ChatBlockExpressionRollContents.None };
+                    return true;
+                }
+
+                case BlockMode.ColorSpecifier:
+                {
+                    string bContent = sb.ToString();
+                    if (bContent.StartsWith("0x"))
+                    {
+                        bContent = bContent[2..];
+                    }
+
+                    if (uint.TryParse(bContent, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out uint i))
+                    {
+                        color = Extensions.FromArgb(i);
+                    }
+
+                    cb = null;
+                    return true;
+                }
+
+                case BlockMode.Skip:
+                {
+                    cb = null;
+                    return true;
+                }
+
+                case BlockMode.TooltipSpecifier:
+                {
+                    tooltip = sb.ToString();
+                    cb = null;
+                    return true;
+                }
+
+                case BlockMode.RenderModeSpecifier:
+                {
+                    if (Enum.TryParse(sb.ToString(), out ChatLine.RenderType result))
+                    {
+                        renderType = result;
+                    }
+
+                    cb = null;
+                    return true;
+                }
+
+                case BlockMode.Expression:
+                {
+                    string bContent = sb.ToString();
+                    if (TryRunExpression(bContent, out object result, out RollExpressionEvaluator evaluator))
+                    {
+                        Color rollColor = evaluator.ResultFlags switch
+                        {
+                            RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
+                            RollResultFlags.HadMaximumValue => Color.LightGreen,
+                            RollResultFlags.HadMinimumValue => Color.Red,
+                            _ => Color.White
+                        };
+
+                        PrepareRollsTooltip(ref bContent, evaluator.RollResults);
+                        cb = new ChatBlock() { Color = rollColor, Text = result.ToString(), Tooltip = $"{bContent} = {result}", Type = ChatBlockType.Expression, RollContents = GetRollContents(evaluator.RollsMade) };
+                        return true;
+                    }
+                    else
+                    {
+                        cb = new ChatBlock() { Color = Color.Red, Text = bContent, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
+                        return true;
+                    }
+                }
+
+                case BlockMode.Passthrough:
+                {
+                    cb = new ChatBlock() { Color = color, Text = sb.ToString(), Tooltip = tooltip, Type = ChatBlockType.Text, RollContents = ChatBlockExpressionRollContents.None };
+                    return true;
+                }
+
+                case BlockMode.Recursive:
+                {
+                    string t = sb.ToString();
+
+                    int rIdx = 0;
+                    List<ChatBlock> blocks = new List<ChatBlock>();
+                    Color c = color;
+                    string tt = string.Empty;
+                    ChatLine.RenderType rRenderType = ChatLine.RenderType.Line;
+                    string rline = string.Empty;
+                    ChatBlockExpressionRollContents compoundContents = ChatBlockExpressionRollContents.None;
+
+                    while (ParseBlock(t, userColor, ref c, ref descColor, ref tt, ref rIdx, ref username, ref destname, ref destID, ref portraitID, ref rRenderType, out ChatBlock rCb))
+                    {
+                        if (rCb != null)
+                        {
+                            rline += rCb.Text;
+                            compoundContents |= rCb.RollContents;
+                        }
+                    }
+
+                    cb = new ChatBlock() { Color = color, Text = rline, Tooltip = sb.ToString(), Type = ChatBlockType.Compound, RollContents = compoundContents };
+                    return true;
+                }
+
+                case BlockMode.DestinationSpecifier:
+                {
+                    string t = sb.ToString();
+                    Guid id = Guid.Empty;
+                    if (!Guid.TryParse(t, out id))
+                    {
+                        if (t.ToLower().Equals("gm"))
+                        {
+                            id = Server.Instance.GetAnyAdmin();
+                        }
+                        else
+                        {
+                            foreach (ClientInfo ci in Server.Instance.ClientInfos.Values)
+                            {
+                                if (ci.Name.ToLower().Equals(t.ToLower()))
+                                {
+                                    id = ci.ID;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!id.Equals(Guid.Empty))
+                    {
                         foreach (ClientInfo ci in Server.Instance.ClientInfos.Values)
                         {
-                            if (ci.Name.ToLower().Equals(t.ToLower()))
+                            if (ci.ID.Equals(id))
                             {
-                                id = ci.ID;
+                                destname = ci.Name;
+                                descColor = ci.Color;
                                 break;
                             }
                         }
                     }
-                }
-
-                if (!id.Equals(Guid.Empty))
-                {
-                    foreach (ClientInfo ci in Server.Instance.ClientInfos.Values)
+                    else
                     {
-                        if (ci.ID.Equals(id))
-                        {
-                            destname = ci.Name;
-                            descColor = ci.Color;
-                            break;
-                        }
+                        destname = string.Empty;
+                        descColor = Extensions.FromAbgr(0);
                     }
+
+                    destID = id;
+                    cb = null;
+                    return true;
                 }
-                else
+
+                case BlockMode.SenderNameSpecifier:
                 {
-                    destname = string.Empty;
-                    descColor = Extensions.FromAbgr(0);
+                    string t = sb.ToString();
+                    if (!string.IsNullOrEmpty(t))
+                    {
+                        username = t;
+                    }
+
+                    cb = null;
+                    return true;
                 }
 
-                destID = id;
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.SenderNameSpecifier)
-            {
-                string t = sb.ToString();
-                if (!string.IsNullOrEmpty(t))
+                case BlockMode.SenderPortraitSpecifier:
                 {
-                    username = t;
+                    string t = sb.ToString();
+                    if (Guid.TryParse(t, out Guid id))
+                    {
+                        portraitID = id;
+                    }
+
+                    cb = null;
+                    return true;
                 }
 
-                cb = null;
-                return true;
-            }
-
-            if (blockMode == BlockMode.SenderPortraitSpecifier)
-            {
-                string t = sb.ToString();
-                if (Guid.TryParse(t, out Guid id))
+                case BlockMode.InlineImage:
                 {
-                    portraitID = id;
+                    string t = sb.ToString();
+                    if (Guid.TryParse(t, out Guid aId))
+                    {
+                        cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
+                        return true;
+                    }
+
+                    if (!Uri.TryCreate(t, UriKind.Absolute, out Uri result))
+                    {
+                        cb = null;
+                        return true;
+                    }
+
+                    if (result.Scheme != Uri.UriSchemeHttp && result.Scheme != Uri.UriSchemeHttps)
+                    {
+                        cb = null;
+                        return true;
+                    }
+
+                    cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
+                    return true;
                 }
 
-                cb = null;
-                return true;
+                default:
+                {
+                    cb = null;
+                    return false;
+                }
             }
-
-            cb = null;
-            return false;
         }
 
         public static bool TryRunExpression(string expr, out object result, out RollExpressionEvaluator evaluator)
@@ -1631,7 +1674,8 @@
             Recursive = 7,
             DestinationSpecifier = 8,
             SenderNameSpecifier = 9,
-            SenderPortraitSpecifier = 10
+            SenderPortraitSpecifier = 10,
+            InlineImage = 11,
         }
 
         [Flags]

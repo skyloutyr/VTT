@@ -340,6 +340,7 @@
                     RenderType.RollExpression => new ChatRendererRollExpression(this),
                     RenderType.AtkDmg => new ChatRendererAtkDmg(this),
                     RenderType.Spell => new ChatRendererSpell(this),
+                    RenderType.Sound => new ChatRendererAudio(this),
                     _ => default
                 };
             }
@@ -433,7 +434,8 @@
             // Other
             SessionMarker,
             Image,
-            RollExpression
+            RollExpression,
+            Sound
         }
 
         private class AssetPreviewReference

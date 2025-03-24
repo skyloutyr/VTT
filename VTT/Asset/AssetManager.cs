@@ -524,114 +524,131 @@
         {
             if (response == AssetResponseType.Ok)
             {
-                ThreadPool.QueueUserWorkItem(x => 
+                ThreadPool.QueueUserWorkItem(x =>
                 {
-                    Image<Rgba32> img = Image.Load<Rgba32>(bin);
+                    Image<Rgba32> img = null;
+                    bool erroredOut = false;
                     List<AssetPreview.FrameData> frames = new List<AssetPreview.FrameData>();
-                    if (img.Frames.Count > 1)
+                    try
                     {
-                        GraphicsOptions opts = new GraphicsOptions() { AlphaCompositionMode = PixelAlphaCompositionMode.Src, Antialias = false, ColorBlendingMode = PixelColorBlendingMode.Normal };
-                        ImageFrameCollection<Rgba32> ifc = img.Frames;
-                        int wS = 0;
-                        int wM = 0;
-                        int hM = 0;
-                        foreach (ImageFrame<Rgba32> frame in ifc.Cast<ImageFrame<Rgba32>>())
+                        img = Image.Load<Rgba32>(bin);
+                        if (img.Frames.Count > 1)
                         {
-                            if (wS + frame.Width > this.GlMaxTextureSize)
+                            GraphicsOptions opts = new GraphicsOptions() { AlphaCompositionMode = PixelAlphaCompositionMode.Src, Antialias = false, ColorBlendingMode = PixelColorBlendingMode.Normal };
+                            ImageFrameCollection<Rgba32> ifc = img.Frames;
+                            int wS = 0;
+                            int wM = 0;
+                            int hM = 0;
+                            foreach (ImageFrame<Rgba32> frame in ifc.Cast<ImageFrame<Rgba32>>())
                             {
-                                wM = Math.Max(wM, wS);
-                                wS = 0;
-                                hM += frame.Height;
-                                if (hM > this.GlMaxTextureSize)
+                                if (wS + frame.Width > this.GlMaxTextureSize)
                                 {
-                                    img.Dispose();
-                                    Client.Instance.DoTask(() => this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null));
-                                    return;
-                                }
-                            }
-
-                            wS += frame.Width;
-                        }
-
-                        wM = Math.Max(wM, wS);
-                        hM += img.Height;
-
-                        Image<Rgba32> final = new Image<Rgba32>(wM, hM);
-                        GifMetadata imgGifMeta = img.Metadata?.GetGifMetadata();
-                        int posX = 0;
-                        int posY = 0;
-                        int cumulativeDelay = 0;
-                        for (int i = 0; i < ifc.Count; ++i)
-                        {
-                            Image<Rgba32> frame = ifc.CloneFrame(i);
-                            ImageFrame<Rgba32> aFrame = ifc[i];
-                            int delay = 10;
-                            if (aFrame.Metadata != null)
-                            {
-                                try
-                                {
-                                    GifFrameMetadata gfm = aFrame.Metadata.GetGifMetadata();
-                                    delay = gfm?.FrameDelay ?? 10;
-                                    if (delay == 0)
+                                    wM = Math.Max(wM, wS);
+                                    wS = 0;
+                                    hM += frame.Height;
+                                    if (hM > this.GlMaxTextureSize)
                                     {
-                                        delay = 10;
+                                        img.Dispose();
+                                        Client.Instance.DoTask(() => this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null));
+                                        return;
                                     }
                                 }
-                                catch
-                                {
-                                    // NOOP
-                                }
+
+                                wS += frame.Width;
                             }
 
-                            if (posX + frame.Width > wM)
+                            wM = Math.Max(wM, wS);
+                            hM += img.Height;
+
+                            Image<Rgba32> final = new Image<Rgba32>(wM, hM);
+                            GifMetadata imgGifMeta = img.Metadata?.GetGifMetadata();
+                            int posX = 0;
+                            int posY = 0;
+                            int cumulativeDelay = 0;
+                            for (int i = 0; i < ifc.Count; ++i)
                             {
-                                posX = 0;
-                                posY += img.Height;
+                                Image<Rgba32> frame = ifc.CloneFrame(i);
+                                ImageFrame<Rgba32> aFrame = ifc[i];
+                                int delay = 10;
+                                if (aFrame.Metadata != null)
+                                {
+                                    try
+                                    {
+                                        GifFrameMetadata gfm = aFrame.Metadata.GetGifMetadata();
+                                        delay = gfm?.FrameDelay ?? 10;
+                                        if (delay == 0)
+                                        {
+                                            delay = 10;
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        // NOOP
+                                    }
+                                }
+
+                                if (posX + frame.Width > wM)
+                                {
+                                    posX = 0;
+                                    posY += img.Height;
+                                }
+
+                                cumulativeDelay += delay;
+                                final.Mutate(x => x.DrawImage(frame, new Point(posX, posY), opts));
+                                AssetPreview.FrameData currentData = new AssetPreview.FrameData(posX, posY, frame.Height, frame.Width, delay, cumulativeDelay);
+                                frames.Add(currentData);
+                                posX += frame.Width;
+                                frame.Dispose();
                             }
 
-                            cumulativeDelay += delay;
-                            final.Mutate(x => x.DrawImage(frame, new Point(posX, posY), opts));
-                            AssetPreview.FrameData currentData = new AssetPreview.FrameData(posX, posY, frame.Height, frame.Width, delay, cumulativeDelay);
-                            frames.Add(currentData);
-                            posX += frame.Width;
-                            frame.Dispose();
+                            img.Dispose();
+                            img = final;
                         }
-
-                        img.Dispose();
-                        img = final;
+                    }
+                    catch
+                    {
+                        erroredOut = true;
                     }
 
                     Client.Instance.DoTask(() =>
                     {
-                        Texture tex = new Texture(TextureTarget.Texture2D);
-                        tex.Bind();
-                        if (frames.Count == 0)
+                        if (erroredOut)
                         {
-                            tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
-                            tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
-                            tex.SetImage(img, SizedInternalFormat.Rgba8);
-                            tex.GenerateMipMaps();
-                            img.Dispose();
-                            Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
+                            this.WebPictures.EraseRecord(id);
+                            this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null);
                         }
                         else
                         {
-                            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-                            tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
-                            tex.SetImage(img, SizedInternalFormat.Rgba8);
-                            img.Dispose();
-                            Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
-                        }
+                            Texture tex = new Texture(TextureTarget.Texture2D);
+                            tex.Bind();
+                            if (frames.Count == 0)
+                            {
+                                tex.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
+                                tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
+                                tex.SetImage(img, SizedInternalFormat.Rgba8);
+                                tex.GenerateMipMaps();
+                                img.Dispose();
+                                Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
+                            }
+                            else
+                            {
+                                tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                                tex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+                                tex.SetImage(img, SizedInternalFormat.Rgba8);
+                                img.Dispose();
+                                Configuration.Default.MemoryAllocator.ReleaseRetainedResources();
+                            }
 
-                        AssetPreview prev = new AssetPreview() { GLTex = tex, IsAnimated = frames.Count > 0 };
-                        if (frames.Count > 0)
-                        {
-                            prev.Frames = frames.ToArray();
-                            prev.FramesTotalDelay = frames.Sum(f => f.Duration);
-                        }
+                            AssetPreview prev = new AssetPreview() { GLTex = tex, IsAnimated = frames.Count > 0 };
+                            if (frames.Count > 0)
+                            {
+                                prev.Frames = frames.ToArray();
+                                prev.FramesTotalDelay = frames.Sum(f => f.Duration);
+                            }
 
-                        this.WebPictures.EraseRecord(id);
-                        this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Return, prev);
+                            this.WebPictures.EraseRecord(id);
+                            this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Return, prev);
+                        }
                     });
                 });
 

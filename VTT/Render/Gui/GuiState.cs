@@ -52,6 +52,7 @@
         public ConcurrentQueue<string> dropEventsReceiver = new ConcurrentQueue<string>();
         public List<string> dropEvents = new List<string>();
         public MapObject overrideObjectOpenRightClickContextMenu;
+        public bool chatHovered = false;
 
         public void Reset()
         {
@@ -107,6 +108,7 @@
             }
 
             this.overrideObjectOpenRightClickContextMenu = null;
+            this.chatHovered = false;
         }
     }
 }

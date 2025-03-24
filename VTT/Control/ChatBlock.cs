@@ -171,6 +171,7 @@
         Expression = 2,
         Error = 4,
         Compound = 8,
+        Image = 16,
 
         ExpressionError = Expression | Error,
         TextError = Text | Error,

@@ -1423,6 +1423,23 @@
                         {
                             state.shaderGraphExtraTexturesHovered.ExtraTextures.ExtraTexturesAttachments[state.shaderGraphExtraTexturesHoveredIndex] = this._draggedRef.AssetID;
                         }
+
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.chatHovered)
+                    {
+                        if (this._draggedRef?.Type == AssetType.Sound)
+                        {
+                            this._chatString = $"[m:Sound][p:{this._draggedRef.AssetID}]";
+                            haveResult = true;
+                        }
+
+                        if (this._draggedRef?.Type == AssetType.Texture)
+                        {
+                            this._chatString += $"[i:{this._draggedRef.AssetID}]";
+                            haveResult = true;
+                        }
                     }
                 }
 

@@ -89,6 +89,8 @@
 
                         ImGui.EndTooltip();
                     }
+
+                    state.chatHovered = true;
                 }
 
                 if (!b && ImGui.IsItemFocused() && Client.Instance.Frontend.GameHandle.IsAnyControlDown())

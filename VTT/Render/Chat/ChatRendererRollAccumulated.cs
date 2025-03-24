@@ -39,7 +39,6 @@
             float cX = ImGui.GetCursorScreenPos().X;
             float w = 100;
             float cY = ImGui.GetCursorScreenPos().Y;
-            float ccY = ImGui.GetCursorPosY();
 
             drawList.AddLine(new(cX + w - 94, cY), new(cX + w, cY), outline);
             drawList.AddLine(new(cX + w, cY), new(cX + w, cY + 28), outline);
@@ -60,13 +59,9 @@
                 Vector2 tSize = ImGuiHelper.CalcTextSize(blockRolls.Text);
                 Vector2 tLen = tSize + (padding * 2);
                 this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tLen.X * 0.5f), cY + 16 - (tLen.Y * 0.5f), tLen.X, tLen.Y), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color.Abgr(), senderColorAbgr);
-                ImGui.SetCursorPosX(0);
-                ImGui.SetCursorPosY(ccY + 32);
             }
-            else
-            {
-                ImGui.Dummy(new Vector2(32, 32));
-            }
+
+            ImGui.Dummy(new Vector2(32, 32));
         }
     }
 }

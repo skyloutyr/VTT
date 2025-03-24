@@ -7,6 +7,7 @@
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ChatRendererSimple : ChatRendererBase
@@ -62,8 +63,11 @@
                     this.Container.SenderColor.Abgr()
                 );
 
-                Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.ChatSimpleRollImage;
-                drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
+                GuiRenderer uiRoot = Client.Instance.Frontend.Renderer.GuiRenderer;
+
+                // Not a bug - color intentionally set to sender's!
+                drawList.AddImage(uiRoot.DiceIconAtlas, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36), uiRoot.ChatIconD20.BoundsPrimaryStart, uiRoot.ChatIconD20.BoundsPrimaryEnd, senderColorAbgr);
+                drawList.AddImage(uiRoot.DiceIconAtlas, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36), uiRoot.ChatIconD20.BoundsSecondaryStart, uiRoot.ChatIconD20.BoundsSecondaryEnd, senderColorAbgr);
 
                 float cXL = 340 / 4f;
                 float cXR = cXL * 3;

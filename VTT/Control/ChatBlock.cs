@@ -72,6 +72,12 @@
                         {
                             switch (rKindV)
                             {
+                                case 2:
+                                {
+                                    AddRollKind(ref contents, ChatBlockExpressionRollContents.SingleD2, nRollsV);
+                                    break;
+                                }
+
                                 case 4:
                                 {
                                     AddRollKind(ref contents, ChatBlockExpressionRollContents.SingleD4, nRollsV);
@@ -116,7 +122,7 @@
 
                                 default:
                                 {
-                                    AddRollKind(ref contents, ChatBlockExpressionRollContents.SingleDUnknown, nRollsV);
+                                    AddRollKind(ref contents, ChatBlockExpressionRollContents.SingleD20, nRollsV);
                                     break;
                                 }
                             }
@@ -130,12 +136,12 @@
 
         private static void AddRollKind(ref ChatBlockExpressionRollContents contents, ChatBlockExpressionRollContents flagToAdd, int amt)
         {
-            if (flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown && amt > 1)
+            if (flagToAdd <= ChatBlockExpressionRollContents.SingleD2 && amt > 1)
             {
                 flagToAdd = (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
             }
 
-            if (flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown)
+            if (flagToAdd <= ChatBlockExpressionRollContents.SingleD2)
             {
                 ChatBlockExpressionRollContents multiples = (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
                 if (!contents.HasFlag(multiples))
@@ -181,7 +187,7 @@
         SingleD12 = 16,
         SingleD20 = 32,
         SingleD100 = 64,
-        SingleDUnknown = 128,
+        SingleD2 = 128,
         MultipleD4 = 256,
         MultipleD6 = 512,
         MultipleD8 = 1024,
@@ -189,7 +195,7 @@
         MultipleD12 = 4096,
         MultipleD20 = 8192,
         MultipleD100 = 16384,
-        MultipleDUnknown = 32768,
+        MultipleD2 = 32768,
         AnyD4 = SingleD4 | MultipleD4,
         AnyD6 = SingleD6 | MultipleD6,
         AnyD8 = SingleD8 | MultipleD8,
@@ -197,6 +203,6 @@
         AnyD12 = SingleD12 | MultipleD12,
         AnyD20 = SingleD20 | MultipleD20,
         AnyD100 = SingleD100 | MultipleD100,
-        AnyDUnknown = SingleDUnknown | MultipleDUnknown
+        AnyD2 = SingleD2 | MultipleD2
     }
 }

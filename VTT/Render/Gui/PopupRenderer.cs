@@ -364,30 +364,112 @@
                     ImGui.PopID();
 
                     int[] dieSide = { 2, 4, 6, 8, 10, 12, 20, 100 };
+                    uint[] colors = { 
+                        Client.Instance.Settings.ColorD2,
+                        Client.Instance.Settings.ColorD4,
+                        Client.Instance.Settings.ColorD6,
+                        Client.Instance.Settings.ColorD8,
+                        Client.Instance.Settings.ColorD10,
+                        Client.Instance.Settings.ColorD12,
+                        Client.Instance.Settings.ColorD20,
+                        Client.Instance.Settings.ColorD100,
+                    };
+
                     for (int i = 0; i < dieSide.Length; ++i)
                     {
+                        int side = dieSide[i];
                         ImGui.TableNextRow();
                         ImGui.TableSetColumnIndex(0);
+                        DieIconData iconData = side switch
+                        {
+                            2 => this.ChatIconD2,
+                            4 => this.ChatIconD4,
+                            6 => this.ChatIconD6,
+                            8 => this.ChatIconD8,
+                            10 => this.ChatIconD10,
+                            12 => this.ChatIconD12,
+                            20 => this.ChatIconD20,
+                            100 => this.ChatIconD10,
+                            _ => this.ChatIconD20,
+                        };
+
+                        if (side == 100)
+                        {
+                            Vector2 cHere = ImGui.GetCursorPos();
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            ImGui.SetCursorPos(cHere);
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                        }
+                        else
+                        {
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSingularStart, iconData.BoundsSingularEnd, Extensions.Vec4FromAbgr(colors[i]));
+                        }
+
+                        ImGui.SameLine();
                         ImGui.PushID("dieBtnID_" + i + "s");
-                        if (ImGui.Button("1d" + dieSide[i]))
+                        if (ImGui.Button("1d" + side))
                         {
                             anyPress = true;
-                            resultingRolls = $"[m:DiceRoll][roll(1, {dieSide[i]})]";
+                            resultingRolls = $"[m:DiceRoll][roll(1, {side})]";
                         }
 
                         ImGui.PopID();
                         ImGui.TableSetColumnIndex(1);
+                        if (side == 100 || this._numDiceSingular > 1)
+                        {
+                            Vector2 cHere = ImGui.GetCursorPos();
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            ImGui.SetCursorPos(cHere);
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                        }
+                        else
+                        {
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSingularStart, iconData.BoundsSingularEnd, Extensions.Vec4FromAbgr(colors[i]));
+                        }
+
+                        ImGui.SameLine();
                         ImGui.PushID("dieBtnID_" + i + "c");
-                        if (ImGui.Button(this._numDiceSingular + "d" + dieSide[i]))
+                        if (ImGui.Button(this._numDiceSingular + "d" + side))
                         {
                             anyPress = true;
-                            resultingRolls = $"[m:DiceRoll][roll({this._numDiceSingular}, {dieSide[i]})]";
+                            resultingRolls = $"[m:DiceRoll][roll({this._numDiceSingular}, {side})]";
                         }
 
                         ImGui.PopID();
                         ImGui.TableSetColumnIndex(2);
+
+                        if (side == 100)
+                        {
+                            Vector2 cHere = ImGui.GetCursorPos();
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            ImGui.SetCursorPos(cHere);
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            if (this._numDiceSeparate > 1)
+                            {
+                                ImGui.SameLine();
+                                ImGui.TextDisabled("+");
+                                ImGui.SameLine();
+                                cHere = ImGui.GetCursorPos();
+                                ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                                ImGui.SetCursorPos(cHere);
+                                ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            }
+                        }
+                        else
+                        {
+                            ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSingularStart, iconData.BoundsSingularEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            if (this._numDiceSeparate > 1)
+                            {
+                                ImGui.SameLine();
+                                ImGui.TextDisabled("+");
+                                ImGui.SameLine();
+                                ImGui.Image(this.DiceIconAtlas, new Vector2(20, 20), iconData.BoundsSingularStart, iconData.BoundsSingularEnd, Extensions.Vec4FromAbgr(colors[i]));
+                            }
+                        }
+
+                        ImGui.SameLine();
                         ImGui.PushID("dieBtnID_" + i + "m");
-                        if (ImGui.Button(this._numDiceSeparate + "d" + dieSide[i]))
+                        if (ImGui.Button(this._numDiceSeparate + "d" + side))
                         {
                             anyPress = true;
                             if (this._numDiceSeparate > 1)
@@ -396,12 +478,12 @@
                                 resultingRolls = $"[m:DiceRolls]";
                                 for (int j = 0; j < this._numDiceSeparate; ++j)
                                 {
-                                    resultingRolls += $"[roll(1, {dieSide[i]})]";
+                                    resultingRolls += $"[roll(1, {side})]";
                                 }
                             }
                             else
                             {
-                                resultingRolls = $"[m:DiceRoll][roll(1, {dieSide[i]})]";
+                                resultingRolls = $"[m:DiceRoll][roll(1, {side})]";
                             }
                         }
 

@@ -949,6 +949,15 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.chat_dice_enabled.tt"));
                     }
 
+                    uint clrD2 = Client.Instance.Settings.ColorD4;
+                    ChatDiceColorMode policyD2 = Client.Instance.Settings.ColorModeD2;
+                    if (ChatDieColorSetting(lang, ref clrD2, ref policyD2, 2))
+                    {
+                        Client.Instance.Settings.ColorD2 = clrD2;
+                        Client.Instance.Settings.ColorModeD2 = policyD2;
+                        Client.Instance.Settings.Save();
+                    }
+
                     uint clrD4 = Client.Instance.Settings.ColorD4;
                     ChatDiceColorMode policyD4 = Client.Instance.Settings.ColorModeD4;
                     if (ChatDieColorSetting(lang, ref clrD4, ref policyD4, 4))
@@ -1417,6 +1426,7 @@
                 GuiRenderer uiRoot = Client.Instance.Frontend.Renderer.GuiRenderer;
                 (Vector2, Vector2) dieImage = die switch
                 {
+                    2 => uiRoot.ChatIconD2.BoundsSingularTuple,
                     4 => uiRoot.ChatIconD4.BoundsSingularTuple,
                     6 => uiRoot.ChatIconD6.BoundsSingularTuple,
                     8 => uiRoot.ChatIconD8.BoundsSingularTuple,

@@ -79,6 +79,12 @@
     <None Remove="Embed\icon-d12-secondary-highlight.png" />
     <None Remove="Embed\icon-d12-secondary.png" />
     <None Remove="Embed\icon-d12.png" />
+    <None Remove="Embed\icon-d2-highlight.png" />
+    <None Remove="Embed\icon-d2-primary-highlight.png" />
+    <None Remove="Embed\icon-d2-primary.png" />
+    <None Remove="Embed\icon-d2-secondary-highlight.png" />
+    <None Remove="Embed\icon-d2-secondary.png" />
+    <None Remove="Embed\icon-d2.png" />
     <None Remove="Embed\icon-d20-highlight.png" />
     <None Remove="Embed\icon-d20-primary-highlight.png" />
     <None Remove="Embed\icon-d20-primary.png" />
@@ -285,6 +291,12 @@
     <EmbeddedResource Include="Embed\icon-d12-secondary-highlight.png" />
     <EmbeddedResource Include="Embed\icon-d12-secondary.png" />
     <EmbeddedResource Include="Embed\icon-d12.png" />
+    <EmbeddedResource Include="Embed\icon-d2-highlight.png" />
+    <EmbeddedResource Include="Embed\icon-d2-primary-highlight.png" />
+    <EmbeddedResource Include="Embed\icon-d2-primary.png" />
+    <EmbeddedResource Include="Embed\icon-d2-secondary-highlight.png" />
+    <EmbeddedResource Include="Embed\icon-d2-secondary.png" />
+    <EmbeddedResource Include="Embed\icon-d2.png" />
     <EmbeddedResource Include="Embed\icon-d20-highlight.png" />
     <EmbeddedResource Include="Embed\icon-d20-primary-highlight.png" />
     <EmbeddedResource Include="Embed\icon-d20-primary.png" />

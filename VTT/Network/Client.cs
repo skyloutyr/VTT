@@ -737,6 +737,15 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool ChatDiceEnabled { get; set; }
 
+        [DefaultValue(0xff91faff)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public uint ColorD2 { get; set; } = 0xff91faff;
+
+        [DefaultValue(ChatDiceColorMode.SetColor)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ChatDiceColorMode ColorModeD2 { get; set; } = ChatDiceColorMode.SetColor;
+
         [DefaultValue(0xff7f7fff)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public uint ColorD4 { get; set; } = 0xff7f7fff;
@@ -873,6 +882,8 @@
                 AudioContextHandlingMode = GLContextHandlingMode.Explicit,
                 NumAsyncTextureBuffers = 3,
                 ChatDiceEnabled = true,
+                ColorD2 = 0xff91faff,
+                ColorModeD2 = ChatDiceColorMode.SetColor,
                 ColorD4 = 0xff7f7fff,
                 ColorModeD4 = ChatDiceColorMode.SetColor,
                 ColorD6 = 0xff9bffee,

@@ -57,7 +57,7 @@
                     }
                 }
 
-                if (block.RollContents <= ChatBlockExpressionRollContents.SingleDUnknown)
+                if (block.RollContents <= ChatBlockExpressionRollContents.SingleD2)
                 {
                     ChatBlockExpressionRollContents multiples = (ChatBlockExpressionRollContents)((int)block.RollContents << 8);
                     if (!cumulativeContents.HasFlag(multiples))

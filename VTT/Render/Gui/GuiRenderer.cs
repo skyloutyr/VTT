@@ -9,7 +9,6 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
-    using System.Xml.Linq;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
@@ -90,6 +89,7 @@
         public Texture ChatMissingAvatar { get; set; }
 
         public Texture DiceIconAtlas { get; set; }
+        public DieIconData ChatIconD2 { get; set; }
         public DieIconData ChatIconD4 { get; set; }
         public DieIconData ChatIconD6 { get; set; }
         public DieIconData ChatIconD8 { get; set; }
@@ -958,6 +958,7 @@
                 };
             }
 
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d2 = CreateIconSetData("d2");
             Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d4 = CreateIconSetData("d4");
             Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d6 = CreateIconSetData("d6");
             Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d8 = CreateIconSetData("d8");
@@ -965,6 +966,7 @@
             Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d12 = CreateIconSetData("d12");
             Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d20 = CreateIconSetData("d20");
 
+            ProcessIconSet(data_icon_d2);
             ProcessIconSet(data_icon_d4);
             ProcessIconSet(data_icon_d6);
             ProcessIconSet(data_icon_d8);
@@ -976,6 +978,7 @@
             cfg.PreferContiguousImageBuffers = true;
             using Image<Rgba32> img = new Image<Rgba32>(cfg, neededW, neededH);
 
+            PaintIconSet(img, data_icon_d2);
             PaintIconSet(img, data_icon_d4);
             PaintIconSet(img, data_icon_d6);
             PaintIconSet(img, data_icon_d8);
@@ -983,6 +986,7 @@
             PaintIconSet(img, data_icon_d12);
             PaintIconSet(img, data_icon_d20);
 
+            this.ChatIconD2 = CreateDataFromSet(data_icon_d2);
             this.ChatIconD4 = CreateDataFromSet(data_icon_d4);
             this.ChatIconD6 = CreateDataFromSet(data_icon_d6);
             this.ChatIconD8 = CreateDataFromSet(data_icon_d8);

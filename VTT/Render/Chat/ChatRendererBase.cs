@@ -29,7 +29,7 @@
         public static string TextOrAlternative(string text, string alt) => string.IsNullOrEmpty(text) ? alt : text;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint SelectDiceColor(uint diceSetColor, ChatDiceColorMode colodMode, uint senderColor)
+        public static uint SelectDiceColor(uint diceSetColor, ChatDiceColorMode colodMode, uint senderColor)
         {
             return colodMode switch
             {
@@ -110,6 +110,15 @@
                 switch (rollContents)
                 {
                     // First test if we have the most basic singular die roll
+                    case ChatBlockExpressionRollContents.SingleD2:
+                    {
+                        iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSingularTuple;
+                        highlightPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSingularHighlightTuple;
+                        clrPrimary = SelectDiceColor(Client.Instance.Settings.ColorD2, Client.Instance.Settings.ColorModeD2, senderColor);
+                        havePick = true;
+                        break;
+                    }
+
                     case ChatBlockExpressionRollContents.SingleD4:
                     {
                         iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD4.BoundsSingularTuple;
@@ -155,7 +164,6 @@
                         break;
                     }
 
-                    case ChatBlockExpressionRollContents.SingleDUnknown:
                     case ChatBlockExpressionRollContents.SingleD20:
                     {
                         iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD20.BoundsSingularTuple;
@@ -166,6 +174,18 @@
                     }
 
                     // If basic SINGLE fails, test for basic MULTIPLE
+                    case ChatBlockExpressionRollContents.MultipleD2:
+                    {
+                        iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsPrimaryTuple;
+                        highlightPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsPrimaryHighlightTuple;
+                        iconSecondary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSecondaryTuple;
+                        highlightSecondary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSecondaryHighlightTuple;
+                        clrPrimary = clrSecondary = SelectDiceColor(Client.Instance.Settings.ColorD2, Client.Instance.Settings.ColorModeD2, senderColor);
+                        multipleDiceMode = true;
+                        havePick = true;
+                        break;
+                    }
+
                     case ChatBlockExpressionRollContents.MultipleD4:
                     {
                         iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD4.BoundsPrimaryTuple;
@@ -239,7 +259,6 @@
                         break;
                     }
 
-                    case ChatBlockExpressionRollContents.MultipleDUnknown:
                     case ChatBlockExpressionRollContents.MultipleD20:
                     {
                         iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD20.BoundsPrimaryTuple;
@@ -263,7 +282,7 @@
                     // So it is safe to assign primaries/secondaries here
 
                     // First we test for a primary in the DESCENDING order of die side magnitude
-                    if ((rci & (int)ChatBlockExpressionRollContents.AnyD20) != 0 || (rci & (int)ChatBlockExpressionRollContents.AnyDUnknown) != 0)
+                    if ((rci & (int)ChatBlockExpressionRollContents.AnyD20) != 0 || (rci & (int)ChatBlockExpressionRollContents.AnyD2) != 0)
                     {
                         iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD20.BoundsPrimaryTuple;
                         highlightPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD20.BoundsPrimaryHighlightTuple;
@@ -317,13 +336,22 @@
                         highlightPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD4.BoundsPrimaryHighlightTuple;
                         clrPrimary = SelectDiceColor(Client.Instance.Settings.ColorD4, Client.Instance.Settings.ColorModeD4, senderColor);
                         diePrimary = 4;
+                        goto lFoundPrimary;
+                    }
+
+                    if ((rci & (int)ChatBlockExpressionRollContents.AnyD2) != 0)
+                    {
+                        iconPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsPrimaryTuple;
+                        highlightPrimary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsPrimaryHighlightTuple;
+                        clrPrimary = SelectDiceColor(Client.Instance.Settings.ColorD2, Client.Instance.Settings.ColorModeD2, senderColor);
+                        diePrimary = 2;
                     }
 
                 // The EVIL goto label!
                 lFoundPrimary:;
                     if (diePrimary == 0) // Well, something's broken
                     {
-                        goto lEndIconSelectionProc;
+                        goto lEndIconSelection;
                     }
 
                     bool haveSecondary = false;
@@ -375,19 +403,27 @@
                         highlightSecondary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD4.BoundsSecondaryHighlightTuple;
                         clrSecondary = SelectDiceColor(Client.Instance.Settings.ColorD4, Client.Instance.Settings.ColorModeD4, senderColor);
                         haveSecondary = true;
+                        goto lFoundSecondary;
+                    }
+
+                    if (diePrimary != 2 && (rci & (int)ChatBlockExpressionRollContents.AnyD2) != 0)
+                    {
+                        iconSecondary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSecondaryTuple;
+                        highlightSecondary = Client.Instance.Frontend.Renderer.GuiRenderer.ChatIconD2.BoundsSecondaryHighlightTuple;
+                        clrSecondary = SelectDiceColor(Client.Instance.Settings.ColorD2, Client.Instance.Settings.ColorModeD2, senderColor);
+                        haveSecondary = true;
                     }
 
                 lFoundSecondary:;
-                    if (!haveSecondary) // Well, something is horrendously broken
-                    {
-                    }
-                    else
+                    if (haveSecondary) 
                     {
                         multipleDiceMode = true;
                     }
+
+                    // If we have no secondary here things are broken
                 }
 
-            lEndIconSelectionProc:;
+            lEndIconSelection:;
                 if (iconPrimary.HasValue && (!multipleDiceMode || iconSecondary.HasValue))
                 {
                     if (hover)

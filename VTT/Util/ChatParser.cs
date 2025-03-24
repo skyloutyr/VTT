@@ -607,6 +607,7 @@
 
                 ChatBlockExpressionRollContents local = roll.Item2 switch
                 {
+                    2 => ChatBlockExpressionRollContents.SingleD2,
                     4 => ChatBlockExpressionRollContents.SingleD4,
                     6 => ChatBlockExpressionRollContents.SingleD6,
                     8 => ChatBlockExpressionRollContents.SingleD8,
@@ -614,10 +615,10 @@
                     12 => ChatBlockExpressionRollContents.SingleD12,
                     20 => ChatBlockExpressionRollContents.SingleD20,
                     100 => ChatBlockExpressionRollContents.SingleD100,
-                    _ => ChatBlockExpressionRollContents.SingleDUnknown
+                    _ => ChatBlockExpressionRollContents.SingleD20
                 };
 
-                if (roll.Item1 > 1 || (local <= ChatBlockExpressionRollContents.SingleDUnknown && rollContents.HasFlag(local)))
+                if (roll.Item1 > 1 || (local <= ChatBlockExpressionRollContents.SingleD2 && rollContents.HasFlag(local)))
                 {
                     local = (ChatBlockExpressionRollContents)((int)local << 8);
                 }

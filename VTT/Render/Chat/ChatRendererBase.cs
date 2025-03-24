@@ -68,6 +68,10 @@
             drawList.AddText(location, color, text);
         }
 
+        private const uint cellColor = 0xff161616;
+        private const uint cellOutlineColor = 0xff808080;
+        private const uint cellOutlineHoverColor = 0xff4169e1;
+
         // This method looks imposing for something that runs once every frame per die image per roll in the chat
         // However, the main performance question comes from dice image rendering, and that is somewhat optimized by a switch/case and evil gotos
         public void AddTooltipBlock(ImDrawListPtr drawList, RectangleF location, string text, Vector2 knownTextSize, string tt, ChatBlockExpressionRollContents rollContents, uint textColor, uint senderColor, bool renderTextNow = true, IList<(Vector2, uint, string, bool)> textRenderAccumulator = null)
@@ -77,8 +81,6 @@
             float t = location.Top;
             float b = location.Bottom;
 
-            uint cell = Extensions.FromHex("161616").Abgr();
-            uint cellOutline = Color.Gray.Abgr();
             const float rounding = 5f;
             bool hover = ImGui.IsMouseHoveringRect(new Vector2(l, t), new Vector2(r, b));
             bool needShadow = false;
@@ -87,15 +89,16 @@
             uint clrPrimary = 0xffffffff;
             uint clrSecondary = 0xffffffff;
             bool multipleDiceMode = false;
+            uint cellOutline = cellOutlineColor;
             IntPtr atlas = Client.Instance.Frontend.Renderer.GuiRenderer.DiceIconAtlas;
 
             if (rollContents == ChatBlockExpressionRollContents.None || !Client.Instance.Settings.ChatDiceEnabled)
             {
-                drawList.AddRectFilled(new Vector2(l, t), new Vector2(r, b), cell, rounding);
+                drawList.AddRectFilled(new Vector2(l, t), new Vector2(r, b), cellColor, rounding);
 
                 if (hover)
                 {
-                    cellOutline = Color.RoyalBlue.Abgr();
+                    cellOutline = cellOutlineHoverColor;
                 }
 
                 drawList.AddRect(new Vector2(l, t), new Vector2(r, b), cellOutline, rounding);
@@ -446,7 +449,7 @@
                 else
                 {
                     // Fallback
-                    drawList.AddRectFilled(new Vector2(l, t), new Vector2(r, b), cell, rounding);
+                    drawList.AddRectFilled(new Vector2(l, t), new Vector2(r, b), cellColor, rounding);
 
                     if (hover)
                     {

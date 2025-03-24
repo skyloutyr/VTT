@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -641,11 +642,747 @@
             return true;
         }
 
+        private static void StdMath(string name, FunctionArgs args)
+        {
+            try
+            {
+                switch (name)
+                {
+                    case "round":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is float f)
+                        {
+                            result = Math.Round(f);
+                        }
+
+                        if (result is double d)
+                        {
+                            result = Math.Round(d);
+                        }
+
+                        args.Result = result;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "floor":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is float f)
+                        {
+                            result = Math.Floor(f);
+                        }
+
+                        if (result is double d)
+                        {
+                            result = Math.Floor(d);
+                        }
+
+                        args.Result = result;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "ceil":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is float f)
+                        {
+                            result = Math.Ceiling(f);
+                        }
+
+                        if (result is double d)
+                        {
+                            result = Math.Ceiling(d);
+                        }
+
+                        args.Result = result;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "max":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+
+                        if (result1 is IConvertible ic1 && result2 is IConvertible ic2)
+                        {
+                            double d1 = ic1.ToDouble(null);
+                            double d2 = ic2.ToDouble(null);
+                            args.Result = d1 > d2 ? result1 : result2;
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "min":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+
+                        if (result1 is IConvertible ic1 && result2 is IConvertible ic2)
+                        {
+                            double d1 = ic1.ToDouble(null);
+                            double d2 = ic2.ToDouble(null);
+                            args.Result = d1 <= d2 ? result1 : result2;
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "abs":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is sbyte b)
+                        {
+                            result = Math.Abs(b);
+                        }
+
+                        if (result is short s)
+                        {
+                            result = Math.Abs(s);
+                        }
+
+                        if (result is int i)
+                        {
+                            result = Math.Abs(i);
+                        }
+
+                        if (result is long l)
+                        {
+                            result = Math.Abs(l);
+                        }
+
+                        if (result is float f)
+                        {
+                            result = Math.Abs(f);
+                        }
+
+                        if (result is double d)
+                        {
+                            result = Math.Abs(d);
+                        }
+
+                        if (result is decimal dc)
+                        {
+                            result = Math.Abs(dc);
+                        }
+
+                        args.Result = result;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "acos":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Acos(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "asin":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Asin(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "asinh":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Asinh(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "atan":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Atan(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "atanh":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Atanh(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "atan2":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+
+                        if (result1 is IConvertible ic1 && result2 is IConvertible ic2)
+                        {
+                            double d1 = ic1.ToDouble(null);
+                            double d2 = ic2.ToDouble(null);
+                            args.Result = Math.Atan2(d1, d2);
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "cbrt":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Cbrt(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "sin":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Sin(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "sinh":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Sinh(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "cos":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Cos(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "cosh":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Cosh(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "tan":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Tan(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "exp":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Exp(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "rad":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = ic.ToDouble(null) * Math.PI / 180.0;
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "deg":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = ic.ToDouble(null) * 180.0 / Math.PI;
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "log":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Log(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "log2":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Log2(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "log10":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Log10(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "pow":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+
+                        if (result1 is IConvertible ic1 && result2 is IConvertible ic2)
+                        {
+                            double d1 = ic1.ToDouble(null);
+                            double d2 = ic2.ToDouble(null);
+                            args.Result = Math.Pow(d1, d2);
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "sqrt":
+                    {
+                        object result = args.Parameters[0].Evaluate();
+                        if (result is IConvertible ic)
+                        {
+                            args.Result = Math.Sqrt(ic.ToDouble(null));
+                        }
+
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "mod":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b % ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb % ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s % ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us % ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i % ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui % ic.ToUInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l % ic.ToInt64(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul % ic.ToUInt64(null);
+                            }
+
+                            if (result1 is decimal dc)
+                            {
+                                result1 = dc % ic.ToDecimal(null);
+                            }
+
+                            if (result1 is float f)
+                            {
+                                result1 = f % ic.ToSingle(null);
+                            }
+
+                            if (result1 is double d)
+                            {
+                                result1 = d % ic.ToDouble(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "lsh":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b << ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb << ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s << ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us << ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i << ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui << ic.ToInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l << ic.ToInt32(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul << ic.ToInt32(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "rsh":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b >> ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb >> ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s >> ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us >> ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i >> ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui >> ic.ToInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l >> ic.ToInt32(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul >> ic.ToInt32(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "and":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b & ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb & ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s & ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us & ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i & ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui & ic.ToUInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l & ic.ToInt64(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul & ic.ToUInt64(null);
+                            }
+
+                            if (result1 is bool bo)
+                            {
+                                result1 = bo && ic.ToBoolean(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "or":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b | ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb | ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s | ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us | ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i | ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui | ic.ToUInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l | ic.ToInt64(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul | ic.ToUInt64(null);
+                            }
+
+                            if (result1 is bool bo)
+                            {
+                                result1 = bo || ic.ToBoolean(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+
+                    case "xor":
+                    {
+                        object result1 = args.Parameters[0].Evaluate();
+                        object result2 = args.Parameters[1].Evaluate();
+                        if (result2 is IConvertible ic)
+                        {
+                            if (result1 is byte b)
+                            {
+                                result1 = b ^ ic.ToByte(null);
+                            }
+
+                            if (result1 is sbyte sb)
+                            {
+                                result1 = sb ^ ic.ToSByte(null);
+                            }
+
+                            if (result1 is short s)
+                            {
+                                result1 = s ^ ic.ToInt16(null);
+                            }
+
+                            if (result1 is ushort us)
+                            {
+                                result1 = us ^ ic.ToUInt16(null);
+                            }
+
+                            if (result1 is int i)
+                            {
+                                result1 = i ^ ic.ToInt32(null);
+                            }
+
+                            if (result1 is uint ui)
+                            {
+                                result1 = ui ^ ic.ToUInt32(null);
+                            }
+
+                            if (result1 is long l)
+                            {
+                                result1 = l ^ ic.ToInt64(null);
+                            }
+
+                            if (result1 is ulong ul)
+                            {
+                                result1 = ul ^ ic.ToUInt64(null);
+                            }
+
+                            if (result1 is bool bo)
+                            {
+                                result1 = bo ^ ic.ToBoolean(null);
+                            }
+                        }
+
+                        args.Result = result1;
+                        args.HasResult = true;
+                        break;
+                    }
+                }
+            }
+            catch
+            {
+                args.Result = 0;
+                args.HasResult = false;
+            }
+        }
+
         public static bool IsEscaped(string s, int idx) => idx != 0 && s[idx - 1] == '\\';
 
         public sealed class RollExpressionEvaluator
         {
+            public const int MaxRolls = 1000000;
+
             private readonly Expression _expression;
+            private readonly string _expressionString;
 
             public RollResultFlags ResultFlags { get; set; } = RollResultFlags.None;
             public Dictionary<string, List<string>> RollResults { get; } = new Dictionary<string, List<string>>();
@@ -654,8 +1391,10 @@
 
             public RollExpressionEvaluator(string expr)
             {
+                this._expressionString = expr;
                 this._expression = new Expression(expr);
                 this._expression.EvaluateFunction += this.RollFunction;
+                this._expression.EvaluateFunction += StdMath;
             }
 
             public bool TryRun(out object result)
@@ -674,40 +1413,196 @@
 
             private void RollFunction(string name, FunctionArgs args)
             {
-                if (name.Equals("roll"))
+                switch (name)
                 {
-                    try
+                    case "roll":
+                    case "rollE":
                     {
-                        int num = Math.Min((int)args.Parameters[0].Evaluate(), 10000000);
-                        int side = (int)args.Parameters[1].Evaluate();
-                        string accumStr = string.Empty;
-                        int accumInt = 0;
-                        for (int i = 0; i < num; ++i)
+                        try
                         {
-                            int r = RandomNumberGenerator.GetInt32(side) + 1;
-                            if (r == 1)
+                            bool exploding = name.Equals("rollE");
+                            int num = Math.Min((int)args.Parameters[0].Evaluate(), MaxRolls);
+                            int side = (int)args.Parameters[1].Evaluate();
+                            int explodesAt = exploding ? args.Parameters.Length > 2 ? (int)args.Parameters[2].Evaluate() : side : int.MaxValue;
+                            int critsAt = exploding ? args.Parameters.Length > 3 ? (int)args.Parameters[3].Evaluate() : side : args.Parameters.Length > 2 ? (int)args.Parameters[2].Evaluate() : side;
+                            int fumblesAt = exploding ? args.Parameters.Length > 4 ? (int)args.Parameters[4].Evaluate() : 1 : args.Parameters.Length > 3 ? (int)args.Parameters[3].Evaluate() : 1;
+                            string accumStr = string.Empty;
+                            string expr = $"{name}({num}, {side}";
+                            if (exploding)
                             {
-                                this.ResultFlags |= RollResultFlags.HadMinimumValue;
+                                if (args.Parameters.Length > 2)
+                                {
+                                    expr += $", {explodesAt}";
+                                }
+
+                                if (args.Parameters.Length > 3)
+                                {
+                                    expr += $", {critsAt}";
+                                }
+
+                                if (args.Parameters.Length > 4)
+                                {
+                                    expr += $", {fumblesAt}";
+                                }
+                            }
+                            else
+                            {
+                                if (args.Parameters.Length > 2)
+                                {
+                                    expr += $", {critsAt}";
+                                }
+
+                                if (args.Parameters.Length > 3)
+                                {
+                                    expr += $", {fumblesAt}";
+                                }
                             }
 
-                            if (r == side)
+                            expr += ")";
+
+                            int accumInt = 0;
+                            int totalRolls = 0;
+                            for (int i = 0; i < num; ++i)
                             {
-                                this.ResultFlags |= RollResultFlags.HadMaximumValue;
+                                int r = RandomNumberGenerator.GetInt32(side) + 1;
+                                if (r <= fumblesAt)
+                                {
+                                    this.ResultFlags |= RollResultFlags.HadMinimumValue;
+                                }
+
+                                if (r >= critsAt)
+                                {
+                                    this.ResultFlags |= RollResultFlags.HadMaximumValue;
+                                }
+
+                                if (r >= explodesAt && totalRolls < MaxRolls)
+                                {
+                                    i -= 1;
+                                }
+
+                                accumStr += r.ToString() + (i != num - 1 ? ',' : "");
+                                accumInt += r;
+                                totalRolls += 1;
                             }
 
-                            accumStr += r.ToString() + (i != num - 1 ? ',' : "");
-                            accumInt += r;
+                            args.HasResult = true;
+                            args.Result = accumInt;
+                            this.AddRollResult(expr, accumStr);
+                            this.RollsMade.Add((num, side));
+                        }
+                        catch
+                        {
+                            args.HasResult = false;
+                            args.Result = 0;
                         }
 
-                        args.HasResult = true;
-                        args.Result = accumInt;
-                        this.AddRollResult($"{name}({num}, {side})", accumStr);
-                        this.RollsMade.Add((num, side));
+                        break;
                     }
-                    catch
+
+                    case "rollMin":
+                    case "rollMax":
+                    case "rollMinE":
+                    case "rollMaxE":
                     {
-                        args.HasResult = false;
-                        args.Result = 0;
+                        try
+                        {
+                            bool exploding = name.Equals("rollMinE") || name.Equals("rollMaxE");
+                            int num = Math.Min((int)args.Parameters[0].Evaluate(), MaxRolls);
+                            int side = (int)args.Parameters[1].Evaluate();
+                            int numToKeep = (int)args.Parameters[2].Evaluate();
+                            int explodesAt = exploding ? args.Parameters.Length > 3 ? (int)args.Parameters[3].Evaluate() : side : int.MaxValue;
+                            int critsAt = exploding ? args.Parameters.Length > 4 ? (int)args.Parameters[4].Evaluate() : side : args.Parameters.Length > 3 ? (int)args.Parameters[3].Evaluate() : side;
+                            int fumblesAt = exploding ? args.Parameters.Length > 5 ? (int)args.Parameters[5].Evaluate() : 1 : args.Parameters.Length > 4 ? (int)args.Parameters[4].Evaluate() : 1;
+                            List<int> rollResults = new List<int>();
+                            int totalRolls = 0;
+                            string accumStr = string.Empty;
+                            string expr = $"{name}({num}, {side}, {numToKeep}";
+                            if (exploding)
+                            {
+                                if (args.Parameters.Length > 3)
+                                {
+                                    expr += $", {explodesAt}";
+                                }
+
+                                if (args.Parameters.Length > 4)
+                                {
+                                    expr += $", {critsAt}";
+                                }
+
+                                if (args.Parameters.Length > 5)
+                                {
+                                    expr += $", {fumblesAt}";
+                                }
+                            }
+                            else
+                            {
+                                if (args.Parameters.Length > 3)
+                                {
+                                    expr += $", {critsAt}";
+                                }
+
+                                if (args.Parameters.Length > 4)
+                                {
+                                    expr += $", {fumblesAt}";
+                                }
+                            }
+
+                            expr += ")";
+                            for (int i = 0; i < num; ++i)
+                            {
+                                int r = RandomNumberGenerator.GetInt32(side) + 1;
+                                if (r <= fumblesAt)
+                                {
+                                    this.ResultFlags |= RollResultFlags.HadMinimumValue;
+                                }
+
+                                if (r >= critsAt)
+                                {
+                                    this.ResultFlags |= RollResultFlags.HadMaximumValue;
+                                }
+
+                                if (r >= explodesAt && totalRolls < MaxRolls)
+                                {
+                                    i -= 1;
+                                }
+
+                                rollResults.Add(r);
+                                totalRolls += 1;
+                                accumStr += r.ToString() + (i != num - 1 ? ',' : "");
+                            }
+
+                            bool isMax = name.StartsWith("rollMax");
+                            int accumInt = 0;
+                            while (rollResults.Count > numToKeep)
+                            {
+                                if (isMax)
+                                {
+                                    rollResults.Remove(rollResults.Min());
+                                }
+                                else
+                                {
+                                    rollResults.Remove(rollResults.Max());
+                                }
+                            }
+
+                            for (int i = 0; i < rollResults.Count; i++)
+                            {
+                                int r = rollResults[i];
+                                accumInt += r;
+                            }
+
+                            args.HasResult = true;
+                            args.Result = accumInt;
+                            this.AddRollResult(expr, accumStr);
+                            this.RollsMade.Add((num, side));
+                        }
+                        catch
+                        {
+                            args.HasResult = false;
+                            args.Result = 0;
+                        }
+
+                        break;
                     }
                 }
             }

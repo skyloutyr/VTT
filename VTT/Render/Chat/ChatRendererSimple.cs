@@ -62,6 +62,9 @@
                     this.Container.SenderColor.Abgr()
                 );
 
+                ImGui.Dummy(new Vector2(360, 88));
+                ImGui.SetCursorPos(cursorLocal);
+
                 GuiRenderer uiRoot = Client.Instance.Frontend.Renderer.GuiRenderer;
 
                 // Not a bug - color intentionally set to sender's!
@@ -76,10 +79,13 @@
                 Vector2 sR1 = ImGuiHelper.CalcTextSize(tR1);
                 Vector2 sR2 = ImGuiHelper.CalcTextSize(tR2);
 
-                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXL - 4 - sR1.X / 2, cursorScreen.Y + 24 - 4 - sR1.Y / 2, sR1.X + 8, sR1.Y + 8), tR1, sR1, r1.Tooltip, r1.RollContents, r1.Color.Abgr(), senderColorAbgr);
-                ImGui.Dummy(new Vector2(sR1.X + 8, sR1.Y + 8));
-                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXR - 4 - sR2.X / 2, cursorScreen.Y + 24 - 4 - sR2.Y / 2, sR2.X + 8, sR2.Y + 8), tR2, sR2, r2.Tooltip, r2.RollContents, r2.Color.Abgr(), senderColorAbgr);
-                ImGui.Dummy(new Vector2(sR2.X + 8, sR2.Y + 8));
+                float szXBlock1 = Math.Max(24, sR1.X + 8);
+                float szXBlock2 = Math.Max(24, sR2.X + 8);
+                float szYBlock1 = Math.Max(24, sR1.Y + 8);
+                float szYBlock2 = Math.Max(24, sR2.Y + 8);
+
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXL - szXBlock1 / 2, cursorScreen.Y + 24 - szYBlock1 / 2, szXBlock1, szYBlock1), tR1, sR1, r1.Tooltip, r1.RollContents, r1.Color.Abgr(), senderColorAbgr);
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXR - szXBlock2 / 2, cursorScreen.Y + 24 - szYBlock2 / 2, szXBlock2, szYBlock2), tR2, sR2, r2.Tooltip, r2.RollContents, r2.Color.Abgr(), senderColorAbgr);
 
                 Vector2 sRn = ImGuiHelper.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));

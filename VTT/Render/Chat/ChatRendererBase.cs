@@ -69,7 +69,7 @@
 
         private const uint cellColor = 0xff161616;
         private const uint cellOutlineColor = 0xff808080;
-        private const uint cellOutlineHoverColor = 0xff4169e1;
+        private const uint cellOutlineHoverColor = 0xffe16941;
 
         // This method looks imposing for something that runs once every frame per die image per roll in the chat
         // However, the main performance question comes from dice image rendering, and that is somewhat optimized by a switch/case and evil gotos

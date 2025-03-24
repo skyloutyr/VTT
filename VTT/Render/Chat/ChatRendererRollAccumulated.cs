@@ -58,7 +58,9 @@
             {
                 Vector2 tSize = ImGuiHelper.CalcTextSize(blockRolls.Text);
                 Vector2 tLen = tSize + (padding * 2);
-                this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tLen.X * 0.5f), cY + 16 - (tLen.Y * 0.5f), tLen.X, tLen.Y), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color.Abgr(), senderColorAbgr);
+                float tW = Math.Max(24, tLen.X);
+                float tH = Math.Max(24, tLen.Y);
+                this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tW * 0.5f), cY + 16 - (tH * 0.5f), tW, tH), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color.Abgr(), senderColorAbgr);
             }
 
             ImGui.Dummy(new Vector2(32, 32));

@@ -42,6 +42,12 @@
                     rollContainers.Clear();
                 }
 
+                if (block.RollContents != ChatBlockExpressionRollContents.None)
+                {
+                    imTextSize.X = Math.Max(24, imTextSize.X);
+                    imTextSize.Y = Math.Max(24, imTextSize.Y);
+                }
+
                 RollContainer rc = new RollContainer(cX, imTextSize.X, cY, imTextSize.Y, block.Text, block.Tooltip, (Vector4)block.Color, block.RollContents);
                 rollContainers.Add(rc);
                 if (int.TryParse(rc.text, out int res))
@@ -83,6 +89,12 @@
 
             resString += " = " + result;
             Vector2 imResultSize = ImGuiHelper.CalcTextSize(result.ToString()) + (imPadding * 2);
+            if (cumulativeContents != ChatBlockExpressionRollContents.None)
+            {
+                imResultSize.X = Math.Max(24, imResultSize.X);
+                imResultSize.Y = Math.Max(24, imResultSize.Y);
+            }
+
             if (cX + imResultSize.X > maxX && rollContainers.Count > 0)
             {
                 this._lines.Add(rollContainers.ToArray());

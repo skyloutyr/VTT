@@ -2,7 +2,6 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.Processing.Processors.Normalization;
     using System;
     using System.Collections.Generic;
     using System.Numerics;

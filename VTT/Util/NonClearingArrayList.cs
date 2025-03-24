@@ -1,10 +1,8 @@
 ﻿namespace VTT.Util
 {
-    using Newtonsoft.Json.Linq;
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Reflection;
 
     public sealed class NonClearingArrayList<T> : IList<T>
     {

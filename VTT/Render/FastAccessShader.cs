@@ -1,6 +1,5 @@
 ﻿namespace VTT.Render
 {
-    using System;
     using System.Numerics;
     using VTT.GL;
 

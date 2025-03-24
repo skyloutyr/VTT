@@ -800,6 +800,9 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public ChatDiceColorMode ColorModeD100 { get; set; } = ChatDiceColorMode.SetColor;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool UnifyChatDiceRendering { get; set; } = false;
 
         public static ClientSettings Load()
         {
@@ -884,6 +887,7 @@
                 ColorModeD20 = ChatDiceColorMode.SetColor,
                 ColorD100 = 0xffffffff,
                 ColorModeD100 = ChatDiceColorMode.SetColor,
+                UnifyChatDiceRendering = false
             };
 
             ret.Save();

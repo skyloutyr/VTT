@@ -1012,6 +1012,18 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    bool bUnifyChatDice = Client.Instance.Settings.UnifyChatDiceRendering;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.unify_chat_dice_rendering") + "###UnifyChatDiceRendering", ref bUnifyChatDice))
+                    {
+                        Client.Instance.Settings.UnifyChatDiceRendering = true;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.unify_chat_dice_rendering.tt"));
+                    }
+
                     ImGui.TreePop();
                 }
 
@@ -1403,16 +1415,16 @@
             if (ImGui.TreeNode(lang.Translate($"menu.settings.die.{die}.color_settings") + $"###Die{die}ColorSettingsContextWindow"))
             {
                 GuiRenderer uiRoot = Client.Instance.Frontend.Renderer.GuiRenderer;
-                IntPtr dieImage = die switch
+                (Vector2, Vector2) dieImage = die switch
                 {
-                    4 => uiRoot.ChatIconD4,
-                    6 => uiRoot.ChatIconD6,
-                    8 => uiRoot.ChatIconD8,
-                    10 => uiRoot.ChatIconD10,
-                    12 => uiRoot.ChatIconD12,
-                    20 => uiRoot.ChatIconD20,
-                    100 => uiRoot.ChatIconD10Primary,
-                    _ => uiRoot.ChatIconD20
+                    4 => uiRoot.ChatIconD4.BoundsSingularTuple,
+                    6 => uiRoot.ChatIconD6.BoundsSingularTuple,
+                    8 => uiRoot.ChatIconD8.BoundsSingularTuple,
+                    10 => uiRoot.ChatIconD10.BoundsSingularTuple,
+                    12 => uiRoot.ChatIconD12.BoundsSingularTuple,
+                    20 => uiRoot.ChatIconD20.BoundsSingularTuple,
+                    100 => uiRoot.ChatIconD10.BoundsPrimaryTuple,
+                    _ => uiRoot.ChatIconD20.BoundsSingularTuple,
                 };
 
                 Vector4 clrVec = Extensions.Vec4FromAbgr(clr);
@@ -1431,11 +1443,11 @@
                 }
 
                 Vector2 here = ImGui.GetCursorPos();
-                ImGui.Image(dieImage, new Vector2(24, 24), Vector2.Zero, Vector2.One, clrVec);
-                if (dieImage == uiRoot.ChatIconD10Primary)
+                ImGui.Image(uiRoot.DiceIconAtlas, new Vector2(24, 24), dieImage.Item1, dieImage.Item2, clrVec);
+                if (die == 100)
                 {
                     ImGui.SetCursorPos(here); 
-                    ImGui.Image(uiRoot.ChatIconD10Secondary, new Vector2(24, 24), Vector2.Zero, Vector2.One, clrVec);
+                    ImGui.Image(uiRoot.DiceIconAtlas, new Vector2(24, 24), uiRoot.ChatIconD10.BoundsSecondaryStart, uiRoot.ChatIconD10.BoundsSecondaryEnd, clrVec);
                 }
 
                 ImGui.SameLine();

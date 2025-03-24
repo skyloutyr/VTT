@@ -57,7 +57,27 @@
                     }
                 }
 
-                cumulativeContents |= block.RollContents;
+                if (block.RollContents <= ChatBlockExpressionRollContents.SingleDUnknown)
+                {
+                    ChatBlockExpressionRollContents multiples = (ChatBlockExpressionRollContents)((int)block.RollContents << 8);
+                    if (!cumulativeContents.HasFlag(multiples))
+                    {
+                        if (cumulativeContents.HasFlag(block.RollContents))
+                        {
+                            cumulativeContents &= ~block.RollContents; // Clear single
+                            cumulativeContents |= multiples; // Set multiple
+                        }
+                        else
+                        {
+                            cumulativeContents |= block.RollContents;
+                        }
+                    }
+                }
+                else
+                {
+                    cumulativeContents |= block.RollContents;
+                }
+
                 cX += rc.w + imSeparatorSize.X;
             }
 
@@ -187,7 +207,6 @@
 
             ImGui.SetCursorPos(new(ocX, ccY + aH + 4));
         }
-
 
         protected readonly struct RollContainer
         {

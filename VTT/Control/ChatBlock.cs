@@ -130,21 +130,29 @@
 
         private static void AddRollKind(ref ChatBlockExpressionRollContents contents, ChatBlockExpressionRollContents flagToAdd, int amt)
         {
-            if (amt <= 1 && contents.HasFlag(flagToAdd) && flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown)
+            if (flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown && amt > 1)
             {
-                // All SingleD flags are located within the first 8 bits
-                // All MultipleD flags are located within the second 8 bits, and match the order
-                // If the SingleD flag is already set, add the corresponding MultipleD flag
-                contents |= (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
+                flagToAdd = (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
+            }
+
+            if (flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown)
+            {
+                ChatBlockExpressionRollContents multiples = (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
+                if (!contents.HasFlag(multiples))
+                {
+                    if (contents.HasFlag(flagToAdd))
+                    {
+                        contents &= ~flagToAdd;
+                        contents |= multiples;
+                    }
+                    else
+                    {
+                        contents |= flagToAdd;
+                    }
+                }
             }
             else
             {
-                // If we are adding a SingleD flag and amount is > 1 then we need to change it to a MultipleD flag
-                if (flagToAdd <= ChatBlockExpressionRollContents.SingleDUnknown && amt > 1)
-                {
-                    flagToAdd = (ChatBlockExpressionRollContents)((int)flagToAdd << 8);
-                }
-
                 contents |= flagToAdd;
             }
         }

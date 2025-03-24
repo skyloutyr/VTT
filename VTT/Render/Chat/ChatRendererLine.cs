@@ -8,6 +8,7 @@
     using System.Numerics;
     using System.Text;
     using VTT.Control;
+    using VTT.Network;
     using VTT.Util;
 
     public class ChatRendererLine : ChatRendererBase
@@ -138,6 +139,10 @@
             return ret;
         }
 
+        // Note the optimization here is to reduce draw calls by reducing the amount of texture switches
+        // The reason this approach is used rather than ImGui's own AddCustomRectXXXX is due to ImGui's #8465 - API deprecated
+        // So no point in working with it until the new API releases
+        private readonly static NonClearingArrayList<(Vector2, uint, string, bool)> textDrawList = new NonClearingArrayList<(Vector2, uint, string, bool)>();
         public override void Render(Guid senderId, uint senderColorAbgr)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
@@ -149,6 +154,7 @@
             }
             else
             {
+                textDrawList.Clear();
                 foreach (ImCachedLine icl in this._cachedLines)
                 {
                     float pX = ImGui.GetCursorPosX();
@@ -164,7 +170,7 @@
                             float cY = vBase.Y;
                             float w = icw.Width;
                             float h = icw.Height;
-                            this.AddTooltipBlock(drawList, new RectangleF(cX, cY - 3, w, h), icw.Text, icw.TextSize, icw.Owner.Tooltip, icw.Owner.RollContents, icw.Owner.Color.Abgr(), senderColorAbgr);
+                            this.AddTooltipBlock(drawList, new RectangleF(cX, cY - 3, w, h), icw.Text, icw.TextSize, icw.Owner.Tooltip, icw.Owner.RollContents, icw.Owner.Color.Abgr(), senderColorAbgr, Client.Instance.Settings.ChatDiceEnabled && Client.Instance.Settings.UnifyChatDiceRendering, textDrawList);
                             ImGui.Dummy(new Vector2(w, h));
                         }
                         else
@@ -187,6 +193,11 @@
 
                     pY += icl.Height + 2;
                     ImGui.SetCursorPos(new(ipX, pY));
+                }
+
+                foreach ((Vector2, uint, string, bool) textDrawCallback in textDrawList)
+                {
+                    this.AddTextAt(drawList, textDrawCallback.Item1, textDrawCallback.Item2, textDrawCallback.Item3, textDrawCallback.Item4);
                 }
             }
         }

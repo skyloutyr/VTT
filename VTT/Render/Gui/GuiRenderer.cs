@@ -3,10 +3,13 @@
     using ImGuiNET;
     using Newtonsoft.Json.Linq;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
+    using SixLabors.ImageSharp.Processing;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
+    using System.Xml.Linq;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
@@ -86,42 +89,13 @@
         public Texture JournalEdit { get; set; }
         public Texture ChatMissingAvatar { get; set; }
 
-        public Texture ChatIconD4 { get; set; }
-        public Texture ChatIconD6 { get; set; }
-        public Texture ChatIconD8 { get; set; }
-        public Texture ChatIconD10 { get; set; }
-        public Texture ChatIconD12 { get; set; }
-        public Texture ChatIconD20 { get; set; }
-        public Texture ChatIconD4Highlight { get; set; }
-        public Texture ChatIconD6Highlight { get; set; }
-        public Texture ChatIconD8Highlight { get; set; }
-        public Texture ChatIconD10Highlight { get; set; }
-        public Texture ChatIconD12Highlight { get; set; }
-        public Texture ChatIconD20Highlight { get; set; }
-        public Texture ChatIconD4Primary { get; set; }
-        public Texture ChatIconD6Primary { get; set; }
-        public Texture ChatIconD8Primary { get; set; }
-        public Texture ChatIconD10Primary { get; set; }
-        public Texture ChatIconD12Primary { get; set; }
-        public Texture ChatIconD20Primary { get; set; }
-        public Texture ChatIconD4Secondary { get; set; }
-        public Texture ChatIconD6Secondary { get; set; }
-        public Texture ChatIconD8Secondary { get; set; }
-        public Texture ChatIconD10Secondary { get; set; }
-        public Texture ChatIconD12Secondary { get; set; }
-        public Texture ChatIconD20Secondary { get; set; }
-        public Texture ChatIconD4PrimaryHighlight { get; set; }
-        public Texture ChatIconD6PrimaryHighlight { get; set; }
-        public Texture ChatIconD8PrimaryHighlight { get; set; }
-        public Texture ChatIconD10PrimaryHighlight { get; set; }
-        public Texture ChatIconD12PrimaryHighlight { get; set; }
-        public Texture ChatIconD20PrimaryHighlight { get; set; }
-        public Texture ChatIconD4SecondaryHighlight { get; set; }
-        public Texture ChatIconD6SecondaryHighlight { get; set; }
-        public Texture ChatIconD8SecondaryHighlight { get; set; }
-        public Texture ChatIconD10SecondaryHighlight { get; set; }
-        public Texture ChatIconD12SecondaryHighlight { get; set; }
-        public Texture ChatIconD20SecondaryHighlight { get; set; }
+        public Texture DiceIconAtlas { get; set; }
+        public DieIconData ChatIconD4 { get; set; }
+        public DieIconData ChatIconD6 { get; set; }
+        public DieIconData ChatIconD8 { get; set; }
+        public DieIconData ChatIconD10 { get; set; }
+        public DieIconData ChatIconD12 { get; set; }
+        public DieIconData ChatIconD20 { get; set; }
 
         public Texture PlayIcon { get; set; }
         public Texture PauseIcon { get; set; }
@@ -319,42 +293,7 @@
             this.JournalEdit = OpenGLUtil.LoadUIImage("icons8-edit-40");
             this.ChatMissingAvatar = OpenGLUtil.LoadUIImage("avatar_missing");
 
-            this.ChatIconD4 = OpenGLUtil.LoadUIImage("icon-d4");
-            this.ChatIconD6 = OpenGLUtil.LoadUIImage("icon-d6");
-            this.ChatIconD8 = OpenGLUtil.LoadUIImage("icon-d8");
-            this.ChatIconD10 = OpenGLUtil.LoadUIImage("icon-d10");
-            this.ChatIconD12 = OpenGLUtil.LoadUIImage("icon-d12");
-            this.ChatIconD20 = OpenGLUtil.LoadUIImage("icon-d20");
-            this.ChatIconD4Highlight = OpenGLUtil.LoadUIImage("icon-d4-highlight");
-            this.ChatIconD6Highlight = OpenGLUtil.LoadUIImage("icon-d6-highlight");
-            this.ChatIconD8Highlight = OpenGLUtil.LoadUIImage("icon-d8-highlight");
-            this.ChatIconD10Highlight = OpenGLUtil.LoadUIImage("icon-d10-highlight");
-            this.ChatIconD12Highlight = OpenGLUtil.LoadUIImage("icon-d12-highlight");
-            this.ChatIconD20Highlight = OpenGLUtil.LoadUIImage("icon-d20-highlight");
-            this.ChatIconD4Primary = OpenGLUtil.LoadUIImage("icon-d4-primary");
-            this.ChatIconD6Primary = OpenGLUtil.LoadUIImage("icon-d6-primary");
-            this.ChatIconD8Primary = OpenGLUtil.LoadUIImage("icon-d8-primary");
-            this.ChatIconD10Primary = OpenGLUtil.LoadUIImage("icon-d10-primary");
-            this.ChatIconD12Primary = OpenGLUtil.LoadUIImage("icon-d12-primary");
-            this.ChatIconD20Primary = OpenGLUtil.LoadUIImage("icon-d20-primary");
-            this.ChatIconD4Secondary = OpenGLUtil.LoadUIImage("icon-d4-secondary");
-            this.ChatIconD6Secondary = OpenGLUtil.LoadUIImage("icon-d6-secondary");
-            this.ChatIconD8Secondary = OpenGLUtil.LoadUIImage("icon-d8-secondary");
-            this.ChatIconD10Secondary = OpenGLUtil.LoadUIImage("icon-d10-secondary");
-            this.ChatIconD12Secondary = OpenGLUtil.LoadUIImage("icon-d12-secondary");
-            this.ChatIconD20Secondary = OpenGLUtil.LoadUIImage("icon-d20-secondary");
-            this.ChatIconD4PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d4-primary-highlight");
-            this.ChatIconD6PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d6-primary-highlight");
-            this.ChatIconD8PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d8-primary-highlight");
-            this.ChatIconD10PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d10-primary-highlight");
-            this.ChatIconD12PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d12-primary-highlight");
-            this.ChatIconD20PrimaryHighlight = OpenGLUtil.LoadUIImage("icon-d20-primary-highlight");
-            this.ChatIconD4SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d4-secondary-highlight");
-            this.ChatIconD6SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d6-secondary-highlight");
-            this.ChatIconD8SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d8-secondary-highlight");
-            this.ChatIconD10SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d10-secondary-highlight");
-            this.ChatIconD12SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d12-secondary-highlight");
-            this.ChatIconD20SecondaryHighlight = OpenGLUtil.LoadUIImage("icon-d20-secondary-highlight");
+            this.CreateDiceIcons();
 
             this.PlayIcon = OpenGLUtil.LoadUIImage("icons8-play-40");
             this.PauseIcon = OpenGLUtil.LoadUIImage("icons8-pause-40");
@@ -929,5 +868,162 @@
         {
             this._escapeCapturedThisFrame = true;
         }
+
+        private void CreateDiceIcons()
+        {
+            int neededW = 0;
+            int neededH = 0;
+
+            static (int x, int y, int w, int h, Image<Rgba32> img) CreateIconData(string iconPath)
+            {
+                Image<Rgba32> img = IOVTT.ResourceToImage<Rgba32>($"VTT.Embed.{iconPath}.png");
+                return (0, 0, img.Width, img.Height, img);
+            }
+
+            static Span<(int x, int y, int w, int h, Image<Rgba32> img)> CreateIconSetData(string iconName)
+            {
+                Span<(int x, int y, int w, int h, Image<Rgba32> img)> ret = new(int x, int y, int w, int h, Image < Rgba32 > img)[6];
+                ret[0] = CreateIconData($"icon-{iconName}");
+                ret[1] = CreateIconData($"icon-{iconName}-highlight");
+                ret[2] = CreateIconData($"icon-{iconName}-primary");
+                ret[3] = CreateIconData($"icon-{iconName}-primary-highlight");
+                ret[4] = CreateIconData($"icon-{iconName}-secondary");
+                ret[5] = CreateIconData($"icon-{iconName}-secondary-highlight");
+                return ret;
+            }
+
+            void ProcessIconData(ref (int x, int y, int w, int h, Image<Rgba32> img) data)
+            {
+                data.x = neededW;
+                data.y = 0;
+                neededW += data.w;
+                neededH = Math.Max(neededH, data.h);
+            }
+
+            void ProcessIconSet(Span<(int x, int y, int w, int h, Image<Rgba32> img)> set)
+            {
+                for (int i = 0; i < set.Length; ++i)
+                {
+                    ProcessIconData(ref set[i]);
+                }
+            }
+
+            static void PaintIconData(Image<Rgba32> canvas, (int x, int y, int w, int h, Image<Rgba32> img) data)
+            {
+                canvas.Mutate(x => x.DrawImage(data.img, new Point(data.x, data.y), 1));
+                data.img.Dispose();
+            }
+
+            static void PaintIconSet(Image<Rgba32> canvas, Span<(int x, int y, int w, int h, Image<Rgba32> img)> set)
+            {
+                foreach ((int x, int y, int w, int h, Image<Rgba32> img) element in set)
+                {
+                    PaintIconData(canvas, element);
+                }
+            }
+
+            void CreateBoundsFromData((int x, int y, int w, int h, Image<Rgba32> img) data, out Vector2 start, out Vector2 end)
+            {
+                float s = (float)data.x / neededW;
+                float t = (float)data.y / neededH;
+                float u = s + ((float)data.w / neededW);
+                float v = t + ((float)data.h / neededH);
+                start = new Vector2(s, t);
+                end = new Vector2(u, v);
+            }
+
+            DieIconData CreateDataFromSet(Span<(int x, int y, int w, int h, Image<Rgba32> img)> set)
+            {
+                CreateBoundsFromData(set[0], out Vector2 singularStart, out Vector2 singularEnd);
+                CreateBoundsFromData(set[1], out Vector2 singularHighlightStart, out Vector2 singularHighlightEnd);
+                CreateBoundsFromData(set[2], out Vector2 primaryStart, out Vector2 primaryEnd);
+                CreateBoundsFromData(set[3], out Vector2 primaryHighlightStart, out Vector2 primaryHighlightEnd);
+                CreateBoundsFromData(set[4], out Vector2 secondaryStart, out Vector2 secondaryEnd);
+                CreateBoundsFromData(set[5], out Vector2 secondaryHighlightStart, out Vector2 secondaryHighlightEnd);
+
+                return new DieIconData()
+                {
+                    BoundsSingularStart = singularStart,
+                    BoundsSingularEnd = singularEnd,
+                    BoundsSingularHighlightStart = singularHighlightStart,
+                    BoundsSingularHighlightEnd = singularHighlightEnd,
+                    BoundsPrimaryStart = primaryStart,
+                    BoundsPrimaryEnd = primaryEnd,
+                    BoundsPrimaryHighlightStart = primaryHighlightStart,
+                    BoundsPrimaryHighlightEnd = primaryHighlightEnd,
+                    BoundsSecondaryStart = secondaryStart,
+                    BoundsSecondaryEnd = secondaryEnd,
+                    BoundsSecondaryHighlightStart = secondaryHighlightStart,
+                    BoundsSecondaryHighlightEnd = secondaryHighlightEnd
+                };
+            }
+
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d4 = CreateIconSetData("d4");
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d6 = CreateIconSetData("d6");
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d8 = CreateIconSetData("d8");
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d10 = CreateIconSetData("d10");
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d12 = CreateIconSetData("d12");
+            Span<(int x, int y, int w, int h, Image<Rgba32> img)> data_icon_d20 = CreateIconSetData("d20");
+
+            ProcessIconSet(data_icon_d4);
+            ProcessIconSet(data_icon_d6);
+            ProcessIconSet(data_icon_d8);
+            ProcessIconSet(data_icon_d10);
+            ProcessIconSet(data_icon_d12);
+            ProcessIconSet(data_icon_d20);
+
+            Configuration cfg = Configuration.Default.Clone();
+            cfg.PreferContiguousImageBuffers = true;
+            using Image<Rgba32> img = new Image<Rgba32>(cfg, neededW, neededH);
+
+            PaintIconSet(img, data_icon_d4);
+            PaintIconSet(img, data_icon_d6);
+            PaintIconSet(img, data_icon_d8);
+            PaintIconSet(img, data_icon_d10);
+            PaintIconSet(img, data_icon_d12);
+            PaintIconSet(img, data_icon_d20);
+
+            this.ChatIconD4 = CreateDataFromSet(data_icon_d4);
+            this.ChatIconD6 = CreateDataFromSet(data_icon_d6);
+            this.ChatIconD8 = CreateDataFromSet(data_icon_d8);
+            this.ChatIconD10 = CreateDataFromSet(data_icon_d10);
+            this.ChatIconD12 = CreateDataFromSet(data_icon_d12);
+            this.ChatIconD20 = CreateDataFromSet(data_icon_d20);
+
+            Texture tex = new Texture(TextureTarget.Texture2D);
+            tex.Bind();
+            tex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+            tex.SetFilterParameters(FilterParam.LinearMipmapLinear, FilterParam.Linear);
+            tex.SetImage(img, SizedInternalFormat.Rgba8);
+            tex.GenerateMipMaps();
+            this.DiceIconAtlas = tex;
+        }
+    }
+
+    public class DieIconData
+    {
+        public Vector2 BoundsSingularStart { get; init; }
+        public Vector2 BoundsSingularEnd { get; init; }
+        public (Vector2, Vector2) BoundsSingularTuple => (this.BoundsSingularStart, this.BoundsSingularEnd);
+
+        public Vector2 BoundsSingularHighlightStart { get; init; }
+        public Vector2 BoundsSingularHighlightEnd { get; init; }
+        public (Vector2, Vector2) BoundsSingularHighlightTuple => (this.BoundsSingularHighlightStart, this.BoundsSingularHighlightEnd);
+
+        public Vector2 BoundsPrimaryStart { get; init; }
+        public Vector2 BoundsPrimaryEnd { get; init; }
+        public (Vector2, Vector2) BoundsPrimaryTuple => (this.BoundsPrimaryStart, this.BoundsPrimaryEnd);
+
+        public Vector2 BoundsPrimaryHighlightStart { get; init; }
+        public Vector2 BoundsPrimaryHighlightEnd { get; init; }
+        public (Vector2, Vector2) BoundsPrimaryHighlightTuple => (this.BoundsPrimaryStart, this.BoundsPrimaryEnd);
+
+        public Vector2 BoundsSecondaryStart { get; init; }
+        public Vector2 BoundsSecondaryEnd { get; init; }
+        public (Vector2, Vector2) BoundsSecondaryTuple => (this.BoundsSecondaryStart, this.BoundsSecondaryEnd);
+
+        public Vector2 BoundsSecondaryHighlightStart { get; init; }
+        public Vector2 BoundsSecondaryHighlightEnd { get; init; }
+        public (Vector2, Vector2) BoundsSecondaryHighlightTuple => (this.BoundsSecondaryHighlightStart, this.BoundsSecondaryHighlightEnd);
     }
 }

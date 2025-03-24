@@ -769,6 +769,7 @@ menu.settings.async_texture_upload.buffers.triple=Тройной Буффер
 ui.shadow2d.mode_addblockerpoints.tt=Добавить Блокировщик Точками\nДобавляет новый блокирующий обзор прямоугольник на карту.\nВ этом режиме нажатие ЛКМ создаёт новую точку, которая будет одним из углов финального прямоугольника, для которого необходимы 4 угла.
 ui.shadow2d.mode_addsunlightpoints.tt=Добавить Освещение Точками\nДобавляет новый прямоугольник освещения на карту.\nВсе наблюдатели внутри таких прямоугольников не имеют лимитов на дистанцию зрения.\nМожет быть использовано для выделения частей карты как наружных.
 ui.popup.object_actions.add_turn.team_generic=Общая Команда
+menu.settings.die.2.color_settings=Настройки к2
 menu.settings.die.4.color_settings=Настройки к4
 menu.settings.die.6.color_settings=Настройки к6
 menu.settings.die.8.color_settings=Настройки к8

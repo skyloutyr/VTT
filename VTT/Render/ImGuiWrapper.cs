@@ -61,6 +61,24 @@ void main()
             this._imCtx = ImGui.CreateContext();
             ImGui.SetCurrentContext(this._imCtx);
             ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+#if DEBUG
+            unsafe
+            {
+                ImGui.GetIO().NativePtr->ConfigErrorRecovery = 1;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableAssert = 1;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableTooltip = 1;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableDebugLog = 1;
+                ImGui.GetIO().NativePtr->ConfigDebugIsDebuggerPresent = Debugger.IsAttached ? (byte)1 : (byte)0;
+            }
+#else
+            unsafe
+            {
+                ImGui.GetIO().NativePtr->ConfigErrorRecovery = 1;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableAssert = 0;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableDebugLog = 0;
+                ImGui.GetIO().NativePtr->ConfigErrorRecoveryEnableTooltip = 1;
+            }
+#endif
             ImGui.GetIO().ConfigWindowsResizeFromEdges = true;
             ImGui.GetIO().ConfigDockingWithShift = true;
             ImGui.GetIO().DisplayFramebufferScale = new Vector2(1, 1);

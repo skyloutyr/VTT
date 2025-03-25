@@ -45,8 +45,8 @@
                                     int hMax = 0;
                                     foreach (VTT.Asset.Glb.TextureAnimation.Frame frame in animData.Frames)
                                     {
-                                        wMax = Math.Max(wMax, (int)frame.Location.Width * tex.Size.Width);
-                                        hMax = Math.Max(wMax, (int)frame.Location.Height * tex.Size.Height);
+                                        wMax = Math.Max(wMax, (int)(frame.Location.Width * tex.Size.Width));
+                                        hMax = Math.Max(wMax, (int)(frame.Location.Height * tex.Size.Height));
                                     }
 
                                     this.Width = MathF.Min(320, wMax);

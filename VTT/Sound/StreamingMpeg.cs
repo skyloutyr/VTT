@@ -15,8 +15,8 @@
         private readonly float[] _buf;
         private readonly UnsafeResizeableArray<byte> _rArray;
         private int _maxBufferStep;
-        private readonly object _rArrayLock = new object();
-        private bool _rArrayFreed = false;
+        private readonly object _lock = new object();
+        private bool _disposed = false;
 
         public StreamingMpeg()
         {
@@ -26,21 +26,29 @@
         }
 
         // Add data to the underlying ms and reset its position to what it was before writing to preserve coherency
-        // Non-thread safe, but writing and reading ops happen on the same thread in a strict order, so maybe fine
+        // Happens on the NETWORK thread
         public void AddData(byte[] dataBuffer) 
         {
-            if (this._mpeg == null)
+            lock (this._lock)
             {
-                this._ms = new MemoryStream();
-            }
+                if (this._disposed)
+                {
+                    return;
+                }
 
-            this._ms.Position = this._totalData; // Need to set the stream to end first, write afterwards
-            this._ms.Write(dataBuffer, 0, dataBuffer.Length);
-            this._totalData += dataBuffer.Length;
-            this._ms.Position = this._lastReadIndex;
-            if (this._mpeg == null)
-            {
-                this._mpeg = new MpegFile(this._ms);
+                if (this._mpeg == null)
+                {
+                    this._ms = new MemoryStream();
+                }
+
+                this._ms.Position = this._totalData; // Need to set the stream to end first, write afterwards
+                this._ms.Write(dataBuffer, 0, dataBuffer.Length);
+                this._totalData += dataBuffer.Length;
+                this._ms.Position = this._lastReadIndex;
+                if (this._mpeg == null)
+                {
+                    this._mpeg = new MpegFile(this._ms);
+                }
             }
         }
 
@@ -53,34 +61,41 @@
         // While underlying readers are outside of our control, they will still advance the stream, and thus we know when to stop
         // Also this unfortunately keeps the entire MS in memory for streaming. 
         // TODO figure out a buffered memory stream implementation which will discard earlier data no longer in use
+        // Happens on the NETWORK thread
         public byte[] ReadSamples(bool expectMore, out bool readToEnd)
         {
-            int lastMsPosition = (int)this._ms.Position;
-            while (true)
+            lock (this._lock)
             {
-                int p = (int)this._ms.Position;
-                // From analysis the internal reader always advances the stream by 4032 at a time, but still worth being cautious
-                if (p + Math.Max(4096, this._maxBufferStep) >= this._ms.Length && expectMore) 
+                if (this._disposed)
                 {
-                    // Can't read more as we could reach EOF (unlikely THIS read, but may at a later read still)
-                    readToEnd = false;
-                    break;
-                }
-
-                // Only read 1 layer 3 frame just in case
-                // Although based on analysis we will obtain 576 bytes, and we should ALWAYS obtain 576 bytes due to layer III encoding (and encoding will ALWAYS be layer III) it is still worth reading up to maximum allowed by spec just in case
-                // The case being if Layer II somehow is encoded (bad ffmpeg?) we will fail the read entirely if buffer is not large enough, read 0, reach EOF and die
-                // Using a f32 due to clipping issues (library blissfuly unaware of clipping and causes bad audio output)
-                int r = this._mpeg.ReadSamples(this._buf, 0, 1152); 
-                if (r <= 0)
-                {
-                    // Reached eof
                     readToEnd = true;
-                    break;
+                    return Array.Empty<byte>();
                 }
 
-                lock (this._rArrayLock)
+                int lastMsPosition = (int)this._ms.Position;
+                while (true)
                 {
+                    int p = (int)this._ms.Position;
+                    // From analysis the internal reader always advances the stream by 4032 at a time, but still worth being cautious
+                    if (p + Math.Max(4096, this._maxBufferStep) >= this._ms.Length && expectMore)
+                    {
+                        // Can't read more as we could reach EOF (unlikely THIS read, but may at a later read still)
+                        readToEnd = false;
+                        break;
+                    }
+
+                    // Only read 1 layer 3 frame just in case
+                    // Although based on analysis we will obtain 576 bytes, and we should ALWAYS obtain 576 bytes due to layer III encoding (and encoding will ALWAYS be layer III) it is still worth reading up to maximum allowed by spec just in case
+                    // The case being if Layer II somehow is encoded (bad ffmpeg?) we will fail the read entirely if buffer is not large enough, read 0, reach EOF and die
+                    // Using a f32 due to clipping issues (library blissfuly unaware of clipping and causes bad audio output)
+                    int r = this._mpeg.ReadSamples(this._buf, 0, 1152);
+                    if (r <= 0)
+                    {
+                        // Reached eof
+                        readToEnd = true;
+                        break;
+                    }
+
                     for (int i = 0; i < r; ++i)
                     {
                         float f = this._buf[i];
@@ -95,72 +110,64 @@
                         unsafe
                         {
                             ushort us = *(ushort*)&s;
-                            if (!this._rArrayFreed)
-                            {
-                                this._rArray.AddRange(BitConverter.GetBytes(us), 0, sizeof(ushort));
-                            }
+                            this._rArray.AddRange(BitConverter.GetBytes(us), 0, sizeof(ushort));
                         }
                     }
-                }
 
-                if (lastMsPosition != this._ms.Position)
-                {
-                    int delta = (int)(this._ms.Position - lastMsPosition);
-                    if (delta > 4096 && delta > this._maxBufferStep)
+                    if (lastMsPosition != this._ms.Position)
                     {
-                        Client.Instance.Logger.Log(LogLevel.Warn, $"Abrubpt sound delta change (to {delta} bytes)!");
+                        int delta = (int)(this._ms.Position - lastMsPosition);
+                        if (delta > 4096 && delta > this._maxBufferStep)
+                        {
+                            Client.Instance.Logger.Log(LogLevel.Warn, $"Abrubpt sound delta change (to {delta} bytes)!");
+                        }
+
+                        this._maxBufferStep = (int)Math.Max(this._maxBufferStep, delta);
+                        lastMsPosition = (int)this._ms.Position;
                     }
-
-                    this._maxBufferStep = (int)Math.Max(this._maxBufferStep, delta);
-                    lastMsPosition = (int)this._ms.Position;
                 }
-            }
 
-            byte[] ret = Array.Empty<byte>();
-            lock (this._rArrayLock)
-            {
-                if (!this._rArrayFreed)
-                {
-                    ret = this._rArray.ToBytes();
-                    this._rArray.Reset();
-                }
+                byte[] ret = Array.Empty<byte>();
+                ret = this._rArray.ToBytes();
+                this._rArray.Reset();
+                this._lastReadIndex = (int)this._ms.Position;
+                return ret;
             }
-
-            this._lastReadIndex = (int)this._ms.Position;
-            return ret;
         }
 
+        // Happens on the MAIN thread
         public void Free()
         {
-            try
+            lock (this._lock)
             {
-                this._mpeg.Dispose();
-            }
-            catch
-            {
-                // NOOP
-            }
+                try
+                {
+                    this._mpeg.Dispose();
+                }
+                catch
+                {
+                    // NOOP
+                }
 
-            try
-            {
-                this._ms.Dispose();
-            }
-            catch
-            {
-                // NOOP
-            }
+                try
+                {
+                    this._ms.Dispose();
+                }
+                catch
+                {
+                    // NOOP
+                }
 
-            try
-            {
-                lock (this._rArrayLock)
+                try
                 {
                     this._rArray.Free();
-                    this._rArrayFreed = true;
                 }
-            }
-            catch
-            {
-                // NOOP
+                catch
+                {
+                    // NOOP
+                }
+
+                this._disposed = true;
             }
         }
     }

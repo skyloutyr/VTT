@@ -39,9 +39,17 @@ uniform sampler2D in_fontTexture;
 in vec4 color;
 in vec2 texCoord;
 out vec4 outputColor;
+
+uniform bool gamma_correct;
+uniform float gamma_factor;
+
 void main()
 {
     outputColor = color * texture(in_fontTexture, texCoord);
+    if (gamma_correct)
+    {
+        outputColor.rgb = pow(outputColor.rgb, vec3(1.0/gamma_factor));
+    }
 }";
 
         private readonly IntPtr _imCtx;
@@ -399,15 +407,19 @@ void main()
             GL.Disable(Capability.DepthTest);
             GL.Enable(Capability.ScissorTest);
 
-            _shader.Bind();
+            this._shader.Bind();
 
             float left = drawData.DisplayPos.X;
             float right = drawData.DisplayPos.X + drawData.DisplaySize.X;
             float top = drawData.DisplayPos.Y;
             float bottom = drawData.DisplayPos.Y + drawData.DisplaySize.Y;
 
-            _shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
+            this._shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
+            this._shader["gamma_correct"].Set(false);
+            this._shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
         }
+
+        public void ToggleGamma(bool gamma) => this._shader["gamma_correct"].Set(gamma);
 
         private int _maxVboSize = 0;
         private int _maxEboSize = 0;
@@ -462,7 +474,7 @@ void main()
                     ImDrawCmdPtr pcmd = cmdList.CmdBuffer[cmd_i];
                     if (pcmd.UserCallback != IntPtr.Zero)
                     {
-                        Marshal.GetDelegateForFunctionPointer<ImDrawCallback>(pcmd.UserCallback)(pcmd, drawIdxSize, fbWidth, fbHeight);
+                        Marshal.GetDelegateForFunctionPointer<ImDrawCallback>(pcmd.UserCallback)(pcmd, drawIdxSize, fbWidth, fbHeight, pcmd.UserCallbackData);
                     }
                     else
                     {
@@ -512,7 +524,7 @@ void main()
             }
         }
 
-        public delegate void ImDrawCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight);
+        public delegate void ImDrawCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight, IntPtr userData);
     }
 
     public static class ImGuiHelper

@@ -6,12 +6,14 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
+    using System.Runtime.InteropServices;
     using System.Text;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
     using VTT.Util;
+    using static VTT.Render.ImGuiWrapper;
 
     public class ChatRendererLine : ChatRendererBase
     {
@@ -22,6 +24,9 @@
         public ChatRendererLine(ChatLine container) : base(container)
         {
         }
+
+        private static ImDrawCallback GammaSetterCallback = SetGammaCallback;
+        private static void SetGammaCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight, IntPtr userData) => Client.Instance.Frontend.GuiWrapper.ToggleGamma(userData.ToInt32() != 0);
 
         public override void Cache(Vector2 windowSize, out float width, out float height)
         {
@@ -196,6 +201,7 @@
                         Vector2 vBase = ImGui.GetCursorScreenPos();
                         if (icw.Owner.Type == ChatBlockType.Image)
                         {
+                            bool needGammaCorrection = false;
                             Asset a = null;
                             AssetPreview ap = null;
                             bool isAssetRef = Guid.TryParse(icw.Owner.Text, out Guid assetId);
@@ -252,6 +258,8 @@
                                                 imgSt = Vector2.Zero;
                                                 imgUv = Vector2.One;
                                             }
+
+                                            needGammaCorrection = a.Texture.Meta?.GammaCorrect ?? false;
                                         }
                                         else
                                         {
@@ -308,7 +316,16 @@
                                 imgSize.X = MathF.Min(320, imgSize.X);
                                 imgSize.Y = MathF.Min(320, imgSize.Y);
 
+                                if (needGammaCorrection)
+                                {
+                                    ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(1));
+                                }
+
                                 ImGui.Image(imgTexture, imgSize, imgSt, imgUv);
+                                if (needGammaCorrection)
+                                {
+                                    ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(0));
+                                }
                             }
                         }
                         else

@@ -586,6 +586,59 @@
         public IEnumerable<BoneData> ProvideBones();
     }
 
+    public class PreviewAnimationContainer : IAnimationStorage
+    {
+        private readonly List<IAnimationStorage.BoneData> _cBoneData = new List<IAnimationStorage.BoneData>();
+        public List<IAnimationStorage.BoneData> StoredBoneData => this._cBoneData;
+        private GlbAnimation _lastStorageAnimation;
+        private readonly object animationStorageLock = new object();
+
+        public PreviewAnimationContainer()
+        {
+        }
+
+        public bool CheckAnimation(GlbAnimation anim, GlbArmature arm)
+        {
+            if (anim != this._lastStorageAnimation)
+            {
+                this._lastStorageAnimation = anim;
+                lock (this.animationStorageLock)
+                {
+                    this.StoredBoneData.Clear();
+                    foreach (GlbBone bone in arm.UnsortedBones)
+                    {
+                        IAnimationStorage.BoneData bd = new IAnimationStorage.BoneData()
+                        {
+                            Index = bone.ModelIndex,
+                            Transform = bone.Transform
+                        };
+
+                        this.StoredBoneData.Add(bd);
+                    }
+
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        public void LoadBonesFromAnimation(GlbArmature arm)
+        {
+            lock (this.animationStorageLock)
+            {
+                for (int i = 0; i < this.StoredBoneData.Count; i++)
+                {
+                    IAnimationStorage.BoneData bd = this.StoredBoneData[i];
+                    bd.Transform = arm.UnsortedBones[i].Transform;
+                }
+            }
+        }
+
+        public IEnumerable<IAnimationStorage.BoneData> ProvideBones() => this.StoredBoneData;
+    }
+
     public class AnimationContainer : ISerializable, IAnimationStorage
     {
         private float _time;

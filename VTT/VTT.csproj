@@ -200,6 +200,8 @@
     <None Remove="Embed\moverlay.vert" />
     <None Remove="Embed\object.frag" />
     <None Remove="Embed\object.vert" />
+    <None Remove="Embed\object_preview.frag" />
+    <None Remove="Embed\object_preview.vert" />
     <None Remove="Embed\object_shadow.frag" />
     <None Remove="Embed\object_shadow.vert" />
     <None Remove="Embed\overlay.frag" />
@@ -334,6 +336,8 @@
     <EmbeddedResource Include="Embed\icons8-shadow2d-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
+    <EmbeddedResource Include="Embed\object_preview.frag" />
+    <EmbeddedResource Include="Embed\object_preview.vert" />
     <EmbeddedResource Include="Embed\pattern0.png" />
     <EmbeddedResource Include="Embed\pattern1.png" />
     <EmbeddedResource Include="Embed\pattern2.png" />

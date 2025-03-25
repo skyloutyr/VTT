@@ -1,5 +1,6 @@
 ﻿namespace VTT.Render
 {
+    using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
@@ -29,6 +30,7 @@
         //public ShaderProgram RenderShader { get; set; }
         public ShaderProgram HighlightShader { get; set; }
         public ShaderProgram OverlayShader { get; set; }
+        public FastAccessShader PreviewShader { get; set; }
         public MapObject ObjectMouseOver { get; set; }
         public MapObject ObjectListObjectMouseOver { get; set; }
         public Vector3 MouseHitWorld { get; set; }
@@ -149,6 +151,8 @@
             this.CPUTimerHighlights = new Stopwatch();
             this.CPUTimerCompound = new Stopwatch();
             this.MissingModel = new GlbScene(new ModelData.Metadata(), IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
+
+            this.PreviewShader = new FastAccessShader(OpenGLUtil.LoadShader("object_preview", ShaderType.Vertex, ShaderType.Fragment));
         }
 
         #region Hightlight Box
@@ -370,6 +374,7 @@
             }
         }
 
+        private readonly PreviewAnimationContainer _previewAnimationContainer = new PreviewAnimationContainer();
         public void RenderHighlights(Map m, double delta)
         {
             this.CPUTimerHighlights.Restart();
@@ -458,6 +463,44 @@
             }
 
             GL.Enable(Capability.CullFace);
+
+            // TODO render preview
+            AssetRef draggedRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
+            if (draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture))
+            {
+                AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(draggedRef.AssetID, AssetType.Model, out Asset a);
+                if (status == AssetStatus.Return && a.ModelGlReady)
+                {
+                    GL.Enable(Capability.Blend);
+                    GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                    GL.DepthMask(false);
+                    GL.Disable(Capability.CullFace);
+
+                    this.PreviewShader.Program.Bind();
+                    this.PreviewShader.Essentials.View.Set(cam.View);
+                    this.PreviewShader.Essentials.Projection.Set(cam.Projection);
+                    this.PreviewShader.Program["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+                    Vector3? worldVec = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
+                    if (!worldVec.HasValue)
+                    {
+                        Ray ray = Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor();
+                        worldVec = ray.Origin + (ray.Direction * 6.0f);
+                    }
+
+                    if (ImGui.IsKeyDown(ImGuiKey.LeftAlt))
+                    {
+                        worldVec = MapRenderer.SnapToGrid(worldVec.Value, m.GridSize);
+                    }
+
+                    Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(worldVec.Value);
+                    a.Model.GLMdl.Render(this.PreviewShader, modelMatrix, cam.Projection, cam.View, 0, a.Model.GLMdl.Animations.FirstOrDefault(), 0, this._previewAnimationContainer);
+
+                    GL.Enable(Capability.CullFace);
+                    GL.DepthMask(true);
+                    GL.Disable(Capability.Blend);
+                }
+            }
+
             this.CPUTimerHighlights.Stop();
         }
 

@@ -7,6 +7,7 @@
     public static unsafe class MemoryHelper
     {
         public static T* Allocate<T>(nuint nElements) where T : unmanaged => (T*)NativeMemory.Alloc(nElements, (nuint)sizeof(T));
+        public static T* AllocateZeroed<T>(nuint nElements) where T : unmanaged => (T*)NativeMemory.AllocZeroed(nElements, (nuint)sizeof(T));
         public static T* Reallocate<T>(T* oldPtr, nuint nElements) where T : unmanaged => (T*)NativeMemory.Realloc(oldPtr, nElements * (nuint)sizeof(T));
         public static void Free(void* ptr)
         {
@@ -17,6 +18,7 @@
         }
 
         public static void* AllocateBytes(nuint nBytes) => Allocate<byte>(nBytes);
+        public static void* AllocateBytesZeroed(nuint nBytes) => AllocateZeroed<byte>(nBytes);
         public static void* ReallocateBytes(void* oldPtr, nuint nBytes) => Reallocate((byte*)oldPtr, nBytes);
         public static void* StringToPointerAnsi(in string s, out int strlen)
         {

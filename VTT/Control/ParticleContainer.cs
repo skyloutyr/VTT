@@ -42,7 +42,7 @@
 
         public void UpdateBufferState()
         {
-            if (this.IsActive && !Guid.Empty.Equals(this.SystemID))
+            if (!this.SystemID.IsEmpty())
             {
                 if (this._psIns != null && this._psInsDispose)
                 {
@@ -51,18 +51,21 @@
                     this._psIns = null;
                 }
 
-                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.SystemID, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a?.ParticleSystem != null)
+                if (this.IsActive)
                 {
-                    if (this._psIns == null)
+                    if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.SystemID, AssetType.ParticleSystem, out Asset a) == AssetStatus.Return && a?.ParticleSystem != null)
                     {
-                        this._psIns = new ParticleSystemInstance(a.ParticleSystem, this);
-                    }
+                        if (this._psIns == null)
+                        {
+                            this._psIns = new ParticleSystemInstance(a.ParticleSystem, this);
+                        }
 
-                    this._psIns.UpdateBufferState();
-                }
-                else
-                {
-                    this._psIns = null;
+                        this._psIns.UpdateBufferState();
+                    }
+                    else
+                    {
+                        this._psIns = null;
+                    }
                 }
             }
         }

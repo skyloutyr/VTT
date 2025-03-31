@@ -448,7 +448,7 @@
             this._allParticles = MemoryHelper.Allocate<Particle>((nuint)numPossibleParticles);
             this._numParticles = numPossibleParticles;
             this._sizeInBytes = numPossibleParticles * sizeof(GLParticleData);
-            this._buffer = MemoryHelper.Allocate<GLParticleData>((nuint)numPossibleParticles);
+            this._buffer = MemoryHelper.AllocateZeroed<GLParticleData>((nuint)numPossibleParticles);
             for (int i = 0; i < numPossibleParticles; ++i)
             {
                 this._allParticles[i] = new Particle() { active = 0, age = 0, color = Vector4.Zero, lifespan = 0, velocity = Vector3.Zero, worldPosition = Vector3.Zero };

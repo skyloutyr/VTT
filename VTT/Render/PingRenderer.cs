@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render
 {
     using ImGuiNET;
-    using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;

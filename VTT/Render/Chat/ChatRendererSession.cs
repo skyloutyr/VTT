@@ -1,7 +1,6 @@
 ﻿namespace VTT.Render.Chat
 {
     using ImGuiNET;
-    using SixLabors.ImageSharp;
     using System;
     using System.Numerics;
     using VTT.Control;

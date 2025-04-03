@@ -22,13 +22,13 @@
         {
             int l = br.ReadInt32();
             this.Line = new ChatLine() { Index = l };
-            this.Line.Read(br);
+            this.Line.ReadNetwork(br);
         }
 
         public override void Encode(BinaryWriter bw)
         {
             bw.Write(this.Line.Index);
-            this.Line.Write(bw);
+            this.Line.WriteNetwork(bw);
         }
     }
 }

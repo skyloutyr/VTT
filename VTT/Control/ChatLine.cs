@@ -11,7 +11,10 @@
     using VTT.Asset;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Network.Packet;
+    using VTT.Render;
     using VTT.Render.Chat;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ChatLine
@@ -28,6 +31,7 @@
         public Color SenderColor { get => senderColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : senderColor; set => senderColor = value; }
         public Color DestColor { get => destColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : destColor; set => destColor = value; }
         public List<ChatBlock> Blocks { get; set; } = new List<ChatBlock>();
+        public EmojiReactions Reactions { get; set; } = new EmojiReactions();
 
         public ChatRendererBase Renderer { get; set; }
         public RenderType Type { get; set; }
@@ -111,15 +115,17 @@
             {
                 float scrollMin = ImGui.GetScrollY();
                 float scrollMax = scrollMin + h;
-                if (ImGui.GetCursorPosY() + this._cachedHeight + 30 < scrollMin)
+                bool haveReactions = this.Reactions.Total > 0;
+                int spacing = haveReactions ? 54 : 30;
+                if (ImGui.GetCursorPosY() + this._cachedHeight + spacing < scrollMin)
                 {
-                    ImGui.Dummy(new Vector2(1, this._cachedHeight + 30));
+                    ImGui.Dummy(new Vector2(1, this._cachedHeight + spacing));
                     return true;
                 }
 
                 if (scrollMax > float.Epsilon && ImGui.GetCursorPosY() > scrollMax)
                 {
-                    ImGui.Dummy(new Vector2(1, this._cachedHeight + 30));
+                    ImGui.Dummy(new Vector2(1, this._cachedHeight + spacing));
                     return true;
                 }
 
@@ -244,23 +250,121 @@
                     ImGui.EndTooltip();
                 }
 
-                this.Renderer?.Render(this.SenderID, this.SenderColor.Abgr());
-                if (ImGui.IsMouseHoveringRect(sV, new Vector2(ImGui.GetCursorScreenPos().X + 350, ImGui.GetCursorScreenPos().Y)))
+                this.Renderer?.Render(this.SenderID, this.SenderColor.Abgr()); 
+                
+                if (ImGui.BeginPopupContextItem("chat_line_popup_" + idx))
                 {
-                    if (ImGui.BeginPopupContextItem("chat_line_popup_" + idx))
+                    if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
                     {
-                        if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
+                        ImGui.SetClipboardText($"{this.SendTime} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
+                    }
+
+                    ImGui.EndPopup();
+                }
+
+                if (ImGui.IsMouseHoveringRect(sV, new Vector2(ImGui.GetCursorScreenPos().X + 350, ImGui.GetCursorScreenPos().Y)) && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                {
+                    ImGui.OpenPopup("chat_line_popup_" + idx);
+                }
+
+                GuiRenderer uiRoot = GuiRenderer.Instance;
+                PingRenderer pr = Client.Instance.Frontend.Renderer.PingRenderer;
+
+                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                if (haveReactions)
+                {
+                    cNow = ImGui.GetCursorScreenPos() + new Vector2(0, 4);
+                    ImGui.Dummy(new Vector2(1, 26));
+                    int penX = 0;
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        Vector2 locNow = cNow + new Vector2(penX, 0);
+                        int cnt = this.Reactions.GetReactionCount(i);
+                        if (cnt > 0)
                         {
-                            ImGui.SetClipboardText($"{this.SendTime} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
+                            string txt = cnt.ToString();
+                            Vector2 tSize = ImGui.CalcTextSize(txt);
+                            Vector2 sSize = new Vector2(20 + 4 + tSize.X + 4, 20);
+                            bool hover = ImGui.IsMouseHoveringRect(locNow, locNow + sSize);
+                            drawList.AddRect(locNow, locNow + sSize, ImGui.GetColorU32(hover ? ImGuiCol.ButtonHovered : ImGuiCol.Border), 16f);
+                            drawList.AddImageRounded(pr.EmojiTextures[i], locNow, locNow + new Vector2(20, 20), Vector2.Zero, Vector2.One, 0xffffffff, 16f);
+                            drawList.AddText(locNow + new Vector2(24, 0), ImGui.GetColorU32(ImGuiCol.Text), txt);
+                            if (hover)
+                            {
+                                List<Guid> reacters = this.Reactions.GetReactersList(i);
+                                if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                {
+                                    bool isReacter = reacters.Contains(Client.Instance.ID);
+                                    new PacketChatReaction() { Reacter = Client.Instance.ID, EmojiIndex = i, CLIndex = idx, IsAddition = !isReacter }.Send();
+                                }
+
+                                ImGui.BeginTooltip();
+                                int reactCnt = 0;
+                                foreach (Guid id in reacters)
+                                { 
+                                    if (Client.Instance.ClientInfos.TryGetValue(id, out ClientInfo ci))
+                                    {
+                                        ImGui.PushStyleColor(ImGuiCol.TextDisabled, ci.Color.Abgr());
+                                        ImGui.TextDisabled(ci.Name);
+                                        ImGui.PopStyleColor();
+                                        reactCnt += 1;
+                                    }
+
+                                    if (reactCnt >= 12)
+                                    {
+                                        ImGui.TextDisabled(lang.Translate("ui.chat.reacters.more", reacters.Count - 12));
+                                        break;
+                                    }
+                                }
+
+                                ImGui.EndTooltip();
+                            }
+
+                            penX += (int)sSize.X + 4;
+                        }
+                    }
+                }
+
+                cNow = ImGui.GetCursorScreenPos() + new Vector2(winSize.X - 40, -20);
+                bool mouseHoveringReactPopupRect = false;
+                string reactPopupId = "chat_line_react_popup_" + idx;
+                if (mouseHoveringReactPopupRect = ImGui.IsMouseHoveringRect(cNow, cNow + new Vector2(20, 20)))
+                {
+                    uint dotColor = ImGui.GetColorU32(ImGuiCol.Border);
+                    ImGui.GetWindowDrawList().AddCircleFilled(cNow + new Vector2(4, 15), 3, dotColor);
+                    ImGui.GetWindowDrawList().AddCircleFilled(cNow + new Vector2(12, 15), 3, dotColor);
+                    ImGui.GetWindowDrawList().AddCircleFilled(cNow + new Vector2(20, 15), 3, dotColor);
+                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                    {
+                        ImGui.OpenPopup(reactPopupId);
+                    }
+                }
+
+                if ((mouseHoveringReactPopupRect || ImGui.IsPopupOpen(reactPopupId)) && ImGui.BeginPopupContextItem(reactPopupId, ImGuiPopupFlags.MouseButtonLeft))
+                {
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        ImGui.PushStyleColor(ImGuiCol.Border, 0x00000000);
+                        ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
+                        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0x00000000);
+                        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0x00000000);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
+                        if (ImGui.ImageButton($"chat_line_react_popup_{idx}_react_{i}", pr.EmojiTextures[i], new Vector2(18, 18)))
+                        {
+                            new PacketChatReaction() { Reacter = Client.Instance.ID, EmojiIndex = i, CLIndex = idx, IsAddition = true }.Send();
+                            ImGui.CloseCurrentPopup();
                         }
 
-                        ImGui.EndPopup();
+                        ImGui.PopStyleVar();
+                        ImGui.PopStyleColor();
+                        ImGui.PopStyleColor();
+                        ImGui.PopStyleColor();
+                        ImGui.PopStyleColor();
+
+                        ImGui.SameLine();
                     }
 
-                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
-                    {
-                        ImGui.OpenPopup("chat_line_popup_" + idx);
-                    }
+                    ImGui.EndPopup();
                 }
 
                 return true;
@@ -363,7 +467,19 @@
             this._cached = true;
         }
 
-        public void Write(BinaryWriter bw)
+        public void WriteNetwork(BinaryWriter bw)
+        {
+            this.WriteStorage(bw);
+            this.Reactions.Write(bw);
+        }
+
+        public void ReadNetwork(BinaryReader br)
+        {
+            this.ReadStorage(br);
+            this.Reactions.Read(br);
+        }
+
+        public void WriteStorage(BinaryWriter bw)
         {
             bw.Write((byte)3);
             bw.Write(this.SenderID.ToByteArray());
@@ -386,7 +502,7 @@
             }
         }
 
-        public void Read(BinaryReader br)
+        public void ReadStorage(BinaryReader br)
         {
             byte version = br.ReadByte(); // Version
             this.SenderID = new Guid(br.ReadBytes(16));
@@ -461,6 +577,115 @@
             {
                 this.preview = preview;
                 this.ready = ready;
+            }
+        }
+
+        /// <summary>
+        /// Does not persist atm, needs chat storage rework to persist
+        /// </summary>
+        public class EmojiReactions
+        {
+            private readonly List<Guid>[] _reactions = new List<Guid>[12] {  
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>(),
+                new List<Guid>()
+            };
+
+            private readonly int[] _numIndividualReactions = new int[12];
+            private int _numTotalReactions = 0;
+
+            public int Total => this._numTotalReactions;
+
+            public int GetReactionCount(int index) => this._numIndividualReactions[index];
+            public IEnumerable<Guid> GetReacters(int index) => this._reactions[index];
+            public List<Guid> GetReactersList(int index) => this._reactions[index];
+
+            public EmojiReactions Clone()
+            {
+                EmojiReactions ret = new EmojiReactions();
+                ret._numTotalReactions = this._numTotalReactions;
+                for (int i = 0; i < 12; ++i)
+                {
+                    ret._numIndividualReactions[i] = this._numIndividualReactions[i];
+                    ret._reactions[i].AddRange(this._reactions[i]);
+                }
+
+                return ret;
+            }
+
+            public void CopyFrom(EmojiReactions reactions)
+            {
+                this._numTotalReactions = reactions._numTotalReactions;
+                for (int i = 0; i < 12; ++i)
+                {
+                    this._numIndividualReactions[i] = reactions._numIndividualReactions[i];
+                    this._reactions[i].Clear();
+                    this._reactions[i].AddRange(reactions._reactions[i]);
+                }
+            }
+
+            public void Write(BinaryWriter bw)
+            {
+                bw.Write((byte)0); // Version;
+                bw.Write(this._numTotalReactions);
+                if (this._numTotalReactions > 0)
+                {
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        bw.Write(this._numIndividualReactions[i]);
+                        foreach (Guid id in this._reactions[i])
+                        {
+                            bw.Write(id);
+                        }
+                    }
+                }
+            }
+
+            public void Read(BinaryReader br)
+            {
+                byte version = br.ReadByte();
+                this._numTotalReactions = br.ReadInt32();
+                if (this._numTotalReactions > 0)
+                {
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        this._numIndividualReactions[i] = br.ReadInt32();
+                        this._reactions[i].Clear();
+                        for (int j = 0; j < this._numIndividualReactions[i]; ++j)
+                        {
+                            this._reactions[i].Add(br.ReadGuid());
+                        }
+                    }
+                }
+            }
+
+            public void AddReaction(Guid sender, int reactionIndex)
+            {
+                if (!this._reactions[reactionIndex].Contains(sender))
+                {
+                    this._reactions[reactionIndex].Add(sender);
+                    this._numIndividualReactions[reactionIndex] += 1;
+                    this._numTotalReactions += 1;
+                }
+            }
+
+            public void RemoveReaction(Guid sender, int reactionIndex)
+            {
+                if (this._reactions[reactionIndex].Contains(sender))
+                {
+                    this._reactions[reactionIndex].Remove(sender);
+                    this._numIndividualReactions[reactionIndex] -= 1;
+                    this._numTotalReactions -= 1;
+                }
             }
         }
     }

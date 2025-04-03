@@ -788,3 +788,4 @@ menu.settings.chat_dice_enabled=Enable Chat Dice
 menu.settings.chat_dice_enabled.tt=Controls the way dice rolls are displayed in the chat.\nIf toggled on, rolls will show a miniature image of a corresponding die (if possble).\nIf toggled off default expression box will be used.
 menu.settings.unify_chat_dice_rendering=Unify Chat Dice Rendering
 menu.settings.unify_chat_dice_rendering.tt=Controls the algorithm for chat dice rendering.\nIf enabled then rendering will be easy on the GPU at the cost of CPU and RAM bandwith.\nIf disabled rendering will be harder on the GPU (and the PCI-E slot bandwith), but the CPU and RAM bandwith will not be affected.
+ui.chat.reacters.more=And {0} more...

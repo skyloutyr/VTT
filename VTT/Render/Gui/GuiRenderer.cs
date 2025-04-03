@@ -17,7 +17,6 @@
     using VTT.Network.Packet;
     using VTT.Render.MainMenu;
     using VTT.Util;
-    using Extensions = Util.Extensions;
 
     public partial class GuiRenderer
     {

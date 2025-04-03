@@ -40,6 +40,7 @@
 
         public object chatLock = new object();
         public List<ChatLine> ServerChat { get; } = new List<ChatLine>();
+        public ServerChatExtras ServerChatExtras { get; } = new ServerChatExtras();
         public ConcurrentQueue<ChatLine> AppendedChat { get; } = new ConcurrentQueue<ChatLine>();
         public ConcurrentDictionary<Guid, TextJournal> Journals { get; } = new ConcurrentDictionary<Guid, TextJournal>();
 
@@ -379,12 +380,14 @@
                     }
                 }
 
-                if (!this.AppendedChat.IsEmpty)
+                if (!this.AppendedChat.IsEmpty && !this.NonPersistent)
                 {
-                    if (!this.NonPersistent)
-                    {
-                        this.SaveChat();
-                    }
+                    this.SaveChat();
+                }
+
+                if (this.ServerChatExtras.NeedsDiskWrite && !this.NonPersistent)
+                {
+                    this.SaveChatExtras();
                 }
 
                 foreach (TextJournal tj in this.Journals.Values)
@@ -543,7 +546,7 @@
                                 while (br.BaseStream.Position < br.BaseStream.Length - 1)
                                 {
                                     ChatLine cl = new ChatLine() { Index = idx++ };
-                                    cl.Read(br);
+                                    cl.ReadStorage(br);
                                     ret.Add(cl);
                                 }
 
@@ -575,6 +578,22 @@
                     {
                         this.ServerChat.AddRange(lines);
                     }
+                }
+            }
+
+            string expectedExtras = Path.Combine(chatLoc, "extras.bin");
+            if (File.Exists(expectedExtras))
+            {
+                try
+                {
+                    using BinaryReader br = new BinaryReader(File.OpenRead(expectedExtras));
+                    this.ServerChatExtras.ReadAll(br);
+                    this.ServerChatExtras.ApplyAll(this.ServerChat); // No lock needed here, server isn't started
+                }
+                catch (Exception e)
+                {
+                    this.Logger.Log(LogLevel.Error, "Could not load server chat extra data!");
+                    this.Logger.Exception(LogLevel.Error, e);
                 }
             }
         }
@@ -613,13 +632,22 @@
                     {
                         if (this.AppendedChat.TryDequeue(out ChatLine cl))
                         {
-                            cl.Write(bw);
+                            cl.WriteStorage(bw);
                         }
                     }
 
                     bw.Flush();
                 }
             }
+        }
+
+        public void SaveChatExtras()
+        {
+            string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
+            string expectedExtras = Path.Combine(chatLoc, "extras.bin");
+            using BinaryWriter bw = new BinaryWriter(File.OpenWrite(expectedExtras));
+            this.ServerChatExtras.WriteAll(bw);
+            this.ServerChatExtras.NeedsDiskWrite = false;
         }
 
         public void LoadAllMaps()
@@ -1137,6 +1165,101 @@
             this.MapName = mapName;
             this.MapFolder = mapFolder;
             this.MapDiskLocation = mapDiskLocation;
+        }
+    }
+
+    public class ServerChatExtras
+    {
+        public List<LineData> Unapplied { get; set; } = new List<LineData>();
+        public List<LineData> All { get; set; } = new List<LineData>();
+        public bool NeedsDiskWrite { get; set; }
+
+        private readonly object _lock = new object();
+
+        public void WriteAll(BinaryWriter bw)
+        {
+            lock (this._lock)
+            {
+                bw.Write((byte)0); // Version
+                bw.Write(this.All.Count);
+                foreach (LineData d in this.All)
+                {
+                    d.Write(bw);
+                }
+            }
+        }
+
+        public void ReadAll(BinaryReader br)
+        {
+            lock (this._lock)
+            {
+                byte version = br.ReadByte();
+                int cnt = br.ReadInt32();
+                for (int i = 0; i < cnt; ++i)
+                {
+                    LineData d = new LineData();
+                    d.Read(br);
+                    this.All.Add(d);
+                    this.Unapplied.Add(d);
+                }
+            }
+        }
+
+        public void ApplyAll(List<ChatLine> lines)
+        {
+            foreach (LineData data in this.Unapplied)
+            {
+                data.Apply(lines[data.LineIndex]);
+            }
+        }
+
+        public void NotifyOfLineDataChange(ChatLine line)
+        {
+            lock (this._lock)
+            {
+                int ldIndex = this.All.FindIndex(x => x.LineIndex == line.Index);
+                if (ldIndex == -1) // New line data tba
+                {
+                    ldIndex = this.All.Count;
+                    this.All.Add(new LineData(){ LineIndex = line.Index });
+                }
+
+                if (line.Reactions.Total == 0) // Actually remove this line
+                {
+                    this.All.RemoveAt(ldIndex);
+                }
+                else
+                {
+                    this.All[ldIndex].Reactions = line.Reactions.Clone();
+                }
+
+                this.NeedsDiskWrite = true;
+            }
+        }
+
+        public class LineData
+        {
+            public int LineIndex { get; set; }
+            public ChatLine.EmojiReactions Reactions { get; set; } = new ChatLine.EmojiReactions();
+
+            public void Write(BinaryWriter bw)
+            {
+                bw.Write((byte)0); // Version
+                bw.Write(this.LineIndex);
+                this.Reactions.Write(bw);
+            }
+
+            public void Read(BinaryReader br)
+            {
+                byte version = br.ReadByte();
+                this.LineIndex = br.ReadInt32();
+                this.Reactions.Read(br);
+            }
+
+            public void Apply(ChatLine line)
+            {
+                line.Reactions.CopyFrom(this.Reactions);
+            }
         }
     }
 }

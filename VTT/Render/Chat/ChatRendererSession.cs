@@ -36,8 +36,8 @@
             Vector2 localPos = ImGui.GetCursorPos();
             Vector2 pos = ImGui.GetCursorScreenPos();
             Vector2 size = ImGui.GetContentRegionAvail();
-            uint gold = Color.Gold.Abgr();
-            uint nothing = Color.Transparent.Abgr();
+            uint gold = ColorAbgr.Gold;
+            uint nothing = ColorAbgr.Transparent;
             float h = 24 + ImGui.GetTextLineHeightWithSpacing();
 
             drawList.AddRectFilledMultiColor(

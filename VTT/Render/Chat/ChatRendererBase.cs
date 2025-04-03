@@ -430,10 +430,10 @@
                 {
                     if (hover)
                     {
-                        drawList.AddImage(atlas, new Vector2(l, t), new Vector2(r, b), highlightPrimary.Value.Item1, highlightPrimary.Value.Item2, Color.RoyalBlue.Abgr());
+                        drawList.AddImage(atlas, new Vector2(l, t), new Vector2(r, b), highlightPrimary.Value.Item1, highlightPrimary.Value.Item2, ColorAbgr.RoyalBlue);
                         if (multipleDiceMode)
                         {
-                            drawList.AddImage(atlas, new Vector2(l, t), new Vector2(r, b), highlightSecondary.Value.Item1, highlightSecondary.Value.Item2, Color.RoyalBlue.Abgr());
+                            drawList.AddImage(atlas, new Vector2(l, t), new Vector2(r, b), highlightSecondary.Value.Item1, highlightSecondary.Value.Item2, ColorAbgr.RoyalBlue);
                         }
                     }
 
@@ -452,7 +452,7 @@
 
                     if (hover)
                     {
-                        cellOutline = Color.RoyalBlue.Abgr();
+                        cellOutline = ColorAbgr.RoyalBlue;
                     }
 
                     drawList.AddRect(new Vector2(l, t), new Vector2(r, b), cellOutline, rounding);

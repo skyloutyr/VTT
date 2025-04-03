@@ -313,8 +313,8 @@
 
         private readonly uint clrG = Extensions.FromHex("404040").Abgr();
         private readonly uint clrGBright = Extensions.FromHex("606060").Abgr();
-        private readonly uint clrB = Color.Black.Abgr();
-        private readonly uint clrSelected = Color.RoyalBlue.Abgr();
+        private readonly uint clrB = ColorAbgr.Black;
+        private readonly uint clrSelected = ColorAbgr.RoyalBlue;
         private readonly uint clrA = Extensions.FromHex("4e2623").Abgr();
         private readonly uint clrAB = Extensions.FromHex("8f0e1f").Abgr();
         private readonly uint clrD = Extensions.FromHex("242238").Abgr();
@@ -426,8 +426,8 @@
 
                 string oName = p.OwnerName;
                 Vector2 tSize = ImGuiHelper.CalcTextSize(oName);
-                winDrawList.AddText(screenxy2 + new Vector2(2, 26) - (tSize / 2), Color.Black.Abgr(), oName);
-                winDrawList.AddText(screenxy2 + new Vector2(1, 25) - (tSize / 2), Color.White.Abgr(), oName);
+                winDrawList.AddText(screenxy2 + new Vector2(2, 26) - (tSize / 2), ColorAbgr.Black, oName);
+                winDrawList.AddText(screenxy2 + new Vector2(1, 25) - (tSize / 2), ColorAbgr.White, oName);
                 winDrawList.AddText(screenxy2 + new Vector2(0, 24) - (tSize / 2), p.OwnerColor.Abgr(), oName);
             }
         }

@@ -68,7 +68,7 @@
                         }
 
                         uint clrIn = ImGui.GetColorU32(ImGuiCol.PlotLines);
-                        uint clrOut = Color.Orange.Abgr();
+                        uint clrOut = ColorAbgr.Orange;
                         idlp.PathStroke(clrIn, ImDrawFlags.None, 1f);
 
                         idlp.PathClear();

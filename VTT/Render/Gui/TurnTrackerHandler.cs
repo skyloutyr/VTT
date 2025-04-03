@@ -499,7 +499,7 @@
                     {
                         Lifetime = lt,
                         LifetimeMax = lt,
-                        Color = isSpecial ? Color.Gold.Abgr() : 0xffffffffu,
+                        Color = isSpecial ? ColorAbgr.Gold : 0xffffffffu,
                         Motion = new Vec2(-0.05f + (this.Random.NextSingle() * 0.1f), -0.3f + (this.Random.NextSingle() * 0.1f)),
                         RelativePosition = new Vec2(bgPadding.X + ((this.Random.NextSingle() * bgSize.X) - (bgPadding.X * 2)), bgSize.Y),
                         ScaleMultiplier = isSpecial ? 0.5f : 0.8f + (this.Random.NextSingle() * 0.4f),

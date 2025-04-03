@@ -934,7 +934,7 @@
                         {
                             if (this._mostSevereUploadIssue == AsyncAssetLoader.AssetLoadStatus.Ok)
                             {
-                                ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkGreen.Abgr());
+                                ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.DarkGreen);
                                 ImGui.TextUnformatted("✅");
                                 ImGui.PopStyleColor();
                             }
@@ -942,13 +942,13 @@
                             {
                                 if (this._mostSevereUploadIssue >= AsyncAssetLoader.AssetLoadStatus.ErrorGeneric)
                                 {
-                                    ImGui.PushStyleColor(ImGuiCol.Text, Color.DarkRed.Abgr());
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.DarkRed);
                                     ImGui.TextUnformatted("⮿");
                                     ImGui.PopStyleColor();
                                 }
                                 else
                                 {
-                                    ImGui.PushStyleColor(ImGuiCol.Text, Color.Yellow.Abgr());
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.Yellow);
                                     ImGui.TextUnformatted("⚠");
                                     ImGui.PopStyleColor();
                                 }

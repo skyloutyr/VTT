@@ -98,7 +98,7 @@
             return " "; // Can't be string.Empty due to ImGui not accepting empty strings
         }
 
-        public Color GetBlockColorOr(int index, Color defaultValue) => this.TryGetBlockAt(index, out ChatBlock cb) ? cb.Color : defaultValue;
+        public uint GetBlockColorOr(int index, uint defaultValue) => this.TryGetBlockAt(index, out ChatBlock cb) ? cb.Color.Abgr() : defaultValue;
 
         public bool ImRender(Vector2 winSize, float h, int idx, SimpleLanguage lang)
         {
@@ -113,13 +113,13 @@
                 float scrollMax = scrollMin + h;
                 if (ImGui.GetCursorPosY() + this._cachedHeight + 30 < scrollMin)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 30);
+                    ImGui.Dummy(new Vector2(1, this._cachedHeight + 30));
                     return true;
                 }
 
                 if (scrollMax > float.Epsilon && ImGui.GetCursorPosY() > scrollMax)
                 {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + this._cachedHeight + 30);
+                    ImGui.Dummy(new Vector2(1, this._cachedHeight + 30));
                     return true;
                 }
 
@@ -202,7 +202,7 @@
                 cNow = ImGui.GetCursorPos();
                 ImGui.Dummy(new Vector2(1, 1));
                 ImGui.SetCursorPos(cNow + Vector2.One);
-                ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.Black);
                 ImGui.TextUnformatted(this.SenderDisplayName);
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPos(cNow);
@@ -221,7 +221,7 @@
                 cNow = ImGui.GetCursorPos();
                 ImGui.Dummy(new Vector2(1, 1));
                 ImGui.SetCursorPos(cNow + Vector2.One);
-                ImGui.PushStyleColor(ImGuiCol.Text, Color.Black.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.Black);
                 ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPos(cNow);
@@ -275,6 +275,9 @@
             this.Renderer?.ClearCache();
         }
 
+        private const uint abgrAdmin = 0xff00007d;
+        private const uint abgrObserver = 0xffffab73;
+
         private static readonly Vector2 avatarSize = new Vector2(24, 24);
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "VS 2022 Community bug - erroneous warning generated")]
         public static bool AddAvatar(ImDrawListPtr drawList, Guid clientId, bool injectDummy = true, bool drawMissing = true)
@@ -301,6 +304,8 @@
 
             Vector2 cHere = ImGui.GetCursorScreenPos();
             bool online = false;
+            bool admin = false;
+            bool observer = false;
             if (Client.Instance.ClientInfos.TryGetValue(clientId, out ClientInfo localCI))
             {
                 online = localCI.IsLoggedOn;
@@ -308,12 +313,21 @@
                 {
                     avatarOverrideColor = localCI.Color.Abgr();
                 }
+
+                admin = localCI.IsAdmin;
+                observer = localCI.IsObserver;
+            }
+
+            if (admin || observer)
+            {
+                uint clr = admin ? abgrAdmin : abgrObserver;
+                drawList.AddRectFilled(cHere - new Vector2(2, 2), cHere + new Vector2(6, 6), clr, 4f);
             }
 
             drawList.AddImageRounded(avatarImageIndex, cHere, cHere + avatarSize, Vector2.Zero, Vector2.One, avatarOverrideColor, 15f);
             if (online)
             {
-                drawList.AddRect(cHere, cHere + avatarSize, Color.RoyalBlue.Abgr(), 15f);
+                drawList.AddRect(cHere, cHere + avatarSize, ColorAbgr.RoyalBlue, 15f);
             }
 
             if (injectDummy)

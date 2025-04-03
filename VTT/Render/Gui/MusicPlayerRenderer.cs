@@ -281,7 +281,7 @@
                                     if (this._isDraggingTrack && hover)
                                     {
                                         float deltaY = cPos.Y + 16 - ImGui.GetMousePos().Y;
-                                        uint clrOrange = Color.Orange.Abgr();
+                                        uint clrOrange = ColorAbgr.Orange;
                                         if (deltaY > 0)
                                         {
                                             idlp.AddLine(cPos - new Vector2(0, 2), cPos + new Vector2(380, -2), clrOrange);

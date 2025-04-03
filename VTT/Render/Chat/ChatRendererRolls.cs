@@ -200,8 +200,8 @@
             }
 
             RollContainer[] cons = this._lines[^1];
-            uint outline = Color.Gray.Abgr();
-            uint color = Color.White.Abgr();
+            uint outline = ColorAbgr.Gray;
+            uint color = ColorAbgr.White;
 
             drawList.AddLine(new(imCursor.X + mW - 94, imCursor.Y), new(imCursor.X + mW, imCursor.Y), outline);
             drawList.AddLine(new(imCursor.X + mW, imCursor.Y), new(imCursor.X + mW, imCursor.Y + 28), outline);

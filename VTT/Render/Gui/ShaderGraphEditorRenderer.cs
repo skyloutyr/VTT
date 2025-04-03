@@ -221,7 +221,7 @@
 
                                     if (!n.TemplateID.Equals(ShaderNodeTemplate.ConstructColor4.ID))
                                     {
-                                        uint selfColor = mOverInput ? Color.RoyalBlue.Abgr() : GetColorForType(ni.SelfType).Abgr();
+                                        uint selfColor = mOverInput ? ColorAbgr.RoyalBlue : GetColorForType(ni.SelfType).Abgr();
                                         if (!ni.ConnectedOutput.Equals(Guid.Empty))
                                         {
                                             drawPtr.AddCircleFilled(nSPos + new SVec2(0, yOffset), 5, selfColor);
@@ -231,7 +231,7 @@
                                             drawPtr.AddCircle(nSPos + new SVec2(0, yOffset), 5, selfColor);
                                         }
 
-                                        drawPtr.AddText(nSPos + new SVec2(12, yOffset - 10), Color.White.Abgr(), ni.Name);
+                                        drawPtr.AddText(nSPos + new SVec2(12, yOffset - 10), ColorAbgr.White, ni.Name);
                                     }
                                     else
                                     {
@@ -346,7 +346,7 @@
                                 foreach (NodeOutput no in n.Outputs)
                                 {
                                     bool mOverThisOut = ImGui.IsMouseHoveringRect(nSPos + new SVec2(-5, yOffset - 5), nSPos + new SVec2(5, yOffset + 5));
-                                    uint selfColor = mOverThisOut ? Color.RoyalBlue.Abgr() : GetColorForType(no.SelfType).Abgr();
+                                    uint selfColor = mOverThisOut ? ColorAbgr.RoyalBlue : GetColorForType(no.SelfType).Abgr();
                                     if (mOverThisOut)
                                     {
                                         nOutOver = no;
@@ -363,7 +363,7 @@
                                     }
 
                                     SVec2 ts = ImGuiHelper.CalcTextSize(no.Name);
-                                    drawPtr.AddText(nSPos + new SVec2(-12 - ts.X, yOffset - 10), Color.White.Abgr(), no.Name);
+                                    drawPtr.AddText(nSPos + new SVec2(-12 - ts.X, yOffset - 10), ColorAbgr.White, no.Name);
                                     yOffset += 20;
                                 }
 
@@ -559,8 +559,8 @@
                     SVec2 bl = initialScreen + new SVec2(-4, winSize.Y - 51);
                     uint backClrV4 = ImGui.GetColorU32(ImGuiCol.WindowBg);
                     drawPtr.AddRectFilled(bl, bl + new SVec2(winSize.X, 20), backClrV4);
-                    drawPtr.AddText(bl + new SVec2(32, 0), Color.DarkRed.Abgr(), "⮿");
-                    drawPtr.AddText(bl + new SVec2(50, 0), Color.White.Abgr(), $"{this._shaderErrors.Count}");
+                    drawPtr.AddText(bl + new SVec2(32, 0), ColorAbgr.DarkRed, "⮿");
+                    drawPtr.AddText(bl + new SVec2(50, 0), ColorAbgr.White, $"{this._shaderErrors.Count}");
                     if (ImGui.IsMouseHoveringRect(bl + new SVec2(32, 0), bl + new SVec2(50, 18)))
                     {
                         ImGui.BeginTooltip();
@@ -580,8 +580,8 @@
                         ImGui.EndTooltip();
                     }
 
-                    drawPtr.AddText(bl + new SVec2(100, 0), Color.Yellow.Abgr(), "⚠");
-                    drawPtr.AddText(bl + new SVec2(118, 0), Color.White.Abgr(), $"{this._shaderWarnings.Count}");
+                    drawPtr.AddText(bl + new SVec2(100, 0), ColorAbgr.Yellow, "⚠");
+                    drawPtr.AddText(bl + new SVec2(118, 0), ColorAbgr.White, $"{this._shaderWarnings.Count}");
                     if (ImGui.IsMouseHoveringRect(bl + new SVec2(100, 0), bl + new SVec2(118, 18)))
                     {
                         ImGui.BeginTooltip();
@@ -851,7 +851,7 @@
             uint lineColorAvgFrom = cF.Mix(cT, 0.75f).Abgr();
             if (mOverAny)
             {
-                lineColorFrom = lineColorTo = lineColorAvgFrom = lineColorAvgTo = Color.RoyalBlue.Abgr();
+                lineColorFrom = lineColorTo = lineColorAvgFrom = lineColorAvgTo = ColorAbgr.RoyalBlue;
             }
 
             CubicBezier curve = this.GetCurve(from, to, 0.1f);

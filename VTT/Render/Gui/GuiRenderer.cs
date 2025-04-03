@@ -699,8 +699,8 @@
                     Vector2 winSize = ImGui.GetWindowSize();
                     Vector2 screenPos = ImGui.GetCursorScreenPos();
 
-                    Vector4 winBack = *ImGui.GetStyleColorVec4(ImGuiCol.WindowBg);
-                    Vector4 winBorder = *ImGui.GetStyleColorVec4(ImGuiCol.Border);
+                    uint winBack = ImGui.GetColorU32(ImGuiCol.WindowBg);
+                    uint winBorder = ImGui.GetColorU32(ImGuiCol.Border);
 
                     ImDrawListPtr drawList = ImGui.GetForegroundDrawList();
                     screenPos -= new Vector2((-winSize.X / 2) + 52, 32);
@@ -709,7 +709,7 @@
                         screenPos + new Vector2(96, 0),
                         screenPos + new Vector2(96, 96),
                         screenPos + new Vector2(0, 96),
-                        Extensions.FromVec4(winBack).Abgr()
+                        winBack
                     );
 
                     drawList.AddQuad(
@@ -717,7 +717,7 @@
                         screenPos + new Vector2(96, 0),
                         screenPos + new Vector2(96, 96),
                         screenPos + new Vector2(0, 96),
-                        Extensions.FromVec4(winBorder).Abgr()
+                        winBorder
                     );
 
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(this._inspectedObject.AssetID, AssetType.Model, out AssetPreview ap);

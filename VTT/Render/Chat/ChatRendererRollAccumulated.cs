@@ -33,8 +33,8 @@
         public override void Render(Guid senderId, uint senderColorAbgr)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            uint outline = Color.Gray.Abgr();
-            uint color = this.Container.GetBlockColorOr(0, Color.Black).Abgr();
+            uint outline = ColorAbgr.Gray;
+            uint color = this.Container.GetBlockColorOr(0, ColorAbgr.Black);
 
             float cX = ImGui.GetCursorScreenPos().X;
             float w = 100;

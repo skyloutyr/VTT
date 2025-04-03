@@ -130,21 +130,48 @@
                 float bscX = ImGui.GetCursorPosX();
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 100);
-                if (ImGui.ImageButton("btnChatLinkImage", this.ChatLinkImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
+                if (ImGui.ImageButton("btnChatSearch", this.Search, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
+                {
+                    state.chatSearchPopup = true;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.chat.btn.search.tt"));
+                }
+
+                ImGui.SetCursorPosX(bscX);
+                ImGui.SetCursorPosY(cSize.Y - 66);
+                if (ImGui.ImageButton("btnChatLinkImage", this.ChatLinkImage, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
                 {
                     state.linkPopup = true;
                 }
 
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.chat.btn.link_image.tt"));
+                }
+
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cSize.Y - 56);
-                if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f)))
+                ImGui.SetCursorPosY(cSize.Y - 34);
+                if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
                 {
                     state.rollPopup = true;
                 }
 
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.chat.btn.roll.tt"));
+                }
+
                 ImGui.SetCursorPosX(bscX);
-                ImGui.SetCursorPosY(cSize.Y - 12);
-                sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x36, new Vector2(-0.6f, -0.5f), new Vector2(1.6f, 1.5f));
+                ImGui.SetCursorPosY(cSize.Y - 2);
+                sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.chat.btn.send.tt"));
+                }
+
                 ImGui.SetCursorPosY(32);
                 Vector4 darkGray = ((Vector4)Color.DimGray);
                 Vector4 imDefault = (*ImGui.GetStyleColorVec4(ImGuiCol.ChildBg));

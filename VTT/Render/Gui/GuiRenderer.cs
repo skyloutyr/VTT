@@ -210,6 +210,7 @@
         private static readonly Vector2 Vec320x70 = new(320, 70);
         private static readonly Vector2 Vec48x60 = new Vector2(48, 60);
         private static readonly Vector2 Vec48x36 = new Vector2(48, 36);
+        private static readonly Vector2 Vec48x24 = new Vector2(48, 24);
 
         private static readonly Vector4 ImColBlack = new Vector4(0, 0, 0, 1);
 

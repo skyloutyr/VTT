@@ -152,15 +152,19 @@
             }
         }
 
+        public static readonly Color CritColor = Color.LightGreen;
+        public static readonly Color Nat1Color = Color.Red;
+        public static readonly Color CritAndNat1Color = Color.LightBlue;
+
         public static ChatBlock ParseExpression(string exp)
         {
             if (TryRunExpression(exp, out object result, out RollExpressionEvaluator evaluator))
             {
                 Color rollColor = evaluator.ResultFlags switch
                 {
-                    RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
-                    RollResultFlags.HadMaximumValue => Color.LightGreen,
-                    RollResultFlags.HadMinimumValue => Color.Red,
+                    RollResultFlags.HadMaximumAndMinimumValue => CritAndNat1Color,
+                    RollResultFlags.HadMaximumValue => CritColor,
+                    RollResultFlags.HadMinimumValue => Nat1Color,
                     _ => Color.White
                 };
 
@@ -450,9 +454,9 @@
                     {
                         Color rollColor = evaluator.ResultFlags switch
                         {
-                            RollResultFlags.HadMaximumAndMinimumValue => Color.LightBlue,
-                            RollResultFlags.HadMaximumValue => Color.LightGreen,
-                            RollResultFlags.HadMinimumValue => Color.Red,
+                            RollResultFlags.HadMaximumAndMinimumValue => CritAndNat1Color,
+                            RollResultFlags.HadMaximumValue => CritColor,
+                            RollResultFlags.HadMinimumValue => Nat1Color,
                             _ => Color.White
                         };
 

@@ -53,6 +53,7 @@
         public List<string> dropEvents = new List<string>();
         public MapObject overrideObjectOpenRightClickContextMenu;
         public bool chatHovered = false;
+        public bool chatSearchPopup = false;
 
         public void Reset()
         {
@@ -109,6 +110,7 @@
 
             this.overrideObjectOpenRightClickContextMenu = null;
             this.chatHovered = false;
+            this.chatSearchPopup = false;
         }
     }
 }

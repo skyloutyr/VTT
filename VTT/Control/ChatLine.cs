@@ -194,7 +194,7 @@
                 {
                     string time = this.SendTime.ToString("HH:mm:ss");
                     float ocpx = ImGui.GetCursorPosX();
-                    ImGui.SetCursorPosX(350 - ImGui.CalcTextSize(time).X);
+                    ImGui.SetCursorPosX(winSize.X - 12 - ImGui.CalcTextSize(time).X);
                     ImGui.Text(time);
                     if (ImGui.IsItemHovered())
                     {
@@ -687,6 +687,232 @@
                     this._numTotalReactions -= 1;
                 }
             }
+        }
+    }
+
+    public class ChatSearchCollection : ISerializable
+    {
+        public Guid ID { get; set; }
+        public bool IsServer { get; set; }
+
+        public string SearchQuery { get; set; } = string.Empty;
+        public Guid SenderQuery { get; set; } = Guid.Empty;
+        public Guid RecepientQuery { get; set; } = Guid.Empty;
+        public DateTime TimeFromQuery { get; set; } = DateTime.UnixEpoch;
+        public DateTime TimeToQuery { get; set; } = DateTime.MaxValue;
+        public SearchQueryFlags Flags { get; set; } = SearchQueryFlags.MatchAll;
+
+        public int ServerLastSearchPosition { get; set; }
+        public bool ClientInvalidateCache { get; set; }
+        public bool ClientServerHadNoMoreToSend { get; set; }
+
+        private readonly List<ChatLine> _lines = new List<ChatLine>();
+        public readonly object chatLinesLock = new object();
+
+        public void Clear()
+        {
+            lock (this.chatLinesLock)
+            {
+                this._lines.Clear();
+            }
+        }
+
+        public void ReceiveLineList(List<ChatLine> lines)
+        {
+            lock (this.chatLinesLock)
+            {
+                this._lines.AddRange(lines);
+            }
+
+            if (!this.IsServer)
+            {
+                this.ClientServerHadNoMoreToSend = lines.Count == 0;
+            }
+
+            this.ClientInvalidateCache = true;
+        }
+
+        public IEnumerable<ChatLine> EnumerateLinesUnsafe() => this._lines;
+
+        public void NotifyOfQueryParameterChanged(bool fullInvalidate = false)
+        {
+            lock (this.chatLinesLock)
+            {
+                this._lines.Clear();
+            }
+
+            if (!this.IsServer)
+            {
+                this.ClientServerHadNoMoreToSend = false;
+                new PacketChatQuery() { QueryID = this.ID, QueryData = this.Serialize(), ConstructNewQuery = fullInvalidate }.Send();
+                this.RequestMoreLines();
+            }
+        }
+
+        public void RequestMoreLines()
+        {
+            if (!this.IsServer)
+            {
+                new PacketChatQueryLines() { QueryID = this.ID }.Send();
+            }
+        }
+
+        public bool Matches(ChatLine cl)
+        {
+            if (!this.SenderQuery.IsEmpty() && !Guid.Equals(this.SenderQuery, cl.SenderID))
+            {
+                return false;
+            }
+
+            if (!this.RecepientQuery.IsEmpty() && !Guid.Equals(this.RecepientQuery, cl.DestID))
+            {
+                return false;
+            }
+
+            if (cl.SendTime < this.TimeFromQuery || cl.SendTime > this.TimeToQuery)
+            {
+                return false;
+            }
+
+            if (this.Flags == SearchQueryFlags.None)
+            {
+                return false;
+            }
+
+            bool clIsBasicText = cl.Type == ChatLine.RenderType.Line;
+            bool clIsSpecialRenderer = !clIsBasicText;
+            bool clHasRolls = false;
+            bool clHasText = false;
+            bool clHasCrits = false;
+            bool clHasNat1s = false;
+            bool clHasRollsNonCrits = false;
+            foreach (ChatBlock block in cl.Blocks)
+            {
+                if (block.RollContents != ChatBlockExpressionRollContents.None)
+                {
+                    clHasRolls = true;
+                    Color c = block.Color;
+                    if (c.Equals(ChatParser.CritColor))
+                    {
+                        clHasCrits = true;
+                    }
+                    else
+                    {
+                        if (c.Equals(ChatParser.Nat1Color))
+                        {
+                            clHasNat1s = true;
+                        }
+                        else
+                        {
+                            if (c.Equals(ChatParser.CritAndNat1Color))
+                            {
+                                clHasCrits = clHasNat1s = true;
+                            }
+                            else
+                            {
+                                clHasRollsNonCrits = true;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    clHasText = true;
+                }
+            }
+
+            if (clHasRolls && !this.Flags.HasFlag(SearchQueryFlags.HasRolls))
+            {
+                return false;
+            }
+
+            if (clHasText && !this.Flags.HasFlag(SearchQueryFlags.HasText))
+            {
+                return false;
+            }
+
+            if (clIsBasicText && !this.Flags.HasFlag(SearchQueryFlags.IsBasicText))
+            {
+                return false;
+            }
+
+            if (clIsSpecialRenderer && !this.Flags.HasFlag(SearchQueryFlags.IsSpecialRenderer))
+            {
+                return false;
+            }
+
+            if (clHasRolls && !this.Flags.HasFlag(SearchQueryFlags.HasRolls))
+            {
+                return false;
+            }
+
+            if (clHasNat1s && !this.Flags.HasFlag(SearchQueryFlags.HasNat1s))
+            {
+                return false;
+            }
+
+            if (clHasCrits && !this.Flags.HasFlag(SearchQueryFlags.HasCrits))
+            {
+                return false;
+            }
+
+            if (clHasRollsNonCrits && !this.Flags.HasFlag(SearchQueryFlags.HasRollsOutsideOfCritsAndNat1s))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(this.SearchQuery))
+            {
+                string total = cl.GetFullText();
+                if (!total.Contains(this.SearchQuery, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public DataElement Serialize()
+        {
+            // Assume ID already sent in packet
+            DataElement ret = new DataElement();
+            ret.SetString("SearchQuery", this.SearchQuery);
+            ret.SetGuid("SenderQuery", this.SenderQuery);
+            ret.SetGuid("RecepientQuery", this.RecepientQuery);
+            ret.SetDateTime("TimeFromQuery", this.TimeFromQuery);
+            ret.SetDateTime("TimeToQuery", this.TimeToQuery);
+            ret.SetEnum("Flags", this.Flags);
+
+            return ret;
+        }
+
+        public void Deserialize(DataElement e)
+        {
+            this.SearchQuery = e.GetString("SearchQuery", string.Empty);
+            this.SenderQuery = e.GetGuid("SenderQuery", Guid.Empty);
+            this.RecepientQuery = e.GetGuid("RecepientQuery", Guid.Empty);
+            this.TimeFromQuery = e.GetDateTime("TimeFromQuery", DateTime.UnixEpoch);
+            this.TimeToQuery = e.GetDateTime("TimeToQuery", DateTime.MaxValue);
+            this.Flags = e.GetEnum("Flags", SearchQueryFlags.MatchAll);
+        }
+
+        [Flags]
+        public enum SearchQueryFlags : uint
+        {
+            None = 0,
+            HasRolls = 1,
+            HasText = 2,
+            IsBasicText = 4,
+            IsSpecialRenderer = 8,
+            HasCrits = 16,
+            HasNat1s = 32,
+            HasRollsOutsideOfCritsAndNat1s = 64,
+
+            OnlyBasicText = HasText | IsBasicText,
+            OnlySpecialRenderer = MatchAll & ~IsBasicText,
+
+            MatchAll = HasRolls | HasText | IsBasicText | IsSpecialRenderer | HasCrits | HasNat1s | HasRollsOutsideOfCritsAndNat1s
         }
     }
 }

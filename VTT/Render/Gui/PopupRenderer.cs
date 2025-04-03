@@ -950,12 +950,159 @@
 
                 ImGui.EndPopup();
             }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.chat_search") + "###ChatSearch", ref this._chatQueryPopupOpen))
+            {
+                string searchStr = this._currentChatSearchCollection.SearchQuery;
+                if (ImGui.InputText("##SearchQueryPrimary", ref searchStr, byte.MaxValue, ImGuiInputTextFlags.EnterReturnsTrue))
+                {
+                    this._currentChatSearchCollection.SearchQuery = searchStr;
+                    this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                }
+
+                DateTime dt = this._currentChatSearchCollection.TimeFromQuery;
+                if (ImGuiDatePicker.DatePicker(lang.Translate("ui.popup.chat_search.date_from") + "###DateFrom", ref dt, lang, false, 0))
+                {
+                    this._currentChatSearchCollection.TimeFromQuery = dt;
+                    this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                }
+
+                dt = this._currentChatSearchCollection.TimeToQuery;
+                if (ImGuiDatePicker.DatePicker(lang.Translate("ui.popup.chat_search.date_to") + "###DateTo", ref dt, lang, false, 0))
+                {
+                    this._currentChatSearchCollection.TimeFromQuery = dt;
+                    this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                }
+
+                Client.Instance.TryGetClientNamesArray(this._currentChatSearchCollection.SenderQuery, out int id, out string[] names, out Guid[] ids);
+                if (ImGui.Combo(lang.Translate("ui.popup.chat_search.sender") + "###SenderQuery", ref id, names, names.Length))
+                {
+                    this._currentChatSearchCollection.SenderQuery = ids[id];
+                    this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                }
+
+                id = 0;
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    if (Guid.Equals(ids[i], this._currentChatSearchCollection.RecepientQuery))
+                    {
+                        id = i;
+                        break;
+                    }
+                }
+
+                if (ImGui.Combo(lang.Translate("ui.popup.chat_search.recepient") + "###DestQuery", ref id, names, names.Length))
+                {
+                    this._currentChatSearchCollection.RecepientQuery = ids[id];
+                    this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                }
+
+                // Flags...
+                if (ImGui.TreeNode(lang.Translate("ui.popup.chat_search.flags.label")))
+                {
+                    uint flags = (uint)this._currentChatSearchCollection.Flags;
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.rolls") + "###IncludeRolls", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.HasRolls))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.text") + "###IncludeText", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.HasText))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.basic_text") + "###IncludeBasics", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.IsBasicText))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.special") + "###IncludeSpecials", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.IsSpecialRenderer))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.crits") + "###IncludeCrits", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.HasCrits))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.nat1s") + "###IncludeNat1s", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.HasNat1s))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    if (ImGui.CheckboxFlags(lang.Translate("ui.popup.chat_search.flags.non_crits_nat1s") + "###IncludeNonCritNonNat1Rolls", ref flags, (uint)ChatSearchCollection.SearchQueryFlags.HasRollsOutsideOfCritsAndNat1s))
+                    {
+                        this._currentChatSearchCollection.Flags = (ChatSearchCollection.SearchQueryFlags)flags;
+                        this._currentChatSearchCollection.NotifyOfQueryParameterChanged();
+                    }
+
+                    ImGui.TreePop();
+                }
+
+                Vector2 winSize = new Vector2(ImGui.GetContentRegionAvail().X, 320);
+                ImGui.BeginChild("###ChatQueryResults", winSize, ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking);
+                bool needRecache = this._currentChatSearchCollection.ClientInvalidateCache;
+                this._currentChatSearchCollection.ClientInvalidateCache = false;
+                lock (this._currentChatSearchCollection.chatLinesLock)
+                {
+                    foreach (ChatLine cl in this._currentChatSearchCollection.EnumerateLinesUnsafe())
+                    {
+                        if (needRecache)
+                        {
+                            cl.InvalidateCache();
+                        }
+
+                        if (cl.ImRender(winSize - new Vector2(12, 0), winSize.Y, cl.Index, lang))
+                        {
+                            ImGui.Separator();
+                        }
+                    }
+                }
+
+                if (this._currentChatSearchCollection.ClientServerHadNoMoreToSend)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.Red);
+                    ImGui.TextUnformatted(lang.Translate("ui.popup.chat_search.no_more"));
+                    ImGui.PopStyleColor();
+                }
+
+                if (ImGui.Button(lang.Translate("ui.popup.chat_search.request_more") + "###RequestMoreChat", new Vector2(winSize.X, 32)))
+                {
+                    this._currentChatSearchCollection.RequestMoreLines();
+                }
+
+                ImGui.EndChild();
+                ImGui.EndPopup();
+            }
         }
 
+        private ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
         private TextureData.Metadata _editedTextureMetadataCopy;
         private ModelData.Metadata _editedModelMetadataCopy;
         private Vector3 _initialEditedFastLightColor;
         private bool _escDown;
+        private bool _chatQueryPopupOpen;
+
+        public void ReceiveChatSearchQueryData(DataElement e)
+        {
+            this._currentChatSearchCollection.Deserialize(e);
+            this._currentChatSearchCollection.RequestMoreLines(); // If we are here then server told us to redo our query, need more data
+        }
+
+        public void ReceiveChatSearchQueryLines(Guid queryID, List<ChatLine> lines)
+        {
+            if (Guid.Equals(queryID, this._currentChatSearchCollection.ID))
+            {
+                this._currentChatSearchCollection.ReceiveLineList(lines);
+            }
+        }
 
         private unsafe void HandlePopupRequests(GuiState state)
         {
@@ -1092,6 +1239,15 @@
             {
                 this.ShaderEditorRenderer.popupState = true;
                 this.ShaderEditorRenderer.EditedGraph = null;
+            }
+
+            if (state.chatSearchPopup)
+            {
+                this._chatQueryPopupOpen = true;
+                this._currentChatSearchCollection.ID = Client.Instance.ID;
+                this._currentChatSearchCollection.TimeToQuery = DateTime.Now;
+                this._currentChatSearchCollection.NotifyOfQueryParameterChanged(true);
+                ImGui.OpenPopup("###ChatSearch");
             }
         }
     }

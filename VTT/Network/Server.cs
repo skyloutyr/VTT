@@ -57,10 +57,65 @@
 
         public bool NonPersistent { get; set; } = false;
 
+        public ConcurrentDictionary<Guid, ChatSearchCollection> ChatSearchQueries { get; } = new ConcurrentDictionary<Guid, ChatSearchCollection>();
+
         public Server(IPAddress address, int port) : base(address, port)
         {
             Instance = this;
             this.MapsRoot = Path.Combine(IOVTT.ServerDir, "Maps");
+        }
+
+        public List<ChatLine> ProvideChatQueryLines(Guid asker, Guid chatQueryID, int amount)
+        {
+            if (!this.ChatSearchQueries.TryGetValue(chatQueryID, out ChatSearchCollection collection)) // Uh-oh
+            {
+                collection = this.ChatSearchQueries[chatQueryID] = new ChatSearchCollection();
+                collection.IsServer = true;
+                collection.ID = chatQueryID;
+                collection.ServerLastSearchPosition = int.MinValue;
+            }
+
+            // There is no need to lock the chat here as chat is never cleared/lines never removed during server lifetime, only added
+            int searchFrom = collection.ServerLastSearchPosition;
+            if (searchFrom == int.MinValue)
+            {
+                searchFrom = this.ServerChat.Count - 1;
+            }
+
+            List<ChatLine> ret = new List<ChatLine>();
+            while (amount > 0)
+            {
+                if (searchFrom < 0) // Reached the beginning
+                {
+                    break;
+                }
+
+                ChatLine cl = this.ServerChat[searchFrom];
+                if (collection.Matches(cl) && cl.CanSee(asker))
+                {
+                    ret.Add(cl);
+                    --amount;
+                }
+
+                searchFrom -= 1;
+            }
+
+            collection.ServerLastSearchPosition = searchFrom;
+            return ret;
+        }
+
+        public void HandleChatQueryData(Guid chatQueryID, DataElement queryElement, bool isNew)
+        {
+            if (!this.ChatSearchQueries.TryGetValue(chatQueryID, out ChatSearchCollection collection))
+            {
+                collection = this.ChatSearchQueries[chatQueryID] = new ChatSearchCollection();
+                collection.IsServer = true;
+                collection.ID = chatQueryID;
+            }
+
+            collection.ServerLastSearchPosition = int.MinValue;
+            collection.Clear();
+            collection.Deserialize(queryElement);
         }
 
         public string MapsRoot { get; set; }

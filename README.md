@@ -37,7 +37,7 @@
 * Thousands of icons for status effects, with a built-in search bar.
 * Custom health/mana/armour/anything bars for objects, with automatic value calculation for mathematical inputs for ease of use.
 * Journals for storing arbitrary text information.
-* A rich chat system that uses cryptography for random dice rolls, allows up to 10 million rolls (in a single chat message) that are all rolled and delivered within milliseconds, that supports advanced templates (such as attacks, spells, fancy dice rolls and more) and images (including animated gifs)
+* A rich chat system that uses cryptography for random dice rolls, allows up to 1 million rolls (in a single chat message) that are all rolled and delivered within milliseconds, that supports advanced templates (such as attacks, spells, fancy dice rolls and more) and images (including animated gifs)
 * An advanced asset system that supports .glb models and image (.png, .jpeg, .tiff, .gif and similar) sprites. If the required libraries are present on the uploader's side, supports animated images (.webm) too!
 * Skeletal animation support for 3d models.
 * Custom shaders for objects through a powerful node graph editor.
@@ -244,8 +244,10 @@ Additionally, it is possible to manipulate the chat in a more advanced way with 
 * \[r:\] allows recursive block nesting. Anything past the : will be treated as a chat line to be interpreted.
 * \[n:TEXT\] will replace the sender's name in chat with the contents of the block. Mousing over the name will reveal the real sender's name.
 * \[o:GUID\] replicates the effects of the /as command but allows a direct GUID input instead of the object selection.
+* \[i:URL\] specifies an embedded image to be rendered within the chat message (inline if possible). This can be a web URL, or a GUID for a local asset. Texture assets can be drag-n-dropped into the chat window to automatically create this block.
 * \[m:MODE\] specifies the message render mode. This is highly internal and will cause crashes if used improperly, but you are welcome to see the expected message structure in this repo's VSCC integration namespace.
 * You can escape square brackets in chat by putting a backslash \\ before the bracket.
+* A Sound or Texture asset can be drag-n-dropped into the chat window to automatically generate a message that when sent will display the image (in case of a Texture) or a simple sound player (in case of a Sound).
 
 ---
 ## Other Notable Features
@@ -343,4 +345,6 @@ The following command line arguments are available (do not include the square br
 -serverstorage [path]: specifies the file system location for the server. This is the folder where all assets/client info/previews/maps/chat/etc are stored.
 
 -clientstorage [path]: specifies the file system location for the client. This is where the client logs/settings/etc are stored.
+
+-debuggerlogging [true/false]: Explicitly enables (true) or disables (false) logging to an attached debugger.
 ```

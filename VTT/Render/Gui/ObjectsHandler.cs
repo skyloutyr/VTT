@@ -1272,7 +1272,7 @@
                     {
                         if (hasNp)
                         {
-                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + customPadding.Y);
+                            ImGui.Dummy(customPadding);
                         }
 
                         for (int i = 0; i < mo.Bars.Count; i++)

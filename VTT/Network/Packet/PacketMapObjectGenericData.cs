@@ -17,7 +17,7 @@
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
             List<(Guid, Guid, object)> changes = new List<(Guid, Guid, object)>();
-            this.            ContextLogger.Log(LogLevel.Debug, $"Got object data change packet for {this.Data.Count} objects, of type {this.ChangeType}");
+            this.ContextLogger.Log(LogLevel.Debug, $"Got object data change packet for {this.Data.Count} objects, of type {this.ChangeType}");
             foreach ((Map, MapObject, object) d in this.ListObjects())
             {
                 bool hasAccess = true;
@@ -183,6 +183,12 @@
                             d.Item2.Shadow2DLightSourceData = (Vector2)d.Item3;
                             break;
                         }
+
+                        case DataType.DisableNameplateBackground:
+                        {
+                            d.Item2.DisableNameplateBackground = (bool)d.Item3;
+                            break;
+                        }
                     }
 
                     d.Item1.NeedsSave = true;
@@ -227,6 +233,7 @@
                     case DataType.HideSelection:
                     case DataType.IsShadow2DViewport:
                     case DataType.IsShadow2DLightSource:
+                    case DataType.DisableNameplateBackground:
                     {
                         o = br.ReadBoolean();
                         break;
@@ -304,6 +311,7 @@
                     case DataType.HideSelection:
                     case DataType.IsShadow2DViewport:
                     case DataType.IsShadow2DLightSource:
+                    case DataType.DisableNameplateBackground:
                     {
                         bw.Write((bool)d.Item3);
                         break;
@@ -426,7 +434,8 @@
             IsShadow2DViewport,
             Shadow2DViewportData,
             IsShadow2DLightSource,
-            Shadow2DLightSourceData
+            Shadow2DLightSourceData,
+            DisableNameplateBackground
         }
     }
 }

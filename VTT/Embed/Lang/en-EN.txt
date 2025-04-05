@@ -827,3 +827,7 @@ generic.day.4=Thu
 generic.day.5=Fri
 generic.day.6=Sat
 generic.day.7=Sun
+ui.bars.mode.standard=Standard
+ui.bars.mode.compact=Compact
+ui.bars.mode.round=Round
+ui.properties.no_nameplate_bg=Disable Nameplate Background

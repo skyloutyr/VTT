@@ -827,3 +827,7 @@ generic.day.4=Чет
 generic.day.5=Пят
 generic.day.6=Суб
 generic.day.7=Вск
+ui.bars.mode.standard=Стандартная
+ui.bars.mode.compact=Компактная
+ui.bars.mode.round=Круглая
+ui.properties.no_nameplate_bg=Полоса Имени без Фона

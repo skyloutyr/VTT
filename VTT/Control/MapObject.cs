@@ -97,6 +97,7 @@
         public Vector2 Shadow2DViewpointData { get; set; } = new Vector2(6, 12);
         public bool IsShadow2DLightSource { get; set; } = false;
         public Vector2 Shadow2DLightSourceData { get; set; } = new Vector2(6, 12);
+        public bool DisableNameplateBackground { get; set; } = false;
 
         #region Client Data
         public AABox ClientBoundingBox
@@ -205,6 +206,7 @@
             ret.SetVec2("Shadow2DViewpointData", this.Shadow2DViewpointData);
             ret.SetBool("IsShadow2DLightSource", this.IsShadow2DLightSource);
             ret.SetVec2("Shadow2DLightSourceData", this.Shadow2DLightSourceData);
+            ret.SetBool("DisableNameplateBackground", this.DisableNameplateBackground);
             return ret;
         }
 
@@ -266,6 +268,7 @@
             this.Shadow2DViewpointData = e.GetVec2("Shadow2DViewpointData", new Vector2(6, 12));
             this.IsShadow2DLightSource = e.GetBool("IsShadow2DLightSource", false);
             this.Shadow2DLightSourceData = e.GetVec2("Shadow2DLightSourceData", new Vector2(6, 12));
+            this.DisableNameplateBackground = e.GetBool("DisableNameplateBackground", false);
         }
 
         public MapObject Clone()
@@ -304,6 +307,7 @@
             ret.Shadow2DViewpointData = this.Shadow2DViewpointData;
             ret.IsShadow2DLightSource = this.IsShadow2DLightSource;
             ret.Shadow2DLightSourceData = this.Shadow2DLightSourceData;
+            ret.DisableNameplateBackground = this.DisableNameplateBackground;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {
@@ -532,14 +536,16 @@
         public float CurrentValue { get; set; }
         public float MaxValue { get; set; }
         public Color DrawColor { get; set; }
-        public bool Compact { get; set; }
+        public DrawMode RenderMode { get; set; } = DrawMode.Default;
 
         public void Deserialize(DataElement e)
         {
             this.CurrentValue = e.GetSingle("Value");
             this.MaxValue = e.GetSingle("Max");
             this.DrawColor = e.GetColor("Color");
-            this.Compact = e.GetBool("Compact");
+            this.RenderMode = e.Has("DrawMode", DataType.Int)
+                ? e.GetEnum("DrawMode", DrawMode.Default)
+                : e.GetBool("Compact", false) ? DrawMode.Compact : DrawMode.Default;
         }
 
         public DataElement Serialize()
@@ -548,7 +554,7 @@
             ret.SetSingle("Value", this.CurrentValue);
             ret.SetSingle("Max", this.MaxValue);
             ret.SetColor("Color", this.DrawColor);
-            ret.SetBool("Compact", this.Compact);
+            ret.SetEnum("DrawMode", this.RenderMode);
             return ret;
         }
 
@@ -559,7 +565,7 @@
                 CurrentValue = this.CurrentValue,
                 MaxValue = this.MaxValue,
                 DrawColor = this.DrawColor,
-                Compact = this.Compact
+                RenderMode = this.RenderMode
             };
         }
 
@@ -568,6 +574,13 @@
             DisplayBar ret = new DisplayBar();
             ret.Deserialize(de);
             return ret;
+        }
+
+        public enum DrawMode
+        {
+            Default,
+            Compact,
+            Round
         }
     }
 

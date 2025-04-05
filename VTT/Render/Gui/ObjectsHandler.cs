@@ -258,6 +258,11 @@
                             ImGui.EndDisabled();
                         }
 
+                        if (!canEdit)
+                        {
+                            ImGui.BeginDisabled();
+                        }
+
                         bool mIsCrossed = mo.IsCrossedOut;
                         if (ImGui.Checkbox(lang.Translate("ui.properties.crossed") + "###Crossed Out", ref mIsCrossed))
                         {
@@ -272,6 +277,18 @@
                         {
                             this._editedMapObject = mo;
                             state.changeTintColorPopup = true;
+                        }
+
+                        bool mNoNameplateBg = mo.DisableNameplateBackground;
+                        if (ImGui.Checkbox(lang.Translate("ui.properties.no_nameplate_bg") + "###Disable Nameplate Background", ref mNoNameplateBg))
+                        {
+                            os.ForEach(x => x.DisableNameplateBackground = mNoNameplateBg);
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.DisableNameplateBackground, Data = SelectedToPacket3(os, mNoNameplateBg) }.Send();
+                        }
+
+                        if (!canEdit)
+                        {
+                            ImGui.EndDisabled();
                         }
 
                         if (isAdmin)
@@ -335,71 +352,70 @@
 
                         if (ImGui.TreeNode(lang.Translate("ui.bars") + "###Bars"))
                         {
+                            float availX = ImGui.GetContentRegionAvail().X;
                             for (int i = 0; i < mo.Bars.Count; i++)
                             {
-                                DisplayBar db = mo.Bars[i];
-                                float cVal = db.CurrentValue;
-                                float mVal = db.MaxValue;
-                                bool compact = db.Compact;
-                                if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
+                                if (ImGui.BeginChild("##Bar_" + i, new Vector2(availX, 52)))
                                 {
-                                    PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
-                                    pmob.Send();
+                                    DisplayBar db = mo.Bars[i];
+                                    float cVal = db.CurrentValue;
+                                    float mVal = db.MaxValue;
+                                    if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
+                                    {
+                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
+                                        pmob.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
+                                    }
+
+                                    ImGui.SameLine();
+                                    ImGui.PushItemWidth(100);
+                                    if (ImBarInput("##DBValue_" + i, ref cVal, 0, db.MaxValue))
+                                    {
+                                        db.CurrentValue = cVal;
+                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
+                                        pmob.Send();
+                                    }
+
+                                    ImGui.SameLine();
+                                    if (ImBarInput("##DBMax_" + i, ref mVal, 0, float.PositiveInfinity))
+                                    {
+                                        db.MaxValue = mVal;
+                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
+                                        pmob.Send();
+                                    }
+
+                                    ImGui.PopItemWidth();
+                                    ImGui.SameLine();
+                                    if (ImGui.ColorButton("##DBChangeColor_" + i, (Vector4)db.DrawColor))
+                                    {
+                                        this._editedBarIndex = i;
+                                        this._editedMapObject = mo;
+                                        this._editedBarColor = (Vector4)db.DrawColor;
+                                        state.changeColorPopup = true;
+                                    }
+
+                                    string[] modes = new string[] { lang.Translate("ui.bars.mode.standard"), lang.Translate("ui.bars.mode.compact"), lang.Translate("ui.bars.mode.round") };
+                                    int barRenderMode = (int)db.RenderMode;
+                                    if (ImGui.Combo("##DBRenderMode_" + i, ref barRenderMode, modes, modes.Length))
+                                    {
+                                        db.RenderMode = (DisplayBar.DrawMode)barRenderMode;
+                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
+                                        pmob.Send();
+                                    }
                                 }
 
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
-                                }
-
-                                ImGui.SameLine();
-                                ImGui.PushItemWidth(100);
-                                if (ImBarInput("##DBValue_" + i, ref cVal, 0, db.MaxValue))
-                                {
-                                    db.CurrentValue = cVal;
-                                    PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
-                                    pmob.Send();
-                                }
-
-                                ImGui.SameLine();
-                                if (ImBarInput("##DBMax_" + i, ref mVal, 0, float.PositiveInfinity))
-                                {
-                                    db.MaxValue = mVal;
-                                    PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
-                                    pmob.Send();
-                                }
-
-                                ImGui.PopItemWidth();
-                                ImGui.SameLine();
-                                if (ImGui.ColorButton("##DBChangeColor_" + i, (Vector4)db.DrawColor))
-                                {
-                                    this._editedBarIndex = i;
-                                    this._editedMapObject = mo;
-                                    this._editedBarColor = (Vector4)db.DrawColor;
-                                    state.changeColorPopup = true;
-                                }
-
-                                ImGui.SameLine();
-
-                                if (ImGui.Checkbox("##DBCompact_" + i, ref compact))
-                                {
-                                    db.Compact = compact;
-                                    PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
-                                    pmob.Send();
-                                }
-
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.SetTooltip(lang.Translate("ui.bars.compact"));
-                                }
-
+                                ImGui.EndChild();
                             }
 
                             if (ImGui.ImageButton("btnAddBar", this.AddIcon, Vec12x12))
                             {
                                 Random rand = new Random();
                                 Color hsv = (Color)new HSVColor((float)(rand.NextDouble() * 360), 1, 1);
-                                DisplayBar db = new DisplayBar() { CurrentValue = 0, MaxValue = 100, DrawColor = hsv, Compact = true };
+                                DisplayBar db = new DisplayBar() { CurrentValue = 0, MaxValue = 100, DrawColor = hsv, RenderMode = DisplayBar.DrawMode.Default };
                                 PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Add, Index = 0, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
                                 pmob.Send();
                             }
@@ -1219,6 +1235,10 @@
                     bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
                     int h = (renderName ? 32 : 8) + ((renderBars ? mo.Bars.Count : 0) * 16) + (hasNp && !(renderBars && mo.Bars.Count > 0) ? -8 : 0);
                     ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings;
+                    if (mo.DisableNameplateBackground)
+                    {
+                        flags |= ImGuiWindowFlags.NoBackground;
+                    }
 
                     if (renderName)
                     {
@@ -1227,14 +1247,14 @@
 
                     Vector2 customPadding = ImGui.GetStyle().WindowPadding;
                     ImGui.SetNextWindowPos(new Vector2(screen.X - (tX / 2), screen.Y - h));
-                    ImGui.SetNextWindowSize(new Vector2(tX, h + (hasNp ? customPadding.Y : 0)));
+                    ImGui.SetNextWindowSizeConstraints(new Vector2(tX, 0), new Vector2(float.MaxValue, float.MaxValue));
                     if (hasNp)
                     {
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
                     }
 
-                    ImGui.Begin("Overlay_" + mo.ID.ToString(), flags);
+                    ImGui.Begin("Overlay_" + mo.ID.ToString(), flags | ImGuiWindowFlags.AlwaysAutoResize);
                     if (hasNp)
                     {
                         if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
@@ -1275,63 +1295,154 @@
                             ImGui.Dummy(customPadding);
                         }
 
+                        bool prevWasRound = false;
+                        float penX = 0;
                         for (int i = 0; i < mo.Bars.Count; i++)
                         {
                             DisplayBar db = mo.Bars[i];
                             float mW = MathF.Max(112, tX - 16);
-                            if (!db.Compact)
+                            Vector2 cNow = ImGui.GetCursorPos();
+                            string dbText = db.CurrentValue + "/" + db.MaxValue;
+                            Vector2 dbTextSize = ImGui.CalcTextSize(dbText);
+                            switch (db.RenderMode)
                             {
-                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
-                                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2f);
-                                float cYPreBar = ImGui.GetCursorPosY();
-                                ImGui.Dummy(new(0, cYPreBar + 16));
-
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
-                                ImGui.SetCursorPosY(cYPreBar);
-                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 12), string.Empty);
-                                ImGui.PopStyleVar();
-
-                                float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
-                                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 0, 0, 1));
-                                if (Client.Instance.Settings.TextThickDropShadow)
+                                case DisplayBar.DrawMode.Default:
                                 {
-                                    for (int j = 0; j < 4; ++j)
+                                    prevWasRound = false;
+                                    penX = 0;
+                                    ImGui.Dummy(new(0, 16));
+                                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
+                                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2f);
+
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
+                                    ImGui.SetCursorPosY(cNow.Y);
+                                    ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 12), string.Empty);
+                                    ImGui.PopStyleVar();
+
+                                    float tW = dbTextSize.X;
+                                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 0, 0, 1));
+                                    if (Client.Instance.Settings.TextThickDropShadow)
                                     {
-                                        ImGui.SetCursorPosY(cYPreBar - 5 + ((j & 1) << 1));
-                                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
-                                        ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
+                                        for (int j = 0; j < 4; ++j)
+                                        {
+                                            ImGui.SetCursorPosY(cNow.Y - 5 + ((j & 1) << 1));
+                                            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                                            ImGui.Text(dbText);
+                                        }
                                     }
+                                    else
+                                    {
+                                        ImGui.SetCursorPosY(cNow.Y - 3);
+                                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) + 1);
+                                        ImGui.Text(dbText);
+                                    }
+
+                                    ImGui.PopStyleColor();
+                                    ImGui.SetCursorPosY(cNow.Y - 4);
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
+                                    ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                                    ImGui.Text(dbText);
+                                    ImGui.PopStyleColor();
+                                    ImGui.SetCursorPosY(cNow.Y + 16);
+
+                                    ImGui.PopStyleColor();
+                                    break;
                                 }
-                                else
+
+                                case DisplayBar.DrawMode.Compact:
                                 {
-                                    ImGui.SetCursorPosY(cYPreBar - 3);
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) + 1);
-                                    ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
+                                    prevWasRound = false;
+                                    penX = 0;
+                                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
+                                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5f);
+                                    ImGui.SetCursorPosY(cNow.Y - 7);
+                                    float tW = dbTextSize.X;
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW + (hasNp ? customPadding.X : 0));
+                                    ImGui.Text(dbText);
+                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
+                                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
+                                    ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 4));
+                                    ImGui.PopStyleVar();
+                                    ImGui.PopStyleColor();
+                                    break;
                                 }
 
-                                ImGui.PopStyleColor();
-                                ImGui.SetCursorPosY(cYPreBar - 4);
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
-                                ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
-                                ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
-                                ImGui.PopStyleColor();
-                                ImGui.SetCursorPosY(cYPreBar + 16);
+                                case DisplayBar.DrawMode.Round:
+                                {
+                                    if (prevWasRound)
+                                    {
+                                        if (penX + 56 > tX)
+                                        {
+                                            penX = 0;
+                                        }
+                                        else
+                                        {
+                                            ImGui.SetCursorPos(cNow - new Vector2(-penX, 48));
+                                            cNow = ImGui.GetCursorPos();
+                                        }
+                                    }
 
-                                ImGui.PopStyleColor();
-                            }
-                            else
-                            {
-                                ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
-                                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5f);
-                                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 7);
-                                float tW = ImGuiHelper.CalcTextSize(db.CurrentValue + "/" + db.MaxValue).X;
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW + (hasNp ? customPadding.X : 0));
-                                ImGui.Text(db.CurrentValue + "/" + db.MaxValue);
-                                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
-                                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
-                                ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 4));
-                                ImGui.PopStyleVar();
-                                ImGui.PopStyleColor();
+                                    prevWasRound = true;
+                                    penX += 56;
+                                    ImGui.Dummy(new Vector2(56, 48));
+                                    ImGui.SetCursorPos(cNow);
+                                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                                    Vector2 dCHere = ImGui.GetCursorScreenPos();
+                                    uint clrEmpty = ImGui.GetColorU32(ImGuiCol.FrameBg);
+                                    Vector2 center = dCHere + new Vector2(28, 24);
+                                    drawList.AddCircleFilled(center, 24, clrEmpty);
+                                    float progress = db.CurrentValue / db.MaxValue;
+                                    if (float.IsNaN(progress))
+                                    {
+                                        progress = 0;
+                                    }
+
+                                    float angleStep = MathF.PI * 2 / 32f;
+                                    float angleNeeded = MathF.PI * 2 * progress;
+                                    if (progress > 0)
+                                    {
+                                        drawList.PathLineTo(center);
+                                        for (int k = 0; k <= 32; ++k)
+                                        {
+                                            bool stopIterHere = false;
+                                            float angleHere = angleStep * k;
+                                            if (angleHere >= angleNeeded)
+                                            {
+                                                angleHere = angleNeeded;
+                                                stopIterHere = true;
+                                            }
+
+                                            Vector2 v = new Vector2(-MathF.Sin(angleHere), MathF.Cos(angleHere)) * 24;
+                                            drawList.PathLineTo(center + v);
+                                            if (stopIterHere)
+                                            {
+                                                break;
+                                            }
+                                        }
+
+                                        drawList.PathFillConvex(db.DrawColor.Abgr());
+                                        drawList.PathClear();
+                                        drawList.AddCircleFilled(center, 12, clrEmpty);
+                                    }
+
+                                    if (Client.Instance.Settings.TextThickDropShadow)
+                                    {
+                                        for (int j = 0; j < 4; ++j)
+                                        {
+                                            drawList.AddText(center - (dbTextSize * 0.5f) + new Vector2(-1 + ((j & 1) * 2), -1 + ((j >> 1) * 2)), 0xff000000, dbText);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        drawList.AddText(center - (dbTextSize * 0.5f) + Vector2.One, 0xff000000, dbText);
+                                    }
+
+                                    drawList.AddText(center - (dbTextSize * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), dbText);
+
+                                    ImGui.SetCursorPosY(cNow.Y + 48);
+                                    ImGui.SetCursorPosX(0);
+                                    break;
+                                }
                             }
                         }
                     }

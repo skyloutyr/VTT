@@ -69,15 +69,16 @@
                             if (aref != null)
                             {
                                 musicName = aref.Name;
+                                sMax = (float)(aref.Meta?.SoundInfo?.TotalDuration ?? float.NaN);
                             }
                             else
                             {
-                                musicName = !string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim())
+                                musicName = !string.IsNullOrEmpty((a?.Sound?.Meta?.SoundAssetName ?? string.Empty).Trim())
                                     ? a.Sound.Meta.SoundAssetName
                                     : lang.Translate("ui.music_player.name_unknown", d.Item1.ToString());
-                            }
 
-                            sMax = (float)(aref.Meta?.SoundInfo?.TotalDuration ?? float.NaN);
+                                sMax = (float)(a?.Sound?.Meta?.TotalDuration ?? float.NaN);
+                            }
                         }
                         else
                         {
@@ -233,7 +234,7 @@
                                         }
                                         else
                                         {
-                                            if (!string.IsNullOrEmpty(a?.Sound?.Meta?.SoundAssetName?.Trim()))
+                                            if (!string.IsNullOrEmpty((a?.Sound?.Meta?.SoundAssetName ?? string.Empty).Trim()))
                                             {
                                                 soundName = a.Sound.Meta.SoundAssetName;
                                             }

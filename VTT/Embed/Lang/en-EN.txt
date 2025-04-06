@@ -1,4 +1,5 @@
-﻿menu.join=Join
+﻿identifier=English (International)
+menu.join=Join
 menu.host=Host
 menu.settings=Settings
 menu.quit=Quit

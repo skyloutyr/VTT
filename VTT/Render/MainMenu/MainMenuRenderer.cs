@@ -1144,14 +1144,21 @@
 
                 if (ImGui.TreeNode(lang.Translate("menu.settings.category.language") + "###Language & Accessibility"))
                 {
-                    string[] langs = { lang.Translate("menu.settings.language.en-EN"), lang.Translate("menu.settings.language.ru-RU") };
-                    string[] actualLangs = { "en-EN", "ru-RU" };
-                    int selected = Array.IndexOf(actualLangs, Client.Instance.Settings.Language ?? "en-EN");
-                    if (ImGui.Combo(lang.Translate("menu.settings.language") + "###Language", ref selected, langs, langs.Length))
+                    string[] identifiers = new string[Localisation.AllLocales.Count]; 
+                    string[] locales = new string[Localisation.AllLocales.Count];
+                    for (int i = 0; i < Localisation.AllLocales.Count; i++)
                     {
-                        Client.Instance.Settings.Language = actualLangs[selected];
+                        SimpleLanguage val = Localisation.AllLocales[i];
+                        identifiers[i] = val.Identifier;
+                        locales[i] = val.Locale;
+                    }
+
+                    int selected = Math.Max(0, Array.IndexOf(locales, Client.Instance.Settings.Language ?? "en-EN"));
+                    if (ImGui.Combo(lang.Translate("menu.settings.language") + "###Language", ref selected, identifiers, identifiers.Length))
+                    {
+                        Client.Instance.Settings.Language = locales[selected];
                         Client.Instance.Settings.Save();
-                        lang.LoadFile(actualLangs[selected]);
+                        Client.Instance.Lang = Localisation.SwitchLanguage(locales[selected]);
                     }
 
                     float mSensitivity = Client.Instance.Settings.Sensitivity;

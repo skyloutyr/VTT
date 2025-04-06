@@ -1,26 +1,37 @@
 ﻿namespace VTT.Util
 {
     using System.Collections.Generic;
+    using System.IO;
 
     public class SimpleLanguage
     {
         public Dictionary<string, string> Language { get; } = new Dictionary<string, string>();
 
-        public void LoadFile(string fName)
-        {
-            fName = "VTT.Embed.Lang." + fName + ".txt";
-            bool exists = IOVTT.DoesResourceExist(fName);
-            if (!exists)
-            {
-                fName = "VTT.Embed.Lang.en-EN.txt";
-            }
+        public string Locale { get; }
+        public bool IsDefault { get; }
+        public bool Loaded { get; set; }
+        public string Identifier { get; set; }
 
-            this.Load(IOVTT.ResourceToString(fName));
+        public SimpleLanguage(string identifier, bool isDefault = false) 
+        { 
+            this.Locale = identifier;
+            this.IsDefault = isDefault;
         }
 
-        public void Load(string contents)
+        public void LoadEmbeddedInformation()
         {
-            this.Language.Clear();
+            string fName = $"VTT.Embed.Lang.{this.Locale}.txt";
+            Stream s = IOVTT.ResourceToStream(fName);
+            if (s != null)
+            {
+                using StreamReader sr = new StreamReader(s);
+                this.LoadData(sr.ReadToEnd());
+                s.Dispose();
+            }
+        }
+
+        public void LoadData(string contents)
+        {
             foreach (string line in contents.Split('\n'))
             {
                 int kIdx = line.IndexOf('=');
@@ -33,7 +44,9 @@
             }
         }
 
-        public string Translate(string sIn) => this.Language.TryGetValue(sIn, out string sVal) ? sVal : sIn;
-        public string Translate(string sIn, params object[] format) => this.Language.TryGetValue(sIn, out string sVal) ? string.Format(sVal, format) : sIn;
+        public void Unload() => this.Language.Clear();
+
+        public string Translate(string sIn) => this.Language.TryGetValue(sIn, out string sVal) ? sVal : this.IsDefault ? sIn : Localisation.English.Translate(sIn);
+        public string Translate(string sIn, params object[] format) => this.Language.TryGetValue(sIn, out string sVal) ? string.Format(sVal, format) : this.IsDefault ? sIn : Localisation.English.Translate(sIn, format);
     }
 }

@@ -36,7 +36,7 @@
         public bool IsObserver { get; set; }
         public Logger Logger { get; set; }
 
-        public SimpleLanguage Lang { get; } = new SimpleLanguage();
+        public SimpleLanguage Lang { get; set; }
         public AppVersion ClientVersion { get; set; }
         public NetClient NetClient { get; set; }
         public bool Connected => this.NetClient?.IsConnected ?? false;
@@ -94,12 +94,8 @@
             this.Logger.Log(LogLevel.Info, "Self-assigned id is " + this.ID.ToString());
             this.Settings = ClientSettings.Load();
             this.LoadVersion();
-            if (this.Settings.Sensitivity is < 0.1f or > 10f)
-            {
-                this.Settings.Sensitivity = 1.0f;
-            }
-
-            this.Lang.LoadFile(this.Settings.Language ?? "en-EN");
+            Localisation.GatherAll();
+            this.Lang = Localisation.SwitchLanguage(this.Settings.Language);
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ShaderNodeTemplate).TypeHandle);
             this.Frontend = new ClientWindow();
         }
@@ -127,10 +123,15 @@
                         File.WriteAllText(fPath, contents);
                         this.ClientVersion = JsonConvert.DeserializeObject<AppVersion>(contents);
                     }
+                    else
+                    {
+                        this.ClientVersion = new AppVersion() { Version = Program.Version };
+                    }
                 }
                 catch (Exception e)
                 {
                     this.Logger.Exception(LogLevel.Error, e);
+                    this.ClientVersion = new AppVersion() { Version = Program.Version };
                 }
             }
         }
@@ -818,7 +819,13 @@
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
             try
             {
-                return JsonConvert.DeserializeObject<ClientSettings>(File.ReadAllText(expectedLocation));
+                ClientSettings settings = JsonConvert.DeserializeObject<ClientSettings>(File.ReadAllText(expectedLocation));
+                if (settings.Sensitivity is < 0.1f or > 10f)
+                {
+                    settings.Sensitivity = 1.0f;
+                }
+
+                return settings;
             }
             catch
             {

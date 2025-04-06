@@ -1,4 +1,5 @@
-﻿menu.join=Присоединиться
+﻿identifier=Русский (Россия)
+menu.join=Присоединиться
 menu.host=Создать
 menu.settings=Настройки
 menu.quit=Выйти

@@ -355,23 +355,11 @@
                             float availX = ImGui.GetContentRegionAvail().X;
                             for (int i = 0; i < mo.Bars.Count; i++)
                             {
-                                if (ImGui.BeginChild("##Bar_" + i, new Vector2(availX, 52)))
+                                if (ImGui.BeginChild("##Bar_" + i, new Vector2(280, 64), ImGuiChildFlags.Borders))
                                 {
                                     DisplayBar db = mo.Bars[i];
                                     float cVal = db.CurrentValue;
                                     float mVal = db.MaxValue;
-                                    if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
-                                    {
-                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
-                                        pmob.Send();
-                                    }
-
-                                    if (ImGui.IsItemHovered())
-                                    {
-                                        ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
-                                    }
-
-                                    ImGui.SameLine();
                                     ImGui.PushItemWidth(100);
                                     if (ImBarInput("##DBValue_" + i, ref cVal, 0, db.MaxValue))
                                     {
@@ -396,6 +384,18 @@
                                         this._editedMapObject = mo;
                                         this._editedBarColor = (Vector4)db.DrawColor;
                                         state.changeColorPopup = true;
+                                    }
+
+                                    ImGui.SameLine();
+                                    if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
+                                    {
+                                        PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
+                                        pmob.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
                                     }
 
                                     string[] modes = new string[] { lang.Translate("ui.bars.mode.standard"), lang.Translate("ui.bars.mode.compact"), lang.Translate("ui.bars.mode.round") };
@@ -1233,7 +1233,56 @@
                     float tX = nS;
                     tX = MathF.Max(128, tX + 16);
                     bool hasNp = mo.HasCustomNameplate && mo.CustomNameplateID != Guid.Empty;
-                    int h = (renderName ? 32 : 8) + ((renderBars ? mo.Bars.Count : 0) * 16) + (hasNp && !(renderBars && mo.Bars.Count > 0) ? -8 : 0);
+                    Vector2 customPadding = ImGui.GetStyle().WindowPadding;
+                    int barsHeight = 0;
+                    bool layoutgenPrevBarWasInline = false;
+                    float layoutgenPenX = 0;
+                    for (int i = 0; i < mo.Bars.Count; i++)
+                    {
+                        DisplayBar db = mo.Bars[i];
+                        switch (db.RenderMode)
+                        {
+                            case DisplayBar.DrawMode.Default:
+                            {
+                                layoutgenPrevBarWasInline = false;
+                                layoutgenPenX = 0;
+                                barsHeight += 16;
+                                break;
+                            }
+
+                            case DisplayBar.DrawMode.Compact:
+                            {
+                                layoutgenPrevBarWasInline = false;
+                                layoutgenPenX = 0;
+                                barsHeight += 16;
+                                break;
+                            }
+
+                            case DisplayBar.DrawMode.Round:
+                            {
+                                if (layoutgenPrevBarWasInline)
+                                {
+                                    if (layoutgenPenX + 56 > tX)
+                                    {
+                                        layoutgenPenX = 0;
+                                        barsHeight += 48;
+                                    }
+                                }
+                                else
+                                {
+                                    layoutgenPenX = 0;
+                                    barsHeight += 48;
+                                }
+
+
+                                layoutgenPenX += 56;
+                                layoutgenPrevBarWasInline = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    int h = (renderName ? 32 : 8) + barsHeight + (hasNp && !(renderBars && mo.Bars.Count > 0) ? -8 : 0);
                     ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings;
                     if (mo.DisableNameplateBackground)
                     {
@@ -1245,7 +1294,6 @@
                         RenderStatusEffects(mo, screen, tX);
                     }
 
-                    Vector2 customPadding = ImGui.GetStyle().WindowPadding;
                     ImGui.SetNextWindowPos(new Vector2(screen.X - (tX / 2), screen.Y - h));
                     ImGui.SetNextWindowSizeConstraints(new Vector2(tX, 0), new Vector2(float.MaxValue, float.MaxValue));
                     if (hasNp)

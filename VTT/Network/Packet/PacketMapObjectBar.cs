@@ -90,7 +90,7 @@
                         {
                             case Action.Add:
                             {
-                                mo.Bars.Add(this.Bar);
+                                Client.Instance.DoTask(() => mo.Bars.Add(this.Bar));
                                 break;
                             }
 
@@ -101,11 +101,11 @@
                                 {
                                     if (this.BarAction == Action.Delete)
                                     {
-                                        mo.Bars.RemoveAt(this.Index);
+                                        Client.Instance.DoTask(() => mo.Bars.RemoveAt(this.Index));
                                     }
                                     else
                                     {
-                                        mo.Bars[this.Index] = this.Bar;
+                                        Client.Instance.DoTask(() => mo.Bars[this.Index] = this.Bar);
                                     }
                                 }
                                 else

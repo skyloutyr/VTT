@@ -687,14 +687,14 @@
                         this.FrameState.inspectPopup = true;
                     }
 
-                    if (ImGui.BeginMenu(lang.Translate("ui.popup.object_actions.link_to_chat" + "###LinkToChat")))
+                    if (ImGui.BeginMenu(lang.Translate("ui.popup.object_actions.link_to_chat") + "###LinkToChat"))
                     {
-                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.no_bars" + "###WithoutBars")))
+                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.no_bars") + "###WithoutBars"))
                         {
                             ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
                         }
 
-                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.yes_bars" + "###WithBars")))
+                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.yes_bars") + "###WithBars"))
                         {
                             ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
                         }

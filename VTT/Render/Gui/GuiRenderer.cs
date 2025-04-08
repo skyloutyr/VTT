@@ -15,6 +15,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Chat;
     using VTT.Render.MainMenu;
     using VTT.Util;
 
@@ -685,6 +686,22 @@
                         this._inspectedObject = mouseOver;
                         this.FrameState.inspectPopup = true;
                     }
+
+                    if (ImGui.BeginMenu(lang.Translate("ui.popup.object_actions.link_to_chat" + "###LinkToChat")))
+                    {
+                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.no_bars" + "###WithoutBars")))
+                        {
+                            ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
+                        }
+
+                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.yes_bars" + "###WithBars")))
+                        {
+                            ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
+                        }
+
+                        ImGui.EndMenu();
+                    }
+
                 }
 
                 ImGui.EndPopup();

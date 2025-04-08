@@ -832,3 +832,6 @@ ui.bars.mode.standard=Standard
 ui.bars.mode.compact=Compact
 ui.bars.mode.round=Round
 ui.properties.no_nameplate_bg=Disable Nameplate Background
+ui.popup.object_actions.link_to_chat=Link to chat...
+ui.popup.object_actions.link_to_chat.no_bars=Without bars
+ui.popup.object_actions.link_to_chat.yes_bars=With bars

@@ -459,6 +459,7 @@
                     RenderType.AtkDmg => new ChatRendererAtkDmg(this),
                     RenderType.Spell => new ChatRendererSpell(this),
                     RenderType.Sound => new ChatRendererAudio(this),
+                    RenderType.ObjectSnapshot => new ChatRendererMapObject(this),
                     _ => default
                 };
             }
@@ -565,7 +566,8 @@
             SessionMarker,
             Image,
             RollExpression,
-            Sound
+            Sound,
+            ObjectSnapshot
         }
 
         private class AssetPreviewReference

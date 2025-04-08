@@ -1349,149 +1349,7 @@
                         {
                             DisplayBar db = mo.Bars[i];
                             float mW = MathF.Max(112, tX - 16);
-                            Vector2 cNow = ImGui.GetCursorPos();
-                            string dbText = db.CurrentValue + "/" + db.MaxValue;
-                            Vector2 dbTextSize = ImGui.CalcTextSize(dbText);
-                            switch (db.RenderMode)
-                            {
-                                case DisplayBar.DrawMode.Default:
-                                {
-                                    prevWasRound = false;
-                                    penX = 0;
-                                    ImGui.Dummy(new(0, 16));
-                                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
-                                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2f);
-
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
-                                    ImGui.SetCursorPosY(cNow.Y);
-                                    ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 12), string.Empty);
-                                    ImGui.PopStyleVar();
-
-                                    float tW = dbTextSize.X;
-                                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 0, 0, 1));
-                                    if (Client.Instance.Settings.TextThickDropShadow)
-                                    {
-                                        for (int j = 0; j < 4; ++j)
-                                        {
-                                            ImGui.SetCursorPosY(cNow.Y - 5 + ((j & 1) << 1));
-                                            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
-                                            ImGui.Text(dbText);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ImGui.SetCursorPosY(cNow.Y - 3);
-                                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) + 1);
-                                        ImGui.Text(dbText);
-                                    }
-
-                                    ImGui.PopStyleColor();
-                                    ImGui.SetCursorPosY(cNow.Y - 4);
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (mW / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
-                                    ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
-                                    ImGui.Text(dbText);
-                                    ImGui.PopStyleColor();
-                                    ImGui.SetCursorPosY(cNow.Y + 16);
-
-                                    ImGui.PopStyleColor();
-                                    break;
-                                }
-
-                                case DisplayBar.DrawMode.Compact:
-                                {
-                                    prevWasRound = false;
-                                    penX = 0;
-                                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)db.DrawColor);
-                                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5f);
-                                    ImGui.SetCursorPosY(cNow.Y - 7);
-                                    float tW = dbTextSize.X;
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + mW - tW + (hasNp ? customPadding.X : 0));
-                                    ImGui.Text(dbText);
-                                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
-                                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
-                                    ImGui.ProgressBar(db.CurrentValue / db.MaxValue, new Vector2(mW, 4));
-                                    ImGui.PopStyleVar();
-                                    ImGui.PopStyleColor();
-                                    break;
-                                }
-
-                                case DisplayBar.DrawMode.Round:
-                                {
-                                    if (prevWasRound)
-                                    {
-                                        if (penX + 56 > tX)
-                                        {
-                                            penX = 0;
-                                        }
-                                        else
-                                        {
-                                            ImGui.SetCursorPos(cNow - new Vector2(-penX, 48));
-                                            cNow = ImGui.GetCursorPos();
-                                        }
-                                    }
-
-                                    prevWasRound = true;
-                                    penX += 56;
-                                    ImGui.Dummy(new Vector2(56, 48));
-                                    ImGui.SetCursorPos(cNow);
-                                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                                    Vector2 dCHere = ImGui.GetCursorScreenPos();
-                                    uint clrEmpty = ImGui.GetColorU32(ImGuiCol.FrameBg);
-                                    Vector2 center = dCHere + new Vector2(28, 24);
-                                    drawList.AddCircleFilled(center, 24, clrEmpty);
-                                    float progress = db.CurrentValue / db.MaxValue;
-                                    if (float.IsNaN(progress))
-                                    {
-                                        progress = 0;
-                                    }
-
-                                    float angleStep = MathF.PI * 2 / 32f;
-                                    float angleNeeded = MathF.PI * 2 * progress;
-                                    if (progress > 0)
-                                    {
-                                        drawList.PathLineTo(center);
-                                        for (int k = 0; k <= 32; ++k)
-                                        {
-                                            bool stopIterHere = false;
-                                            float angleHere = angleStep * k;
-                                            if (angleHere >= angleNeeded)
-                                            {
-                                                angleHere = angleNeeded;
-                                                stopIterHere = true;
-                                            }
-
-                                            Vector2 v = new Vector2(-MathF.Sin(angleHere), MathF.Cos(angleHere)) * 24;
-                                            drawList.PathLineTo(center + v);
-                                            if (stopIterHere)
-                                            {
-                                                break;
-                                            }
-                                        }
-
-                                        drawList.PathFillConvex(db.DrawColor.Abgr());
-                                        drawList.PathClear();
-                                        drawList.AddCircleFilled(center, 12, clrEmpty);
-                                    }
-
-                                    if (Client.Instance.Settings.TextThickDropShadow)
-                                    {
-                                        for (int j = 0; j < 4; ++j)
-                                        {
-                                            drawList.AddText(center - (dbTextSize * 0.5f) + new Vector2(-1 + ((j & 1) * 2), -1 + ((j >> 1) * 2)), 0xff000000, dbText);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        drawList.AddText(center - (dbTextSize * 0.5f) + Vector2.One, 0xff000000, dbText);
-                                    }
-
-                                    drawList.AddText(center - (dbTextSize * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), dbText);
-
-                                    ImGui.SetCursorPosY(cNow.Y + 48);
-                                    ImGui.SetCursorPosX(0);
-                                    break;
-                                }
-                            }
+                            RenderBar(db.CurrentValue, db.MaxValue, db.RenderMode, db.DrawColor, hasNp, customPadding, mW, tX, ref prevWasRound, ref penX);
                         }
                     }
 
@@ -1581,6 +1439,154 @@
                     }
                 }
             }
+        }
+
+        public static void RenderBar(float current, float max, DisplayBar.DrawMode renderMode, Color barColor, bool hasNp, Vector2 customPadding, float barWidth, float maxWidth, ref bool prevWasRound, ref float penX)
+        {
+            Vector2 cNow = ImGui.GetCursorPos();
+            string dbText = current + "/" + max;
+            Vector2 dbTextSize = ImGui.CalcTextSize(dbText);
+            switch (renderMode)
+            {
+                case DisplayBar.DrawMode.Default:
+                {
+                    prevWasRound = false;
+                    penX = 0;
+                    ImGui.Dummy(new(0, 16));
+                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)barColor);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2f);
+
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
+                    ImGui.SetCursorPosY(cNow.Y);
+                    ImGui.ProgressBar(current / max, new Vector2(barWidth, 12), string.Empty);
+                    ImGui.PopStyleVar();
+
+                    float tW = dbTextSize.X;
+                    ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, 0, 0, 1));
+                    if (Client.Instance.Settings.TextThickDropShadow)
+                    {
+                        for (int j = 0; j < 4; ++j)
+                        {
+                            ImGui.SetCursorPosY(cNow.Y - 5 + ((j & 1) << 1));
+                            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (barWidth / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) - 1 + ((j >> 1) << 1));
+                            ImGui.Text(dbText);
+                        }
+                    }
+                    else
+                    {
+                        ImGui.SetCursorPosY(cNow.Y - 3);
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (barWidth / 2) - (tW / 2) + (hasNp ? customPadding.X : 0) + 1);
+                        ImGui.Text(dbText);
+                    }
+
+                    ImGui.PopStyleColor();
+                    ImGui.SetCursorPosY(cNow.Y - 4);
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (barWidth / 2) - (tW / 2) + (hasNp ? customPadding.X : 0));
+                    ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                    ImGui.Text(dbText);
+                    ImGui.PopStyleColor();
+                    ImGui.SetCursorPosY(cNow.Y + 16);
+
+                    ImGui.PopStyleColor();
+                    break;
+                }
+
+                case DisplayBar.DrawMode.Compact:
+                {
+                    prevWasRound = false;
+                    penX = 0;
+                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)barColor);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5f);
+                    ImGui.SetCursorPosY(cNow.Y - 7);
+                    float tW = dbTextSize.X;
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + barWidth - tW + (hasNp ? customPadding.X : 0));
+                    ImGui.Text(dbText);
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 5);
+                    ImGui.ProgressBar(current / max, new Vector2(barWidth, 4));
+                    ImGui.PopStyleVar();
+                    ImGui.PopStyleColor();
+                    break;
+                }
+
+                case DisplayBar.DrawMode.Round:
+                {
+                    if (prevWasRound)
+                    {
+                        if (penX + 56 > maxWidth)
+                        {
+                            penX = 0;
+                        }
+                        else
+                        {
+                            ImGui.SetCursorPos(cNow - new Vector2(-penX, 48));
+                            cNow = ImGui.GetCursorPos();
+                        }
+                    }
+
+                    prevWasRound = true;
+                    penX += 56;
+                    ImGui.Dummy(new Vector2(56, 48));
+                    ImGui.SetCursorPos(cNow);
+                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                    Vector2 dCHere = ImGui.GetCursorScreenPos();
+                    uint clrEmpty = ImGui.GetColorU32(ImGuiCol.FrameBg);
+                    Vector2 center = dCHere + new Vector2(28, 24);
+                    drawList.AddCircleFilled(center, 24, clrEmpty);
+                    float progress = current / max;
+                    if (float.IsNaN(progress))
+                    {
+                        progress = 0;
+                    }
+
+                    float angleStep = MathF.PI * 2 / 32f;
+                    float angleNeeded = MathF.PI * 2 * progress;
+                    if (progress > 0)
+                    {
+                        drawList.PathLineTo(center);
+                        for (int k = 0; k <= 32; ++k)
+                        {
+                            bool stopIterHere = false;
+                            float angleHere = angleStep * k;
+                            if (angleHere >= angleNeeded)
+                            {
+                                angleHere = angleNeeded;
+                                stopIterHere = true;
+                            }
+
+                            Vector2 v = new Vector2(-MathF.Sin(angleHere), MathF.Cos(angleHere)) * 24;
+                            drawList.PathLineTo(center + v);
+                            if (stopIterHere)
+                            {
+                                break;
+                            }
+                        }
+
+                        drawList.PathFillConvex(barColor.Abgr());
+                        drawList.PathClear();
+                        drawList.AddCircleFilled(center, 12, clrEmpty);
+                    }
+
+                    if (Client.Instance.Settings.TextThickDropShadow)
+                    {
+                        for (int j = 0; j < 4; ++j)
+                        {
+                            drawList.AddText(center - (dbTextSize * 0.5f) + new Vector2(-1 + ((j & 1) * 2), -1 + ((j >> 1) * 2)), 0xff000000, dbText);
+                        }
+                    }
+                    else
+                    {
+                        drawList.AddText(center - (dbTextSize * 0.5f) + Vector2.One, 0xff000000, dbText);
+                    }
+
+                    drawList.AddText(center - (dbTextSize * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), dbText);
+
+                    ImGui.SetCursorPosY(cNow.Y + 48);
+                    ImGui.SetCursorPosX(0);
+                    break;
+                }
+            }
+
         }
 
         private static readonly Dictionary<uint, (bool, bool, float)> activeSliders = new Dictionary<uint, (bool, bool, float)>();

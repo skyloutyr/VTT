@@ -694,9 +694,10 @@
                             ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
                         }
 
-                        if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.yes_bars") + "###WithBars"))
+                        bool canIncludeBars = Client.Instance.IsAdmin || Client.Instance.IsObserver || mouseOver.CanEdit(Client.Instance.ID);
+                        if (canIncludeBars && ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.yes_bars") + "###WithBars"))
                         {
-                            ChatRendererMapObject.SendChatSnapshot(mouseOver, false);
+                            ChatRendererMapObject.SendChatSnapshot(mouseOver, canIncludeBars);
                         }
 
                         ImGui.EndMenu();

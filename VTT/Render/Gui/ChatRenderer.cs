@@ -22,8 +22,8 @@
             Client.Instance.Logger.Log(LogLevel.Debug, "Sending chat: " + line);
             PacketChatMessage pcm = new PacketChatMessage() { Message = line };
             pcm.Send();
-            this._chat.Add(line);
-            this._cChatIndex = this._chat.Count;
+            this._chatMemory.Add(line);
+            this._cChatIndex = this._chatMemory.Count;
         }
 
         private unsafe void RenderChat(SimpleLanguage lang, GuiState state)
@@ -95,31 +95,31 @@
 
                 if (!b && ImGui.IsItemFocused() && Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                 {
-                    if (this._chat.Count > 0)
+                    if (this._chatMemory.Count > 0)
                     {
                         if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
                         {
-                            if (--this._cChatIndex >= 0 && this._chat.Count > 0)
+                            if (--this._cChatIndex >= 0 && this._chatMemory.Count > 0)
                             {
                                 loseFocus = true;
-                                this._chatString = this._chat[this._cChatIndex];
+                                this._chatString = this._chatMemory[this._cChatIndex];
                                 this._needsRefocusChat = true;
                             }
 
-                            this._cChatIndex = Math.Clamp(this._cChatIndex, 0, this._chat.Count - 1);
+                            this._cChatIndex = Math.Clamp(this._cChatIndex, 0, this._chatMemory.Count - 1);
                         }
                         else
                         {
                             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
                             {
-                                if (++this._cChatIndex < this._chat.Count && this._chat.Count > 0)
+                                if (++this._cChatIndex < this._chatMemory.Count && this._chatMemory.Count > 0)
                                 {
                                     loseFocus = true;
-                                    this._chatString = this._chat[this._cChatIndex];
+                                    this._chatString = this._chatMemory[this._cChatIndex];
                                     this._needsRefocusChat = true;
                                 }
 
-                                this._cChatIndex = Math.Clamp(this._cChatIndex, 0, this._chat.Count - 1);
+                                this._cChatIndex = Math.Clamp(this._cChatIndex, 0, this._chatMemory.Count - 1);
                             }
                         }
                     }
@@ -262,8 +262,8 @@
 
                         PacketChatMessage pcm = new PacketChatMessage() { Message = this._chatString };
                         pcm.Send();
-                        this._chat.Add(this._chatString);
-                        this._cChatIndex = this._chat.Count;
+                        this._chatMemory.Add(this._chatString);
+                        this._cChatIndex = this._chatMemory.Count;
                     }
                 }
 

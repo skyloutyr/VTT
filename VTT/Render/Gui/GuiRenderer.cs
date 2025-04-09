@@ -335,7 +335,7 @@
         private Texture[] _moveModeTextures;
         public Texture[] Shadow2DControlModeTextures { get; private set; }
 
-        private readonly List<string> _chat = new List<string>();
+        private readonly List<string> _chatMemory = new List<string>();
         private int _cChatIndex;
         private bool _showImGuiDemoWindow = false;
         public GuiState FrameState { get; } = new GuiState();

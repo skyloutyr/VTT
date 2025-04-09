@@ -11,6 +11,8 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using VTT.Render.Chat;
+    using System.Linq;
 
     public partial class GuiRenderer
     {
@@ -327,6 +329,8 @@
             {
                 bool anyPress = false;
                 string resultingRolls = string.Empty;
+                string rollIdentifier = string.Empty;
+                ChatDiceRollMemory.DiceRollInformation rollMemoryData = default;
                 if (ImGui.BeginTable("##DiceRollTable", 3))
                 {
                     ImGui.TableSetupColumn("Singular Die");
@@ -411,6 +415,8 @@
                         {
                             anyPress = true;
                             resultingRolls = $"[m:DiceRoll][roll(1, {side})]";
+                            rollIdentifier = $"1d{side}+0";
+                            rollMemoryData = new(1, side, 0, false);
                         }
 
                         ImGui.PopID();
@@ -433,6 +439,8 @@
                         {
                             anyPress = true;
                             resultingRolls = $"[m:DiceRoll][roll({this._numDiceSingular}, {side})]";
+                            rollIdentifier = $"{this._numDiceSingular}d{side}+0";
+                            rollMemoryData = new(this._numDiceSingular, side, 0, false);
                         }
 
                         ImGui.PopID();
@@ -479,11 +487,21 @@
                                 for (int j = 0; j < this._numDiceSeparate; ++j)
                                 {
                                     resultingRolls += $"[roll(1, {side})]";
+                                    rollIdentifier += $"1d{side}+";
+                                    if (j == this._numDiceSeparate - 1)
+                                    {
+                                        rollIdentifier += "0";
+                                    }
                                 }
+
+                                rollMemoryData = new(this._numDiceSeparate, side, 0, true);
+
                             }
                             else
                             {
                                 resultingRolls = $"[m:DiceRoll][roll(1, {side})]";
+                                rollIdentifier = $"1d{side}+0";
+                                rollMemoryData = new(1, side, 0, false);
                             }
                         }
 
@@ -513,6 +531,7 @@
                     if (this._numDiceCustom <= 1)
                     {
                         rollsStr = $"[roll({this._numDiceCustom}, {this._dieSideCustom})]";
+                        rollIdentifier = $"{this._numDiceCustom}d{this._dieSideCustom}+0";
                     }
                     else
                     {
@@ -530,6 +549,8 @@
                     }
 
                     resultingRolls = $"[m:RollExpression]{rollsStr}+{this._dieExtraCustom}";
+                    rollIdentifier = $"{this._numDiceCustom}d{this._dieSideCustom}+{this._dieExtraCustom}";
+                    rollMemoryData = new(this._numDiceCustom, this._dieSideCustom, this._dieExtraCustom, true);
                 }
 
                 ImGui.PopID();
@@ -537,9 +558,127 @@
                 {
                     PacketChatMessage pcm = new PacketChatMessage() { Message = resultingRolls };
                     pcm.Send();
-                    this._chat.Add(resultingRolls);
-                    this._cChatIndex = this._chat.Count;
+                    this._chatMemory.Add(resultingRolls);
+                    this._cChatIndex = this._chatMemory.Count;
+                    Client.Instance.Settings.AddDiceRollMemory(rollIdentifier, resultingRolls, rollMemoryData, Client.Instance.Chat.LastOrDefault()?.Index ?? 0);
                 }
+
+                if (ImGui.BeginChild("##RollMemory", new Vector2(ImGui.GetContentRegionAvail().X, 120), ImGuiChildFlags.NavFlattened | ImGuiChildFlags.Borders))
+                {
+                    ChatDiceRollMemory memoryToActUpon = null;
+                    bool memoryActionIsDeletion = false;
+                    Vector2 dieImgSize = new Vector2(20, 20);
+                    Vector2 txtPlusSz = ImGui.CalcTextSize("+");
+                    if (Client.Instance.Settings.DiceRollMemory != null)
+                    {
+                        foreach (ChatDiceRollMemory mem in Client.Instance.Settings.DiceRollMemory)
+                        {
+                            DieIconData iconData = mem.RollInfo.DieSide switch
+                            {
+                                2 => this.ChatIconD2,
+                                4 => this.ChatIconD4,
+                                6 => this.ChatIconD6,
+                                8 => this.ChatIconD8,
+                                10 => this.ChatIconD10,
+                                12 => this.ChatIconD12,
+                                20 => this.ChatIconD20,
+                                100 => this.ChatIconD10,
+                                _ => this.ChatIconD20
+                            };
+
+                            uint dieColor = mem.RollInfo.DieSide switch
+                            {
+                                2 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD2, Client.Instance.Settings.ColorModeD2, Client.Instance.Settings.Color),
+                                4 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD4, Client.Instance.Settings.ColorModeD4, Client.Instance.Settings.Color),
+                                6 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD6, Client.Instance.Settings.ColorModeD6, Client.Instance.Settings.Color),
+                                8 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD8, Client.Instance.Settings.ColorModeD8, Client.Instance.Settings.Color),
+                                10 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD10, Client.Instance.Settings.ColorModeD10, Client.Instance.Settings.Color),
+                                12 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD12, Client.Instance.Settings.ColorModeD12, Client.Instance.Settings.Color),
+                                20 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD20, Client.Instance.Settings.ColorModeD20, Client.Instance.Settings.Color),
+                                100 => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD100, Client.Instance.Settings.ColorModeD100, Client.Instance.Settings.Color),
+                                _ => ChatRendererBase.SelectDiceColor(Client.Instance.Settings.ColorD20, Client.Instance.Settings.ColorModeD20, Client.Instance.Settings.Color),
+                            };
+
+                            float dieImgTakenUpSpace = 0;
+                            Vector2 cHere = ImGui.GetCursorScreenPos();
+                            ImDrawListPtr drawListPtr = ImGui.GetWindowDrawList();
+                            if (mem.RollInfo.IsCompound)
+                            {
+                                if (mem.RollInfo.DieSide == 100)
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, dieColor);
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, dieColor);
+                                }
+                                else
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsSingularStart, iconData.BoundsSingularEnd, dieColor);
+                                }
+
+                                drawListPtr.AddText(cHere + new Vector2(dieImgSize.X + 4, 0), ImGui.GetColorU32(ImGuiCol.Text), "+");
+                                if (mem.RollInfo.DieSide == 100)
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0), cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0) + dieImgSize, iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, dieColor);
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0), cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0) + dieImgSize, iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, dieColor);
+                                }
+                                else
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0), cHere + new Vector2(dieImgSize.X + txtPlusSz.X + 8, 0) + dieImgSize, iconData.BoundsSingularStart, iconData.BoundsSingularEnd, dieColor);
+                                }
+
+                                drawListPtr.AddText(cHere + new Vector2(12 + (dieImgSize.X * 2) + txtPlusSz.X, 0), ImGui.GetColorU32(ImGuiCol.Text), "+ ...");
+                                dieImgTakenUpSpace = (dieImgSize.X * 2) + 12 + ImGui.CalcTextSize("++ ...").X;
+                            }
+                            else
+                            {
+                                dieImgTakenUpSpace = 24;
+                                if (mem.RollInfo.DieSide == 100 || mem.RollInfo.NumDice > 1)
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsPrimaryStart, iconData.BoundsPrimaryEnd, dieColor);
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsSecondaryStart, iconData.BoundsSecondaryEnd, dieColor);
+                                }
+                                else
+                                {
+                                    drawListPtr.AddImage(this.DiceIconAtlas, cHere, cHere + dieImgSize, iconData.BoundsSingularStart, iconData.BoundsSingularEnd, dieColor);
+                                }
+                            }
+
+                            ImGui.Dummy(new Vector2(dieImgTakenUpSpace, 20));
+                            ImGui.SameLine();
+
+                            Vector2 btnSz = new Vector2(ImGui.GetContentRegionAvail().X - 44, 20);
+                            if (ImGui.Button($"{mem.RollInfo.NumDice}d{mem.RollInfo.DieSide} + {mem.RollInfo.ExtraValue}###RollDiceKey_" + mem.Key, btnSz))
+                            {
+                                PacketChatMessage pcm = new PacketChatMessage() { Message = mem.Value };
+                                pcm.Send();
+                                this._chatMemory.Add(mem.Value);
+                                this._cChatIndex = this._chatMemory.Count;
+                                memoryToActUpon = mem;
+                                memoryActionIsDeletion = false;
+                            }
+
+                            ImGui.SameLine();
+                            if (ImGui.ImageButton("##RollDiceDelete_" + mem.Key, this.DeleteIcon, new Vector2(16, 16)))
+                            {
+                                memoryToActUpon = mem;
+                                memoryActionIsDeletion = true;
+                            }
+                        }
+
+                        if (memoryToActUpon != null)
+                        {
+                            if (memoryActionIsDeletion)
+                            {
+                                Client.Instance.Settings.RemoveDiceRollMemory(memoryToActUpon.Key);
+                            }
+                            else
+                            {
+                                Client.Instance.Settings.IncrementKnownMemoryValue(memoryToActUpon, Client.Instance.Chat.LastOrDefault()?.Index ?? 0);
+                            }
+                        }
+                    }
+                }
+
+                ImGui.EndChild();
 
                 bool bc = ImGui.Button(close);
 
@@ -589,8 +728,8 @@
                     this._imgHeight = Math.Clamp(this._imgHeight, 1, 680);
                     string cStr = $"[m:Image][p:{this._imgWidth}][p:{this._imgHeight}][t:{this._imgTooltip}][p:{this._imgUrl}]";
                     new PacketChatMessage() { Message = cStr }.Send();
-                    this._chat.Add(cStr);
-                    this._cChatIndex = this._chat.Count;
+                    this._chatMemory.Add(cStr);
+                    this._cChatIndex = this._chatMemory.Count;
                 }
 
                 ImGui.EndPopup();

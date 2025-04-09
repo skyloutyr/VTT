@@ -18,6 +18,7 @@
     using VTT.Network.VSCC;
     using VTT.Render;
     using VTT.Util;
+    using static VTT.Network.ChatDiceRollMemory;
 
     /*
      * Client-Server primer
@@ -814,6 +815,54 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UnifyChatDiceRendering { get; set; } = false;
 
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public List<ChatDiceRollMemory> DiceRollMemory { get; set; } = new List<ChatDiceRollMemory>();
+
+        public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
+        {
+            mem.UseFrequency = lastChatIndex;
+            this.DiceRollMemory.Sort();
+            this.Save();
+        }
+
+        public void AddDiceRollMemory(string key, string value, DiceRollInformation data, int lastChatIndex)
+        {
+            if (this.DiceRollMemory == null)
+            {
+                this.DiceRollMemory = new List<ChatDiceRollMemory>();
+            }
+
+            foreach (ChatDiceRollMemory mem in this.DiceRollMemory)
+            {
+                if (string.Equals(mem.Key, key))
+                {
+                    mem.UseFrequency += 1;
+                    this.DiceRollMemory.Sort();
+                    this.Save();
+                    return;
+                }
+            }
+
+            // If we are here no such memory was found
+            this.DiceRollMemory.Add(new ChatDiceRollMemory() { Key = key, Value = value, UseFrequency = lastChatIndex, RollInfo = data });
+            this.DiceRollMemory.Sort();
+            this.Save();
+        }
+
+        public void RemoveDiceRollMemory(string key)
+        {
+            if (this.DiceRollMemory == null)
+            {
+                this.DiceRollMemory = new List<ChatDiceRollMemory>();
+                this.Save();
+                return;
+            }
+
+            this.DiceRollMemory.RemoveAll(x => string.Equals(x.Key, key));
+            this.DiceRollMemory.Sort();
+            this.Save();
+        }
+
         public static ClientSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ClientDir, "Settings.json");
@@ -905,7 +954,8 @@
                 ColorModeD20 = ChatDiceColorMode.SetColor,
                 ColorD100 = 0xffffffff,
                 ColorModeD100 = ChatDiceColorMode.SetColor,
-                UnifyChatDiceRendering = false
+                UnifyChatDiceRendering = false,
+                DiceRollMemory = new List<ChatDiceRollMemory>(),
             };
 
             ret.Save();
@@ -1075,6 +1125,32 @@
             foreach (MPMapPointer mpmp in this.Elements)
             {
                 mpmp.RecursivelySort();
+            }
+        }
+    }
+
+    public class ChatDiceRollMemory : IComparable<ChatDiceRollMemory>
+    {
+        public int UseFrequency { get; set; }
+        public string Key { get; set; }
+        public string Value { get; set; }
+        public DiceRollInformation RollInfo { get; set; }
+
+        public int CompareTo(ChatDiceRollMemory other) => other.UseFrequency.CompareTo(this.UseFrequency);
+
+        public readonly struct DiceRollInformation
+        {
+            public int NumDice { get; }
+            public int DieSide { get; }
+            public int ExtraValue { get; }
+            public bool IsCompound { get; }
+
+            public DiceRollInformation(int numDice, int dieSide, int extraValue, bool isCompound)
+            {
+                this.NumDice = numDice;
+                this.DieSide = dieSide;
+                this.ExtraValue = extraValue;
+                this.IsCompound = isCompound;
             }
         }
     }

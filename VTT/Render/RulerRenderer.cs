@@ -19,6 +19,9 @@
 
     public class RulerRenderer
     {
+        public const float LineThickness = 0.02f;
+        public const float StartEndCapScale = 0.15f;
+
         public List<RulerInfo> ActiveInfos { get; } = new List<RulerInfo>();
 
         public RulerInfo CurrentInfo { get; set; }
@@ -438,7 +441,7 @@
 
             foreach (RulerInfo ri in this.ActiveInfos)
             {
-                model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(ri.Start);
+                model = Matrix4x4.CreateScale(StartEndCapScale) * Matrix4x4.CreateTranslation(ri.Start);
                 shader["model"].Set(model);
                 Vector4 riClr = ri.Color.Vec4();
                 if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
@@ -461,7 +464,7 @@
 
                 if (!ri.KeepAlive || ((ri.Type is RulerType.Ruler or RulerType.Polyline) && ri.CumulativeLength > 0.2f))
                 {
-                    model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(ri.End);
+                    model = Matrix4x4.CreateScale(StartEndCapScale) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(ri.End);
                     shader["model"].Set(model);
                     this.ModelArrow.Render();
                     if (ri.Type == RulerType.Polyline)
@@ -470,7 +473,7 @@
                         {
                             if (i > 0)
                             {
-                                model = Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(ri.Points[i]);
+                                model = Matrix4x4.CreateScale(StartEndCapScale) * Matrix4x4.CreateTranslation(ri.Points[i]);
                                 shader["model"].Set(model);
                                 this.ModelSphere.Render();
                             }
@@ -509,7 +512,7 @@
                 {
                     case RulerType.Circle:
                     {
-                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length(), m.Is2D ? 0.075f : 0.2f);
+                        this.CreateCircle(ri.Start, (ri.End - ri.Start).Length(), m.Is2D ? 0.075f : 0.12f);
                         this.UploadBuffers();
                         shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
                         this._vao.Bind();
@@ -734,7 +737,7 @@
             this._indexData.Add(i0 + 3);
 
             // Create top and bottom outlines
-            void AddVerticalLine(Vector3 from, Vector3 to, float thickness = 0.2f)
+            void AddVerticalLine(Vector3 from, Vector3 to, float thickness = LineThickness)
             {
                 Vector3 tl = new Vector3(from.X - thickness, from.Y - thickness, from.Z);
                 Vector3 tr = new Vector3(from.X + thickness, from.Y - thickness, from.Z);
@@ -750,7 +753,7 @@
                 this._indexData.Add(lastIndex + 3);
             }
 
-            void AddHorizontalLine(Vector3 from, Vector3 to, float thickness = 0.2f)
+            void AddHorizontalLine(Vector3 from, Vector3 to, float thickness = LineThickness)
             {
                 Vector3 tl = new Vector3(from.X - thickness, from.Y - thickness, from.Z);
                 Vector3 tr = new Vector3(from.X - thickness, from.Y + thickness, from.Z);
@@ -882,12 +885,12 @@
             Vector3 a = Vector3.Cross(Vector3.UnitX, vE2S);
             Quaternion qZ = new Quaternion(a, 1).Normalized();
 
-            Vector3 oZ = Vector4.Transform(new Vector4(0, 0, 1, 1), qZ).Xyz().Normalized() * 0.03f;
-            Vector3 oX = Vector3.Cross(vE2S, oZ).Normalized() * 0.03f;
+            Vector3 oZ = Vector4.Transform(new Vector4(0, 0, 1, 1), qZ).Xyz().Normalized() * LineThickness;
+            Vector3 oX = Vector3.Cross(vE2S, oZ).Normalized() * LineThickness;
 
             if (!completeToEnd)
             {
-                end -= vE2S * 0.1f;
+                end -= vE2S * StartEndCapScale * 0.5f;
             }
 
             Vector3 v1 = start + oX + oZ; // 0

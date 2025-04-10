@@ -1564,9 +1564,9 @@
 
                         drawList.PathFillConvex(barColor.Abgr());
                         drawList.PathClear();
-                        drawList.AddCircleFilled(center, 12, clrEmpty);
                     }
 
+                    drawList.AddCircleFilled(center, 12, ImGui.GetColorU32(ImGuiCol.WindowBg));
                     if (Client.Instance.Settings.TextThickDropShadow)
                     {
                         for (int j = 0; j < 4; ++j)
@@ -1582,7 +1582,7 @@
                     drawList.AddText(center - (dbTextSize * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), dbText);
 
                     ImGui.SetCursorPosY(cNow.Y + 48);
-                    ImGui.SetCursorPosX(0);
+                    ImGui.SetCursorPosX(ImGui.GetStyle().WindowPadding.X);
                     break;
                 }
             }

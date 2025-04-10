@@ -12,6 +12,22 @@
 
     public partial class GuiRenderer
     {
+        private bool ImSidebarBtn(string id, Vector2 size, Texture image, bool active, out bool hovered)
+        {
+            bool ret = false;
+            Vector2 cHere = ImGui.GetCursorScreenPos();
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            if (ImGui.InvisibleButton(id, size))
+            {
+                ret = true;
+            }
+
+            hovered = ImGui.IsItemHovered();
+            drawList.AddRect(cHere, cHere + size, ImGui.GetColorU32(active ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button), 6f);
+            drawList.AddImageRounded(image, cHere + new Vector2(4, 4), cHere + size - new Vector2(4, 4), Vector2.Zero, Vector2.One, 0xffffffff, 6f);
+            return ret;
+        }
+
         private unsafe void RenderSidebar(Map m, SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
@@ -19,10 +35,12 @@
                 return;
             }
 
-            ImGui.SetNextWindowBgAlpha(0.35f);
+            ImGui.SetNextWindowBgAlpha(0f);
             ImGui.SetNextWindowPos(Vector2.Zero);
-            if (ImGui.Begin("Mode Controls", window_flags))
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4, 4));
+            if (ImGui.Begin("Mode Controls", window_flags | ImGuiWindowFlags.NoBackground))
             {
+                ImGui.PopStyleVar();
                 for (int i = 0; i < 9; ++i)
                 {
                     if (!Client.Instance.IsAdmin && (i == (int)EditMode.FOW || i == (int)EditMode.FX || i == (int)EditMode.Shadows2D))
@@ -35,17 +53,25 @@
                         continue;
                     }
 
+                    /* Old code
                     bool selected = (int)mor.EditMode == i;
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 4f);
                     ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, Vector4.Zero);
                     if (selected)
                     {
-                        ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                        ImGui.PushStyleColor(ImGuiCol.Border, *ImGui.GetStyleColorVec4(ImGuiCol.ButtonActive));
                     }
 
                     if (ImGui.ImageButton("btnMode_" + i, _modeTextures[i], Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
                     {
                         mor.EditMode = (EditMode)i;
+                    }
+
+                    if (selected)
+                    {
+                        ImGui.PopStyleColor();
                     }
 
                     if (ImGui.IsItemHovered())
@@ -54,54 +80,44 @@
                         ImGui.SetTooltip(modett);
                     }
 
-                    if (selected)
-                    {
-                        ImGui.PopStyleColor();
-                    }
-
+                    ImGui.PopStyleColor();
                     ImGui.PopStyleColor();
                     ImGui.PopStyleVar();
-                    if (i != 8)
+                    ImGui.PopStyleVar();
+                    */
+                    if (this.ImSidebarBtn($"btnMode_{i}", Vec32x32, this._modeTextures[i], (int)mor.EditMode == i, out bool hovered))
                     {
-                        ImGui.NewLine();
+                        mor.EditMode = (EditMode)i;
+                    }
+
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate($"ui.mode.{Enum.GetName((EditMode)i).ToLower()}"));
                     }
                 }
 
                 if (Client.Instance.IsAdmin)
                 {
-                    ImGui.NewLine();
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    if (this._showingTurnOrder)
-                    {
-                        ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                    }
-
-                    bool sto = this._showingTurnOrder;
-                    if (ImGui.ImageButton("btnOpenTurnTracker", this.ToggleTurnOrder, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                    if (this.ImSidebarBtn($"btnOpenTurnTracker", Vec32x32, this.ToggleTurnOrder, this._showingTurnOrder, out bool hovered))
                     {
                         this._showingTurnOrder = !this._showingTurnOrder;
                     }
 
-                    if (ImGui.IsItemHovered())
+                    if (hovered)
                     {
                         ImGui.SetTooltip(lang.Translate("ui.turn_tracker"));
                     }
-
-                    if (sto)
-                    {
-                        ImGui.PopStyleColor();
-                    }
-
-                    ImGui.PopStyleColor();
-                    ImGui.PopStyleVar();
                 }
+            }
+            else
+            {
+                ImGui.PopStyleVar();
             }
 
             ImGui.End();
         }
 
-        private unsafe void RenderDebugInfo(double time, ImGuiWindowFlags window_flags)
+        private unsafe void RenderDebugInfo(double time, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -109,11 +125,12 @@
             }
 
             ImGui.SetNextWindowBgAlpha(0.35f);
-            ImGui.SetNextWindowPos(Vec56x0);
+            ImGui.SetNextWindowPos(SidebarFirstEntryPosition);
             if (DebugEnabled)
             {
-                if (ImGui.Begin("Debug", window_flags))
+                if (ImGui.Begin("SidebarDebugOverlay", window_flags))
                 {
+                    state.renderedDebugOverlay = true;
                     PerformanceMetrics pm = Client.Instance.Frontend.GameHandle.MetricsFramerate;
                     ImGui.TextUnformatted($"Frame: {((double)pm.LastTickAvg / TimeSpan.TicksPerMillisecond):0.000}ms, {pm.LastNumFrames} frames");
                     ImGui.Text("Cursor: " + Client.Instance.Frontend.MouseX + ", " + Client.Instance.Frontend.MouseY);
@@ -125,7 +142,7 @@
                 ImGui.End();
             }
         }
-        private unsafe void RenderFOWControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        private unsafe void RenderFOWControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -135,141 +152,84 @@
             if (mor.EditMode == EditMode.FOW && Client.Instance.IsAdmin)
             {
                 FOWRenderer fowr = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer;
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##FOWControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                bool selected = fowr.CanvasMode == FOWRenderer.RevealMode.Reveal;
-                if (selected)
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##FOWControls", window_flags))
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
+                    if (this.ImSidebarBtn("btnFowControls", Vec32x32, this.FOWRevealIcon, fowr.CanvasMode == FOWRenderer.RevealMode.Reveal, out bool hovered))
+                    {
+                        fowr.CanvasMode = FOWRenderer.RevealMode.Reveal;
+                    }
 
-                if (ImGui.ImageButton("btnFowControls", this.FOWRevealIcon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    fowr.CanvasMode = FOWRenderer.RevealMode.Reveal;
-                }
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.reveal"));
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.reveal"));
-                }
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnFowHide", Vec32x32, this.FOWHideIcon, fowr.CanvasMode == FOWRenderer.RevealMode.Hide, out hovered))
+                    {
+                        fowr.CanvasMode = FOWRenderer.RevealMode.Hide;
+                    }
 
-                if (selected)
-                {
-                    ImGui.PopStyleColor();
-                }
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.hide"));
+                    }
 
-                ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnFowBox", Vec32x32, this.FOWModeBox, fowr.PaintMode == FOWRenderer.SelectionMode.Box, out hovered))
+                    {
+                        fowr.PaintMode = FOWRenderer.SelectionMode.Box;
+                    }
 
-                if (!selected)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.box"));
+                    }
 
-                if (ImGui.ImageButton("btnFowHide", this.FOWHideIcon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    fowr.CanvasMode = FOWRenderer.RevealMode.Hide;
-                }
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnFowPoly", Vec32x32, this.FOWModePolygon, fowr.PaintMode == FOWRenderer.SelectionMode.Polygon, out hovered))
+                    {
+                        fowr.PaintMode = FOWRenderer.SelectionMode.Polygon;
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.hide"));
-                }
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.polygon"));
+                    }
 
-                if (!selected)
-                {
-                    ImGui.PopStyleColor();
-                }
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnFowBrush", Vec32x32, this.FOWModeBrush, fowr.PaintMode == FOWRenderer.SelectionMode.Brush, out hovered))
+                    {
+                        fowr.PaintMode = FOWRenderer.SelectionMode.Brush;
+                    }
 
-                selected = fowr.PaintMode == FOWRenderer.SelectionMode.Box;
-                if (selected)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.draw"));
+                    }
 
-                if (ImGui.ImageButton("btnFowBox", this.FOWModeBox, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    fowr.PaintMode = FOWRenderer.SelectionMode.Box;
-                }
+                    float cBSize = fowr.BrushSize;
+                    ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgActive, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgHovered) * new Vector4(1, 1, 1, 0.4f));
+                    if (ImGui.SliderFloat("##BrushSize", ref cBSize, 0.0625f, 8f))
+                    {
+                        fowr.BrushSize = cBSize;
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.box"));
-                }
-
-                if (selected)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.SameLine();
-                selected = fowr.PaintMode == FOWRenderer.SelectionMode.Polygon;
-                if (selected)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
-
-                if (ImGui.ImageButton("btnFowPoly", this.FOWModePolygon, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    fowr.PaintMode = FOWRenderer.SelectionMode.Polygon;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.polygon"));
-                }
-
-                if (selected)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.SameLine();
-
-                selected = fowr.PaintMode == FOWRenderer.SelectionMode.Brush;
-                if (selected)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
-
-                if (ImGui.ImageButton("btnFowBrush", this.FOWModeBrush, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    fowr.PaintMode = FOWRenderer.SelectionMode.Brush;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.draw"));
-                }
-
-                if (selected)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
-
-                float cBSize = fowr.BrushSize;
-                if (ImGui.SliderFloat("##BrushSize", ref cBSize, 0.0625f, 8f))
-                {
-                    fowr.BrushSize = cBSize;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fow.brush_size"));
+                    ImGui.PopStyleColor(3);
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fow.brush_size"));
+                    }
                 }
 
                 ImGui.End();
             }
         }
 
-        private unsafe void RenderMeasureControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        private unsafe void RenderMeasureControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -278,102 +238,109 @@
 
             if (mor.EditMode == EditMode.Measure)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##MeasureControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                for (int i = 0; i < 9; ++i)
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##MeasureControls", window_flags))
                 {
-                    RulerType iMode = (RulerType)i;
-                    bool selected = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == iMode;
-                    if (ImImageButton("##RulerModeBtn" + i, this._rulerModeTextures[i], Vec32x32, selected))
+                    for (int i = 0; i < 9; ++i)
                     {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode = iMode;
+                        RulerType iMode = (RulerType)i;
+                        if (this.ImSidebarBtn("##RulerModeBtn" + i, Vec32x32, this._rulerModeTextures[i], Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == iMode, out bool hovered))
+                        {
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode = iMode;
+                        }
+
+                        if (hovered)
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.measure." + iMode.ToString().ToLower()));
+                        }
+
+                        if (i != 8)
+                        {
+                            ImGui.SameLine();
+                        }
+                    }
+
+                    ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgActive, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgHovered) * new Vector4(1, 1, 1, 0.4f));
+                    float rExtraData = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentExtraValue;
+                    if (ImGui.DragFloat("##RulerModeExtraData", ref rExtraData, 0.1f))
+                    {
+                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentExtraValue = rExtraData;
                     }
 
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(lang.Translate("ui.measure." + iMode.ToString().ToLower()));
+                        ImGui.SetTooltip(lang.Translate("ui.measure.extra.tt"));
                     }
 
-                    if (i != 8)
+                    bool bDisplayInfos = Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo;
+                    if (ImGui.Checkbox(lang.Translate("ui.measure.display_infos") + "###RulersDisplayInfo", ref bDisplayInfos))
                     {
-                        ImGui.SameLine();
-                    }
-                }
-
-                float rExtraData = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentExtraValue;
-                if (ImGui.DragFloat("##RulerModeExtraData", ref rExtraData, 0.1f))
-                {
-                    Client.Instance.Frontend.Renderer.RulerRenderer.CurrentExtraValue = rExtraData;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.measure.extra.tt"));
-                }
-
-                bool bDisplayInfos = Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo;
-                if (ImGui.Checkbox(lang.Translate("ui.measure.display_infos") + "###RulersDisplayInfo", ref bDisplayInfos))
-                {
-                    Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo = bDisplayInfos;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.measure.display_infos.tt"));
-                }
-
-                if (Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == RulerType.Eraser)
-                {
-                    Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
-                    if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###EraserMask", ref id, names, names.Length))
-                    {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask = ids[id];
+                        Client.Instance.Frontend.Renderer.RulerRenderer.RulersDisplayInfo = bDisplayInfos;
                     }
 
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                        ImGui.SetTooltip(lang.Translate("ui.measure.display_infos.tt"));
                     }
+
+                    if (Client.Instance.Frontend.Renderer.RulerRenderer.CurrentMode == RulerType.Eraser)
+                    {
+                        Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
+                        if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###EraserMask", ref id, names, names.Length))
+                        {
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentEraserMask = ids[id];
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                        }
+                    }
+
+                    ImGui.Separator();
+                    if (ImGui.TreeNode(lang.Translate("ui.measure.color") + "###RulerColorPicker"))
+                    {
+                        Vector3 cclr = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor.Xyz();
+                        ImGui.PushItemWidth(150);
+                        if (ImGui.ColorPicker3("##RulerColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoSidePreview))
+                        {
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = new Vector4(cclr, 1.0f);
+                        }
+
+                        ImGui.PopItemWidth();
+                        string rTt = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip;
+                        if (ImGui.InputText("##RulerColorPickerTT", ref rTt, 64))
+                        {
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip = rTt;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.measure.tooltip.tt"));
+                        }
+
+                        ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                        if (ImGui.Button(lang.Translate("ui.generic.reset") + "###RulerClear"))
+                        {
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
+                            Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip = string.Empty;
+                        }
+
+                        ImGui.PopStyleColor();
+                        ImGui.TreePop();
+                    }
+
+                    ImGui.PopStyleColor(3);
                 }
 
-                ImGui.Separator();
-                if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###RulerColorPicker"))
-                {
-                    Vector3 cclr = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor.Xyz();
-                    ImGui.PushItemWidth(200);
-                    if (ImGui.ColorPicker3("##RulerColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs))
-                    {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = new Vector4(cclr, 1.0f);
-                    }
-
-                    string rTt = Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip;
-                    if (ImGui.InputText("##RulerColorPickerTT", ref rTt, 64))
-                    {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip = rTt;
-                    }
-
-                    if (ImGui.Button(lang.Translate("ui.generic.reset") + "###RulerClear"))
-                    {
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
-                        Client.Instance.Frontend.Renderer.RulerRenderer.CurrentTooltip = string.Empty;
-                    }
-
-                    ImGui.PopItemWidth();
-                    ImGui.TreePop();
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }
 
-        private unsafe void RenderTranslationControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        private unsafe void RenderTranslationControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -382,46 +349,31 @@
 
             if (mor.EditMode == EditMode.Translate)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
                 ImGui.Begin("##TranslateControls", window_flags);
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
                 for (int i = 0; i < 3; ++i)
                 {
                     TranslationMode tMode = (TranslationMode)i;
                     string modeName = Enum.GetName(tMode).ToLower();
-                    bool selected = tMode == Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode;
-                    if (selected)
-                    {
-                        ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                    }
-
-                    if (ImGui.ImageButton("btnMovementMode_" + modeName, this._moveModeTextures[i], Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
+                    if (this.ImSidebarBtn($"btnMovementMode_{modeName}", Vec32x32, this._moveModeTextures[i], tMode == Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode, out bool hovered))
                     {
                         Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode = tMode;
                     }
 
-                    if (ImGui.IsItemHovered())
+                    if (hovered)
                     {
                         ImGui.SetTooltip(lang.Translate("ui.translate." + modeName));
-                    }
-
-                    if (selected)
-                    {
-                        ImGui.PopStyleColor();
                     }
 
                     ImGui.SameLine();
                 }
 
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }
 
-        private unsafe void RenderCameraControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        private unsafe void RenderCameraControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -430,85 +382,49 @@
 
             if (mor.EditMode == EditMode.Select)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##CameraMoveControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                CameraControlMode ccm = Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode;
-                if (ccm == CameraControlMode.Standard)
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##CameraMoveControls", window_flags))
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
+                    CameraControlMode ccm = Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode;
+                    if (this.ImSidebarBtn("btnSelectCameraStd", Vec32x32, this.Select, ccm == CameraControlMode.Standard, out bool hovered))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Standard;
+                    }
+
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.camera.standard"));
+                    }
+
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnSelectCameraMove", Vec32x32, this.CameraMove, ccm == CameraControlMode.Move, out hovered))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Move;
+                    }
+
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.camera.move"));
+                    }
+
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("btnSelectCameraRotate", Vec32x32, this.CameraRotate, ccm == CameraControlMode.Rotate, out hovered))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Rotate;
+                    }
+
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.camera.rotate"));
+                    }
                 }
 
-                if (ImGui.ImageButton("btnSelectCameraStd", this.Select, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Standard;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.camera.standard"));
-                }
-
-                if (ccm == CameraControlMode.Standard)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.SameLine();
-
-                if (ccm == CameraControlMode.Move)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
-
-                if (ImGui.ImageButton("btnSelectCameraMove", this.CameraMove, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Move;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.camera.move"));
-                }
-
-                if (ccm == CameraControlMode.Move)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.SameLine();
-
-                if (ccm == CameraControlMode.Rotate)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Border, (Vector4)Color.RoyalBlue);
-                }
-
-                if (ImGui.ImageButton("btnSelectCameraRotate", this.CameraRotate, Vec32x32, Vector2.Zero, Vector2.One, Vector4.Zero))
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode = CameraControlMode.Rotate;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.camera.rotate"));
-                }
-
-                if (ccm == CameraControlMode.Rotate)
-                {
-                    ImGui.PopStyleColor();
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }
 
-        private unsafe void RenderDrawControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags)
+        private unsafe void RenderDrawControls(MapObjectRenderer mor, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
@@ -517,82 +433,80 @@
 
             if (mor.EditMode == EditMode.Draw)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##DrawControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                bool selected = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing;
-                if (ImImageButton("##DrawModeBtnDraw", this.FOWModeBrush, Vec32x32, selected))
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##DrawControls", window_flags))
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = true;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.draw.brush.tt"));
-                }
-
-                ImGui.SameLine();
-
-                if (ImImageButton("##DrawModeBtnErase", this.MeasureModeErase, Vec32x32, !selected))
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = false;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.draw.erase.tt"));
-                }
-
-                float radius = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius;
-                if (ImGui.SliderFloat("##DrawModeRadius", ref radius, 0.1f, 10f))
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius = MathF.Max(0.025f, radius);
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.draw.radius.tt"));
-                }
-
-                if (!Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing)
-                {
-                    Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
-                    if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###DrawEraserMask", ref id, names, names.Length))
+                    if (this.ImSidebarBtn("##DrawModeBtnDraw", Vec32x32, this.FOWModeBrush, Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing, out bool hovered))
                     {
-                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask = ids[id];
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = true;
                     }
 
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.draw.brush.tt"));
+                    }
+
+                    ImGui.SameLine();
+                    if (this.ImSidebarBtn("##DrawModeBtnErase", Vec32x32, this.MeasureModeErase, !Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing, out hovered))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing = false;
+                    }
+
+                    if (hovered)
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.draw.erase.tt"));
+                    }
+
+                    float radius = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius;
+                    ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgActive, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgHovered) * new Vector4(1, 1, 1, 0.4f));
+                    if (ImGui.SliderFloat("##DrawModeRadius", ref radius, 0.1f, 10f))
+                    {
+                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentRadius = MathF.Max(0.025f, radius);
+                    }
+
+                    ImGui.PopStyleColor(3);
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                        ImGui.SetTooltip(lang.Translate("ui.draw.radius.tt"));
+                    }
+
+                    if (!Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing)
+                    {
+                        Client.Instance.TryGetClientNamesArray(Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask, out int id, out string[] names, out Guid[] ids);
+                        if (ImGui.Combo(lang.Translate("ui.measure.eraser_mask") + "###DrawEraserMask", ref id, names, names.Length))
+                        {
+                            Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentEraserMask = ids[id];
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.measure.eraser_mask.tt"));
+                        }
+                    }
+
+                    ImGui.Separator();
+                    if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###DrawColorPicker"))
+                    {
+                        Vector3 cclr = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor.Xyz();
+                        ImGui.PushItemWidth(150);
+                        if (ImGui.ColorPicker3("##DrawColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoSidePreview))
+                        {
+                            Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = new Vector4(cclr, 1.0f);
+                        }
+
+                        if (ImGui.Button(lang.Translate("ui.generic.reset") + "###DrawClear"))
+                        {
+                            Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
+                        }
+
+                        ImGui.PopItemWidth();
+                        ImGui.TreePop();
                     }
                 }
 
-                ImGui.Separator();
-                if (ImGui.TreeNode(lang.Translate("ui.generic.color") + "###DrawColorPicker"))
-                {
-                    Vector3 cclr = Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor.Xyz();
-                    ImGui.PushItemWidth(200);
-                    if (ImGui.ColorPicker3("##DrawColorPickerD", ref cclr, ImGuiColorEditFlags.PickerHueWheel | ImGuiColorEditFlags.NoInputs))
-                    {
-                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = new Vector4(cclr, 1.0f);
-                    }
-
-                    if (ImGui.Button(lang.Translate("ui.generic.reset") + "###DrawClear"))
-                    {
-                        Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
-                    }
-
-                    ImGui.PopItemWidth();
-                    ImGui.TreePop();
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }
@@ -612,69 +526,69 @@
 
             if (mor.EditMode == EditMode.FX)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##FXControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
-                bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                drawList.AddRect(imScreenPos, rectEnd, bClr);
-                drawList.AddImage(this.AssetParticleIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                string mdlTxt = "";
-                int mdlTxtOffset = 0;
-                if (Client.Instance.AssetManager.Refs.ContainsKey(this._fxToEmitParticleSystemID))
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##FXControls", window_flags))
                 {
-                    AssetRef aRef = Client.Instance.AssetManager.Refs[this._fxToEmitParticleSystemID];
-                    mdlTxt += aRef.Name;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._fxToEmitParticleSystemID, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                    Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+                    Vector2 rectEnd = imScreenPos + new Vector2(ImGui.GetContentRegionAvail().X, 24);
+                    bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+                    uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+                    drawList.AddRect(imScreenPos, rectEnd, bClr);
+                    drawList.AddImage(this.AssetParticleIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+                    string mdlTxt = "";
+                    int mdlTxtOffset = 0;
+                    if (Client.Instance.AssetManager.Refs.ContainsKey(this._fxToEmitParticleSystemID))
                     {
-                        Texture tex = ap.GetGLTexture();
-                        if (tex != null)
+                        AssetRef aRef = Client.Instance.AssetManager.Refs[this._fxToEmitParticleSystemID];
+                        mdlTxt += aRef.Name;
+                        if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._fxToEmitParticleSystemID, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
                         {
-                            drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                            mdlTxtOffset += 20;
+                            Texture tex = ap.GetGLTexture();
+                            if (tex != null)
+                            {
+                                drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
+                                mdlTxtOffset += 20;
+                            }
                         }
+                    }
+
+                    if (this._fxToEmitParticleSystemID.IsEmpty())
+                    {
+                        mdlTxt = lang.Translate("generic.none");
+                    }
+                    else
+                    {
+                        mdlTxt += " (" + this._fxToEmitParticleSystemID.ToString() + ")\0";
+                    }
+
+                    drawList.PushClipRect(imScreenPos, rectEnd);
+                    drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+                    drawList.PopClipRect();
+                    ImGui.Dummy(new Vector2(0, 28));
+                    if (mouseOver)
+                    {
+                        state.movingParticleAssetOverFXRecepticle = true;
+                        ImGui.SetTooltip(lang.Translate("ui.fx.particle.tt"));
+                    }
+
+                    int iFxToEmit = this._fxNumToEmit;
+                    ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgActive, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive) * new Vector4(1, 1, 1, 0.4f));
+                    ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgHovered) * new Vector4(1, 1, 1, 0.4f));
+                    if (ImGui.DragInt(lang.Translate("ui.fx.num_emit") + "###NumParticlesToEmit", ref iFxToEmit))
+                    {
+                        this._fxNumToEmit = iFxToEmit;
+                    }
+
+                    ImGui.PopStyleColor(3);
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.fx.num_emit.tt"));
                     }
                 }
 
-                if (this._fxToEmitParticleSystemID.IsEmpty())
-                {
-                    mdlTxt = lang.Translate("generic.none");
-                }
-                else
-                {
-                    mdlTxt += " (" + this._fxToEmitParticleSystemID.ToString() + ")\0";
-                }
-
-                drawList.PushClipRect(imScreenPos, rectEnd);
-                drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                drawList.PopClipRect();
-                ImGui.Dummy(new Vector2(0, 28));
-                if (mouseOver)
-                {
-                    state.movingParticleAssetOverFXRecepticle = true;
-                    ImGui.SetTooltip(lang.Translate("ui.fx.particle.tt"));
-                }
-
-                int iFxToEmit = this._fxNumToEmit;
-                if (ImGui.DragInt(lang.Translate("ui.fx.num_emit") + "###NumParticlesToEmit", ref iFxToEmit))
-                {
-                    this._fxNumToEmit = iFxToEmit;
-                }
-
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.fx.num_emit.tt"));
-                }
-
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }
@@ -688,32 +602,26 @@
 
             if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Shadows2D)
             {
-                ImGui.SetNextWindowBgAlpha(0.35f);
-                ImGui.SetNextWindowPos(Vec56x70);
-                ImGui.Begin("##Shadow2DControls", window_flags);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 1f);
-
-                Shadow2DControlMode currentMode = renderer.ControlMode;
-                for (int i = 0; i < 9; ++i)
+                ImGui.SetNextWindowBgAlpha(0.2f);
+                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                if (ImGui.Begin("##Shadow2DControls", window_flags))
                 {
-                    bool selected = (Shadow2DControlMode)i == currentMode;
-                    if (ImImageButton("##Shadow2DModeBtn_" + i, Client.Instance.Frontend.Renderer.GuiRenderer.Shadow2DControlModeTextures[i], Vec32x32, selected))
+                    Shadow2DControlMode currentMode = renderer.ControlMode;
+                    for (int i = 0; i < 9; ++i)
                     {
-                        renderer.ControlMode = (Shadow2DControlMode)i;
-                    }
+                        if (this.ImSidebarBtn($"##Shadow2DModeBtn_{i}", Vec32x32, Client.Instance.Frontend.Renderer.GuiRenderer.Shadow2DControlModeTextures[i], (Shadow2DControlMode)i == currentMode, out bool hovered))
+                        {
+                            renderer.ControlMode = (Shadow2DControlMode)i;
+                        }
 
-                    ImGui.SameLine();
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("ui.shadow2d.mode_" + Enum.GetName((Shadow2DControlMode)i).ToLower() + ".tt"));
+                        ImGui.SameLine();
+                        if (hovered)
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.shadow2d.mode_" + Enum.GetName((Shadow2DControlMode)i).ToLower() + ".tt"));
+                        }
                     }
                 }
 
-                ImGui.PopStyleColor();
-                ImGui.PopStyleVar();
                 ImGui.End();
             }
         }

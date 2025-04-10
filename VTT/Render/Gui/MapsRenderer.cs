@@ -14,6 +14,12 @@
 
     public partial class GuiRenderer
     {
+        private float _dayGradientKeyMem = 0;
+        private Vector3 _dayGradientValueMem = Vector3.Zero;
+        private float _nightGradientKeyMem = 0;
+        private Vector3 _nightGradientValueMem = Vector3.Zero;
+
+
         private unsafe void RenderMaps(SimpleLanguage lang, GuiState state)
         {
             if (ImGui.Begin(lang.Translate("ui.maps") + "###Maps"))
@@ -175,6 +181,19 @@
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cPos, Type = PacketChangeMapData.DataType.CameraPosition }.Send();
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
                         pcmd.Send(); // Change default camera position/direction when 2d is switched to current to fix 2d zoom levels
+
+                        if (state.clientMap.DaySkyboxAssetID.IsEmpty())
+                        {
+                            state.clientMap.DaySkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullBlack);
+                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, IsNightGradientColors = false }.Send();
+                        }
+
+                        if (state.clientMap.NightSkyboxAssetID.IsEmpty())
+                        {
+                            state.clientMap.NightSkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullBlack);
+                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, IsNightGradientColors = true }.Send();
+                        }
+
                     }
 
                     if (ImGui.IsItemHovered())
@@ -305,7 +324,6 @@
                     }
 
                     Vector4 mGridColor = (Vector4)state.clientMap.GridColor;
-                    Vector4 mSkyColor = (Vector4)state.clientMap.BackgroundColor;
                     Vector4 mAmbientColor = (Vector4)state.clientMap.AmbientColor;
                     Vector4 mSunColor = (Vector4)state.clientMap.SunColor;
                     ImGui.Text(lang.Translate("ui.maps.grid_color"));
@@ -317,19 +335,345 @@
                         state.changeMapColorPopup = true;
                     }
 
-                    ImGui.SameLine();
-                    ImGui.Text(lang.Translate("ui.maps.sky_color"));
-                    if (ImGui.IsItemHovered())
+                    static void ImGradient(string id, Vector2 size, Gradient<Vector3> grad, Vector3 solidColor, bool readOnly, Action<PacketChangeMapSkyboxColors.ActionType, GradientPoint<Vector3>> callback, ref float selectedKey, ref Vector3 selectedKeyColor)
                     {
-                        ImGui.SetTooltip(lang.Translate("ui.maps.sky_color.tt"));
+                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                        Vector2 contentAvail = ImGui.GetContentRegionAvail();
+                        if (size.X == 0)
+                        {
+                            size.X = contentAvail.X;
+                        }
+
+                        Vector2 cHere = ImGui.GetCursorScreenPos() + new Vector2(0, 8);
+                        ImGui.Dummy(size + new Vector2(0, 16));
+                        GradientPoint<Vector3>? pointToDelete = null;
+                        bool clickedBoxOrTriangle = false;
+                        if (grad != null)
+                        {
+                            for (int i = 0; i < grad.InternalList.Count; i++)
+                            {
+                                GradientPoint<Vector3> curr = grad.InternalList[i];
+                                GradientPoint<Vector3> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
+                                float fS = curr.Key / 24.0f * size.X;
+                                float fN = (next.Key < curr.Key ? 1 : next.Key / 24.0f) * size.X;
+                                uint clrL = curr.Color.Abgr();
+                                uint clrR = next.Color.Abgr();
+                                drawList.AddRectFilledMultiColor(
+                                    new Vector2(cHere.X + fS, cHere.Y),
+                                    new Vector2(cHere.X + fN, cHere.Y + size.Y),
+                                    clrL, clrR, clrR, clrL
+                                );
+
+                                bool hoverTri = !readOnly && VTTMath.PointInTriangle(
+                                    ImGui.GetMousePos(),
+                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8)
+                                );
+
+                                if (hoverTri)
+                                {
+                                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                    {
+                                        selectedKey = curr.Key;
+                                        selectedKeyColor = curr.Color;
+                                        clickedBoxOrTriangle = true;
+                                    }
+                                }
+
+                                if (hoverTri && i != 0 && i != grad.InternalList.Count - 1 && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                                {
+                                    pointToDelete = curr;
+                                    clickedBoxOrTriangle = true;
+                                }
+
+                                drawList.AddTriangleFilled(
+                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
+                                    hoverTri ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button)
+                                );
+
+                                drawList.AddTriangle(
+                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
+                                    ImGui.GetColorU32(curr.Key == selectedKey ? ImGuiCol.ButtonActive : ImGuiCol.Border)
+                                );
+
+                                drawList.AddRectFilled(
+                                    new Vector2(cHere.X + fS - 4, cHere.Y - 8),
+                                    new Vector2(cHere.X + fS + 4, cHere.Y - 0),
+                                    clrL
+                                );
+
+                                bool hoverQuad = !readOnly && ImGui.IsMouseHoveringRect(new Vector2(cHere.X + fS - 4, cHere.Y - 8), new Vector2(cHere.X + fS + 4, cHere.Y - 0));
+                                drawList.AddRect(
+                                    new Vector2(cHere.X + fS - 4, cHere.Y - 8),
+                                    new Vector2(cHere.X + fS + 4, cHere.Y - 0),
+                                    hoverQuad ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border)
+                                );
+
+                                if (hoverQuad && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                {
+                                    callback(PacketChangeMapSkyboxColors.ActionType.SetSolidColor, curr);
+                                    clickedBoxOrTriangle = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            drawList.AddRectFilled(cHere, cHere + size, solidColor.Abgr());
+                        }
+
+                        drawList.AddRect(
+                            cHere,
+                            cHere + size,
+                            ImGui.GetColorU32(ImGuiCol.Border)
+                        );
+
+                        if (!readOnly)
+                        {
+                            if (!clickedBoxOrTriangle && ImGui.IsMouseHoveringRect(cHere, cHere + size) && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                            {
+                                float a = Math.Clamp(((ImGui.GetMousePos() - cHere) / size).X * 24, 0, 24);
+                                Vector3 closest = grad.Interpolate(a, GradientInterpolators.LerpVec3);
+                                if (!grad.ContainsKey(a))
+                                {
+                                    grad.Add(a, closest);
+                                    selectedKey = a;
+                                    selectedKeyColor = closest;
+                                    callback(PacketChangeMapSkyboxColors.ActionType.AddGradientPoint, new GradientPoint<Vector3>(a, closest));
+                                }
+                            }
+
+                            if (pointToDelete.HasValue)
+                            {
+                                grad.Remove(pointToDelete.Value.Key);
+                                callback(PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint, pointToDelete.Value);
+                            }
+
+                            if (!grad.ContainsKey(selectedKey))
+                            {
+                                var kv = grad.First();
+                                selectedKey = kv.Key;
+                                selectedKeyColor = kv.Value;
+                            }
+
+                            grad.TryGetValue(selectedKey, out Vector3 clr);
+                            if (clr != selectedKeyColor)
+                            {
+                                selectedKeyColor = clr;
+                            }
+
+                            float key = selectedKey;
+                            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
+                            if (ImGui.SliderFloat($"{id}_keySelector", ref key, 0, 24))
+                            {
+                                if (selectedKey is > 0 and < 24)
+                                {
+                                    key = Math.Clamp(key, 0.001f, 23.999f);
+                                    grad.Remove(selectedKey);
+                                    grad.Add(key, clr);
+                                    float prev = selectedKey;
+                                    selectedKey = key;
+                                    selectedKeyColor = clr;
+                                    callback(PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint, new GradientPoint<Vector3>(prev, clr));
+                                }
+                            }
+
+                            ImGui.PopItemWidth();
+                            if (ImGui.ColorPicker3($"{id}_valueSelector", ref selectedKeyColor, ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.PickerHueBar))
+                            {
+                                grad.Remove(selectedKey);
+                                grad.Add(selectedKey, selectedKeyColor);
+                                callback(PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, new GradientPoint<Vector3>(selectedKey, selectedKeyColor));
+                            }
+                        }
                     }
 
-                    ImGui.SameLine();
-                    if (ImGui.ColorButton("##SkyColor", mSkyColor))
+                    static void ImGradientReadonly(Vector2 size, Gradient<Vector3> grad, Vector3 solidColor)
                     {
-                        this._editedMapColor = mSkyColor;
-                        this._editedMapColorIndex = 1;
-                        state.changeMapColorPopup = true;
+                        float f = -1;
+                        Vector3 v = Vector3.Zero;
+                        ImGradient(string.Empty, size, grad, solidColor, true, static (x, y) => { }, ref f, ref v);
+                    }
+
+                    void SkyboxSettings(bool isDay)
+                    {
+                        string dayNight = isDay ? "Day" : "Night";
+                        string dayNightLower = isDay ? "day" : "night";
+                        MapSkyboxColors colors = isDay ? state.clientMap.DaySkyboxColors : state.clientMap.NightSkyboxColors;
+                        ImGui.TextUnformatted(lang.Translate($"ui.maps.sky_settings.skybox_{dayNightLower}.asset"));
+                        if (ImGui.BeginChild(lang.Translate($"ui.maps.sky_settings.skybox_{dayNightLower}") + $"###{dayNight}SkyboxSettings", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders))
+                        {
+                            bool mouseOverSkyboxAssetRecepticle = ImGuiHelper.ImAssetRecepticle(lang, isDay ? state.clientMap.DaySkyboxAssetID : state.clientMap.NightSkyboxAssetID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out bool assetRecepticleHovered);
+                            if (mouseOverSkyboxAssetRecepticle && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                            {
+                                if (isDay)
+                                {
+                                    state.mapDaySkyboxAssetHovered = state.clientMap;
+                                }
+                                else
+                                {
+                                    state.mapNightSkyboxAssetHovered = state.clientMap;
+                                }
+                            }
+
+                            if (assetRecepticleHovered)
+                            {
+                                ImGui.BeginTooltip();
+                                ImGui.TextUnformatted(lang.Translate($"ui.maps.sky_settings.skybox_{dayNightLower}.asset.tt"));
+                                Vector2 cHere = ImGui.GetCursorScreenPos();
+                                ImGui.Image(this.SkyboxUIExample, new Vector2(64 * 4, 64 * 3));
+                                string t = lang.Translate("generic.top");
+                                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 1) + 32, (64 * 0) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                t = lang.Translate("generic.left");
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 0) + 32, (64 * 1) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                t = lang.Translate("generic.front");
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 1) + 32, (64 * 1) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                t = lang.Translate("generic.right");
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 2) + 32, (64 * 1) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                t = lang.Translate("generic.back");
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 3) + 32, (64 * 1) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                t = lang.Translate("generic.bottom");
+                                ImGuiHelper.AddTextWithSingleDropShadow(drawList, cHere + new Vector2((64 * 1) + 32, (64 * 2) + 32) - (ImGui.CalcTextSize(t) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), t);
+                                ImGui.EndTooltip();
+                            }
+                        }
+
+                        if (ImGui.Button(lang.Translate($"ui.maps.sky_settings.skybox_any.asset.clear") + $"###Clear{dayNight}SkyboxAsset"))
+                        {
+                            new PacketSetMapSkyboxAsset() { AssetID = Guid.Empty, MapID = state.clientMap.ID, IsNightSkybox = !isDay }.Send();
+                            colors.SwitchType(MapSkyboxColors.ColorsPointerType.DefaultSky);
+                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.DefaultSky, IsNightGradientColors = !isDay }.Send();
+                        }
+
+                        ImGui.NewLine();
+                        string[] sbColorPointerTypes = new string[] { lang.Translate("ui.maps.sky_settings.skybox.colors.default"), lang.Translate("ui.maps.sky_settings.skybox.colors.black"), lang.Translate("ui.maps.sky_settings.skybox.colors.white"), lang.Translate("ui.maps.sky_settings.skybox.colors.solid"), lang.Translate("ui.maps.sky_settings.skybox.colors.custom_gradient"), lang.Translate("ui.maps.sky_settings.skybox.colors.asset") };
+                        int sbColorPointerIndex = (int)colors.OwnType;
+                        ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.skybox.colors_label"));
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.maps.sky_settings.skybox.colors.tt"));
+                        }
+
+                        if (ImGui.Combo($"##{dayNight}SkyboxColorsKind", ref sbColorPointerIndex, sbColorPointerTypes, sbColorPointerTypes.Length))
+                        {
+                            colors.SwitchType((MapSkyboxColors.ColorsPointerType)sbColorPointerIndex);
+                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = (MapSkyboxColors.ColorsPointerType)sbColorPointerIndex, IsNightGradientColors = !isDay }.Send();
+                        }
+
+                        switch (colors.OwnType)
+                        {
+                            case MapSkyboxColors.ColorsPointerType.DefaultSky:
+                            {
+                                ImGradientReadonly(new Vector2(0, 32), Client.Instance.Frontend.Renderer.SkyRenderer.SkyGradient, default);
+                                break;
+                            }
+
+                            case MapSkyboxColors.ColorsPointerType.FullBlack:
+                            {
+                                ImGradientReadonly(new Vector2(0, 32), null, Vector3.Zero);
+                                break;
+                            }
+                            case MapSkyboxColors.ColorsPointerType.FullWhite:
+                            {
+                                ImGradientReadonly(new Vector2(0, 32), null, Vector3.One);
+                                break;
+                            }
+
+                            case MapSkyboxColors.ColorsPointerType.SolidColor:
+                            {
+                                if (ImGui.ColorButton("##DaySkyboxColorSolidColor", new Vector4(colors.SolidColor, 1.0f), ImGuiColorEditFlags.NoAlpha, new Vector2(ImGui.GetContentRegionAvail().X, 32)))
+                                {
+                                    this._editedMapSkyboxColorIsDay = isDay;
+                                    this._editedMapSkyboxColorGradientKey = float.NaN;
+                                    this._editedMapSkyboxColorGradientValue = colors.SolidColor;
+                                    state.changeMapSkyboxColorPopup = true;
+                                }
+
+                                break;
+                            }
+
+                            case MapSkyboxColors.ColorsPointerType.CustomGradient:
+                            {
+                                ImGradient($"##GradientSkyColor{dayNight}", new Vector2(0, 32), colors.ColorGradient, default, false, (action, x) => 
+                                {
+                                    switch (action)
+                                    {
+                                        case PacketChangeMapSkyboxColors.ActionType.SetSolidColor:
+                                        {
+                                            this._editedMapSkyboxColorIsDay = isDay;
+                                            this._editedMapSkyboxColorGradientKey = x.Key;
+                                            this._editedMapSkyboxColorGradientValue = x.Color;
+                                            state.changeMapSkyboxColorPopup = true;
+                                            break;
+                                        }
+
+                                        case PacketChangeMapSkyboxColors.ActionType.AddGradientPoint:
+                                        {
+                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.AddGradientPoint, GradientPointKey = x.Key, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
+                                            break;
+                                        }
+
+                                        case PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint:
+                                        {
+                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint, GradientPointKey = x.Key, IsNightGradientColors = !isDay }.Send();
+                                            break;
+                                        }
+
+                                        case PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint:
+                                        {
+                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint, GradientPointKey = x.Key, GradientPointDesination = isDay ? this._dayGradientKeyMem : this._nightGradientKeyMem, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
+                                            break;
+                                        }
+
+                                        case PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor:
+                                        {
+                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, GradientPointKey = x.Key, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
+                                            break;
+                                        }
+                                    }
+                                }, ref (isDay ? ref this._dayGradientKeyMem : ref this._nightGradientKeyMem), ref (isDay ? ref this._dayGradientValueMem : ref this._nightGradientValueMem));
+
+                                break;
+                            }
+
+                            case MapSkyboxColors.ColorsPointerType.CustomImage:
+                            {
+                                bool mOverCustomImageAssetRecepticle = ImGuiHelper.ImAssetRecepticle(lang, colors.GradientAssetID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out _);
+                                if (mOverCustomImageAssetRecepticle && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                                {
+                                    if (isDay)
+                                    {
+                                        state.mapDaySkyboxColorsAssetHovered = state.clientMap;
+                                    }
+                                    else
+                                    {
+                                        state.mapNightSkyboxColorsAssetHovered = state.clientMap;
+                                    }
+                                }
+
+                                if (ImGui.Button(lang.Translate($"ui.maps.sky_settings.skybox_any.asset.clear") + $"###Clear{dayNight}SkyboxGradientColorsAsset"))
+                                {
+                                    new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = Guid.Empty, IsNightGradientColors = !isDay }.Send();
+                                }
+
+                                break;
+                            }
+                        }
+
+                        ImGui.EndChild();
+                    }
+
+                    if (ImGui.TreeNode(lang.Translate("ui.maps.sky_settings") + "##SkySettings"))
+                    {
+                        SkyboxSettings(true);
+                        ImGui.NewLine();
+                        SkyboxSettings(false);
+                        ImGui.TreePop();
                     }
 
                     ImGui.Text(lang.Translate("ui.maps.ambient_color"));
@@ -488,13 +832,13 @@
 
                     #region Ambiance
 
-                    bool mouseOverAmbiance = DrawMapAssetRecepticle(state.clientMap, state.clientMap.AmbientSoundID, () => this._draggedRef?.Type == AssetType.Sound, this.AssetMusicIcon);
+                    bool mouseOverAmbiance = ImGuiHelper.ImAssetRecepticle(lang, state.clientMap.AmbientSoundID, this.AssetSoundIcon, new Vector2(0, 24), static x => x.Type == AssetType.Sound, out bool ambianceAssetHovered);
                     if (mouseOverAmbiance && this._draggedRef != null && this._draggedRef.Type == AssetType.Sound)
                     {
                         state.mapAmbianceHovered = state.clientMap;
                     }
 
-                    if (mouseOverAmbiance)
+                    if (ambianceAssetHovered)
                     {
                         ImGui.SetTooltip(lang.Translate("ui.maps.ambiance.tt"));
                     }
@@ -517,48 +861,6 @@
                     }
 
                     ImGui.NewLine();
-                    unsafe bool DrawMapAssetRecepticle(Map m, Guid aId, Func<bool> assetEval, GL.Texture iconTex = null)
-                    {
-                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                        Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                        Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
-                        bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                        uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                        drawList.AddRect(imScreenPos, rectEnd, bClr);
-                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                        string mdlTxt = "";
-                        int mdlTxtOffset = 0;
-                        if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-                        {
-                            AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                            mdlTxt += aRef.Name;
-                            if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                            {
-                                GL.Texture tex = ap.GetGLTexture();
-                                if (tex != null)
-                                {
-                                    drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                                    mdlTxtOffset += 20;
-                                }
-                            }
-                        }
-
-                        if (Guid.Equals(Guid.Empty, aId))
-                        {
-                            mdlTxt = lang.Translate("generic.none");
-                        }
-                        else
-                        {
-                            mdlTxt += " (" + aId.ToString() + ")\0";
-                        }
-
-                        drawList.PushClipRect(imScreenPos, rectEnd);
-                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                        drawList.PopClipRect();
-                        ImGui.Dummy(new Vector2(0, 28));
-                        return mouseOver;
-                    }
-
                     #endregion
 
                     #region Darkvision

@@ -93,8 +93,7 @@
             if (this._windowNeedsDrawing)
             {
                 Map m = Client.Instance.CurrentMap;
-                GL.ClearColor(this.SkyRenderer.GetSkyColor().Vec4());
-                GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth | ClearBufferMask.Stencil);
+                GL.Clear(ClearBufferMask.Depth | ClearBufferMask.Stencil);
                 if (Client.Instance.Settings.MSAA == ClientSettings.MSAAMode.Disabled)
                 {
                     GL.Disable(Capability.Multisample);
@@ -113,12 +112,13 @@
                 this.SelectionManager?.Render(m, time);
                 this.MapRenderer.DrawingRenderer.Render(this.MapRenderer.ClientCamera);
                 this.ParticleRenderer.RenderFake();
-                this.ParticleRenderer.RenderAll();
                 this.GuiRenderer.Render(time);
                 this.SelectionManager.RenderGui(time);
-                this.SkyRenderer.Render(time);
                 this.PingRenderer?.Render(time);
                 this.ObjectRenderer.RenderLate(m, time);
+                this.SkyRenderer.Render(m, time);
+                this.MapRenderer.RenderLate(m, time);
+                this.ParticleRenderer.RenderAll();
                 this.Container.GuiWrapper.Render(time);
                 this.ObjectRenderer.RenderLatest(m, time);
                 this.MapRenderer.FOWRenderer?.Render(time);

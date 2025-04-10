@@ -1441,6 +1441,34 @@
                             haveResult = true;
                         }
                     }
+
+                    if (!haveResult && state.mapDaySkyboxAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        new PacketSetMapSkyboxAsset() { MapID = state.clientMap.ID, IsNightSkybox = false, AssetID = this._draggedRef.AssetID }.Send();
+                        state.clientMap.DaySkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullWhite);
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, IsNightGradientColors = false }.Send();
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.mapNightSkyboxAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        new PacketSetMapSkyboxAsset() { MapID = state.clientMap.ID, IsNightSkybox = true, AssetID = this._draggedRef.AssetID }.Send();
+                        state.clientMap.NightSkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullWhite);
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, IsNightGradientColors = true }.Send();
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.mapDaySkyboxColorsAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, IsNightGradientColors = false }.Send();
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.mapNightSkyboxColorsAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, IsNightGradientColors = true }.Send();
+                        haveResult = true;
+                    }
                 }
 
                 this._lmbDown = false;

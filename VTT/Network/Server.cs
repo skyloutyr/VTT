@@ -848,7 +848,6 @@
                 {
                     IsServer = true,
                     ID = this.Settings.DefaultMapID,
-                    BackgroundColor = Color.Black,
                     GridColor = Color.White,
                     GridEnabled = true,
                     SunEnabled = true,

@@ -127,6 +127,8 @@
         public Texture Shadow2DAddSunlight { get; set; }
         public Texture Shadow2DAddSunlightPoints { get; set; }
 
+        public Texture SkyboxUIExample { get; set; }
+
         public int LoadingSpinnerFrames { get; set; }
         #endregion
 
@@ -200,6 +202,10 @@
         private readonly List<(string, float, float)> _sortedStatuses = new List<(string, float, float)>();
         private readonly List<(string, float, float)> _allStatuses = new List<(string, float, float)>();
 
+        private float _editedMapSkyboxColorGradientKey;
+        private Vector3 _editedMapSkyboxColorGradientValue;
+        private bool _editedMapSkyboxColorIsDay;
+
         #endregion
 
         #region Draw Consts
@@ -207,8 +213,8 @@
         private static readonly Vector2 Vec12x12 = new Vector2(12, 12);
         private static readonly Vector2 Vec24x24 = new Vector2(24, 24);
         private static readonly Vector2 Vec32x32 = new Vector2(32, 32);
-        private static readonly Vector2 Vec56x0 = new(56, 0);
-        private static readonly Vector2 Vec56x70 = new(56, 70);
+        private static readonly Vector2 SidebarFirstEntryPosition = new(40, 4);
+        private static readonly Vector2 SidebarSecondEntryPosition = new(40, 78);
         private static readonly Vector2 Vec320x70 = new(320, 70);
         private static readonly Vector2 Vec48x60 = new Vector2(48, 60);
         private static readonly Vector2 Vec48x36 = new Vector2(48, 36);
@@ -317,6 +323,8 @@
             this.Shadow2DAddBlockerPoints = OpenGLUtil.LoadUIImage("icons8-newblocker-points-40");
             this.Shadow2DAddSunlightPoints = OpenGLUtil.LoadUIImage("icons8-newillumination-points-40");
 
+            this.SkyboxUIExample = OpenGLUtil.LoadUIImage("skybox-ui-example");
+
             this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
             this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
             this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
@@ -382,12 +390,12 @@
             }
 
             this.RenderSidebar(cMap, lang, window_flags, mor);
-            this.RenderDebugInfo(time, window_flags);
-            this.RenderFOWControls(mor, lang, window_flags);
-            this.RenderTranslationControls(mor, lang, window_flags);
-            this.RenderCameraControls(mor, lang, window_flags);
-            this.RenderMeasureControls(mor, lang, window_flags);
-            this.RenderDrawControls(mor, lang, window_flags);
+            this.RenderDebugInfo(time, window_flags, this.FrameState);
+            this.RenderFOWControls(mor, lang, window_flags, this.FrameState);
+            this.RenderTranslationControls(mor, lang, window_flags, this.FrameState);
+            this.RenderCameraControls(mor, lang, window_flags, this.FrameState);
+            this.RenderMeasureControls(mor, lang, window_flags, this.FrameState);
+            this.RenderDrawControls(mor, lang, window_flags, this.FrameState);
             this.RenderFXControls(mor, lang, window_flags, this.FrameState);
             this.RenderShadows2DControls(mor.Shadow2DRenderer, lang, window_flags, this.FrameState);
             this.RenderChat(lang, this.FrameState);

@@ -97,7 +97,7 @@
                                             dIndex = i;
                                         }
 
-                                        if (this.DrawAssetRecepticle(tid, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                        if (ImGuiHelper.ImAssetRecepticle(lang, tid, GuiRenderer.Instance.AssetImageIcon, new SVec2(0, 28), x => x.Type == AssetType.Texture, out _))
                                         {
                                             if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
                                             {
@@ -111,7 +111,7 @@
                                     }
 
                                     ImGui.TextUnformatted($"{i}: ");
-                                    if (this.DrawAssetRecepticle(Guid.Empty, lang, () => GuiRenderer.Instance.DraggedAssetReference?.Type == AssetType.Texture, GuiRenderer.Instance.AssetImageIcon))
+                                    if (ImGuiHelper.ImAssetRecepticle(lang, Guid.Empty, GuiRenderer.Instance.AssetImageIcon, new SVec2(0, 28), x => x.Type == AssetType.Texture, out _))
                                     {
                                         if (GuiRenderer.Instance.DraggedAssetReference != null && GuiRenderer.Instance.DraggedAssetReference.Type == AssetType.Texture)
                                         {
@@ -797,48 +797,6 @@
                     ImGui.EndTooltip();
                 }
             }
-        }
-
-        unsafe bool DrawAssetRecepticle(Guid aId, SimpleLanguage lang, Func<bool> assetEval, Texture iconTex = null)
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            SVec2 imScreenPos = ImGui.GetCursorScreenPos();
-            SVec2 rectEnd = imScreenPos + new SVec2(320, 24);
-            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-            uint bClr = mouseOver ? GuiRenderer.Instance.DraggedAssetReference != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-            drawList.AddRect(imScreenPos, rectEnd, bClr);
-            drawList.AddImage(iconTex ?? GuiRenderer.Instance.AssetModelIcon, imScreenPos + new SVec2(4, 4), imScreenPos + new SVec2(20, 20));
-            string mdlTxt = "";
-            int mdlTxtOffset = 0;
-            if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-            {
-                AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                mdlTxt += aRef.Name;
-                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                {
-                    Texture tex = ap.GetGLTexture();
-                    if (tex != null)
-                    {
-                        drawList.AddImage(tex, imScreenPos + new SVec2(20, 4), imScreenPos + new SVec2(36, 20));
-                        mdlTxtOffset += 20;
-                    }
-                }
-            }
-
-            if (Guid.Equals(Guid.Empty, aId))
-            {
-                mdlTxt = lang.Translate("generic.none");
-            }
-            else
-            {
-                mdlTxt += " (" + aId.ToString() + ")\0";
-            }
-
-            drawList.PushClipRect(imScreenPos, rectEnd);
-            drawList.AddText(imScreenPos + new SVec2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-            drawList.PopClipRect();
-            ImGui.Dummy(new(0, 28));
-            return mouseOver;
         }
 
         private void ShaderLine(ImDrawListPtr drawPtr, SVec2 from, NodeValueType valFrom, SVec2 to, float xOffset, NodeValueType valTo, bool mOverAny)

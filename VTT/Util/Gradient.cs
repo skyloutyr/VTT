@@ -62,15 +62,19 @@
         public void Add(float key, T val)
         {
             GradientPoint<T> point = new GradientPoint<T>(key, val);
-            this.Keys.Add(point);
-            this.Keys.Sort();
+            int i;
+            if ((i = this.Keys.FindIndex(x => MathF.Abs(key - x.Key) <= float.Epsilon)) != -1)
+            {
+                this.Keys[i] = new GradientPoint<T>(key, val);
+            }
+            else
+            {
+                this.Keys.Add(point);
+                this.Keys.Sort();
+            }
         }
 
-        public void Add(GradientPoint<T> val)
-        {
-            this.Keys.Add(val);
-            this.Keys.Sort();
-        }
+        public void Add(GradientPoint<T> val) => this.Add(val.Key, val.Color);
 
         public bool ContainsKey(float key) => this.Keys.Any(p => p.Key == key);
 

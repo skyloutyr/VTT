@@ -1,9 +1,7 @@
 ﻿namespace VTT.Util
 {
-    using NCalc.Domain;
     using SixLabors.ImageSharp;
     using System;
-    using System.Runtime.ConstrainedExecution;
     using System.Text;
     using VTT.Control;
 

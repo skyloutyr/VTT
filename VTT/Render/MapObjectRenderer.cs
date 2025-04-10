@@ -1205,6 +1205,7 @@
 
             shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
             plr.UniformLights(shader);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
         }
 
         public Vector3 CachedSkyColor => this._cachedSkyColor.Vec3();

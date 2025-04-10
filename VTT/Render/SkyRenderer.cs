@@ -7,6 +7,10 @@
     using VTT.Network;
     using VTT.Util;
     using VTT.GL.Bindings;
+    using VTT.Control;
+    using VTT.Asset;
+    using VTT.Asset.Glb;
+    using SixLabors.ImageSharp.PixelFormats;
 
     public class SkyRenderer
     {
@@ -14,6 +18,7 @@
         private GPUBuffer _vbo;
 
         public ShaderProgram SkyShader { get; set; }
+        public Skybox SkyboxRenderer { get; set; }
 
         public Gradient<Vector3> SkyGradient { get; set; } = new Gradient<Vector3>
         {
@@ -139,6 +144,8 @@
             this._vao.Reset();
             this._vao.SetVertexSize<float>(3);
             this._vao.PushElement(ElementType.Vec3);
+            this.SkyboxRenderer = new Skybox();
+            this.SkyboxRenderer.Init();
         }
 
         public Vector3 GetCurrentSunDirection() => Client.Instance.CurrentMap.SunEnabled ? this.GetSunDirection(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1) : -Vector3.UnitZ;
@@ -160,13 +167,14 @@
             return Vector4.Transform(Vector4.Transform(vec, q1), q).Xyz().Normalized();
         }
 
-        public void Render(double time)
+        public void Render(Map map, double time)
         {
-            Control.Map map = Client.Instance.CurrentMap;
             if (map == null)
             {
                 return;
             }
+
+            this.SkyboxRenderer.Render(map, time);
 
             if (map.Is2D)
             {
@@ -197,9 +205,11 @@
             GL.Disable(Capability.Blend);
         }
 
+        public float GetDayProgress(Map map) => map == null ? 0 : !map.SunEnabled ? 12 : (float)(map.SunPitch + MathF.PI) / MathF.PI * 12;
+
         public Color GetSkyColor()
         {
-            Control.Map map = Client.Instance.CurrentMap;
+            Map map = Client.Instance.CurrentMap;
             if (map == null)
             {
                 return Color.Black;
@@ -207,17 +217,30 @@
 
             if (!map.SunEnabled)
             {
-                return map.BackgroundColor;
+                return Extensions.FromVec3(map.DaySkyboxColors.GetColor(map, 12));
             }
 
-            float pitch = map.SunPitch + MathF.PI;
-            float idx = pitch / MathF.PI * 12;
-            return Extensions.FromVec3(this.SkyGradient.Interpolate(idx, GradientInterpolators.LerpVec3));
+            float dayProgress = this.GetDayProgress(map);
+            const float cutoutPointNightToDayStart = 4.8f;
+            const float cutoutPointNightToDayEnd = 7.6f;
+            const float cutoutPointDayToNightStart = 16f;
+            const float cutoutPointDayToNightEnd = 21f;
+            float dayNightFactor =
+                dayProgress < cutoutPointNightToDayStart ? 1.0f
+                : dayProgress < cutoutPointNightToDayEnd ? 1.0f - (dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart)
+                : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
+                : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
+            return Extensions.FromVec3(Vector3.Lerp(map.DaySkyboxColors.GetColor(map, dayProgress), map.NightSkyboxColors.GetColor(map, dayProgress), dayNightFactor));
+
+            // Legacy
+            // float pitch = map.SunPitch + MathF.PI;
+            // float idx = pitch / MathF.PI * 12;
+            // return Extensions.FromVec3(this.SkyGradient.Interpolate(idx, GradientInterpolators.LerpVec3));
         }
 
         public Color GetSunColor()
         {
-            Control.Map map = Client.Instance.CurrentMap;
+            Map map = Client.Instance.CurrentMap;
             if (map == null)
             {
                 return Color.White;
@@ -235,7 +258,7 @@
 
         public Color GetAmbientColor()
         {
-            Control.Map map = Client.Instance.CurrentMap;
+            Map map = Client.Instance.CurrentMap;
             if (map == null)
             {
                 return Color.White;
@@ -249,6 +272,247 @@
             float pitch = map.SunPitch + MathF.PI;
             float idx = pitch / MathF.PI * 12;
             return Extensions.FromVec3(this.AmbientGradient.Interpolate(idx, GradientInterpolators.CubVec3));
+        }
+
+        public class Skybox
+        {
+            private Guid _dayAssetID = Guid.Empty;
+            private Guid _nightAssetID = Guid.Empty;
+
+            private Texture _skyboxArray;
+            private TextureAnimation _skyboxDayAnimation;
+            private TextureAnimation _skyboxNightAnimation;
+            private Texture _skyboxBlank;
+            private ShaderProgram _skyboxShader;
+
+            public Texture SkyboxTextureArray => this._skyboxArray ?? this._skyboxBlank;
+            public TextureAnimation DayAnimation => this._skyboxDayAnimation;
+            public TextureAnimation NightAnimation => this._skyboxNightAnimation;
+
+            private GPUBuffer _vbo;
+            private VertexArray _vao;
+
+            public Skybox()
+            {
+            }
+
+            public void Init()
+            {
+                this._skyboxBlank = new Texture(TextureTarget.Texture2DArray);
+                this._skyboxBlank.Bind();
+                this._skyboxBlank.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                this._skyboxBlank.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+                GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, 4, 3, 2, PixelDataFormat.Rgba, PixelDataType.Byte, 0);
+                using Image<Rgba32> img = new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255));
+                unsafe
+                {
+                    img.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);
+                    System.Buffers.MemoryHandle hnd = mem.Pin();
+                    GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 0, 4, 3, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                    GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 1, 4, 3, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                    hnd.Dispose();
+                }
+
+                this._vao = new VertexArray();
+                this._vbo = new GPUBuffer(BufferTarget.Array);
+                this._vao.Bind();
+                this._vbo.Bind();
+                this._vao.SetVertexSize(sizeof(float) * 3);
+                this._vao.PushElement(ElementType.Vec3);
+                this._vbo.SetData(new float[] {
+                    -1.0f,  1.0f, -1.0f,
+                    -1.0f, -1.0f, -1.0f,
+                     1.0f, -1.0f, -1.0f,
+                     1.0f, -1.0f, -1.0f,
+                     1.0f,  1.0f, -1.0f,
+                    -1.0f,  1.0f, -1.0f,
+
+                    -1.0f, -1.0f,  1.0f,
+                    -1.0f, -1.0f, -1.0f,
+                    -1.0f,  1.0f, -1.0f,
+                    -1.0f,  1.0f, -1.0f,
+                    -1.0f,  1.0f,  1.0f,
+                    -1.0f, -1.0f,  1.0f,
+
+                     1.0f, -1.0f, -1.0f,
+                     1.0f, -1.0f,  1.0f,
+                     1.0f,  1.0f,  1.0f,
+                     1.0f,  1.0f,  1.0f,
+                     1.0f,  1.0f, -1.0f,
+                     1.0f, -1.0f, -1.0f,
+
+                    -1.0f, -1.0f,  1.0f,
+                    -1.0f,  1.0f,  1.0f,
+                     1.0f,  1.0f,  1.0f,
+                     1.0f,  1.0f,  1.0f,
+                     1.0f, -1.0f,  1.0f,
+                    -1.0f, -1.0f,  1.0f,
+
+                    -1.0f,  1.0f, -1.0f,
+                     1.0f,  1.0f, -1.0f,
+                     1.0f,  1.0f,  1.0f,
+                     1.0f,  1.0f,  1.0f,
+                    -1.0f,  1.0f,  1.0f,
+                    -1.0f,  1.0f, -1.0f,
+
+                    -1.0f, -1.0f, -1.0f,
+                    -1.0f, -1.0f,  1.0f,
+                     1.0f, -1.0f, -1.0f,
+                     1.0f, -1.0f, -1.0f,
+                    -1.0f, -1.0f,  1.0f,
+                     1.0f, -1.0f,  1.0f
+                });
+
+                this._skyboxShader = OpenGLUtil.LoadShader("skybox", ShaderType.Vertex, ShaderType.Fragment);
+                this._skyboxShader.Bind();
+                this._skyboxShader["tex_skybox"].Set(6);
+            }
+
+            public void Clear()
+            {
+                this._dayAssetID = Guid.Empty;
+                this._nightAssetID = Guid.Empty;
+            }
+
+            public void Render(Map m, double dt)
+            {
+                this.ValidateSkyboxTextures(m);
+                Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
+                GL.Enable(Capability.DepthTest);
+                GL.DepthFunction(ComparisonMode.LessOrEqual);
+                GL.DepthMask(false);
+
+                this._skyboxShader.Bind();
+                this.UniformShader(this._skyboxShader, m);
+                this._skyboxShader["projection"].Set(m.Is2D ? Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180.0f, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f) : cam.Projection);
+                this._skyboxShader["view"].Set(cam.View.ClearTranslation());
+
+                this._vao.Bind();
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+                GL.DepthMask(true);
+                GL.DepthFunction(ComparisonMode.Less);
+                GL.Disable(Capability.DepthTest);
+            }
+
+            public void UniformShader(ShaderProgram shader, Map m)
+            {
+                float dayProgress = Client.Instance.Frontend.Renderer.SkyRenderer.GetDayProgress(m);
+                const float cutoutPointNightToDayStart = 4.8f;
+                const float cutoutPointNightToDayEnd = 7.6f;
+                const float cutoutPointDayToNightStart = 16f;
+                const float cutoutPointDayToNightEnd = 21f;
+                float dayNightFactor =
+                    dayProgress < cutoutPointNightToDayStart ? 1.0f
+                    : dayProgress < cutoutPointNightToDayEnd ? 1.0f - (dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart)
+                    : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
+                    : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
+
+                shader["animation_day"].Set(this.DayAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
+                shader["animation_night"].Set(this.NightAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
+                shader["daynight_blend"].Set(dayNightFactor);
+                shader["day_color"].Set(m.DaySkyboxColors.GetColor(m, dayProgress));
+                shader["night_color"].Set(m.NightSkyboxColors.GetColor(m, dayProgress));
+                GL.ActiveTexture(6);
+                this.SkyboxTextureArray.Bind();
+                GL.ActiveTexture(0);
+            }
+
+            public void UniformBlank(ShaderProgram shader, Vector3 color)
+            {
+                shader["animation_day"].Set(new Vector4(0, 0, 1, 1));
+                shader["animation_night"].Set(new Vector4(0, 0, 1, 1));
+                shader["daynight_blend"].Set(0f);
+                shader["day_color"].Set(color);
+                shader["night_color"].Set(color);
+                GL.ActiveTexture(6);
+                this._skyboxBlank.Bind();
+                GL.ActiveTexture(0);
+            }
+
+            private void ValidateSkyboxTextures(Map m)
+            {
+                if (!Guid.Equals(this._dayAssetID, m.DaySkyboxAssetID) || !this.ValidateAssetStatus(this._dayAssetID) || !Guid.Equals(this._nightAssetID, m.NightSkyboxAssetID) || !this.ValidateAssetStatus(this._nightAssetID))
+                {
+                    this._skyboxArray?.Dispose();
+                    this._skyboxArray = null;
+                    this._skyboxDayAnimation = null;
+                    this._skyboxNightAnimation = null;
+                    this._dayAssetID = m.DaySkyboxAssetID;
+                    this._nightAssetID = m.NightSkyboxAssetID;
+                }
+
+                if (this._skyboxArray == null)
+                {
+                    this.CreateSkybox();
+                }
+            }
+
+            private unsafe void CreateSkybox()
+            {
+                if (this._dayAssetID.IsEmpty() && this._nightAssetID.IsEmpty()) // No skybox if we have no asset pointer
+                {
+                    return;
+                }
+
+                Asset dayAsset = null;
+                Asset nightAsset = null;
+
+                if (!this._dayAssetID.IsEmpty())
+                {
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this._dayAssetID, AssetType.Texture, out dayAsset);
+                    if (status != AssetStatus.Return || dayAsset == null || dayAsset.Type != AssetType.Texture || dayAsset.Texture == null || !dayAsset.Texture.glReady)
+                    {
+                        return;
+                    }
+                }
+
+                if (!this._nightAssetID.IsEmpty())
+                {
+                    AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this._nightAssetID, AssetType.Texture, out nightAsset);
+                    if (status != AssetStatus.Return || nightAsset == null || nightAsset.Type != AssetType.Texture || nightAsset.Texture == null || !nightAsset.Texture.glReady)
+                    {
+                        return;
+                    }
+                }
+
+                static TextureAnimation CreateDummyAnimation(Size sz) => new TextureAnimation(
+                    new TextureAnimation.Frame[] 
+                    { 
+                        new TextureAnimation.Frame() 
+                        { 
+                            Duration = 0,
+                            Index = 0,
+                            Location = new RectangleF(0, 0, 4f / sz.Width, 3f / sz.Height)
+                        } 
+                    });
+
+                // If we are here then all assets that are not empty are OK
+                Image<Rgba32> dayImage;
+                Image<Rgba32> nightImage;
+                dayImage = dayAsset == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : dayAsset.Texture.CompoundImage();
+                nightImage = nightAsset == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : nightAsset.Texture.CompoundImage();
+                Size maxSize = new Size(Math.Max(dayImage.Width, nightImage.Width), Math.Max(dayImage.Height, nightImage.Height));
+                this._skyboxDayAnimation = dayAsset == null ? CreateDummyAnimation(maxSize) : dayAsset.Texture.CachedAnimation;
+                this._skyboxNightAnimation = nightAsset == null ? CreateDummyAnimation(maxSize) : nightAsset.Texture.CachedAnimation;
+                this._skyboxArray = new Texture(TextureTarget.Texture2DArray);
+                this._skyboxArray.Bind();
+                this._skyboxArray.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                this._skyboxArray.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+                GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, maxSize.Width, maxSize.Height, 2, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
+                dayImage.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);
+                System.Buffers.MemoryHandle hnd = mem.Pin();
+                GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 0, dayImage.Width, dayImage.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                hnd.Dispose();
+                nightImage.DangerousTryGetSinglePixelMemory(out mem);
+                hnd = mem.Pin();
+                GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 1, nightImage.Width, nightImage.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                hnd.Dispose();
+                dayImage.Dispose();
+                nightImage.Dispose();
+            }
+
+            private bool ValidateAssetStatus(Guid id) => id.IsEmpty() || (Client.Instance.AssetManager.ClientAssetLibrary.Assets.GetStatus(id, out AssetStatus astat) && astat == AssetStatus.Return);
         }
     }
 }

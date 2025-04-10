@@ -157,9 +157,15 @@
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
-            GL.Disable(Capability.DepthTest);
-            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+
             GL.Enable(Capability.DepthTest);
+            GL.DepthFunction(ComparisonMode.LessOrEqual);
+            GL.DepthMask(false);
+            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            GL.DepthMask(true);
+            GL.DepthFunction(ComparisonMode.Less);
+            GL.Disable(Capability.DepthTest);
+
             if (renderMisc)
             {
                 Vector3 cwScale = default;

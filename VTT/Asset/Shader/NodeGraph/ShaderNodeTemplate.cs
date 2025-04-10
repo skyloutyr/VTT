@@ -2845,6 +2845,18 @@ $OUTPUT@1$ = $TEMP@0$.a;",
     _ => ctx.CreateMatrix(1.0f)
 });
 
+        public static ShaderNodeTemplate SampleSkybox { get; } = new ShaderNodeTemplate(Guid.Parse("ab1b6034-fe33-4992-b7e7-7e3c8152d5ea"), ShaderTemplateCategory.Samplers, "Skybox Sampler", true,
+            new NodeInput[] { 
+                new NodeInput(){ Name = "Skybox Coordinates", SelfType = NodeValueType.Vec3, CurrentValue = new Vector3(0, 0, 1) }
+            },
+
+            new NodeOutput[] { 
+                new NodeOutput(){ Name = "Color", SelfType = NodeValueType.Vec3 }
+            },
+@"$OUTPUT@0$ = computeSkyboxColor($INPUT@0$);", 
+(ctx, matrix, outIndex) => ctx.CreateMatrix(Vector3.One)
+);
+
         #endregion
 
         #region Vector Decomposition and Composition

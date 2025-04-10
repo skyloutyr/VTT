@@ -54,6 +54,14 @@ uniform vec2 fow_scale;
 uniform float fow_mod;
 uniform float gamma_factor;
 
+// Skybox
+uniform sampler2DArray tex_skybox;
+uniform vec4 animation_day;
+uniform vec4 animation_night;
+uniform float daynight_blend;
+uniform vec3 day_color;
+uniform vec3 night_color;
+
 uniform bool gamma_correct;
 
 out layout (location = 0) vec4 g_color;
@@ -190,6 +198,65 @@ float texCubemap(vec3 uvw, float offset, float currentDepth)
     return getShadowDepth2DArray(pl_shadow_maps, st, currentDepth);
 }
 
+const vec2 cubemap_offsets[6] = vec2[6](
+    vec2(0.0, 1.0 / 3.0),   
+    vec2(0.5, 1.0 / 3.0),   
+    vec2(0.75, 1.0 / 3.0),  
+    vec2(0.25, 1.0 / 3.0),   
+    vec2(0.25, 0),          // OK
+    vec2(0.25, 2.0 / 3.0)   // OK
+);
+
+const vec2 cubemap_factor = vec2(0.25, 1.0 / 3.0);
+
+vec4 sampleSkybox(vec3 v, vec4 frameData, int index)
+{
+    int i = int(v.z);
+    vec2 t_base = vec2(0, 0);
+    switch (i)
+    {
+        case 0:
+            t_base = vec2(v.y, v.x);
+            break;
+
+        case 1:
+            t_base = vec2(1.0 - v.y, 1.0 - v.x);
+            break;
+
+        case 2:
+            t_base = vec2(v.x, 1.0 - v.y);
+            break;
+
+        case 3:
+            t_base = vec2(1.0 - v.x, v.y);
+            break;
+
+        case 4:
+            t_base = vec2(1.0 - v.x, v.y);
+            break;
+
+        case 5:
+            t_base = vec2(v.x, 1.0 - v.y);
+            break;
+
+        default:
+            break;
+    }
+
+    vec2 position_base = clamp(t_base, vec2(0.001, 0.001), vec2(0.999, 0.999)) * cubemap_factor + cubemap_offsets[i];
+	position_base = position_base * frameData.zw + frameData.xy;
+    return texture(tex_skybox, vec3(position_base, float(index)));
+    //return vec4(t_base, 0.0, 1.0);
+}
+
+vec3 computeSkyboxColor(vec3 v)
+{
+    v = cubemap(v);
+	vec4 day = sampleSkybox(v, animation_day, 0) * vec4(day_color, 1.0);
+    vec4 night = sampleSkybox(v, animation_night, 1) * vec4(night_color, 1.0);
+    return mix(day, night, daynight_blend).rgb;
+}
+
 float computeShadow(int light, vec3 light2frag, vec3 norm)
 {
 	vec3 norm_l2f = normalize(light2frag);
@@ -208,7 +275,7 @@ vec3 calcLight(vec3 world_to_light, vec3 radiance, vec3 world_to_camera, vec3 al
     vec3 F = fresnelSchlick(max(0.0, dot(Lh, world_to_camera)), F0);
 	float D = ndfGGX(cosLh, roughness);
 	float G = gaSchlickGGX(cosLi, cosLo, roughness);
-    vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metallic);
+    vec3 kd = mix(vec3(1.0) - F, computeSkyboxColor(reflect(-world_to_camera, normal)), metallic);
     vec3 diffuseBRDF = kd * albedo;
     vec3 specularBRDF = (F * D * G) / max(eff_epsilon, 4.0 * cosLi * cosLo);
     return (diffuseBRDF + specularBRDF) * radiance * cosLi;

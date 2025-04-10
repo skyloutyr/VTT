@@ -119,11 +119,11 @@
                             break;
                         }
 
-                        case 1:
-                        {
-                            state.clientMap.BackgroundColor = c;
-                            break;
-                        }
+                        //case 1: // Legacy
+                        //{
+                        //    state.clientMap.BackgroundColor = c;
+                        //    break;
+                        //}
 
                         case 2:
                         {
@@ -156,7 +156,7 @@
                         Type = this._editedMapColorIndex switch
                         {
                             0 => PacketChangeMapData.DataType.GridColor,
-                            1 => PacketChangeMapData.DataType.SkyColor,
+                            //1 => PacketChangeMapData.DataType.SkyColor, // Legacy
                             2 => PacketChangeMapData.DataType.AmbientColor,
                             _ => PacketChangeMapData.DataType.SunColor
                         }
@@ -1220,6 +1220,36 @@
                 ImGui.EndChild();
                 ImGui.EndPopup();
             }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_map_skybox_color") + "###ChangeMapSkyboxColor"))
+            {
+                ImGui.ColorPicker3(lang.Translate("ui.generic.color") + "###Color", ref this._editedMapSkyboxColorGradientValue);
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
+                bool bo = ImGui.Button(ok);
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (bo)
+                {
+                    MapSkyboxColors colors = this._editedMapSkyboxColorIsDay ? state.clientMap.DaySkyboxColors : state.clientMap.NightSkyboxColors;
+                    if (float.IsNaN(this._editedMapSkyboxColorGradientKey)) // Editing solid color
+                    {
+                        colors.SolidColor = this._editedMapSkyboxColorGradientValue;
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, IsNightGradientColors = !this._editedMapSkyboxColorIsDay, Action = PacketChangeMapSkyboxColors.ActionType.SetSolidColor, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
+                    }
+                    else // Edited value of the gradient point
+                    {
+                        colors.ColorGradient.Remove(this._editedMapSkyboxColorGradientKey);
+                        colors.ColorGradient.Add(this._editedMapSkyboxColorGradientKey, this._editedMapSkyboxColorGradientValue);
+                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, IsNightGradientColors = !this._editedMapSkyboxColorIsDay, Action = PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, GradientPointKey = this._editedMapSkyboxColorGradientKey, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
+                    }
+                }
+
+                ImGui.EndPopup();
+            }
         }
 
         private ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
@@ -1387,6 +1417,11 @@
                 this._currentChatSearchCollection.TimeToQuery = DateTime.Now;
                 this._currentChatSearchCollection.NotifyOfQueryParameterChanged(true);
                 ImGui.OpenPopup("###ChatSearch");
+            }
+
+            if (state.changeMapSkyboxColorPopup)
+            {
+                ImGui.OpenPopup("###ChangeMapSkyboxColor");
             }
         }
     }

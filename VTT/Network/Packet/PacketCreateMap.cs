@@ -17,7 +17,6 @@
                 {
                     IsServer = true,
                     ID = Guid.NewGuid(),
-                    BackgroundColor = Color.Black,
                     AmbientColor = Color.Black,
                     GridColor = Color.White,
                     GridEnabled = true,

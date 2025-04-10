@@ -113,6 +113,7 @@
                 shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                 shader["dataBuffer"].Set(14);
                 Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader, new Vector3(0.39f));
                 GL.ActiveTexture(4);
                 Client.Instance.Frontend.Renderer.White.Bind();
                 GL.ActiveTexture(3);
@@ -282,6 +283,7 @@
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(Capability.DepthTest);
             GL.DepthMask(false);
 
             this._programsPopulated.Clear();
@@ -299,6 +301,7 @@
             shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
             shader["dataBuffer"].Set(14);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
             BindShadows2DTexture(m);
             GL.ActiveTexture(3);
             Client.Instance.Frontend.Renderer.Black.Bind();
@@ -317,6 +320,7 @@
             }
 
             GL.DepthMask(true);
+            GL.Disable(Capability.DepthTest);
             GL.Disable(Capability.Blend);
 
             this.CPUTimer.Stop();
@@ -396,6 +400,8 @@
                             {
                                 Client.Instance.Frontend.Renderer.White.Bind();
                             }
+
+                            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
 
                             GL.ActiveTexture(0);
                             if (enableMemory)

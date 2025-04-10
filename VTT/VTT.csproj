@@ -230,6 +230,9 @@
     <None Remove="Embed\simple-interface-tone.wav" />
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
+    <None Remove="Embed\skybox-ui-example.png" />
+    <None Remove="Embed\skybox.frag" />
+    <None Remove="Embed\skybox.vert" />
     <None Remove="Embed\sphere_mediumres.obj" />
     <None Remove="Embed\sphere_uhd.obj" />
     <None Remove="Embed\square.obj" />
@@ -353,6 +356,9 @@
     <EmbeddedResource Include="Embed\previewNormal.png" />
     <EmbeddedResource Include="Embed\shadowcast.frag" />
     <EmbeddedResource Include="Embed\shadowcast.vert" />
+    <EmbeddedResource Include="Embed\skybox-ui-example.png" />
+    <EmbeddedResource Include="Embed\skybox.frag" />
+    <EmbeddedResource Include="Embed\skybox.vert" />
     <EmbeddedResource Include="Embed\sphere_uhd.obj" />
   </ItemGroup>
 

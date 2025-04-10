@@ -13,6 +13,7 @@
 
     public static class Extensions
     {
+        private const float oneOverMaxByte = 1.0f / byte.MaxValue;
         public static double ElapsedMillis(this Stopwatch self) => (double)self.ElapsedTicks / TimeSpan.TicksPerMillisecond;
 
         public static SVec2 Normalized(this SVec2 vec) => SVec2.Normalize(vec); 
@@ -33,6 +34,8 @@
             SVec4 v4 = color.Vec4();
             return new SVec3(v4.X, v4.Y, v4.Z);
         }
+
+        public static SVec3 ToVector3(this Rgba32 rgba) => new SVec3(rgba.R, rgba.G, rgba.B) * oneOverMaxByte;
 
         public static SVec2 MinXY(this SVec2 self)
         {
@@ -121,6 +124,18 @@
                 uint bg = (byte)(clrVec.Y * 255);
                 uint bb = (byte)(clrVec.Z * 255);
                 uint ba = (byte)(clrVec.W * 255);
+                return (ba << 24) | (bb << 16) | (bg << 8) | br;
+            }
+        }
+
+        public static uint Abgr(this SVec3 clrVec, float a = 1.0f)
+        {
+            unchecked
+            {
+                uint br = (byte)(clrVec.X * 255);
+                uint bg = (byte)(clrVec.Y * 255);
+                uint bb = (byte)(clrVec.Z * 255);
+                uint ba = (byte)(a * 255);
                 return (ba << 24) | (bb << 16) | (bg << 8) | br;
             }
         }

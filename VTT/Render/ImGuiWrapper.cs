@@ -10,6 +10,7 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using System.Text;
+    using VTT.Asset;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.GLFW;
@@ -532,5 +533,98 @@ void main()
         public static Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? Vector2.Zero : ImGui.CalcTextSize(tIn);
 
         public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
+
+        public static void AddTextWithSingleDropShadow(ImDrawListPtr drawList, Vector2 pos, uint color, string text)
+        {
+            drawList.AddText(pos + new Vector2(1, 1), 0xff000000, text);
+            drawList.AddText(pos, color, text);
+        }
+
+        public static bool ImAssetRecepticleCustomText(string text, Texture icon, Vector2 size, Func<AssetRef, bool> assetEvaluator, out bool hovered)
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+            Vector2 avail = ImGui.GetContentRegionAvail();
+            if (size.X == 0)
+            {
+                size.X = avail.X;
+            }
+
+            if (size.Y == 0)
+            {
+                size.Y = avail.Y;
+            }
+
+            Vector2 rectEnd = imScreenPos + size;
+            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+            AssetRef aRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
+            bool result = mouseOver && aRef != null && assetEvaluator(aRef);
+            uint bClr = result ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : mouseOver ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+            drawList.AddRect(imScreenPos, rectEnd, bClr);
+            drawList.AddImage(icon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+            string mdlTxt = text;
+            drawList.PushClipRect(imScreenPos, rectEnd);
+            drawList.AddText(imScreenPos + new Vector2(20, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+            drawList.PopClipRect();
+            ImGui.Dummy(size);
+            hovered = mouseOver;
+            return result;
+        }
+
+        public static bool ImAssetRecepticle(SimpleLanguage lang, Guid aId, Texture icon, Vector2 size, Func<AssetRef, bool> assetEvaluator, out bool hovered)
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+            Vector2 avail = ImGui.GetContentRegionAvail();
+            if (size.X == 0)
+            {
+                size.X = avail.X;
+            }
+
+            if (size.Y == 0)
+            {
+                size.Y = avail.Y;
+            }
+
+            Vector2 rectEnd = imScreenPos + size;
+            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+            AssetRef aRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
+            bool result = mouseOver && aRef != null && assetEvaluator(aRef);
+            uint bClr = result ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : mouseOver ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+            drawList.AddRect(imScreenPos, rectEnd, bClr);
+            drawList.AddImage(icon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+            string mdlTxt = "";
+            int mdlTxtOffset = 0;
+            if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
+            {
+                aRef = Client.Instance.AssetManager.Refs[aId];
+                mdlTxt += aRef.Name;
+                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
+                {
+                    Texture tex = ap.GetGLTexture();
+                    if (tex != null)
+                    {
+                        drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
+                        mdlTxtOffset += 20;
+                    }
+                }
+            }
+
+            if (Guid.Equals(Guid.Empty, aId))
+            {
+                mdlTxt = lang.Translate("generic.none");
+            }
+            else
+            {
+                mdlTxt += " (" + aId.ToString() + ")\0";
+            }
+
+            drawList.PushClipRect(imScreenPos, rectEnd);
+            drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
+            drawList.PopClipRect();
+            ImGui.Dummy(size);
+            hovered = mouseOver;
+            return result;
+        }
     }
 }

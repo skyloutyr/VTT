@@ -625,5 +625,8 @@
             long dVal = (long)(val.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds;
             self.SetLong(name, dVal);
         }
+
+        public static void SetObject<T>(this DataElement self, string name, T val) where T : ISerializable => self.SetMap(name, val.Serialize());
+        public static void PopulateObject<T>(this DataElement self, string name, T val, DataElement defaultValue = default) where T : ISerializable => val.Deserialize(self.GetMap(name, defaultValue));
     }
 }

@@ -353,18 +353,18 @@
 
                         ImGui.EndChild();
 
-                        bool mouseOverRecepticle = DrawMapAssetRecepticle(lang.Translate("ui.music_player.add_track"), () => this._draggedRef?.Type == AssetType.Sound, this.AssetMusicIcon);
+                        bool mouseOverRecepticle = ImGuiHelper.ImAssetRecepticleCustomText(lang.Translate("ui.music_player.add_track"), this.AssetMusicIcon, new Vector2(0, 28), static x => x.Type == AssetType.Sound, out bool musicAddTrackHovered);
                         if (mouseOverRecepticle && this._draggedRef?.Type == AssetType.Sound)
                         {
                             state.movingAssetOverMusicPlayerAddPoint = true;
                         }
 
-                        if (mouseOverRecepticle)
+                        if (musicAddTrackHovered)
                         {
                             ImGui.SetTooltip(lang.Translate("ui.music_player.add_track.tt"));
                         }
 
-                        mouseOverRecepticle = DrawMapAssetRecepticle(lang.Translate("ui.music_player.remove_track"), null, this.AssetMusicIcon);
+                        mouseOverRecepticle = ImGuiHelper.ImAssetRecepticleCustomText(lang.Translate("ui.music_player.remove_track"), this.AssetMusicIcon, new Vector2(0, 28), static x => true, out bool musicRemoveTrackHovered);
                         if (mouseOverRecepticle)
                         {
                             if (this._dragLmbStatus && !ImGui.IsMouseDown(ImGuiMouseButton.Left))
@@ -381,7 +381,7 @@
                             }
                         }
 
-                        if (mouseOverRecepticle)
+                        if (musicRemoveTrackHovered)
                         {
                             ImGui.SetTooltip(lang.Translate("ui.music_player.remove_track.tt"));
                         }
@@ -393,24 +393,6 @@
                             this._draggedTrackData = default;
                             this._isDraggingTrack = false;
                         }
-                    }
-
-                    unsafe bool DrawMapAssetRecepticle(string text, Func<bool> assetEval, GL.Texture iconTex = null)
-                    {
-                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                        Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                        Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
-                        bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                        uint bClr = assetEval == null ? mouseOver ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.Border) : mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                        drawList.AddRect(imScreenPos, rectEnd, bClr);
-                        drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                        string mdlTxt = text;
-                        int mdlTxtOffset = 0;
-                        drawList.PushClipRect(imScreenPos, rectEnd);
-                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                        drawList.PopClipRect();
-                        ImGui.Dummy(new Vector2(0, 28));
-                        return mouseOver;
                     }
                 }
             }

@@ -49,6 +49,13 @@
             if (m != null)
             {
                 this.GroundHitscanResult = TryHitscanGround(this.ClientCamera, out Vector3 cw) ? cw : null;
+            }
+        }
+
+        public void RenderLate(Map m, double time)
+        {
+            if (m != null)
+            {
                 this.GridRenderer.Render(time, this.ClientCamera, m);
             }
         }

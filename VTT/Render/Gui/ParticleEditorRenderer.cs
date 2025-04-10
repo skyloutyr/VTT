@@ -131,7 +131,7 @@
 
                             if (cEmissionType == 11)
                             {
-                                ImAssetRecepticle("ui.properties.custom_mask.tt", draggedRef, pr.CurrentlyEditedSystem.MaskID, state, pr.CurrentlyEditedSystem, 2);
+                                ImAssetRecepticle(lang, "ui.properties.custom_mask.tt", pr.CurrentlyEditedSystem.MaskID, state, pr.CurrentlyEditedSystem, 2);
                             }
 
                             ImGui.Text(lang.Translate("ui.particle.emission_chance"));
@@ -306,8 +306,8 @@
                                 }
                             }
 
-                            ImAssetRecepticle("ui.popup.model.tt", draggedRef, pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem, 1);
-                            ImAssetRecepticle("ui.properties.custom_shader.tt", draggedRef, pr.CurrentlyEditedSystem.CustomShaderID, state, pr.CurrentlyEditedSystem, 0);
+                            ImAssetRecepticle(lang, "ui.popup.model.tt", pr.CurrentlyEditedSystem.AssetID, state, pr.CurrentlyEditedSystem, 1);
+                            ImAssetRecepticle(lang, "ui.properties.custom_shader.tt", pr.CurrentlyEditedSystem.CustomShaderID, state, pr.CurrentlyEditedSystem, 0);
                             if (ImGui.Button(lang.Translate("ui.properties.custom_shader.delete")))
                             {
                                 pr.CurrentlyEditedSystem.CustomShaderID = Guid.Empty;
@@ -736,69 +736,40 @@
             return false;
         }
 
-        private void ImAssetRecepticle(string text, AssetRef draggedRef, Guid aId, GuiState state, ParticleSystem ps, int type)
+        private void ImAssetRecepticle(SimpleLanguage lang, string text, Guid aId, GuiState state, ParticleSystem ps, int type)
         {
-            float w = ImGui.GetContentRegionAvail().X;
-            if (ImGui.BeginChild("asset_recepticle_" + text, new Vector2(w, 24), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            bool result = ImGuiHelper.ImAssetRecepticle(lang, aId, type switch
             {
-                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                Vector2 contentSize = Vector2.Min(new Vector2(w, 24), ImGui.GetContentRegionAvail());
-                Vector2 rectEnd = imScreenPos + contentSize;
-                bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                bool acceptShader = type == 0 && draggedRef != null && draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader;
-                bool acceptModel = type == 1 && draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture);
-                bool acceptMask = type == 2 && draggedRef != null && draggedRef.Type == AssetType.Texture;
-                uint bClr = mouseOver ? draggedRef != null && (acceptShader || acceptModel || acceptMask) ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                drawList.AddRect(imScreenPos, rectEnd, bClr);
-                drawList.AddImage(type switch
-                {
-                    0 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetShaderIcon,
-                    1 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetModelIcon,
-                    _ => Client.Instance.Frontend.Renderer.GuiRenderer.AssetImageIcon
-                }, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                string mdlTxt = "";
-                int mdlTxtOffset = 0;
-                if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-                {
-                    AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                    mdlTxt += aRef.Name;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                    {
-                        GL.Texture tex = ap.GetGLTexture();
-                        if (tex != null)
-                        {
-                            drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                            mdlTxtOffset += 20;
-                        }
-                    }
-                }
+                0 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetShaderIcon,
+                1 => Client.Instance.Frontend.Renderer.GuiRenderer.AssetModelIcon,
+                _ => Client.Instance.Frontend.Renderer.GuiRenderer.AssetImageIcon
+            }, new Vector2(0, 24), type switch 
+            { 
+                0 => static x => x != null && x.Type is AssetType.Shader or AssetType.GlslFragmentShader,
+                1 => static x => x != null && x.Type is AssetType.Model or AssetType.Texture,
+                2 => static x => x != null && x.Type == AssetType.Texture,
+                _ => static x => false
+            }, out bool hovered);
 
-                mdlTxt += " (" + aId.ToString() + ")\0";
-                drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                ImGui.Dummy(new Vector2(w, 28));
-                if (mouseOver && draggedRef != null && acceptModel)
-                {
-                    state.particleModelHovered = ps;
-                }
-
-                if (mouseOver && draggedRef != null && acceptShader)
-                {
-                    state.particleShaderHovered = ps;
-                }
-
-                if (mouseOver && draggedRef != null && acceptMask)
-                {
-                    state.particleMaskHovered = ps;
-                }
-
-                if (mouseOver)
-                {
-                    ImGui.SetTooltip(Client.Instance.Lang.Translate(text));
-                }
+            if (type == 1 && result)
+            {
+                state.particleModelHovered = ps;
             }
 
-            ImGui.EndChild();
+            if (type == 0 && result)
+            {
+                state.particleShaderHovered = ps;
+            }
+
+            if (type == 2 && result)
+            {
+                state.particleMaskHovered = ps;
+            }
+
+            if (hovered)
+            {
+                ImGui.SetTooltip(Client.Instance.Lang.Translate(text));
+            }
         }
 
         private static bool ImDragInt2(string label, ref int min, ref int max, int mmin, int mmax)

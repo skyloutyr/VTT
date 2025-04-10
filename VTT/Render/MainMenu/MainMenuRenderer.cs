@@ -395,6 +395,7 @@
                             ImGui.Text("    visialy-impared");
                             ImGui.Text("    video-camera");
                             ImGui.Text("    wall");
+                            ImLink(lang.Translate("credits.ui_skybox"), "https://learnopengl.com/img/textures/skybox.zip");
                             ImGui.NewLine();
                             ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
                             ImGui.NewLine();

@@ -293,8 +293,7 @@
 
                         if (isAdmin)
                         {
-                            bool mouseOver = DrawObjectAssetRecepticle(mo, mo.AssetID, () => this._draggedRef.Type is AssetType.Model or AssetType.Texture);
-                            if (mouseOver && this._draggedRef != null && (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture))
+                            if (ImGuiHelper.ImAssetRecepticle(lang, mo.AssetID, this.AssetModelIcon, new Vector2(0, 24), static x => x.Type is AssetType.Model or AssetType.Texture, out bool mouseOver) && this._draggedRef != null && (this._draggedRef.Type == AssetType.Model || this._draggedRef.Type == AssetType.Texture))
                             {
                                 state.objectModelHovered = mo;
                             }
@@ -316,8 +315,7 @@
                                 ImGui.SetTooltip(lang.Translate("ui.properties.has_custom_nameplate.tt"));
                             }
 
-                            mouseOver = DrawObjectAssetRecepticle(mo, mo.CustomNameplateID, () => this._draggedRef.Type == AssetType.Texture, this.AssetImageIcon);
-                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                            if (ImGuiHelper.ImAssetRecepticle(lang, mo.CustomNameplateID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
                             {
                                 state.objectCustomNameplateHovered = mo;
                             }
@@ -327,8 +325,7 @@
                                 ImGui.SetTooltip(lang.Translate("ui.properties.custom_nameplate.tt"));
                             }
 
-                            mouseOver = DrawObjectAssetRecepticle(mo, mo.ShaderID, () => this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader, this.AssetShaderIcon);
-                            if (mouseOver && this._draggedRef != null && this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader)
+                            if (ImGuiHelper.ImAssetRecepticle(lang, mo.ShaderID, this.AssetShaderIcon, new Vector2(0, 24), static x => x.Type is AssetType.Shader or AssetType.GlslFragmentShader, out mouseOver) && this._draggedRef != null && this._draggedRef.Type is AssetType.Shader or AssetType.GlslFragmentShader)
                             {
                                 state.objectCustomShaderHovered = mo;
                             }
@@ -495,37 +492,8 @@
                                 {
                                     foreach (ParticleContainer pc in mo.Particles.GetAllContainers())
                                     {
-                                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                                        Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                                        Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
-                                        bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                                        uint bClr = mouseOver ? this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                                        drawList.AddRect(imScreenPos, rectEnd, bClr);
-                                        drawList.AddImage(this.AssetParticleIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                                        Guid aId = pc.SystemID;
-                                        string mdlTxt = "";
-                                        int mdlTxtOffset = 0;
-                                        if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-                                        {
-                                            AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                                            mdlTxt += aRef.Name;
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                                            {
-                                                GL.Texture tex = ap.GetGLTexture();
-                                                if (tex != null)
-                                                {
-                                                    drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                                                    mdlTxtOffset += 20;
-                                                }
-                                            }
-                                        }
-
-                                        mdlTxt += " (" + aId.ToString() + ")\0";
-                                        drawList.PushClipRect(imScreenPos, rectEnd);
-                                        drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                                        drawList.PopClipRect();
-                                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
-                                        if (mouseOver && this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem)
+                                        
+                                        if (ImGuiHelper.ImAssetRecepticle(lang, pc.SystemID, this.AssetParticleIcon, new Vector2(0, 28), x => x.Type == AssetType.ParticleSystem, out bool mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem)
                                         {
                                             state.particleContainerHovered = pc;
                                         }
@@ -977,48 +945,6 @@
                 }
 
                 ImGui.End();
-            }
-
-            unsafe bool DrawObjectAssetRecepticle(MapObject mo, Guid aId, Func<bool> assetEval, GL.Texture iconTex = null)
-            {
-                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-                Vector2 rectEnd = imScreenPos + new Vector2(320, 24);
-                bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-                uint bClr = mouseOver ? this._draggedRef != null && assetEval() ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-                drawList.AddRect(imScreenPos, rectEnd, bClr);
-                drawList.AddImage(iconTex ?? this.AssetModelIcon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-                string mdlTxt = "";
-                int mdlTxtOffset = 0;
-                if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-                {
-                    AssetRef aRef = Client.Instance.AssetManager.Refs[aId];
-                    mdlTxt += aRef.Name;
-                    if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                    {
-                        GL.Texture tex = ap.GetGLTexture();
-                        if (tex != null)
-                        {
-                            drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                            mdlTxtOffset += 20;
-                        }
-                    }
-                }
-
-                if (Guid.Equals(Guid.Empty, aId))
-                {
-                    mdlTxt = lang.Translate("generic.none");
-                }
-                else
-                {
-                    mdlTxt += " (" + aId.ToString() + ")\0";
-                }
-
-                drawList.PushClipRect(imScreenPos, rectEnd);
-                drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-                drawList.PopClipRect();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 28);
-                return mouseOver;
             }
         }
 

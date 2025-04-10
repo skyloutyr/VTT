@@ -54,6 +54,12 @@
         public MapObject overrideObjectOpenRightClickContextMenu;
         public bool chatHovered = false;
         public bool chatSearchPopup = false;
+        public Map mapDaySkyboxAssetHovered = null;
+        public Map mapNightSkyboxAssetHovered = null;
+        public Map mapDaySkyboxColorsAssetHovered = null;
+        public Map mapNightSkyboxColorsAssetHovered = null;
+        public bool renderedDebugOverlay = false;
+        public bool changeMapSkyboxColorPopup = false;
 
         public void Reset()
         {
@@ -111,6 +117,12 @@
             this.overrideObjectOpenRightClickContextMenu = null;
             this.chatHovered = false;
             this.chatSearchPopup = false;
+            this.mapDaySkyboxAssetHovered = null;
+            this.mapNightSkyboxAssetHovered = null;
+            this.mapDaySkyboxColorsAssetHovered = null;
+            this.mapNightSkyboxColorsAssetHovered = null;
+            this.renderedDebugOverlay = false;
+            this.changeMapSkyboxColorPopup = false;
         }
     }
 }

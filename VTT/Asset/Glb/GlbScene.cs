@@ -1515,6 +1515,7 @@
             shader["tint_color"].Set(Vector4.One);
 
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader, clearColor.Xyz());
 
             GL.BindFramebuffer(FramebufferTarget.All, fbo);
             GL.Viewport(0, 0, width, height);

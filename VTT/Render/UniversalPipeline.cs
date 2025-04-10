@@ -138,6 +138,8 @@
             GL.ActiveTexture(0);
             plr.UniformLights(shader);
 
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
+
             return this.Forward;
         }
         public void EndDeferred(Map m)
@@ -212,6 +214,7 @@
             plr.DepthMap.Bind();
             plr.UniformLights(shader);
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
 
             GL.Enable(Capability.CullFace);
             GL.CullFace(PolygonFaceMode.Back);
@@ -392,6 +395,7 @@
             this.DeferredFinal["g_aomrg"].Set(9);
             this.DeferredFinal["g_emission"].Set(8);
             this.DeferredFinal["g_depth"].Set(7);
+            this.DeferredFinal["tex_skybox"].Set(6);
             this.DeferredFinal["dl_shadow_map"].Set(14);
             this.DeferredFinal["pl_shadow_maps"].Set(13);
 
@@ -405,6 +409,7 @@
             this.Forward["m_texture_aomr"].Set(3);
             this.Forward["pl_shadow_maps"].Set(13);
             this.Forward["dl_shadow_map"].Set(14);
+            this.Forward["tex_skybox"].Set(6);
 
             this.FinalPass = this.CompileShader("universal_final", haveSunShadows, havePointShadows);
             this.FinalPass.Bind();

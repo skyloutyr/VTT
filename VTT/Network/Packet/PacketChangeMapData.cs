@@ -101,7 +101,7 @@
 
                     case DataType.SkyColor:
                     {
-                        m.BackgroundColor = (Color)this.Data;
+                        this.ContextLogger.Log(LogLevel.Warn, $"Legacy map data packet - should be impossible!");
                         break;
                     }
 

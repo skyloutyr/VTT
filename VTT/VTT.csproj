@@ -116,6 +116,7 @@
     <None Remove="Embed\icons8-box-important-80.png" />
     <None Remove="Embed\icons8-closed-eye-40.png" />
     <None Remove="Embed\icons8-color-swatch-40.png" />
+    <None Remove="Embed\icons8-copy-40.png" />
     <None Remove="Embed\icons8-cube-40.png" />
     <None Remove="Embed\icons8-cursor-40.png" />
     <None Remove="Embed\icons8-curved-arrow-40.png" />
@@ -323,6 +324,7 @@
     <EmbeddedResource Include="Embed\icon-d8-secondary-highlight.png" />
     <EmbeddedResource Include="Embed\icon-d8-secondary.png" />
     <EmbeddedResource Include="Embed\icon-d8.png" />
+    <EmbeddedResource Include="Embed\icons8-copy-40.png" />
     <EmbeddedResource Include="Embed\icons8-door-40.png" />
     <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
     <EmbeddedResource Include="Embed\icons8-magic-40.png" />

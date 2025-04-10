@@ -716,6 +716,19 @@
                                     }
 
                                     ImGui.SameLine();
+                                    if (ImGui.ImageButton("duplicateMapBtn_" + d.MapID.ToString(), this.CopyIcon, Vec12x12))
+                                    {
+                                        new PacketDuplicateMap() { MapID = d.MapID }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        hadTT = true;
+                                        ImGui.SetTooltip(lang.Translate("ui.maps.nav.duplicate"));
+                                    }
+
+                                    ImGui.SameLine();
+
                                     if (ImGui.ImageButton("deleteMapBtn_" + d.MapID.ToString(), this.DeleteIcon, Vec12x12))
                                     {
                                         state.deleteMapPopup = true;

@@ -325,5 +325,63 @@
                 data.Write(bw);
             }
         }
+
+        public Map Clone()
+        {
+            Map ret = new Map() 
+            { 
+                ID = Guid.NewGuid(),
+                IsServer = this.IsServer,
+                IsDeleted = this.IsDeleted,
+                Name = $"New {this.Name}",
+                Folder = this.Folder,
+                GridEnabled = this.GridEnabled,
+                GridDrawn = this.GridDrawn,
+                GridSize = this.GridSize,
+                GridUnit = this.GridUnit,
+                GridColor = this.GridColor,
+                BackgroundColor = this.BackgroundColor,
+                AmbientColor = this.AmbientColor,
+                SunColor = this.SunColor,
+                SunEnabled = this.SunEnabled,
+                SunYaw = this.SunYaw,
+                SunPitch = this.SunPitch,
+                SunIntensity = this.SunIntensity,
+                AmbientIntensity = this.AmbientIntensity,
+                EnableShadows = this.EnableShadows,
+                EnableDirectionalShadows = this.EnableDirectionalShadows,
+                EnableDarkvision = this.EnableDarkvision,
+                EnableDrawing = this.EnableDrawing,
+                Has2DShadows = this.Has2DShadows,
+                Is2D = this.Is2D,
+                Camera2DHeight = this.Camera2DHeight,
+                AmbientSoundID = this.AmbientSoundID,
+                AmbientSoundVolume = this.AmbientSoundVolume,
+                DefaultCameraPosition = this.DefaultCameraPosition,
+                DefaultCameraRotation = this.DefaultCameraRotation,
+                FOW = this.FOW.Clone(),
+                NeedsSave = true,
+            };
+
+            ret.TurnTracker = this.TurnTracker.CloneWithoutObjects(ret);
+            ret.ShadowLayer2D.CloneFrom(this.ShadowLayer2D);
+            ret.PermanentMarks.AddRange(this.PermanentMarks.Select(x => x.Clone()));
+            ret.Drawings.AddRange(this.Drawings.Select(x => x.Clone()));
+            lock (this.Lock)
+            {
+                foreach (MapObject mo in this.Objects)
+                {
+                    ret.AddObject(mo.Clone());
+                }
+            }
+
+            foreach (KeyValuePair<Guid, (Guid, float)> kv in this.DarkvisionData)
+            {
+                ret.DarkvisionData[kv.Key] = (kv.Value.Item1, kv.Value.Item2);
+            }
+
+            ret.NeedsSave = ret.IsServer;
+            return ret;
+        }
     }
 }

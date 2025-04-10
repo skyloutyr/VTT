@@ -27,6 +27,20 @@
             this.Teams.Add(new Team() { Name = string.Empty, Color = Color.White });
         }
 
+        public TurnTracker CloneWithoutObjects(Map container)
+        {
+            TurnTracker ret = new TurnTracker(container) { Visible = this.Visible };
+            foreach (Team t in this.Teams)
+            {
+                if (!string.IsNullOrEmpty(t.Name))
+                {
+                    ret.Teams.Add(t.Clone());
+                }
+            }
+
+            return ret;
+        }
+
         public void Sort()
         {
             bool hadEntry = this.TryGetAtSafe(this.EntryIndex, out Entry e);
@@ -361,6 +375,8 @@
                 ret.SetColor("Color", this.Color);
                 return ret;
             }
+
+            public Team Clone() => new Team() { Name = this.Name, Color = this.Color };
         }
     }
 }

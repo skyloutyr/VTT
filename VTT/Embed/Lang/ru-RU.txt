@@ -835,3 +835,4 @@ ui.properties.no_nameplate_bg=Полоса Имени без Фона
 ui.popup.object_actions.link_to_chat=Отправить в чат...
 ui.popup.object_actions.link_to_chat.no_bars=Без полосок
 ui.popup.object_actions.link_to_chat.yes_bars=С полосками
+ui.maps.nav.duplicate=Создать копию этой карты в текущей папке

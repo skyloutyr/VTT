@@ -22,19 +22,26 @@
         public bool WasErasedFromDisk { get; set; }
         public bool NeedsSave { get; set; }
 
-        private FOWCell[] _cells;
-
         public object Lock = new object();
 
         public FOWCanvas(int w, int h)
         {
             Rgba64 back = new Rgba64(0, 0, 0, 0);
             this._img = new Image<Rgba64>(w, h, back);
-            this.InitCellsArray();
         }
 
         public FOWCanvas()
         {
+        }
+
+        public FOWCanvas Clone()
+        {
+            FOWCanvas ret = new FOWCanvas();
+            ret._img = this._img?.Clone();
+            ret.IsDeleted = this.IsDeleted;
+            ret.WasErasedFromDisk = this.WasErasedFromDisk;
+            ret.NeedsSave = true;
+            return ret;
         }
 
         internal Rgba64 GetPixel(int x, int y) => this.IsDeleted ? default : this._img[x, y];
@@ -54,34 +61,11 @@
 
         public void Write(string file) => this._img.SaveAsPng(file);
 
-        public void Read(BinaryReader br)
-        {
-            this._img = Image.Load<Rgba64>(br.BaseStream);
-            this.InitCellsArray();
-        }
+        public void Read(BinaryReader br) => this._img = Image.Load<Rgba64>(br.BaseStream);
 
-        public void Read(string file)
-        {
-            this._img = Image.Load<Rgba64>(file);
-            this.InitCellsArray();
-        }
+        public void Read(string file) => this._img = Image.Load<Rgba64>(file);
 
-        private void InitCellsArray()
-        {
-            int w = this._img.Width;
-            int h = this._img.Height;
-            this._cells = new FOWCell[w * h];
-            for (int i = 0; i < w * h; ++i)
-            {
-                this._cells[i] = new FOWCell(i % w, i / w);
-            }
-        }
-
-        public void Dispose()
-        {
-            this._img.Dispose();
-            this._cells = null;
-        }
+        public void Dispose() => this._img.Dispose();
 
         public bool IsVisible(RectangleF rect, out bool partlyObscured, out bool outOfBounds)
         {
@@ -185,8 +169,7 @@
                     bool result = false;
                     foreach (FOWCellAction acts in actions)
                     {
-                        int idx = (acts.Y * this.Width) + acts.X;
-                        result |= this._cells[idx].Mask(this, acts.Mask, acts.Action);
+                        result |= this.MaskCellAt(acts.X, acts.Y, acts.Action, acts.Mask);
                     }
 
                     if (result)
@@ -362,8 +345,28 @@
 
             return inside;
         }
+
+        private bool MaskCellAt(int imgx, int imgy, bool action, ulong mask)
+        {
+            Rgba64 pixel = this.GetPixel(imgx, imgy);
+            ulong val = pixel.PackedValue;
+            if (!action)
+            {
+                val &= ~mask;
+            }
+            else
+            {
+                val |= mask;
+            }
+
+            bool r = val != pixel.PackedValue;
+            pixel.PackedValue = val;
+            this.SetPixel(imgx, imgy, pixel);
+            return r;
+        }
     }
 
+    [Obsolete("Migrated to FOWCanvas directly, unused, left for methods")]
     public readonly struct FOWCell
     {
         private readonly int _x;

@@ -19,6 +19,24 @@
         private readonly object _lock = new object();
         public Shadow2DBVH BVH { get; set; } = new Shadow2DBVH();
 
+        public void CloneFrom(Map2DShadowLayer other)
+        {
+            lock (this._lock)
+            {
+                lock (other._lock)
+                {
+                    this._boxes.Clear();
+                    this._allBoxes.Clear();
+                    foreach (KeyValuePair<Guid, Shadow2DBox> kv in other._boxes)
+                    {
+                        this._allBoxes.Add(this._boxes[kv.Key] = kv.Value.FullClone(false));
+                    }
+
+                    this._needsBVHChange = true;
+                }
+            }
+        }
+
         public IEnumerable<Shadow2DBox> EnumerateBoxes()
         {
             lock (this._lock)
@@ -516,11 +534,11 @@
             return ret;
         }
 
-        public Shadow2DBox FullClone()
+        public Shadow2DBox FullClone(bool cloneID = true)
         {
             return new Shadow2DBox()
             {
-                BoxID = this.BoxID,
+                BoxID = cloneID ? this.BoxID : Guid.NewGuid(),
                 Start = this.Start,
                 End = this.End,
                 Rotation = this.Rotation,

@@ -106,6 +106,13 @@
             this.DisplayInfo = br.ReadBoolean();
         }
 
+        public RulerInfo Clone()
+        {
+            RulerInfo ret = new RulerInfo();
+            ret.CloneData(this);
+            return ret;
+        }
+
         public void CloneData(RulerInfo other) // Assume SelfID check succeeded
         {
             this.OwnerID = other.OwnerID;

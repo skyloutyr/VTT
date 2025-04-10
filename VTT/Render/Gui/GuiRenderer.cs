@@ -27,6 +27,7 @@
         #region Textures
         public Texture FolderIcon { get; set; }
         public Texture AddIcon { get; set; }
+        public Texture CopyIcon { get; set; }
         public Texture BackIcon { get; set; }
         public Texture ErrorIcon { get; set; }
         public Texture NoImageIcon { get; set; }
@@ -228,6 +229,7 @@
             this.FolderIcon = OpenGLUtil.LoadUIImage("icons8-folder-40");
             this.BackIcon = OpenGLUtil.LoadUIImage("icons8-return-40");
             this.AddIcon = OpenGLUtil.LoadUIImage("icons8-plus-math-40");
+            this.CopyIcon = OpenGLUtil.LoadUIImage("icons8-copy-40");
             this.ErrorIcon = OpenGLUtil.LoadUIImage("icons8-error-40");
             this.NoImageIcon = OpenGLUtil.LoadUIImage("icons8-no-image-40");
             this.GotoIcon = OpenGLUtil.LoadUIImage("icons8-day-camera-40");

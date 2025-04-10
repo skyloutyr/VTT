@@ -184,6 +184,20 @@
             this.Points.Clear();
             this.Points.AddRange(e.GetArray("pts", (n, c) => new DrawingPoint(c.GetVec3(n)), Array.Empty<DrawingPoint>()));
         }
+
+        public DrawingPointContainer Clone()
+        {
+            DrawingPointContainer ret = new DrawingPointContainer() 
+            { 
+                ID = Guid.NewGuid(),
+                OwnerID = this.OwnerID,
+                Radius = this.Radius,
+                Color = this.Color,
+            };
+
+            ret.Points.AddRange(this.Points);
+            return ret;
+        }
     }
 
     public readonly struct DrawingPoint

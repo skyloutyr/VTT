@@ -11,6 +11,9 @@
     using VTT.Asset;
     using VTT.Asset.Glb;
     using SixLabors.ImageSharp.PixelFormats;
+    using System.Collections.Concurrent;
+    using System.Threading;
+    using System.Data;
 
     public class SkyRenderer
     {
@@ -292,6 +295,8 @@
             private GPUBuffer _vbo;
             private VertexArray _vao;
 
+            private bool _waitingOnAsync;
+
             public Skybox()
             {
             }
@@ -372,6 +377,7 @@
             {
                 this._dayAssetID = Guid.Empty;
                 this._nightAssetID = Guid.Empty;
+                this._waitingOnAsync = false;
             }
 
             public void Render(Map m, double dt)
@@ -476,40 +482,67 @@
                     }
                 }
 
+                if (this._waitingOnAsync)
+                {
+                    return;
+                }
+
+                ThreadPool.QueueUserWorkItem(this.LoadImageAsync, (dayAsset, nightAsset));
+                this._waitingOnAsync = true;
+            }
+
+            private void LoadImageAsync(object state)
+            {
+                (Asset, Asset) stateAssets = ((Asset, Asset))state;
+                static void CallbackMain(Guid idDay, Guid idNight, Image<Rgba32> imgDay, Image<Rgba32> imgNight, TextureAnimation animDay, TextureAnimation animNight) => Client.Instance.Frontend.EnqueueTask(() => Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.HandleAsyncCallback(idDay, idNight, imgDay, imgNight, animDay, animNight));
                 static TextureAnimation CreateDummyAnimation(Size sz) => new TextureAnimation(
-                    new TextureAnimation.Frame[] 
-                    { 
-                        new TextureAnimation.Frame() 
-                        { 
+                    new TextureAnimation.Frame[]
+                    {
+                        new TextureAnimation.Frame()
+                        {
                             Duration = 0,
                             Index = 0,
                             Location = new RectangleF(0, 0, 4f / sz.Width, 3f / sz.Height)
-                        } 
+                        }
                     });
 
-                // If we are here then all assets that are not empty are OK
-                Image<Rgba32> dayImage;
-                Image<Rgba32> nightImage;
-                dayImage = dayAsset == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : dayAsset.Texture.CompoundImage();
-                nightImage = nightAsset == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : nightAsset.Texture.CompoundImage();
+                Image<Rgba32> dayImage = stateAssets.Item1 == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : stateAssets.Item1.Texture.CompoundImage();
+                Image<Rgba32> nightImage = stateAssets.Item2 == null ? new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255)) : stateAssets.Item2.Texture.CompoundImage();
                 Size maxSize = new Size(Math.Max(dayImage.Width, nightImage.Width), Math.Max(dayImage.Height, nightImage.Height));
-                this._skyboxDayAnimation = dayAsset == null ? CreateDummyAnimation(maxSize) : dayAsset.Texture.CachedAnimation;
-                this._skyboxNightAnimation = nightAsset == null ? CreateDummyAnimation(maxSize) : nightAsset.Texture.CachedAnimation;
-                this._skyboxArray = new Texture(TextureTarget.Texture2DArray);
-                this._skyboxArray.Bind();
-                this._skyboxArray.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-                this._skyboxArray.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
-                GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, maxSize.Width, maxSize.Height, 2, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
-                dayImage.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);
-                System.Buffers.MemoryHandle hnd = mem.Pin();
-                GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 0, dayImage.Width, dayImage.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
-                hnd.Dispose();
-                nightImage.DangerousTryGetSinglePixelMemory(out mem);
-                hnd = mem.Pin();
-                GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 1, nightImage.Width, nightImage.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
-                hnd.Dispose();
-                dayImage.Dispose();
-                nightImage.Dispose();
+                TextureAnimation dayAnim = stateAssets.Item1?.Texture?.CachedAnimation ?? CreateDummyAnimation(maxSize);
+                TextureAnimation nightAnim = stateAssets.Item2?.Texture?.CachedAnimation ?? CreateDummyAnimation(maxSize);
+                CallbackMain(stateAssets.Item1?.ID ?? Guid.Empty, stateAssets.Item2?.ID ?? Guid.Empty, dayImage, nightImage, dayAnim, nightAnim);
+            }
+
+            private void HandleAsyncCallback(Guid idDay, Guid idNight, Image<Rgba32> imgDay, Image<Rgba32> imgNight, TextureAnimation animDay, TextureAnimation animNight)
+            {
+                if (this._waitingOnAsync)
+                {
+                    if (Guid.Equals(idDay, this._dayAssetID) && Guid.Equals(idNight, this._nightAssetID))
+                    {
+                        this._waitingOnAsync = false;
+                        this._skyboxArray = new Texture(TextureTarget.Texture2DArray);
+                        this._skyboxArray.Bind();
+                        this._skyboxArray.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+                        this._skyboxArray.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+                        Size maxSz = new Size(Math.Max(imgDay.Size.Width, imgNight.Size.Width), Math.Max(imgDay.Size.Height, imgNight.Size.Height));
+                        GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, maxSz.Width, maxSz.Height, 2, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
+                        imgDay.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);
+                        System.Buffers.MemoryHandle hnd = mem.Pin();
+                        unsafe
+                        {
+                            GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 0, imgDay.Width, imgDay.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                            hnd.Dispose();
+                            imgNight.DangerousTryGetSinglePixelMemory(out mem);
+                            hnd = mem.Pin();
+                            GL.TexSubImage3D(TextureTarget.Texture2DArray, 0, 0, 0, 1, imgNight.Width, imgNight.Height, 1, PixelDataFormat.Rgba, PixelDataType.Byte, (nint)hnd.Pointer);
+                            hnd.Dispose();
+                        }
+                    }
+                }
+
+                imgDay?.Dispose();
+                imgNight?.Dispose();
             }
 
             private bool ValidateAssetStatus(Guid id) => id.IsEmpty() || (Client.Instance.AssetManager.ClientAssetLibrary.Assets.GetStatus(id, out AssetStatus astat) && astat == AssetStatus.Return);

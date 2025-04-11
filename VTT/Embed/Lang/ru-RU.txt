@@ -862,3 +862,4 @@ credits.ui_skybox=Образец текстуры неба от learnopengl.com 
 ui.measure.color=Цвет и подсказка
 ui.measure.tooltip.tt=Введённый сюда текст так же будет отображён вместе с именем создателя линейки.
 ui.popup.change_map_skybox_color=Сменить Цвет
+ui.asset_load_error.errorinvalidmp3=Mp3 файл {0} неверен.

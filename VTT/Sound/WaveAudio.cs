@@ -5,6 +5,8 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Buffers.Binary;
+    using System.Collections;
     using System.IO;
     using System.Text;
     using VTT.Network;
@@ -105,6 +107,21 @@
             this.DataLength = LoadDataFromStream((buffer, offset, size) => mpeg.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
             this.Duration = mpeg.Duration.TotalSeconds;
             this.IsReady = true;
+        }
+
+        public static bool ValidateMPEGFrame(Stream s)
+        {
+            Span<byte> header = stackalloc byte[4];
+            int nRead;
+            if ((nRead = s.Read(header)) != 4)
+            {
+                s.Seek(-nRead, SeekOrigin.Current);
+                return false;
+            }
+
+            MpegFrameHeader headerNfo = new MpegFrameHeader(BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(header)));
+            s.Seek(-4, SeekOrigin.Current);
+            return headerNfo.Validate();
         }
 
         private int LoadDataFromStream(Func<float[], int, int, int> reader, int bufferSize)
@@ -333,6 +350,51 @@
                     this.IsReady = false;
                 }
             }
+        }
+    }
+
+    public readonly struct MpegFrameHeader
+    {
+        // AAAAAAAA AAABBCCD EEEEFFGH IIJJKLMM 
+        public readonly ushort frameSync;
+        public readonly byte version;
+        public readonly byte layerDescription;
+        public readonly bool protectionBit;
+        public readonly byte bitrateIndex;
+        public readonly byte samplingRateFrequencyIndex;
+        public readonly bool paddingBit;
+        public readonly bool privateBit;
+        public readonly byte channelMode;
+        public readonly byte modeExtension;
+        public readonly bool copyright;
+        public readonly bool original;
+        public readonly byte emphasis;
+
+        public MpegFrameHeader(uint ui)
+        {
+            this.frameSync = (ushort)((ui >> 21) & 0b11111111111);
+            this.version = (byte)((ui >> 19) & 0b11);
+            this.layerDescription = (byte)((ui >> 17) & 0b11);
+            this.protectionBit = ((ui >> 16) & 0b1) == 0b1;
+            this.bitrateIndex = (byte)((ui >> 12) & 0b1111);
+            this.samplingRateFrequencyIndex = (byte)((ui >> 10) & 0b11);
+            this.paddingBit = ((ui >> 9) & 0b1) == 0b1;
+            this.privateBit = ((ui >> 8) & 0b1) == 0b1;
+            this.channelMode = (byte)((ui >> 6) & 0b11);
+            this.modeExtension = (byte)((ui >> 4) & 0b11);
+            this.copyright = ((ui >> 3) & 0b1) == 0b1;
+            this.original = ((ui >> 2) & 0b1) == 0b1;
+            this.emphasis = (byte)(ui & 0b11);
+        }
+
+        public readonly bool Validate()
+        {
+            return
+                this.frameSync == 0b11111111111 &&
+                this.version >= 0b01 && // Mpeg Version 2.5, 2, or 1,
+                this.layerDescription != 0 && // Layer I, II or III
+                this.bitrateIndex != 0b1111; // 1111 is not an allowed value in any spec. Layer 2 is complex and has an allowed table but for quick valididty we don't care
+            // Technically could also validate channel mode + mode extension validity but w/e, this is enough for basic sanity check
         }
     }
 }

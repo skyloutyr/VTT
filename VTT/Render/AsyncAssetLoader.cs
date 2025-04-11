@@ -125,9 +125,19 @@
 
                 if (ext.EndsWith("mp3"))
                 {
-                    MpegFile mpeg = new MpegFile(File.OpenRead(workload.fsPath));
-                    wa = new WaveAudio(mpeg);
-                    mpeg.Dispose();
+                    FileStream fs = File.OpenRead(workload.fsPath);
+                    if (!WaveAudio.ValidateMPEGFrame(fs))
+                    {
+                        fs.Dispose();
+                        this.NotifyClientOfFailure(AssetLoadStatus.ErrorInvalidMp3, workload);
+                        return;
+                    }
+                    else
+                    {
+                        MpegFile mpeg = new MpegFile(fs);
+                        wa = new WaveAudio(mpeg);
+                        mpeg.Dispose();
+                    }
                 }
 
                 if (ext.EndsWith("ogg"))
@@ -500,7 +510,8 @@
             ErrorNoFile,
             ErrorOpenGL,
             ErrorFFMpeg,
-            ErrorNoFFMpeg
+            ErrorNoFFMpeg,
+            ErrorInvalidMp3
         }
 
         public enum AssetLoadType

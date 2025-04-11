@@ -383,9 +383,19 @@
 
                         if (ext.EndsWith("mp3"))
                         {
-                            MpegFile mpeg = new MpegFile(File.OpenRead(s));
-                            wa = new WaveAudio(mpeg);
-                            mpeg.Dispose();
+                            FileStream fs = File.OpenRead(s);
+                            if (!WaveAudio.ValidateMPEGFrame(fs))
+                            {
+                                fs.Dispose();
+                                Client.Instance.Logger.Log(LogLevel.Error, "Could not parse sound - invalid MP3 file!");
+                                return false;
+                            }
+                            else
+                            {
+                                MpegFile mpeg = new MpegFile(File.OpenRead(s));
+                                wa = new WaveAudio(mpeg);
+                                mpeg.Dispose();
+                            }
                         }
 
                         if (ext.EndsWith("ogg"))
@@ -960,7 +970,7 @@
                             ImGui.BeginTooltip();
                             foreach ((string, AsyncAssetLoader.AssetLoadStatus) d in this._assetLoadErrors)
                             {
-                                ImGui.TextUnformatted(lang.Translate("ui.asset_load_error." + Enum.GetName(d.Item2).ToString().ToLower().ToLower(), d.Item1));
+                                ImGui.TextUnformatted(lang.Translate("ui.asset_load_error." + Enum.GetName(d.Item2).ToString().ToLower(), d.Item1));
                             }
 
                             ImGui.EndTooltip();

@@ -11,9 +11,7 @@
     using VTT.Asset;
     using VTT.Asset.Glb;
     using SixLabors.ImageSharp.PixelFormats;
-    using System.Collections.Concurrent;
     using System.Threading;
-    using System.Data;
 
     public class SkyRenderer
     {

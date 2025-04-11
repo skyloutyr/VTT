@@ -62,6 +62,20 @@
             }
         }
 
+        private bool TurnTrackerUpperButton(string id, string displayText)
+        {
+            Vec2 cHere = ImGui.GetCursorScreenPos();
+            bool ret = ImGui.InvisibleButton(id, new Vec2(24, 24));
+            bool active = ImGui.IsItemActive();
+            bool hover = ImGui.IsItemHovered();
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            uint borderColor = ImGui.GetColorU32(active ? ImGuiCol.ButtonActive : hover ? ImGuiCol.ButtonHovered : ImGuiCol.Button);
+            drawList.AddRectFilled(cHere - new Vec2(0, 4), cHere + new Vec2(24, 24), ImGui.GetColorU32(ImGuiCol.FrameBg), 8f);
+            drawList.AddRect(cHere - new Vec2(0, 4), cHere + new Vec2(24, 24), borderColor, 8f);
+            drawList.AddText(cHere + new Vec2(12, 12) - (ImGui.CalcTextSize(displayText) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), displayText);
+            return ret;
+        }
+
         private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags, GuiState state)
         {
             this._turnTrackerVisible = false;
@@ -442,13 +456,11 @@
                 ImGui.SetNextWindowBgAlpha(0.0f);
                 if (ImGui.Begin("##TurnTrackerCollapseContainer", window_flags | ImGuiWindowFlags.NoBackground))
                 {
-                    ImGui.PushItemWidth(48);
-                    if (ImGui.ArrowButton("##TurnTrackerCollapseButton", this._turnTrackerCollapsed ? ImGuiDir.Down : ImGuiDir.Up))
+                    ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vec4(1, 1, 1, 0.4f));
+                    if (this.TurnTrackerUpperButton("##TurnTrackerCollapseButton", this._turnTrackerCollapsed ? "▼" : "▲"))
                     {
                         this._turnTrackerCollapsed = !this._turnTrackerCollapsed;
                     }
-
-                    ImGui.PopItemWidth();
 
                     if (!this._turnTrackerCollapsed && this._ttOffset != 0)
                     {
@@ -456,17 +468,16 @@
                         ImGui.SetNextWindowBgAlpha(0.0f);
                         if (ImGui.Begin("##TurnTrackerResetContainer", window_flags | ImGuiWindowFlags.NoBackground))
                         {
-                            ImGui.PushItemWidth(48);
-                            if (ImGui.Button("↻###TurnTrackerResetButton", new Vec2(24, 24)))
+                            if (this.TurnTrackerUpperButton("###TurnTrackerResetButton", "↻"))
                             {
                                 this._ttOffset = 0;
                             }
-
-                            ImGui.PopItemWidth();
                         }
 
                         ImGui.End();
                     }
+
+                    ImGui.PopStyleColor();
                 }
 
                 ImGui.End();

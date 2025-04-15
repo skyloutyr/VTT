@@ -691,12 +691,6 @@
 
                 if (mouseOver != null && (Client.Instance.IsAdmin || mouseOver.IsNameVisible || mouseOver.CanEdit(Client.Instance.ID)))
                 {
-                    if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.inspect") + "###Inspect"))
-                    {
-                        this._inspectedObject = mouseOver;
-                        this.FrameState.inspectPopup = true;
-                    }
-
                     if (ImGui.BeginMenu(lang.Translate("ui.popup.object_actions.link_to_chat") + "###LinkToChat"))
                     {
                         if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.link_to_chat.no_bars") + "###WithoutBars"))
@@ -713,6 +707,11 @@
                         ImGui.EndMenu();
                     }
 
+                    if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.inspect") + "###Inspect"))
+                    {
+                        this._inspectedObject = mouseOver;
+                        this.FrameState.inspectPopup = true;
+                    }
                 }
 
                 ImGui.EndPopup();

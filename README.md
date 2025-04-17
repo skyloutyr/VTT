@@ -22,10 +22,21 @@
 
 ---
 
+## A brief list of answers to frequently asked questions
+* The actual, full name of the application is SkyLouTyr's VTT or Sky's VTT. VTT itself is an abbreviation for Virtual Table Top, which is what the app is.
+* The application is self-hosted, meaning the server will be running on the computer that clicked the host button, and all players will connect to that device to play together. There are no dedicated servers, meaning the host must have a public, fixed IP address, and they must have the respective port forwarded to their device. There is support for dedicated server mode (read below).
+* In order to control the camera a blender-like control scheme is used - you hold down the Shift key (any of them) and use the middle mouse button to move the camera around (press and hold for movement, roll for zoom). If shift is not held down, but the middle mouse button is, then the camera will rotate around a point instead. Spacebar can be held down for finer movements. Movement of the camera is also possible with the arrow keys (and the numpad), provided shift is held down. For 2D maps holding down shift is optional for MMB camera movements, but isn't for arrow key camera movements. The scheme may seem confusing at first, but it becomes easy to use after a little practice.
+* The application is NOT designed for a specific tabletop system. It doesn't have character sheets, predefined attack rolls, inventories and so on. VTT is a general-purpose virtual tabletop environment, though it is more suited for TTRPGs compared to something like Tabletop Simulator.
+* Even though VTT is still in its BETA stage, it is stable and useable. Beta here simply refers to the fact that I do not consider VTT fully feature-complete for a release label - though it has a ton of features already. Much care is taken for backwards compatibility - to ensure that all content created by a user still keeps functioning in the newer VTT versions, no matter how old the version that it was created within.
+* The current state of the UI is to be considered temporary while the application is still in BETA. Many things are confusing and are in strange, unexpected places. The UI will be slowly ironed out to a much more pleasant UX as the application is being developed.
+* VTT was, is and will forever be free to use.
+
+---
+
 ## Feature List (Incomplete as there are too many to mention in a short list)
 * Displays 3d models or 2d sprites in complex environments of any scale.
 * 3D and 2D square grids with customizable grid sizes and grid snapping, extending to infinity.
-* A sky system, with the sun positioned according to pitch/yaw controls.
+* A sky system, with the sun positioned according to pitch/yaw controls, and a day/night skybox with the ability to import custom skyboxes and finely control their color changes.
 * Fully dynamic real-time 3d shadows for both the sun and up to 16 light sources on the screen (though the scenes themselves support any amounts of light sources)
 * A very rich property editor for both objects and maps allows for fine control over any value or property to create truly any environment imaginable. Many of the finer controls have tooltips, explaining exactly what a given property controls in great detail.
 * A dynamic fog of war system for both 3D and 2D environments, with all the scalability and fine controls you'd ever need.
@@ -66,7 +77,7 @@ There is no installation process, simply unpack the application into any directo
 - **Your players can't connect**: Make sure that they are using the right ip address and port, and you have port-forwarded the port you are using for the application.
 - **Application crashes**: Whenever VTT encounters an unrecoverable problem it will shutdown, generating a crash report file in the main application directory. Please submit a bug report in the issues section here, including this file and other relevant information (such as log files).
 - **My 2D map is fully black for players after switching it from 3D!**: Make sure that if you have disabled the sun in your map settings you also disable the sun shadows. If there is no sun, everything is considered to be in shadow by default.
-- **I can't delete a player's ruler marker**: Sometimes the players somehow place their markers slightly above the terrain in 2D mode. You can use the eraser tool to fix that. Make sure to set the radius for the eraser - an eraser with aa radius of 0 won't erase anything. This applies to the eraser for drawings too. Also make sure you are using the right eraser - there is one for drawings, and one for ruler markers.
+- **I can't delete a player's ruler marker**: Sometimes the players somehow place their markers slightly above the terrain in 2D mode. You can use the eraser tool to fix that. Make sure to set the radius for the eraser - an eraser with a radius of 0 won't erase anything. This applies to the eraser for drawings too. Also make sure you are using the right eraser - there is one for drawings, and one for ruler markers.
 
 ---
 
@@ -292,6 +303,7 @@ These are the features currently missing that are planned to be implemented:
 - [x] Custom material shaders
 - [ ] Moving away from imgui to a custom interface library
 - [x] Moving away from BCnEncoder .Net to manual stb_dxt implementation (for memory management reasons)
+- [ ] Modding API
 
 If you have any suggestions on what you would like to see implemented, please leave them in the issues tracker here.
 ### The following features will probably never be implemented:

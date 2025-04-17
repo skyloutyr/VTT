@@ -22,7 +22,7 @@
         public override void Cache(Vector2 windowSize, out float width, out float height)
         {
             width = 340f;
-            height = 82f;
+            height = 48f;
             int i = 5;
             bool layoutgenPrevBarWasInline = false;
             float layoutgenPenX = 0;
@@ -30,7 +30,7 @@
             {
                 if (this.Container.TryGetBlockAt(i++, out ChatBlock barBlock))
                 {
-                    if (Enum.TryParse(barBlock.Text[Math.Max(0, barBlock.Text.LastIndexOf('/'))..], out DisplayBar.DrawMode dm))
+                    if (Enum.TryParse(barBlock.Text[(Math.Max(0, barBlock.Text.LastIndexOf('/')) + 1)..], out DisplayBar.DrawMode dm))
                     { 
                         switch (dm)
                         {

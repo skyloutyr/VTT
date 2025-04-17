@@ -21,9 +21,21 @@
                 return null;
             }
 
-            if (text.Contains("%s")) // Escape ImGui (c++) formatting symbol
+            int pSIdx = -1;
+            while ((pSIdx = text.IndexOf("%s", pSIdx + 1)) != -1)
             {
-                return null;
+                if (pSIdx != 0)
+                {
+                    char prev = text[pSIdx - 1];
+                    if (prev == '%') // Already escaped by the sender
+                    {
+                        continue;
+                    }
+                }
+
+                text = text.Insert(pSIdx, "%");
+                pSIdx += 1;
+                continue;
             }
 
             if (text.StartsWith('/')) // Special commands

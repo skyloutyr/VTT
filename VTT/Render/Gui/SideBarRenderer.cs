@@ -28,16 +28,89 @@
             return ret;
         }
 
-        private unsafe void RenderSidebar(Map m, SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor)
+        private unsafe bool ImVLayerSlider(SimpleLanguage lang, Vector2 size, ref int i, int min, int max)
+        {
+            bool r = false;
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0, 0));
+            ImGui.SetNextWindowSize(size);
+            ImGui.SetNextWindowPos(Vector2.Zero);
+            if (ImGui.Begin("##VLayerSlider_cwin", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground))
+            {
+                ImGui.PopStyleVar();
+                float f = i;
+                Vector2 cHere = ImGui.GetCursorScreenPos();
+                ImGui.PushStyleVar(ImGuiStyleVar.GrabMinSize, size.X - 4); // Padding of 2.0 is hardcoded in imgui_widgets.cpp:L3061
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
+                ImGui.PushStyleColor(ImGuiCol.FrameBg, 0);
+                ImGui.PushStyleColor(ImGuiCol.FrameBgActive, 0);
+                ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, 0);
+                ImGui.PushStyleColor(ImGuiCol.SliderGrab, 0);
+                ImGui.PushStyleColor(ImGuiCol.SliderGrabActive, 0);
+                if (ImGui.VSliderFloat("##VLayerSlider", size, ref f, min, max, " ", ImGuiSliderFlags.AlwaysClamp))
+                {
+                    i = (int)MathF.Round(f);
+                    r = true;
+                }
+
+                bool sliderActive = ImGui.IsItemActive();
+                ImGui.PopStyleColor(5);
+                ImGui.PopStyleVar(2);
+                ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                drawList.AddRectFilled(cHere + new Vector2((size.X / 2) - 2, 0), cHere + new Vector2((size.X / 2) + 2, size.Y), ImGui.GetColorU32(ImGuiCol.FrameBg), 200f);
+                float padding = (size.X / 2);
+                for (int j = 0; j < 5; ++j)
+                {
+                    Vector2 linePos = cHere + new Vector2(size.X / 2 - 3, Math.Clamp(size.Y * (j / 4f), padding, size.Y - padding));
+                    drawList.AddLine(linePos, linePos + new Vector2(5, 0), ImGui.GetColorU32(ImGuiCol.Border));
+                }
+
+                float grabberV = (Math.Abs(min) - i) / (float)(max - min);
+                Vector2 grabberPos = cHere + new Vector2(size.X / 2, Math.Clamp(size.Y * grabberV, padding, size.Y - padding));
+                bool grabberHovered = (ImGui.GetMousePos() - grabberPos).Length() <= size.X / 2;
+                drawList.AddCircleFilled(grabberPos, (size.X / 2) - 2, ImGui.GetColorU32(sliderActive ? ImGuiCol.SliderGrabActive : ImGuiCol.SliderGrab));
+                if (grabberHovered)
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.layer.tt.intro"));
+                    for (int j = 2; j >= -2; --j)
+                    {
+                        if (j == i)
+                        {
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextLink));
+                        }
+
+                        ImGui.TextUnformatted(lang.Translate($"ui.maps.layer.tt.{j}"));
+
+                        if (j == i)
+                        {
+                            ImGui.PopStyleColor();
+                        }
+                    }
+
+                    ImGui.EndTooltip();
+                }
+            }
+            else
+            {
+                ImGui.PopStyleVar();
+            }
+
+            ImGui.End();
+            return r;
+        }
+
+        private unsafe void RenderSidebar(Map m, SimpleLanguage lang, ImGuiWindowFlags window_flags, MapObjectRenderer mor, GuiState frameState)
         {
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
             {
                 return;
             }
 
+            bool showLayerControls = frameState.renderedSidebarLayerControls = (Client.Instance.IsAdmin || Client.Instance.IsObserver) && Client.Instance.Settings.DrawSidebarLayerControls;
             ImGui.SetNextWindowBgAlpha(0f);
-            ImGui.SetNextWindowPos(Vector2.Zero);
+            ImGui.SetNextWindowPos(new Vector2(showLayerControls ? 14 : 0, 0));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4, 4));
+            float controlsSzY = 240;
             if (ImGui.Begin("Mode Controls", window_flags | ImGuiWindowFlags.NoBackground))
             {
                 ImGui.PopStyleVar();
@@ -108,6 +181,8 @@
                         ImGui.SetTooltip(lang.Translate("ui.turn_tracker"));
                     }
                 }
+
+                controlsSzY = MathF.Max(ImGui.GetCursorPosY(), controlsSzY);
             }
             else
             {
@@ -115,6 +190,15 @@
             }
 
             ImGui.End();
+
+            if (showLayerControls)
+            {
+                int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
+                if (ImVLayerSlider(lang, new Vector2(18, controlsSzY), ref cLayer, -2, 2))
+                {
+                    Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer = cLayer;
+                }
+            }
         }
 
         private unsafe void RenderDebugInfo(double time, ImGuiWindowFlags window_flags, GuiState state)
@@ -125,7 +209,7 @@
             }
 
             ImGui.SetNextWindowBgAlpha(0.35f);
-            ImGui.SetNextWindowPos(SidebarFirstEntryPosition);
+            ImGui.SetNextWindowPos(SidebarFirstEntryPosition + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
             if (DebugEnabled)
             {
                 if (ImGui.Begin("SidebarDebugOverlay", window_flags))
@@ -153,7 +237,7 @@
             {
                 FOWRenderer fowr = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer;
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##FOWControls", window_flags))
                 {
                     if (this.ImSidebarBtn("btnFowControls", Vec32x32, this.FOWRevealIcon, fowr.CanvasMode == FOWRenderer.RevealMode.Reveal, out bool hovered))
@@ -239,7 +323,7 @@
             if (mor.EditMode == EditMode.Measure)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##MeasureControls", window_flags))
                 {
                     for (int i = 0; i < 9; ++i)
@@ -350,7 +434,7 @@
             if (mor.EditMode == EditMode.Translate)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 ImGui.Begin("##TranslateControls", window_flags);
                 for (int i = 0; i < 3; ++i)
                 {
@@ -383,7 +467,7 @@
             if (mor.EditMode == EditMode.Select)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##CameraMoveControls", window_flags))
                 {
                     CameraControlMode ccm = Client.Instance.Frontend.Renderer.MapRenderer.CameraControlMode;
@@ -434,7 +518,7 @@
             if (mor.EditMode == EditMode.Draw)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##DrawControls", window_flags))
                 {
                     if (this.ImSidebarBtn("##DrawModeBtnDraw", Vec32x32, this.FOWModeBrush, Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.IsDrawing, out bool hovered))
@@ -527,7 +611,7 @@
             if (mor.EditMode == EditMode.FX)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##FXControls", window_flags))
                 {
                     if (ImGuiHelper.ImAssetRecepticle(lang, this._fxToEmitParticleSystemID, this.AssetParticleIcon, new Vector2(0, 28), x => x.Type == AssetType.ParticleSystem, out bool mouseOver))
@@ -570,7 +654,7 @@
             if (Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Shadows2D)
             {
                 ImGui.SetNextWindowBgAlpha(0.2f);
-                ImGui.SetNextWindowPos(state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition);
+                ImGui.SetNextWindowPos((state.renderedDebugOverlay ? SidebarSecondEntryPosition : SidebarFirstEntryPosition) + (state.renderedSidebarLayerControls ? new Vector2(14, 0) : Vector2.Zero));
                 if (ImGui.Begin("##Shadow2DControls", window_flags))
                 {
                     Shadow2DControlMode currentMode = renderer.ControlMode;

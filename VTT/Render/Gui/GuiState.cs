@@ -60,6 +60,7 @@
         public Map mapNightSkyboxColorsAssetHovered = null;
         public bool renderedDebugOverlay = false;
         public bool changeMapSkyboxColorPopup = false;
+        public bool renderedSidebarLayerControls = false;
 
         public void Reset()
         {
@@ -123,6 +124,7 @@
             this.mapNightSkyboxColorsAssetHovered = null;
             this.renderedDebugOverlay = false;
             this.changeMapSkyboxColorPopup = false;
+            this.renderedSidebarLayerControls = false;
         }
     }
 }

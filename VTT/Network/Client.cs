@@ -818,6 +818,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public List<ChatDiceRollMemory> DiceRollMemory { get; set; } = new List<ChatDiceRollMemory>();
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool DrawSidebarLayerControls { get; set; } = true;
+
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
         {
             mem.UseFrequency = lastChatIndex;
@@ -956,6 +960,7 @@
                 ColorModeD100 = ChatDiceColorMode.SetColor,
                 UnifyChatDiceRendering = false,
                 DiceRollMemory = new List<ChatDiceRollMemory>(),
+                DrawSidebarLayerControls = true,
             };
 
             ret.Save();

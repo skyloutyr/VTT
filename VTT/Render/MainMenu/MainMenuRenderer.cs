@@ -1026,13 +1026,20 @@
                     bool bUnifyChatDice = Client.Instance.Settings.UnifyChatDiceRendering;
                     if (ImGui.Checkbox(lang.Translate("menu.settings.unify_chat_dice_rendering") + "###UnifyChatDiceRendering", ref bUnifyChatDice))
                     {
-                        Client.Instance.Settings.UnifyChatDiceRendering = true;
+                        Client.Instance.Settings.UnifyChatDiceRendering = bUnifyChatDice;
                         Client.Instance.Settings.Save();
                     }
 
                     if (ImGui.IsItemHovered())
                     {
                         ImGui.SetTooltip(lang.Translate("menu.settings.unify_chat_dice_rendering.tt"));
+                    }
+
+                    bool drawLayerControlsInSidebar = Client.Instance.Settings.DrawSidebarLayerControls;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.draw_sidebar_layer_controls") + "###Draw Sidebar Layer Controls", ref drawLayerControlsInSidebar))
+                    {
+                        Client.Instance.Settings.DrawSidebarLayerControls = drawLayerControlsInSidebar;
+                        Client.Instance.Settings.Save();
                     }
 
                     ImGui.TreePop();

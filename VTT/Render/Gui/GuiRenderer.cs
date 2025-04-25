@@ -391,7 +391,7 @@
                 ImGui.ShowDemoWindow(ref this._showImGuiDemoWindow);
             }
 
-            this.RenderSidebar(cMap, lang, window_flags, mor);
+            this.RenderSidebar(cMap, lang, window_flags, mor, this.FrameState);
             this.RenderDebugInfo(time, window_flags, this.FrameState);
             this.RenderFOWControls(mor, lang, window_flags, this.FrameState);
             this.RenderTranslationControls(mor, lang, window_flags, this.FrameState);

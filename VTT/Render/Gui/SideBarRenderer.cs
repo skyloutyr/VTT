@@ -56,8 +56,8 @@
                 ImGui.PopStyleColor(5);
                 ImGui.PopStyleVar(2);
                 ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                drawList.AddRectFilled(cHere + new Vector2((size.X / 2) - 2, 0), cHere + new Vector2((size.X / 2) + 2, size.Y), ImGui.GetColorU32(ImGuiCol.FrameBg), 200f);
                 float padding = (size.X / 2);
+                drawList.AddRectFilled(cHere + new Vector2((size.X / 2) - 2, padding), cHere + new Vector2((size.X / 2) + 2, size.Y - padding), ImGui.GetColorU32(ImGuiCol.FrameBg), 200f);
                 for (int j = 0; j < 5; ++j)
                 {
                     Vector2 linePos = cHere + new Vector2(size.X / 2 - 3, Math.Clamp(size.Y * (j / 4f), padding, size.Y - padding));

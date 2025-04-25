@@ -348,9 +348,37 @@
             else
             {
                 AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderID, AssetType.Shader, out Asset a);
-                if (aStat == AssetStatus.Return && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+                if (aStat == AssetStatus.Return)
                 {
-                    shader = a.Shader.NodeGraph.GetGLShader(true);
+                    shader = null;
+                    switch (a.Type)
+                    {
+                        case AssetType.Shader:
+                        {
+                            if (a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+                            {
+                                shader = a.Shader.NodeGraph.GetGLShader(false);
+                            }
+
+                            break;
+                        }
+
+                        case AssetType.GlslFragmentShader:
+                        {
+                            if (a.GlslFragment != null && !string.IsNullOrEmpty(a.GlslFragment.Data))
+                            {
+                                shader = a.GlslFragment.GetGLShader(false);
+                            }
+
+                            break;
+                        }
+
+                        default:
+                        {
+                            break;
+                        }
+                    }
+
                     if (shader != null)
                     {
                         if (!ShaderProgram.IsLastShaderSame(shader))
@@ -412,8 +440,16 @@
 
                         return true;
                     }
+                    else
+                    {
+                        shader = this.ParticleShader;
+                        if (!ShaderProgram.IsLastShaderSame(shader.Program))
+                        {
+                            shader.Program.Bind();
+                        }
 
-                    return false;
+                        return false;
+                    }
                 }
                 else
                 {

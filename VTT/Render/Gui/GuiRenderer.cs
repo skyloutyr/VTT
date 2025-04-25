@@ -48,6 +48,7 @@
         public Texture AssetModelIcon { get; set; }
         public Texture AssetImageIcon { get; set; }
         public Texture AssetShaderIcon { get; set; }
+        public Texture AssetGlslShaderIcon { get; set; }
         public Texture AssetParticleIcon { get; set; }
         public Texture AssetSoundIcon { get; set; }
         public Texture AssetMusicIcon { get; set; }
@@ -257,6 +258,7 @@
             this.AssetModelIcon = OpenGLUtil.LoadUIImage("icons8-3d-64");
             this.AssetImageIcon = OpenGLUtil.LoadUIImage("icons8-picture-40");
             this.AssetShaderIcon = OpenGLUtil.LoadUIImage("icons8-color-swatch-40");
+            this.AssetGlslShaderIcon = OpenGLUtil.LoadUIImage("icons8-fragment-shader-40");
             this.AssetParticleIcon = OpenGLUtil.LoadUIImage("icons8-particle-40");
             this.AssetSoundIcon = OpenGLUtil.LoadUIImage("icons8-sound-40");
             this.AssetMusicIcon = OpenGLUtil.LoadUIImage("icons8-musical-notes-40");

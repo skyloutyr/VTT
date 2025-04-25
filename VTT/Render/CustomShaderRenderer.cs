@@ -21,45 +21,62 @@
 
             if (!shaderAssetID.IsEmpty() && Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(shaderAssetID, Asset.AssetType.Shader, out Asset.Asset a) == Asset.AssetStatus.Return)
             {
-                if (a.Type == Asset.AssetType.Shader && a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
+                switch (a.Type)
                 {
-                    shader = a.Shader.NodeGraph.GetGLShader(false);
-                    if (shader != null)
+                    case Asset.AssetType.Shader:
                     {
-                        if (!ShaderProgram.IsLastShaderSame(shader))
+                        if (a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                         {
-                            shader.Program.Bind();
-                            Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
+                            shader = a.Shader.NodeGraph.GetGLShader(false);
                         }
 
-                        shader.Essentials.TintColor.Set(passthroughData.TintColor);
-                        shader.Essentials.Alpha.Set(passthroughData.Alpha);
-                        shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
-                        GL.ActiveTexture(12);
-                        if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
+                        break;
+                    }
+
+                    case Asset.AssetType.GlslFragmentShader:
+                    {
+                        if (a.GlslFragment != null && !string.IsNullOrEmpty(a.GlslFragment.Data))
                         {
-                            t.Bind();
-                            for (int i = 0; i < sz.Length; ++i)
-                            {
-                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
-                            }
-                        }
-                        else
-                        {
-                            Client.Instance.Frontend.Renderer.White.Bind();
+                            shader = a.GlslFragment.GetGLShader(false);
                         }
 
-                        GL.ActiveTexture(0);
-                        return true;
+                        break;
+                    }
+
+                    default:
+                    {
+                        break;
                     }
                 }
-                else
-                {
-                    if (a.Type == Asset.AssetType.GlslFragmentShader && a.GlslFragment != null && !string.IsNullOrEmpty(a.GlslFragment.Data))
-                    {
 
+                if (shader != null)
+                {
+                    if (!ShaderProgram.IsLastShaderSame(shader))
+                    {
+                        shader.Program.Bind();
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
                     }
+
+                    shader.Essentials.TintColor.Set(passthroughData.TintColor);
+                    shader.Essentials.Alpha.Set(passthroughData.Alpha);
+                    shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
+                    GL.ActiveTexture(12);
+                    if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
+                    {
+                        t.Bind();
+                        for (int i = 0; i < sz.Length; ++i)
+                        {
+                            shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                            shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                        }
+                    }
+                    else
+                    {
+                        Client.Instance.Frontend.Renderer.White.Bind();
+                    }
+
+                    GL.ActiveTexture(0);
+                    return true;
                 }
             }
 

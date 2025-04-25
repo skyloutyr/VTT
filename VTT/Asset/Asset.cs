@@ -5,6 +5,9 @@
     using System.Text;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
+    using VTT.GL;
+    using VTT.Network;
+    using VTT.Render;
     using VTT.Sound;
     using VTT.Util;
 
@@ -73,12 +76,59 @@
     public class GlslFragmentData : IAssetData
     {
         public string Data { get; set; }
+        private FastAccessShader _cachedShader;
+        private bool _glValid;
+        private bool _glGen;
 
         public void Accept(byte[] binary) => this.Data = Encoding.UTF8.GetString(binary);
 
+        public FastAccessShader GetGLShader(bool isParticleShader)
+        {
+            if (string.IsNullOrEmpty(this.Data))
+            {
+                return null;
+            }
+
+            if (!this._glValid && this._glGen)
+            {
+                return null;
+            }
+
+            if (!this._glGen)
+            {
+                Logger l = Client.Instance.Logger;
+                l.Log(LogLevel.Info, "Compiling custom glsl shader");
+                if (ShaderGraph.TryInjectCustomShaderCode(isParticleShader, this.Data, out string fullVertCode, out string fullFragCode))
+                {
+                    if (!ShaderGraph.TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out this._cachedShader))
+                    {
+                        l.Log(LogLevel.Error, "Could not compile custom glsl shader!");
+                        l.Log(LogLevel.Error, err);
+                        this._cachedShader = null;
+                        this._glValid = false;
+                    }
+                    else
+                    {
+                        this._glValid = true;
+                    }
+                }
+                else
+                {
+                    this._cachedShader = null;
+                    this._glValid = false;
+                }
+
+                this._glGen = true;
+            }
+
+            return this._cachedShader;
+        }
+
         public void Dispose()
         {
-            // NOOP
+            this._cachedShader?.Program?.Dispose();
+            this._cachedShader = null;
+            this._glGen = false;
         }
     }
 

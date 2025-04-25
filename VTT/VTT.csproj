@@ -114,6 +114,7 @@
     <None Remove="Embed\icons8-accuracy-40.png" />
     <None Remove="Embed\icons8-block-40.png" />
     <None Remove="Embed\icons8-box-important-80.png" />
+    <None Remove="Embed\icons8-brackets-40.png" />
     <None Remove="Embed\icons8-closed-eye-40.png" />
     <None Remove="Embed\icons8-color-swatch-40.png" />
     <None Remove="Embed\icons8-copy-40.png" />
@@ -132,6 +133,7 @@
     <None Remove="Embed\icons8-error-40.png" />
     <None Remove="Embed\icons8-eye-40.png" />
     <None Remove="Embed\icons8-folder-40.png" />
+    <None Remove="Embed\icons8-fragment-shader-40.png" />
     <None Remove="Embed\icons8-help-80.png" />
     <None Remove="Embed\icons8-incoming-data-40.png" />
     <None Remove="Embed\icons8-length-40.png" />
@@ -327,9 +329,11 @@
     <EmbeddedResource Include="Embed\icon-d8-secondary-highlight.png" />
     <EmbeddedResource Include="Embed\icon-d8-secondary.png" />
     <EmbeddedResource Include="Embed\icon-d8.png" />
+    <EmbeddedResource Include="Embed\icons8-brackets-40.png" />
     <EmbeddedResource Include="Embed\icons8-copy-40.png" />
     <EmbeddedResource Include="Embed\icons8-door-40.png" />
     <EmbeddedResource Include="Embed\icons8-double-right-40.png" />
+    <EmbeddedResource Include="Embed\icons8-fragment-shader-40.png" />
     <EmbeddedResource Include="Embed\icons8-magic-40.png" />
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />

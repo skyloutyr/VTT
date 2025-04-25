@@ -26,7 +26,7 @@
         private bool _glValid;
         private bool _glGen;
 
-        private void RemoveDefine(ref string lines, string define)
+        private static void RemoveDefine(ref string lines, string define)
         {
             string r = "#define " + define;
             int idx = lines.IndexOf(r);
@@ -160,6 +160,85 @@
             return ret;
         }
 
+        public static bool TryInjectCustomShaderCode(bool isParticleShader, string code, out string vertCode, out string fragCode)
+        {
+            fragCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.frag" : "VTT.Embed.object.frag");
+            vertCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.vert" : "VTT.Embed.object.vert");
+            if (fragCode.Contains("#pragma ENTRY_NODEGRAPH")) // have nodegraph entry point
+            {
+                fragCode = fragCode.Replace("#undef NODEGRAPH", "#define NODEGRAPH"); // Mark shader as nodegraph
+                fragCode = fragCode.Replace("#pragma ENTRY_NODEGRAPH", code); // Inject compiled code
+                if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
+                {
+                    bool dirShadows = Client.Instance.Settings.EnableSunShadows;
+                    bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
+                    bool noBranches = Client.Instance.Settings.DisableShaderBranching;
+                    if (!dirShadows)
+                    {
+                        RemoveDefine(ref vertCode, "HAS_DIRECTIONAL_SHADOWS");
+                        RemoveDefine(ref fragCode, "HAS_DIRECTIONAL_SHADOWS");
+                    }
+
+                    if (!pointShadows)
+                    {
+                        RemoveDefine(ref vertCode, "HAS_POINT_SHADOWS");
+                        RemoveDefine(ref fragCode, "HAS_POINT_SHADOWS");
+                    }
+
+                    if (noBranches)
+                    {
+                        RemoveDefine(ref vertCode, "BRANCHING");
+                        RemoveDefine(ref fragCode, "BRANCHING");
+                    }
+
+                    fragCode = fragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
+                }
+
+                return true;
+            }
+
+            vertCode = string.Empty;
+            fragCode = string.Empty;
+            return false;
+        }
+
+        public static bool TryCompileCustomShader(bool isParticleShader, string vertCode, string fragCode, out string err, out FastAccessShader shader)
+        {
+            if (!ShaderProgram.TryCompile(out ShaderProgram sp, vertCode, string.Empty, fragCode, out err))
+            {
+                shader = null;
+                return false;
+            }
+            else
+            {
+                sp.Bind();
+                if (isParticleShader) // Particle shaders don't have uniform block access, and don't have shadow maps
+                {
+                    sp["m_texture_diffuse"].Set(0);
+                    sp["m_texture_normal"].Set(1);
+                    sp["m_texture_emissive"].Set(2);
+                    sp["m_texture_aomr"].Set(3);
+                    sp["tex_skybox"].Set(6);
+                    sp["unifiedTexture"].Set(12);
+                }
+                else
+                {
+                    sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
+                    sp["m_texture_diffuse"].Set(0); // Setup texture locations
+                    sp["m_texture_normal"].Set(1);
+                    sp["m_texture_emissive"].Set(2);
+                    sp["m_texture_aomr"].Set(3);
+                    sp["tex_skybox"].Set(6);
+                    sp["unifiedTexture"].Set(12);
+                    sp["pl_shadow_maps"].Set(13);
+                    sp["dl_shadow_map"].Set(14);
+                }
+
+                shader = new FastAccessShader(sp);
+                return true;
+            }
+        }
+
         public FastAccessShader GetGLShader(bool isParticleShader)
         {
             if (!this.IsLoaded)
@@ -176,80 +255,18 @@
             {
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Info, "Compiling custom shader");
-                if (this.TryCompileShaderCode(out string code))
+                if (this.TryCompileShaderCode(out string code) && TryInjectCustomShaderCode(isParticleShader, code, out string fullVertCode, out string fullFragCode))
                 {
-                    string fullFragCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.frag" : "VTT.Embed.object.frag");
-                    string fullVertCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.vert" : "VTT.Embed.object.vert");
-                    if (fullFragCode.Contains("#pragma ENTRY_NODEGRAPH")) // have nodegraph entry point
+                    if (!TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out this._glData))
                     {
-                        fullFragCode = fullFragCode.Replace("#undef NODEGRAPH", "#define NODEGRAPH"); // Mark shader as nodegraph
-                        fullFragCode = fullFragCode.Replace("#pragma ENTRY_NODEGRAPH", code); // Inject compiled code
-                        if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
-                        {
-                            bool dirShadows = Client.Instance.Settings.EnableSunShadows;
-                            bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
-                            bool noBranches = Client.Instance.Settings.DisableShaderBranching;
-                            if (!dirShadows)
-                            {
-                                RemoveDefine(ref fullVertCode, "HAS_DIRECTIONAL_SHADOWS");
-                                RemoveDefine(ref fullFragCode, "HAS_DIRECTIONAL_SHADOWS");
-                            }
-
-                            if (!pointShadows)
-                            {
-                                RemoveDefine(ref fullVertCode, "HAS_POINT_SHADOWS");
-                                RemoveDefine(ref fullFragCode, "HAS_POINT_SHADOWS");
-                            }
-
-                            if (noBranches)
-                            {
-                                RemoveDefine(ref fullVertCode, "BRANCHING");
-                                RemoveDefine(ref fullFragCode, "BRANCHING");
-                            }
-
-                            fullFragCode = fullFragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
-                        }
-
-                        if (!ShaderProgram.TryCompile(out ShaderProgram sp, fullVertCode, string.Empty, fullFragCode, out string err))
-                        {
-                            l.Log(LogLevel.Error, "Could not compile custom shader!");
-                            l.Log(LogLevel.Error, err);
-                            this._glData = null;
-                            this._glValid = false;
-                        }
-                        else
-                        {
-                            sp.Bind();
-                            if (isParticleShader) // Particle shaders don't have uniform block access, and don't have shadow maps
-                            {
-                                sp["m_texture_diffuse"].Set(0);
-                                sp["m_texture_normal"].Set(1);
-                                sp["m_texture_emissive"].Set(2);
-                                sp["m_texture_aomr"].Set(3);
-                                sp["tex_skybox"].Set(6);
-                                sp["unifiedTexture"].Set(12);
-                            }
-                            else
-                            {
-                                sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
-                                sp["m_texture_diffuse"].Set(0); // Setup texture locations
-                                sp["m_texture_normal"].Set(1);
-                                sp["m_texture_emissive"].Set(2);
-                                sp["m_texture_aomr"].Set(3);
-                                sp["tex_skybox"].Set(6);
-                                sp["unifiedTexture"].Set(12);
-                                sp["pl_shadow_maps"].Set(13);
-                                sp["dl_shadow_map"].Set(14);
-                            }
-
-                            this._glData = new FastAccessShader(sp);
-                            this._glValid = true;
-                        }
+                        l.Log(LogLevel.Error, "Could not compile custom shader!");
+                        l.Log(LogLevel.Error, err);
+                        this._glData = null;
+                        this._glValid = false;
                     }
                     else
                     {
-                        this._glData = null;
-                        this._glValid = false;
+                        this._glValid = true;
                     }
                 }
                 else

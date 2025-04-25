@@ -1060,7 +1060,7 @@
                                 AssetType.Shader => this.AssetShaderIcon,
                                 AssetType.ParticleSystem => this.AssetParticleIcon,
                                 AssetType.Sound => aRef.Meta?.SoundInfo?.IsFullData ?? false ? this.AssetSoundIcon : aRef.Meta?.SoundInfo?.SoundType == SoundData.Metadata.StorageType.Mpeg ? this.AssetCompressedMusicIcon : this.AssetMusicIcon,
-                                AssetType.GlslFragmentShader => this.AssetShaderIcon,
+                                AssetType.GlslFragmentShader => this.AssetGlslShaderIcon,
                                 _ => this.ErrorIcon
                             },
 

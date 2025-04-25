@@ -332,6 +332,7 @@
                             ImGui.Text("    accuracy");
                             ImGui.Text("    block");
                             ImGui.Text("    box-important");
+                            ImGui.Text("    brackets");
                             ImGui.Text("    closed-eye");
                             ImGui.Text("    color-swatch");
                             ImGui.Text("    cube");

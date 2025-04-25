@@ -320,6 +320,13 @@
                         break;
                     }
 
+                    case AssetType.GlslFragmentShader:
+                    {
+                        a.GlslFragment = new GlslFragmentData();
+                        a.GlslFragment.Accept(rawBinary);
+                        break;
+                    }
+
                     case AssetType.Sound:
                     {
                         a.Sound = new SoundData();

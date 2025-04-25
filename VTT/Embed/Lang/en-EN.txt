@@ -863,3 +863,4 @@ ui.measure.color=Colour and Tooltip
 ui.measure.tooltip.tt=Any text entered here will be displayed together with the sender's name.
 ui.popup.change_map_skybox_color=Change Colour
 ui.asset_load_error.errorinvalidmp3=Mp3 File {0} is invalid.
+ui.asset_type.glslfragmentshader=GLSL Shader Code

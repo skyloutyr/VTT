@@ -413,20 +413,23 @@
                             GL.ActiveTexture(2);
                             Client.Instance.Frontend.Renderer.Black.Bind();
 
-                            // Load custom texture
-                            GL.ActiveTexture(12);
-                            if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
+                            if (a.Type == AssetType.Shader) // Custom GLSL shaders can't define extra textures due to being raw GLSL data
                             {
-                                t.Bind();
-                                for (int i = 0; i < sz.Length; ++i)
+                                // Load custom texture
+                                GL.ActiveTexture(12);
+                                if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == AssetStatus.Return && t != null)
                                 {
-                                    shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                                    shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(double.NaN).LocationUniform);
+                                    t.Bind();
+                                    for (int i = 0; i < sz.Length; ++i)
+                                    {
+                                        shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                                        shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(double.NaN).LocationUniform);
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                Client.Instance.Frontend.Renderer.White.Bind();
+                                else
+                                {
+                                    Client.Instance.Frontend.Renderer.White.Bind();
+                                }
                             }
 
                             Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);

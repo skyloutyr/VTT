@@ -13,6 +13,38 @@
 
     public class ShaderGraph : ISerializable
     {
+        private const string customGlslFinisherBoilerplate =
+@"
+#else
+#ifdef VTT_PKIND_DEFERRED
+void main()
+{
+    g_position = vec4(f_world_position, 1.0);
+    g_normal = vec4(0.0, 0.0, 1.0, 1.0);
+    g_albedo = vec4(1.0, 0.0, 0.0, 1.0);
+    g_aomrg = vec4(0.0, 0.0, 0.0, 0.0);
+    g_emission = vec4(0.0, 0.0, 0.0, 1.0);
+}
+#endif
+#ifdef VTT_PKIND_FORWARD
+void main()
+{
+    g_position = vec4(f_world_position, 1.0);
+    g_normal = vec4(0.0, 0.0, 1.0, 1.0);
+    g_albedo = vec4(1.0, 0.0, 0.0, 1.0);
+    g_aomrg = vec4(0.0, 0.0, 0.0, 0.0);
+    g_emission = vec4(0.0, 0.0, 0.0, 1.0);
+    g_color = g_albedo;
+}
+#endif
+#ifdef VTT_PKIND_PARTICLE
+void main()
+{
+    g_color = vec4(1.0, 0.0, 0.0, 1.0);
+}
+#endif
+#endif";
+
         public List<ShaderNode> Nodes { get; set; } = new List<ShaderNode>();
         public object Lock = new object();
         public bool IsLoaded { get; set; } = false;
@@ -160,46 +192,72 @@
             return ret;
         }
 
-        public static bool TryInjectCustomShaderCode(bool isParticleShader, string code, out string vertCode, out string fragCode)
+        public static bool TryInjectCustomShaderCode(bool isParticleShader, bool isGlslShader, string code, out string vertCode, out string fragCode)
         {
             fragCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.frag" : "VTT.Embed.object.frag");
             vertCode = IOVTT.ResourceToString(isParticleShader ? "VTT.Embed.particle.vert" : "VTT.Embed.object.vert");
-            if (fragCode.Contains("#pragma ENTRY_NODEGRAPH")) // have nodegraph entry point
+            if (isGlslShader)
             {
-                fragCode = fragCode.Replace("#undef NODEGRAPH", "#define NODEGRAPH"); // Mark shader as nodegraph
-                fragCode = fragCode.Replace("#pragma ENTRY_NODEGRAPH", code); // Inject compiled code
-                if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
+                if (fragCode.Contains("#pragma ANCHOR_GLSL")) // have glsl anchor point
                 {
-                    bool dirShadows = Client.Instance.Settings.EnableSunShadows;
-                    bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
-                    bool noBranches = Client.Instance.Settings.DisableShaderBranching;
-                    if (!dirShadows)
+                    fragCode = fragCode.Replace("#undef VTTGLSLIMPL", "#define VTTGLSLIMPL"); // Mark shader as custom GLSL impl
+                    bool needFinisher = fragCode.LastIndexOf("#ifdef VTTGLSLIMPL") >= fragCode.IndexOf("#pragma ANCHOR_GLSL") - 20; // self length + CLRF
+                    fragCode = fragCode[..fragCode.IndexOf("#pragma ANCHOR_GLSL")];
+                    fragCode = fragCode + code; // Should keep the CLRF of the above located ifdef directive
+                    if (needFinisher)
                     {
-                        RemoveDefine(ref vertCode, "HAS_DIRECTIONAL_SHADOWS");
-                        RemoveDefine(ref fragCode, "HAS_DIRECTIONAL_SHADOWS");
+                        fragCode = fragCode + customGlslFinisherBoilerplate; // Boilerplate outputs pure red indicating bad shader if something went catastrophically wrong
                     }
-
-                    if (!pointShadows)
-                    {
-                        RemoveDefine(ref vertCode, "HAS_POINT_SHADOWS");
-                        RemoveDefine(ref fragCode, "HAS_POINT_SHADOWS");
-                    }
-
-                    if (noBranches)
-                    {
-                        RemoveDefine(ref vertCode, "BRANCHING");
-                        RemoveDefine(ref fragCode, "BRANCHING");
-                    }
-
-                    fragCode = fragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
                 }
-
-                return true;
+                else
+                {
+                    vertCode = string.Empty;
+                    fragCode = string.Empty;
+                    return false;
+                }
+            }
+            else
+            {
+                if (fragCode.Contains("#pragma ENTRY_NODEGRAPH")) // have nodegraph entry point
+                {
+                    fragCode = fragCode.Replace("#undef NODEGRAPH", "#define NODEGRAPH"); // Mark shader as nodegraph
+                    fragCode = fragCode.Replace("#pragma ENTRY_NODEGRAPH", code); // Inject compiled code
+                }
+                else
+                {
+                    vertCode = string.Empty;
+                    fragCode = string.Empty;
+                    return false;
+                }
             }
 
-            vertCode = string.Empty;
-            fragCode = string.Empty;
-            return false;
+            if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
+            {
+                bool dirShadows = Client.Instance.Settings.EnableSunShadows;
+                bool pointShadows = Client.Instance.Settings.EnableDirectionalShadows;
+                bool noBranches = Client.Instance.Settings.DisableShaderBranching;
+                if (!dirShadows)
+                {
+                    RemoveDefine(ref vertCode, "HAS_DIRECTIONAL_SHADOWS");
+                    RemoveDefine(ref fragCode, "HAS_DIRECTIONAL_SHADOWS");
+                }
+
+                if (!pointShadows)
+                {
+                    RemoveDefine(ref vertCode, "HAS_POINT_SHADOWS");
+                    RemoveDefine(ref fragCode, "HAS_POINT_SHADOWS");
+                }
+
+                if (noBranches)
+                {
+                    RemoveDefine(ref vertCode, "BRANCHING");
+                    RemoveDefine(ref fragCode, "BRANCHING");
+                }
+
+                fragCode = fragCode.Replace("#define PCF_ITERATIONS 2", $"#define PCF_ITERATIONS {Client.Instance.Settings.ShadowsPCF}");
+            }
+
+            return true;
         }
 
         public static bool TryCompileCustomShader(bool isParticleShader, string vertCode, string fragCode, out string err, out FastAccessShader shader)
@@ -255,7 +313,7 @@
             {
                 Logger l = Client.Instance.Logger;
                 l.Log(LogLevel.Info, "Compiling custom shader");
-                if (this.TryCompileShaderCode(out string code) && TryInjectCustomShaderCode(isParticleShader, code, out string fullVertCode, out string fullFragCode))
+                if (this.TryCompileShaderCode(out string code) && TryInjectCustomShaderCode(isParticleShader, false, code, out string fullVertCode, out string fullFragCode))
                 {
                     if (!TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out this._glData))
                     {

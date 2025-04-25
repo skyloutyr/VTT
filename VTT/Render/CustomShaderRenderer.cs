@@ -60,19 +60,22 @@
                     shader.Essentials.TintColor.Set(passthroughData.TintColor);
                     shader.Essentials.Alpha.Set(passthroughData.Alpha);
                     shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
-                    GL.ActiveTexture(12);
-                    if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
+                    if (a.Type == Asset.AssetType.Shader) // Custom GLSL shaders can't define extra textures due to being raw GLSL data
                     {
-                        t.Bind();
-                        for (int i = 0; i < sz.Length; ++i)
+                        GL.ActiveTexture(12);
+                        if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
                         {
-                            shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                            shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                            t.Bind();
+                            for (int i = 0; i < sz.Length; ++i)
+                            {
+                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
+                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                            }
                         }
-                    }
-                    else
-                    {
-                        Client.Instance.Frontend.Renderer.White.Bind();
+                        else
+                        {
+                            Client.Instance.Frontend.Renderer.White.Bind();
+                        }
                     }
 
                     GL.ActiveTexture(0);

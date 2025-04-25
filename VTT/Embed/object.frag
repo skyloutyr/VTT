@@ -8,6 +8,8 @@
 #define HAS_DIRECTIONAL_SHADOWS
 
 #undef NODEGRAPH
+#undef VTTGLSLIMPL
+#define VTT_PKIND_FORWARD
 
 in mat3 f_tbn;
 in vec3 f_normal;
@@ -95,7 +97,7 @@ uniform float daynight_blend;
 uniform vec3 day_color;
 uniform vec3 night_color;
 
-layout (location = 0) out vec4 g_color; // no writing here occurs, needed for consistency
+layout (location = 0) out vec4 g_color; // for a forward rendering program writing here is essential!
 layout (location = 1) out vec4 g_position;
 layout (location = 2) out vec4 g_normal;
 layout (location = 3) out vec4 g_albedo;
@@ -466,6 +468,10 @@ float getFowMultiplier()
 
     return r + g + b + a;
 }
+
+#ifdef VTTGLSLIMPL
+#pragma ANCHOR_GLSL
+#endif
 
 void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float ao, out float m, out float r, out float a)
 {

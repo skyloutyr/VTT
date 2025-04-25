@@ -1,6 +1,8 @@
 ﻿#version 330 core
 
 #undef NODEGRAPH
+#undef VTTGLSLIMPL
+#define VTT_PKIND_PARTICLE
 
 in vec4 inst_color;
 in vec4 f_color;
@@ -235,6 +237,10 @@ float getFowMultiplier(vec3 f_world_position)
 
     return r + g + b + a;
 }
+
+#ifdef VTTGLSLIMPL
+#pragma ANCHOR_GLSL
+#endif
 
 void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float ao, out float m, out float r, out float a)
 {

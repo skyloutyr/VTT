@@ -1,6 +1,8 @@
 ﻿#version 330 core
 
 #undef NODEGRAPH
+#undef VTTGLSLIMPL
+#define VTT_PKIND_DEFERRED
 
 in mat3 f_tbn;
 in vec3 f_position;
@@ -126,6 +128,10 @@ float getGrid()
 
 	return max(0, (gmx * grid_alpha * d) - world_distance_to_cursor_effect);
 }
+
+#ifdef VTTGLSLIMPL
+#pragma ANCHOR_GLSL
+#endif
 
 void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float ao, out float m, out float r, out float a)
 {

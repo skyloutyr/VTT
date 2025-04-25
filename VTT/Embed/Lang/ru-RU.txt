@@ -871,3 +871,6 @@ ui.maps.layer.tt.0=0: Основной слой. С объектами на эт
 ui.maps.layer.tt.-1=-1: Слой карты.
 ui.maps.layer.tt.-2=-2: Слой заднего плана карты. Объекты на этом слое ресуют поверх себя сетку.
 menu.settings.draw_sidebar_layer_controls=Управление Слоями Сбоку
+ui.particle_containers.bone_attachment=Кость Выделения
+ui.particle_containers.bone_attachment.tt=Применимо только при режиме выделения "кость"
+ui.particle.emission.bone=Кость

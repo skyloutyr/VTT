@@ -537,17 +537,40 @@
                                             new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
                                         }
 
-                                        ImGui.Text(lang.Translate("ui.particle_containers.attachment"));
                                         if (!mo.AssetID.Equals(Guid.Empty))
                                         {
                                             if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && a.ModelGlReady)
                                             {
+                                                ImGui.TextUnformatted(lang.Translate("ui.particle_containers.attachment"));
                                                 string[] arr = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
                                                 int idx = Array.IndexOf(arr, arr.FirstOrDefault(s => s.Equals(pc.AttachmentPoint), string.Empty));
                                                 if (ImGui.Combo("##ParticleContainerAttachment_" + pc.ID, ref idx, arr, arr.Length))
                                                 {
                                                     pc.AttachmentPoint = arr[idx];
                                                     new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                                }
+
+                                                // Somewhat jank but if the bone index goes OOB it won't be processed anyways.
+                                                // Solution - don't have multiple armatures, there is no graceful way to make particle systems work with that as the cache will be overridden by the most recent armature used
+                                                // The cache can't be per armature for performance concerns
+                                                if (a.Model.GLMdl.Armatures.Count > 0)
+                                                {
+                                                    string[] boneArr = a.Model.GLMdl.Armatures.OrderByDescending(x => x.UnsortedBones.Count).First().UnsortedBones.Select(x => x.Name).ToArray();
+                                                    if (boneArr.Length > 0)
+                                                    {
+                                                        idx = pc.BoneAttachmentIndex;
+                                                        ImGui.TextUnformatted(lang.Translate("ui.particle_containers.bone_attachment"));
+                                                        if (ImGui.IsItemHovered())
+                                                        {
+                                                            ImGui.SetTooltip(lang.Translate("ui.particle_containers.bone_attachment.tt"));
+                                                        }
+
+                                                        if (ImGui.Combo("##ParticleContainerBoneAttachment_" + pc.ID, ref idx, boneArr, boneArr.Length))
+                                                        {
+                                                            pc.BoneAttachmentIndex = idx;
+                                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

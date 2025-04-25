@@ -394,7 +394,8 @@
             CircleBoundary,
             Volume,
             MeshSurface,
-            Mask
+            Mask,
+            Bone
         }
     }
 
@@ -909,7 +910,6 @@
                                             GlbAnimation anim = this.Container.Container.AnimationContainer.CurrentAnimation;
                                             if (anim != null)
                                             {
-                                                double time = this.Container.Container.AnimationContainer.GetTime(0);
                                                 GlbMesh.BoneData bd1 = sMesh.boneData[rIdx + 0];
                                                 GlbMesh.BoneData bd2 = sMesh.boneData[rIdx + 1];
                                                 GlbMesh.BoneData bd3 = sMesh.boneData[rIdx + 2];
@@ -940,6 +940,50 @@
                                     baseOffset += rPt;
                                 }
 
+                                break;
+                            }
+
+                            case ParticleSystem.EmissionMode.Bone:
+                            {
+                                if (this.IsFake)
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (this.Container.IsFXEmitter)
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.Container.Container.AssetID, AssetType.Model, out Asset a) != AssetStatus.Return || a == null || !a.ModelGlReady)
+                                {
+                                    goto case ParticleSystem.EmissionMode.Point;
+                                }
+
+                                Vector3 rPt = Vector3.Zero;
+                                if (a.Model.GLMdl.IsAnimated)
+                                {
+                                    GlbAnimation anim = this.Container.Container.AnimationContainer.CurrentAnimation;
+                                    if (anim != null)
+                                    {
+                                        lock (this.Container.Container.AnimationContainer.animationStorageLock)
+                                        {
+                                            if (this.Container.BoneAttachmentIndex < this.Container.Container.AnimationContainer.StoredBoneData.Count)
+                                            {
+                                                IAnimationStorage.BoneData bone = this.Container.Container.AnimationContainer.StoredBoneData[this.Container.BoneAttachmentIndex];
+                                                rPt += bone.Transform.Translation; // Rotation and scale of the bone do not matter for particle emission point
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (this.Container.UseContainerOrientation)
+                                {
+                                    rPt = this.Container.IsFXEmitter ? rPt : Vector4.Transform(new Vector4(rPt, 1.0f), this.Container.Container.Rotation).Xyz();
+                                    rPt *= this.Container.IsFXEmitter ? Vector3.One : this.Container.Container.Scale;
+                                }
+
+                                baseOffset += rPt;
                                 break;
                             }
 

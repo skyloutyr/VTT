@@ -132,6 +132,7 @@
 
     public class GlbBone
     {
+        public string Name { get; set; }
         public GlbBone Parent { get; set; }
         public GlbBone[] Children { get; set; }
         public int ModelIndex { get; set; }

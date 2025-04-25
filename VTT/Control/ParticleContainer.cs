@@ -16,6 +16,7 @@
         public bool RotateVelocityByOrientation { get; set; }
         public bool IsActive { get; set; }
         public string AttachmentPoint { get; set; } = string.Empty;
+        public int BoneAttachmentIndex { get; set; } = 0;
 
         public MapObject Container { get; }
         public ParticleContainer(MapObject container) => this.Container = container;
@@ -96,6 +97,7 @@
             ret.SetBool("DoVRot", this.RotateVelocityByOrientation);
             ret.SetInt("PLeft", this.ParticlesToEmit);
             ret.SetBool("IsFX", this.IsFXEmitter);
+            ret.SetInt("BAttach", this.BoneAttachmentIndex);
             return ret;
         }
 
@@ -115,6 +117,7 @@
             this.RotateVelocityByOrientation = e.GetBool("DoVRot", false);
             this.ParticlesToEmit = e.GetInt("PLeft", 0);
             this.IsFXEmitter = e.GetBool("IsFX", false);
+            this.BoneAttachmentIndex = e.GetInt("BAttach", 0);
         }
     }
 }

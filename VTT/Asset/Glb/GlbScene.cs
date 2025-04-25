@@ -992,6 +992,7 @@
                         int joint = arm.Joints[i];
                         Node n = g.Nodes[joint];
                         GlbBone bone = armature.UnsortedBones[i];
+                        bone.Name = n.Name ?? $"Bone.{i:000}";
                         Matrix4x4 world = Matrix4x4.CreateTranslation(n.Translation[0], n.Translation[1], n.Translation[2]) * Matrix4x4.CreateFromQuaternion(new Quaternion(n.Rotation[0], n.Rotation[1], n.Rotation[2], n.Rotation[3])) * Matrix4x4.CreateScale(n.Scale[0], n.Scale[1], n.Scale[2]);
                         Matrix4x4.Invert(world, out Matrix4x4 biwt);
                         bone.InverseWorldTransform = biwt;

@@ -871,3 +871,6 @@ ui.maps.layer.tt.0=0: Main layer. Objects on this layer are interactable and ins
 ui.maps.layer.tt.1=1: GM layer. Objects here are hidden from players, but visible to the turn tracker.
 ui.maps.layer.tt.2=2: Extra GM layer. Objects here will show up as black silhouettes in the turn tracker with a black background and ??? as their name and team.
 menu.settings.draw_sidebar_layer_controls=Sidebar Layer Controls
+ui.particle_containers.bone_attachment=Attachment Bone
+ui.particle_containers.bone_attachment.tt=Only applicable for bone emission mode
+ui.particle.emission.bone=Bone

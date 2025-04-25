@@ -82,19 +82,20 @@
 
                             ImGui.Text(lang.Translate("ui.particle.emission_type"));
                             string[] emissionTypes = {
-                        lang.Translate("ui.particle.emission.point"),
-                        lang.Translate("ui.particle.emission.sphere"),
-                        lang.Translate("ui.particle.emission.sphere_surface"),
-                        lang.Translate("ui.particle.emission.cube"),
-                        lang.Translate("ui.particle.emission.cube_surface"),
-                        lang.Translate("ui.particle.emission.square_volume"),
-                        lang.Translate("ui.particle.emission.square_boundary"),
-                        lang.Translate("ui.particle.emission.circle_volume"),
-                        lang.Translate("ui.particle.emission.circle_boundary"),
-                        lang.Translate("ui.particle.emission.volume"),
-                        lang.Translate("ui.particle.emission.surface"),
-                        lang.Translate("ui.particle.emission.mask"),
-                    };
+                                lang.Translate("ui.particle.emission.point"),
+                                lang.Translate("ui.particle.emission.sphere"),
+                                lang.Translate("ui.particle.emission.sphere_surface"),
+                                lang.Translate("ui.particle.emission.cube"),
+                                lang.Translate("ui.particle.emission.cube_surface"),
+                                lang.Translate("ui.particle.emission.square_volume"),
+                                lang.Translate("ui.particle.emission.square_boundary"),
+                                lang.Translate("ui.particle.emission.circle_volume"),
+                                lang.Translate("ui.particle.emission.circle_boundary"),
+                                lang.Translate("ui.particle.emission.volume"),
+                                lang.Translate("ui.particle.emission.surface"),
+                                lang.Translate("ui.particle.emission.mask"),
+                                lang.Translate("ui.particle.emission.bone"),
+                            };
 
                             int cEmissionType = (int)pr.CurrentlyEditedSystem.EmissionType;
                             if (ImGui.Combo("##ParticleEmissionType", ref cEmissionType, emissionTypes, emissionTypes.Length))

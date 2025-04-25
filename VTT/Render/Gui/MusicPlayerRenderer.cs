@@ -138,7 +138,7 @@
                     if (Client.Instance.IsAdmin)
                     {
                         ImGui.NewLine();
-                        if (ImGui.ImageButton("MusicPlayerStop", this.PlayerStop, new Vector2(24, 24)))
+                        if (this.PlayerStop.ImImageButton("MusicPlayerStop", new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerSetIndex() { Index = -1 }.Send();
                         }
@@ -149,7 +149,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.ImageButton("MusicPlayerPlay", this.PlayIcon, new Vector2(24, 24)))
+                        if (this.PlayIcon.ImImageButton("MusicPlayerPlay", new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerSetIndex() { Index = this._lastSelectedTrackIndex }.Send();
                         }
@@ -160,7 +160,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.ImageButton("MusicPlayerNext", this.PlayerNext, new Vector2(24, 24)))
+                        if (this.PlayerNext.ImImageButton("MusicPlayerNext", new Vector2(24, 24)))
                         {
                             new PacketMusicPlayerAction() { ActionType = PacketMusicPlayerAction.Type.ForceNext }.Send();
                         }
@@ -216,8 +216,8 @@
                                     Guid aId = track.Item1;
                                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(aId, AssetType.Sound, out a);
                                     string soundName = lang.Translate("ui.music_player.name_unknown", track.Item1);
-                                    GL.Texture icon = this.AssetMusicIcon;
-                                    GL.Texture assetTypeIcon = this.AssetMusicIcon;
+                                    ImCustomTexturedRect icon = this.AssetMusicIcon;
+                                    ImCustomTexturedRect assetTypeIcon = this.AssetMusicIcon;
                                     if (status == AssetStatus.Return)
                                     {
                                         AssetRef aref = Client.Instance.AssetManager.FindRefForAsset(a);
@@ -251,7 +251,7 @@
                                         status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview preview);
                                         if (status == AssetStatus.Return && preview != null)
                                         {
-                                            icon = preview.GetGLTexture();
+                                            icon = ImCustomTexturedRect.WrapCustomTexture(preview.GetGLTexture());
                                         }
                                     }
 
@@ -407,8 +407,8 @@
                 {
                     AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this._draggedTrackData.Item1, AssetType.Sound, out Asset a);
                     string soundName = this._draggedTrackData.Item3;
-                    GL.Texture icon = this.AssetMusicIcon;
-                    GL.Texture assetTypeIcon = this.AssetMusicIcon;
+                    ImCustomTexturedRect icon = this.AssetMusicIcon;
+                    ImCustomTexturedRect assetTypeIcon = this.AssetMusicIcon;
                     if (status == AssetStatus.Return)
                     {
                         AssetRef aref = Client.Instance.AssetManager.FindRefForAsset(a);
@@ -427,7 +427,7 @@
                         status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(this._draggedTrackData.Item1, AssetType.Texture, out AssetPreview preview);
                         if (status == AssetStatus.Return && preview != null)
                         {
-                            icon = preview.GetGLTexture();
+                            icon = ImCustomTexturedRect.WrapCustomTexture(preview.GetGLTexture());
                         }
                     }
 

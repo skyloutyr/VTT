@@ -161,7 +161,7 @@
                     this.Container.SenderColor.Abgr()
                 );
 
-                Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.CrossedSwordsIcon;
+                Gui.ImCustomTexturedRect tex = Client.Instance.Frontend.Renderer.GuiRenderer.CrossedSwordsIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
                 float cx = 340 * 0.25f;
                 if (hasRolls)

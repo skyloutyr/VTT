@@ -12,7 +12,7 @@
 
     public partial class GuiRenderer
     {
-        private bool ImSidebarBtn(string id, Vector2 size, Texture image, bool active, out bool hovered)
+        private bool ImSidebarBtn(string id, Vector2 size, Gui.ImCustomTexturedRect image, bool active, out bool hovered)
         {
             bool ret = false;
             Vector2 cHere = ImGui.GetCursorScreenPos();
@@ -24,7 +24,7 @@
 
             hovered = ImGui.IsItemHovered();
             drawList.AddRect(cHere, cHere + size, ImGui.GetColorU32(active ? ImGuiCol.ButtonActive : hovered ? ImGuiCol.ButtonHovered : ImGuiCol.Button), 6f);
-            drawList.AddImageRounded(image, cHere + new Vector2(4, 4), cHere + size - new Vector2(4, 4), Vector2.Zero, Vector2.One, 0xffffffff, 6f);
+            drawList.AddImageRounded(image.Texture, cHere + new Vector2(4, 4), cHere + size - new Vector2(4, 4), image.ST, image.UV, 0xffffffff, 6f);
             return ret;
         }
 

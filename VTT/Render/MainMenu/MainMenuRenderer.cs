@@ -550,7 +550,7 @@
                 if (ImGui.TreeNodeEx(lang.Translate("menu.settings.category.user") + "###User & Multiplayer"))
                 {
                     string cName = Client.Instance.Settings.Name;
-                    if (ImGui.InputText(lang.Translate("menu.settings.username") + "###Username", ref cName, ushort.MaxValue))
+                    if (ImGui.InputText(lang.Translate("menu.settings.username") + "###Username", ref cName, 255))
                     {
                         if (cName.Length > 0)
                         {
@@ -621,15 +621,15 @@
                     ImGui.TextUnformatted(lang.Translate("menu.settings.player_image"));
                     if (Client.Instance.Connected)
                     {
-                        Texture clientImage = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon;
+                        ImCustomTexturedRect clientImage = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon;
                         if (Client.Instance.Frontend.Renderer.AvatarLibrary.ClientImages.TryGetValue(Client.Instance.ID, out (Texture, bool) cImgData) && cImgData.Item2)
                         {
-                            clientImage = cImgData.Item1;
+                            clientImage = ImCustomTexturedRect.WrapCustomTexture(cImgData.Item1);
                         }
 
                         Vector2 v = ImGui.GetCursorScreenPos();
                         Vector2 m = Client.Instance.Frontend.GameHandle.MousePosition.Value;
-                        ImGui.Image(clientImage, new Vector2(64, 64));
+                        clientImage.ImImage(new Vector2(64, 64));
                         if (m.X >= v.X && m.Y >= v.Y && m.X <= v.X + 64 && m.Y <= v.Y + 64)
                         {
                             for (int i = state.dropEvents.Count - 1; i >= 0; i--)

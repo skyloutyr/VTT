@@ -43,7 +43,7 @@
                             ImGui.BeginDisabled();
                         }
 
-                        if (ImGui.ImageButton("btnDeleteObject", this.DeleteIcon, new Vector2(16, 16)) && canEdit)
+                        if (this.DeleteIcon.ImImageButton("btnDeleteObject", new Vector2(16, 16)) && canEdit)
                         {
                             PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = SelectedToPacket2(os), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
                             pdmo.Send();
@@ -95,7 +95,7 @@
                         }
 
                         ImGui.SameLine();
-                        if (ImGui.InputText(lang.Translate("ui.properties.name") + "###Name", ref n, ushort.MaxValue))
+                        if (ImGui.InputText(lang.Translate("ui.properties.name") + "###Name", ref n, 255))
                         {
                             os.ForEach(x => x.Name = n);
                             PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Name, Data = SelectedToPacket3(os, n), IsServer = false, Session = Client.Instance.SessionID };
@@ -384,7 +384,7 @@
                                     }
 
                                     ImGui.SameLine();
-                                    if (ImGui.ImageButton("##BarDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
+                                    if (this.DeleteIcon.ImImageButton("##BarDeleteBtn_" + i, Vec12x12))
                                     {
                                         PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Delete, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
                                         pmob.Send();
@@ -408,7 +408,7 @@
                                 ImGui.EndChild();
                             }
 
-                            if (ImGui.ImageButton("btnAddBar", this.AddIcon, Vec12x12))
+                            if (this.AddIcon.ImImageButton("btnAddBar", Vec12x12))
                             {
                                 Random rand = new Random();
                                 Color hsv = (Color)new HSVColor((float)(rand.NextDouble() * 360), 1, 1);
@@ -435,7 +435,7 @@
                                     float aRange = aura.Item1;
                                     Color aClr = aura.Item2;
 
-                                    if (ImGui.ImageButton("##AuraDeleteBtn_" + i, this.DeleteIcon, Vec12x12))
+                                    if (this.DeleteIcon.ImImageButton("##AuraDeleteBtn_" + i, Vec12x12))
                                     {
                                         new PacketAura() { ActionType = PacketAura.Action.Delete, Index = i, MapID = mo.MapID, ObjectID = mo.ID }.Send();
                                     }
@@ -464,7 +464,7 @@
                                 }
                             }
 
-                            if (ImGui.ImageButton("btnAddAura", this.AddIcon, Vec12x12))
+                            if (this.AddIcon.ImImageButton("btnAddAura", Vec12x12))
                             {
                                 Random rand = new Random();
                                 Color hsv = (Color)new HSVColor((float)(rand.NextDouble() * 360), 1, 1);
@@ -584,7 +584,7 @@
                                     }
                                 }
 
-                                if (ImGui.ImageButton("btnAddParticleContainer", this.AddIcon, Vec12x12))
+                                if (this.AddIcon.ImImageButton("btnAddParticleContainer", Vec12x12))
                                 {
                                     ParticleContainer pc = new ParticleContainer(mo);
                                     new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Add, MapID = mo.MapID, ObjectID = mo.ID, Container = pc.Serialize() }.Send();
@@ -664,7 +664,7 @@
                                     }
                                 }
 
-                                if (ImGui.ImageButton("btnAddFastLight", this.AddIcon, Vec12x12))
+                                if (this.AddIcon.ImImageButton("btnAddFastLight", Vec12x12))
                                 {
                                     Random rand = new Random();
                                     HSVColor hsv = new HSVColor(rand.NextSingle() * 360, 1, 1);
@@ -951,7 +951,7 @@
                             }
 
                             ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
-                            if (ImGui.ImageButton("##BtnAddStatus", this.AddIcon, Vec24x24))
+                            if (this.AddIcon.ImImageButton("##BtnAddStatus", Vec24x24))
                             {
                                 this._editedMapObject = mo;
                                 state.newStatusEffectPopup = true;
@@ -999,7 +999,7 @@
                         if (ImGui.BeginChild("objNav_" + mo.ID.ToString(), new Vector2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar))
                         {
                             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-                            if (ImGui.ImageButton("btnGotoObj_self_" + mo.ID.ToString(), this.GotoIcon, new Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
+                            if (this.GotoIcon.ImImageButton("btnGotoObj_self_" + mo.ID.ToString(), new Vector2(10, 10)) && !Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects)
                             {
                                 Vector3 p = mo.Position;
                                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -1052,7 +1052,7 @@
                     }
 
                     ImGui.SameLine();
-                    ImGui.Image(this.Search, new Vector2(24, 24));
+                    this.Search.ImImage(new Vector2(24, 24));
 
                     int currentLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));

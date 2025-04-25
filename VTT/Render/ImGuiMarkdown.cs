@@ -81,13 +81,10 @@ namespace VTT.Render
 
                     if (status == AssetStatus.Error)
                     {
-                        return new MarkdownImageData()
-                        {
-                            IsValid = true,
-                            Size = CalcImageToImGuiContentRegion(240, 240),
-                            UserTextureID = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon,
-                            UseLinkCallback = false
-                        };
+                        MarkdownImageData ret = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.ToMarkdownImageData();
+                        ret.IsValid = true;
+                        ret.Size = CalcImageToImGuiContentRegion(240, 240);
+                        ret.UseLinkCallback = false;
                     }
 
                     if (status == AssetStatus.Await)

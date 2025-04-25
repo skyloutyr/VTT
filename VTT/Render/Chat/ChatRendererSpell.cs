@@ -77,7 +77,7 @@
                     this.Container.SenderColor.Abgr()
                 );
 
-                Texture tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
+                Gui.ImCustomTexturedRect tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
                 drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), ImGuiHelper.TextOrEmpty(name.Text));
                 Vector2 ts = ImGuiHelper.CalcTextSize(ImGuiHelper.TextOrEmpty(cname.Text));

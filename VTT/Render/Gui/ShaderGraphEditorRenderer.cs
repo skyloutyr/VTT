@@ -92,7 +92,7 @@
                                     {
                                         ImGui.TextUnformatted($"{i}: ");
                                         ImGui.SameLine();
-                                        if (ImGui.ImageButton("btn_del_xtrtex_" + tid.ToString(), GuiRenderer.Instance.DeleteIcon, new(16, 16)))
+                                        if (GuiRenderer.Instance.DeleteIcon.ImImageButton("btn_del_xtrtex_" + tid.ToString(), new(16, 16)))
                                         {
                                             dIndex = i;
                                         }

@@ -107,7 +107,7 @@
                     }
 
                     string mName = state.clientMap.Name;
-                    if (ImGui.InputText(lang.Translate("ui.maps.name") + "###Name", ref mName, ushort.MaxValue))
+                    if (ImGui.InputText(lang.Translate("ui.maps.name") + "###Name", ref mName, 255))
                     {
                         state.clientMap.Name = mName;
                         PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mName, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.Name };
@@ -115,7 +115,7 @@
                     }
 
                     string mFolder = state.clientMap.Folder;
-                    if (ImGui.InputText(lang.Translate("ui.maps.folder") + "###Folder", ref mFolder, ushort.MaxValue))
+                    if (ImGui.InputText(lang.Translate("ui.maps.folder") + "###Folder", ref mFolder, 4096))
                     {
                         state.clientMap.Folder = mFolder;
                         PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mFolder, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.Folder };
@@ -934,7 +934,7 @@
 
                                 ImGui.SameLine();
                                 ImGui.PopItemWidth();
-                                if (ImGui.ImageButton("btnDeleteDarkvision_" + j, this.DeleteIcon, Vec12x12))
+                                if (this.DeleteIcon.ImImageButton("btnDeleteDarkvision_" + j, Vec12x12))
                                 {
                                     new PacketDarkvisionData() { Deletion = true, MapID = cMap.ID, PlayerID = darkvisionData.Key }.Send();
                                 }
@@ -944,7 +944,7 @@
                             ++j;
                         }
 
-                        if (ImGui.ImageButton("btnNewDarkvision", this.AddIcon, Vec12x12))
+                        if (this.AddIcon.ImImageButton("btnNewDarkvision", Vec12x12))
                         {
                             new PacketDarkvisionData() { MapID = state.clientMap.ID, ObjectID = Guid.Empty, PlayerID = Guid.Empty, Value = 0 }.Send();
                         }
@@ -984,7 +984,7 @@
                                         ImGui.PopStyleColor();
                                     }
 
-                                    if (ImGui.ImageButton("moveToBtn_" + d.MapID.ToString(), this.MoveToIcon, Vec12x12))
+                                    if (this.MoveToIcon.ImImageButton("moveToBtn_" + d.MapID.ToString(), Vec12x12))
                                     {
                                         PacketChangeMap pcm = new PacketChangeMap() { Clients = new Guid[1] { Client.Instance.ID }, NewMapID = d.MapID, IsServer = false, Session = Client.Instance.SessionID };
                                         pcm.Send();
@@ -997,7 +997,7 @@
                                     }
 
                                     ImGui.SameLine();
-                                    if (ImGui.ImageButton("moveAllToBtn_" + d.MapID.ToString(), this.MoveAllToIcon, Vec12x12))
+                                    if (this.MoveAllToIcon.ImImageButton("moveAllToBtn_" + d.MapID.ToString(), Vec12x12))
                                     {
                                         if (!Client.Instance.Frontend.GameHandle.IsAnyControlDown())
                                         {
@@ -1018,7 +1018,7 @@
                                     }
 
                                     ImGui.SameLine();
-                                    if (ImGui.ImageButton("duplicateMapBtn_" + d.MapID.ToString(), this.CopyIcon, Vec12x12))
+                                    if (this.CopyIcon.ImImageButton("duplicateMapBtn_" + d.MapID.ToString(), Vec12x12))
                                     {
                                         new PacketDuplicateMap() { MapID = d.MapID }.Send();
                                     }
@@ -1031,7 +1031,7 @@
 
                                     ImGui.SameLine();
 
-                                    if (ImGui.ImageButton("deleteMapBtn_" + d.MapID.ToString(), this.DeleteIcon, Vec12x12))
+                                    if (this.DeleteIcon.ImImageButton("deleteMapBtn_" + d.MapID.ToString(), Vec12x12))
                                     {
                                         state.deleteMapPopup = true;
                                         this._deletedMapId = d.MapID;
@@ -1098,7 +1098,7 @@
                             RecursivelyRenderMaps(Client.Instance.ClientMPMapsRoot, true, wC);
                         }
 
-                        if (ImGui.ImageButton("btnNewMap", this.AddIcon, Vec12x12))
+                        if (this.AddIcon.ImImageButton("btnNewMap", Vec12x12))
                         {
                             PacketCreateMap pcm = new PacketCreateMap();
                             pcm.Send();

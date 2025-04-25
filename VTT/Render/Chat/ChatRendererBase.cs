@@ -492,7 +492,7 @@
                     if (tt.Contains('+') || tt.Contains('-') || tt.Contains('*') || tt.Contains('/'))
                     {
                         ImGui.SetCursorPos(here + new Vector2(32, 16));
-                        ImGui.Image(Client.Instance.Frontend.Renderer.GuiRenderer.AddIcon, new Vector2(16, 16), Vector2.Zero, Vector2.One, Vector4.One);
+                        Client.Instance.Frontend.Renderer.GuiRenderer.AddIcon.ImImage(new Vector2(16, 16));
                     }
                 }
 

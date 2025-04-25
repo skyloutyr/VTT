@@ -657,7 +657,7 @@
                             }
 
                             ImGui.SameLine();
-                            if (ImGui.ImageButton("##RollDiceDelete_" + mem.Key, this.DeleteIcon, new Vector2(16, 16)))
+                            if (this.DeleteIcon.ImImageButton("##RollDiceDelete_" + mem.Key, new Vector2(16, 16)))
                             {
                                 memoryToActUpon = mem;
                                 memoryActionIsDeletion = true;
@@ -692,7 +692,7 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.link_image") + "###Link Image"))
             {
-                ImGui.InputText(lang.Translate("ui.popup.link_image.url") + "###URL", ref this._imgUrl, ushort.MaxValue);
+                ImGui.InputText(lang.Translate("ui.popup.link_image.url") + "###URL", ref this._imgUrl, 2048); // chromium - 2048, firefox - dynamicly resized buffer, IE - 2083, safari - 80000, going with the lowest maximum
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(lang.Translate("ui.popup.link_image.url.tt"));
@@ -846,7 +846,7 @@
             if (state.clientMap != null && ImGui.BeginPopupModal(lang.Translate("ui.popup.status") + "###Create Status Effect", ref this._statusOpen))
             {
                 string rF = this._statusSortString;
-                if (ImGui.InputText(lang.Translate("ui.popup.status.filter"), ref rF, 256))
+                if (ImGui.InputText(lang.Translate("ui.popup.status.filter"), ref rF, 255))
                 {
                     this._statusSortString = rF;
                     this._sortedStatuses.Clear();

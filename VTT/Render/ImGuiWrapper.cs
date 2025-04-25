@@ -10,12 +10,13 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using System.Text;
-    using VTT.Asset;
+    using System.Xml.Linq;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Util;
+    using static VTT.Render.ImGuiHelper;
 
     public sealed class ImGuiWrapper : IDisposable
     {
@@ -56,11 +57,8 @@ void main()
         private readonly IntPtr _imCtx;
 
         private ShaderProgram _shader;
-        private GPUBuffer _vboHandle;
-        private GPUBuffer _elementsHandle;
-        private VertexArray _vertexArrayObject;
         private Texture _fontTexture;
-
+        private UIStreamingBufferCollection _uiBuffers = new UIStreamingBufferCollection();
         private ClientSettings.UISkin? _skinChangeTo;
 
         public Stopwatch CPUTimer { get; set; }
@@ -107,21 +105,7 @@ void main()
             ImGui.GetIO().BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
             this._skinChangeTo = Client.Instance.Settings.InterfaceSkin;
             UISkins.DefaultStyleData = new ImGuiStyle(ImGui.GetStyle());
-
-
-            this.RebuildFontAtlas();
             this.InitKeyMap();
-
-            this._vboHandle = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
-            this._elementsHandle = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.StreamDraw);
-            this._vertexArrayObject = new VertexArray();
-            this._vertexArrayObject.Bind();
-            this._vboHandle.Bind();
-            this._elementsHandle.Bind();
-            this._vertexArrayObject.SetVertexSize<float>(5);
-            this._vertexArrayObject.PushElement(ElementType.Vec2);
-            this._vertexArrayObject.PushElement(ElementType.Vec2);
-            this._vertexArrayObject.PushElement(new ElementType(4, 4, VertexAttributeType.Byte, sizeof(byte)), true);
             this.CPUTimer = new Stopwatch();
         }
 
@@ -278,12 +262,11 @@ void main()
             }
         }
 
-        private unsafe void RebuildFontAtlas()
+        public unsafe void RebuildFontAtlas()
         {
             try
             {
                 ImFontAtlasPtr fonts = ImGui.GetIO().Fonts;
-
                 string temp = Path.Combine(IOVTT.ClientDir, "unifont.ttf");
                 if (!File.Exists(temp))
                 {
@@ -300,6 +283,8 @@ void main()
                 LoadEmoji(builder);
                 builder.BuildRanges(out ImVector ranges);
                 fonts.AddFontFromFileTTF(temp, 16, null, ranges.Data);
+                UIFontIconLoader fontIconLoader = new UIFontIconLoader(fonts);
+                Client.Instance.Frontend.Renderer.GuiRenderer.LoadCustomFontIcons(fontIconLoader);
                 fonts.Build();
 
                 _fontTexture = new Texture(TextureTarget.Texture2D);
@@ -307,6 +292,7 @@ void main()
                 _fontTexture.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
                 _fontTexture.SetWrapParameters(WrapParam.Repeat, WrapParam.Repeat, WrapParam.Repeat);
                 ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int w, out int h);
+                fontIconLoader.BakeIcons(pixels, w, h);
                 _fontTexture.Size = new Size(w, h);
                 GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Rgba8, w, h, PixelDataFormat.Rgba, PixelDataType.Byte, pixels);
                 fonts.TexID = _fontTexture;
@@ -422,8 +408,6 @@ void main()
 
         public void ToggleGamma(bool gamma) => this._shader["gamma_correct"].Set(gamma);
 
-        private int _maxVboSize = 0;
-        private int _maxEboSize = 0;
         unsafe void RenderDrawData()
         {
             ImDrawDataPtr drawData = ImGui.GetDrawData();
@@ -452,24 +436,13 @@ void main()
             int drawVertSize = Marshal.SizeOf<ImDrawVert>();
             int drawIdxSize = sizeof(ushort);
 
+            this._uiBuffers.Reset();
             for (int n = 0; n < drawData.CmdListsCount; n++)
             {
                 ImDrawListPtr cmdList = drawData.CmdLists[n];
 
-                this._vertexArrayObject.Bind();
-                // Upload vertex/index buffers
-                int vS = cmdList.VtxBuffer.Size * drawVertSize;
-                int eS = cmdList.IdxBuffer.Size * drawIdxSize;
-                this._maxVboSize = Math.Max(this._maxVboSize, vS);
-                this._maxEboSize = Math.Max(this._maxEboSize, eS);
-
-                this._vboHandle.Bind();
-                this._vboHandle.SetData(IntPtr.Zero, this._maxVboSize);
-                this._vboHandle.SetSubData(cmdList.VtxBuffer.Data, vS, 0);
-                this._elementsHandle.Bind();
-                this._elementsHandle.SetData(IntPtr.Zero, this._maxEboSize);
-                this._elementsHandle.SetSubData(cmdList.IdxBuffer.Data, eS, 0);
-
+                UIStreamingBuffer buffer = this._uiBuffers.Next();
+                buffer.Respecify(cmdList);
                 for (int cmd_i = 0; cmd_i < cmdList.CmdBuffer.Size; cmd_i++)
                 {
                     ImDrawCmdPtr pcmd = cmdList.CmdBuffer[cmd_i];
@@ -490,9 +463,10 @@ void main()
                         GL.Scissor((int)clip_rect.X, (int)(fbHeight - clip_rect.W), (int)(clip_rect.Z - clip_rect.X), (int)(clip_rect.W - clip_rect.Y));
 
                         // Bind texture, Draw
-                        if (pcmd.TextureId != IntPtr.Zero)
+                        if (pcmd.TextureId != IntPtr.Zero && pcmd.TextureId != lastTexId)
                         {
                             GL.BindTexture(TextureTarget.Texture2D, (uint)pcmd.TextureId);
+                            lastTexId = pcmd.TextureId;
                         }
 
                         GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, drawIdxSize == 2 ? ElementsType.UnsignedShort : ElementsType.UnsignedInt, (IntPtr)(pcmd.IdxOffset * drawIdxSize), (int)pcmd.VtxOffset);
@@ -518,113 +492,11 @@ void main()
             {
                 _shader.Dispose();
                 _shader = null;
-                _vboHandle.Dispose();
-                _elementsHandle.Dispose();
-                _vertexArrayObject.Dispose();
+                this._uiBuffers.Free();
                 _fontTexture.Dispose();
             }
         }
 
         public delegate void ImDrawCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight, IntPtr userData);
-    }
-
-    public static class ImGuiHelper
-    {
-        public static Vector2 CalcTextSize(string tIn) => string.IsNullOrEmpty(tIn) ? Vector2.Zero : ImGui.CalcTextSize(tIn);
-
-        public static string TextOrEmpty(string text) => string.IsNullOrEmpty(text) ? " " : text;
-
-        public static void AddTextWithSingleDropShadow(ImDrawListPtr drawList, Vector2 pos, uint color, string text)
-        {
-            drawList.AddText(pos + new Vector2(1, 1), 0xff000000, text);
-            drawList.AddText(pos, color, text);
-        }
-
-        public static bool ImAssetRecepticleCustomText(string text, Texture icon, Vector2 size, Func<AssetRef, bool> assetEvaluator, out bool hovered)
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-            Vector2 avail = ImGui.GetContentRegionAvail();
-            if (size.X == 0)
-            {
-                size.X = avail.X;
-            }
-
-            if (size.Y == 0)
-            {
-                size.Y = avail.Y;
-            }
-
-            Vector2 rectEnd = imScreenPos + size;
-            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-            AssetRef aRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
-            bool result = mouseOver && aRef != null && assetEvaluator(aRef);
-            uint bClr = result ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : mouseOver ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-            drawList.AddRect(imScreenPos, rectEnd, bClr);
-            drawList.AddImage(icon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-            string mdlTxt = text;
-            drawList.PushClipRect(imScreenPos, rectEnd);
-            drawList.AddText(imScreenPos + new Vector2(20, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-            drawList.PopClipRect();
-            ImGui.Dummy(size);
-            hovered = mouseOver;
-            return result;
-        }
-
-        public static bool ImAssetRecepticle(SimpleLanguage lang, Guid aId, Texture icon, Vector2 size, Func<AssetRef, bool> assetEvaluator, out bool hovered)
-        {
-            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-            Vector2 imScreenPos = ImGui.GetCursorScreenPos();
-            Vector2 avail = ImGui.GetContentRegionAvail();
-            if (size.X == 0)
-            {
-                size.X = avail.X;
-            }
-
-            if (size.Y == 0)
-            {
-                size.Y = avail.Y;
-            }
-
-            Vector2 rectEnd = imScreenPos + size;
-            bool mouseOver = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
-            AssetRef aRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
-            bool result = mouseOver && aRef != null && assetEvaluator(aRef);
-            uint bClr = result ? ImGui.GetColorU32(ImGuiCol.HeaderHovered) : mouseOver ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
-            drawList.AddRect(imScreenPos, rectEnd, bClr);
-            drawList.AddImage(icon, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
-            string mdlTxt = "";
-            int mdlTxtOffset = 0;
-            if (Client.Instance.AssetManager.Refs.ContainsKey(aId))
-            {
-                aRef = Client.Instance.AssetManager.Refs[aId];
-                mdlTxt += aRef.Name;
-                if (Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(aId, AssetType.Texture, out AssetPreview ap) == AssetStatus.Return && ap != null)
-                {
-                    Texture tex = ap.GetGLTexture();
-                    if (tex != null)
-                    {
-                        drawList.AddImage(tex, imScreenPos + new Vector2(20, 4), imScreenPos + new Vector2(36, 20));
-                        mdlTxtOffset += 20;
-                    }
-                }
-            }
-
-            if (Guid.Equals(Guid.Empty, aId))
-            {
-                mdlTxt = lang.Translate("generic.none");
-            }
-            else
-            {
-                mdlTxt += " (" + aId.ToString() + ")\0";
-            }
-
-            drawList.PushClipRect(imScreenPos, rectEnd);
-            drawList.AddText(imScreenPos + new Vector2(20 + mdlTxtOffset, 4), ImGui.GetColorU32(ImGuiCol.Text), mdlTxt);
-            drawList.PopClipRect();
-            ImGui.Dummy(size);
-            hovered = mouseOver;
-            return result;
-        }
     }
 }

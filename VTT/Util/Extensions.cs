@@ -27,6 +27,7 @@
         public static SVec2 Zw(this SVec4 vec) => new SVec2(vec.Z, vec.W);
         public static SVec2 PerpendicularRight(this SVec2 vec) => new SVec2(vec.Y, -vec.X);
         public static SVec2 PerpendicularLeft(this SVec2 vec) => new SVec2(-vec.Y, vec.X);
+        public static SVec4 FromXyZw(SVec2 xy, SVec2 zw) => new SVec4(xy, zw.X, zw.Y);
 
         public static SVec4 Vec4(this Color color) => ((SVec4)color);
         public static SVec3 Vec3(this Color color)

@@ -130,7 +130,8 @@
                 float bscX = ImGui.GetCursorPosX();
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 100);
-                if (ImGui.ImageButton("btnChatSearch", this.Search, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
+                // TODO uv issues with ImImageButton and custom ImCustomRects! Should be new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)
+                if (this.Search.ImImageButtonCustomImageSize("btnChatSearch", Vec48x24, new Vector2(14, 2), new Vector2(20, 20)))
                 {
                     state.chatSearchPopup = true;
                 }
@@ -142,7 +143,7 @@
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 66);
-                if (ImGui.ImageButton("btnChatLinkImage", this.ChatLinkImage, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
+                if (this.ChatLinkImage.ImImageButtonCustomImageSize("btnChatLinkImage", Vec48x24, new Vector2(14, 2), new Vector2(20, 20)))
                 {
                     state.linkPopup = true;
                 }
@@ -154,7 +155,7 @@
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 34);
-                if (ImGui.ImageButton("btnChatRoll", this.RollIcon, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)))
+                if (this.RollIcon.ImImageButtonCustomImageSize("btnChatRoll", Vec48x24, new Vector2(14, 2), new Vector2(20, 20)))
                 {
                     state.rollPopup = true;
                 }
@@ -166,7 +167,7 @@
 
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 2);
-                sendSignal |= ImGui.ImageButton("btnChatSendMessage", this.ChatSendImage, Vec48x24, new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f));
+                sendSignal |= this.ChatSendImage.ImImageButtonCustomImageSize("btnChatSendMessage", Vec48x24, new Vector2(14, 2), new Vector2(20, 20));
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(lang.Translate("ui.chat.btn.send.tt"));

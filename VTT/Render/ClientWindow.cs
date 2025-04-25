@@ -385,6 +385,7 @@
             this.Sound.Init();
             this.GuiWrapper = new ImGuiWrapper();
             this.Renderer.Create();
+            this.GuiWrapper.RebuildFontAtlas();
             if (ArgsManager.TryGetValue(LaunchArgumentKey.GLDebugMode, out string val))
             {
                 this._debugProc = this.GL_DebugCallback;

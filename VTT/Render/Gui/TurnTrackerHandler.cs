@@ -551,7 +551,7 @@
 
                             TurnTracker.Team t = cMap.TurnTracker.Teams[i];
                             string tName = t.Name;
-                            if (ImGui.InputText("##TeamName" + i, ref tName, ushort.MaxValue))
+                            if (ImGui.InputText("##TeamName" + i, ref tName, 255))
                             {
                                 if (!string.IsNullOrEmpty(tName))
                                 {
@@ -570,7 +570,7 @@
                             }
 
                             ImGui.SameLine();
-                            if (ImGui.ImageButton("TeamDeleteButton_" + i, this.DeleteIcon, Vec12x12))
+                            if (this.DeleteIcon.ImImageButton("TeamDeleteButton_" + i, Vec12x12))
                             {
                                 PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.Delete, Name = t.Name };
                                 pti.Send();
@@ -587,7 +587,7 @@
                             }
                         }
 
-                        if (ImGui.ImageButton("btnAddTeam", this.AddIcon, Vec12x12))
+                        if (this.AddIcon.ImImageButton("btnAddTeam", Vec12x12))
                         {
                             PacketTeamInfo pti = new PacketTeamInfo() { Action = PacketTeamInfo.ActionType.Add, Color = Color.White, Name = "New Team " + cMap.TurnTracker.Teams.Count };
                             pti.Send();
@@ -620,7 +620,7 @@
                             ImGui.PushStyleColor(ImGuiCol.Border, (Vec4)Color.RoyalBlue);
                         }
 
-                        if (ImGui.ImageButton("TurnTrackerVisibilityButton", this.FOWRevealIcon, Vec12x12))
+                        if (this.FOWRevealIcon.ImImageButton("TurnTrackerVisibilityButton", Vec12x12))
                         {
                             PacketToggleTurnTrackerVisibility ptttv = new PacketToggleTurnTrackerVisibility() { Action = !cMap.TurnTracker.Visible };
                             ptttv.Send();
@@ -637,7 +637,7 @@
                             ImGui.PopStyleColor();
                         }
 
-                        if (ImGui.ImageButton("TurnTrackerAddSelectedButton", this.AddIcon, Vec12x12))
+                        if (this.AddIcon.ImImageButton("TurnTrackerAddSelectedButton", Vec12x12))
                         {
                             for (int i = 0; i < Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count; i++)
                             {
@@ -738,7 +738,7 @@
                                     ImGui.EndDragDropSource();
                                 }
 
-                                if (ImGui.ImageButton("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString(), this.GotoIcon, Vec12x12))
+                                if (this.GotoIcon.ImImageButton("GotoEntryBtn_" + i + "_" + e.ObjectID.ToString(), Vec12x12))
                                 {
                                     if (haveObject)
                                     {
@@ -760,7 +760,7 @@
                                 }
 
                                 ImGui.SameLine();
-                                if (ImGui.ImageButton("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString(), this.MoveToIcon, Vec12x12))
+                                if (this.MoveToIcon.ImImageButton("TurnToEntryBtn_" + i + "_" + e.ObjectID.ToString(), Vec12x12))
                                 {
                                     new PacketMoveTurnToIndex() { Index = i }.Send();
                                 }
@@ -821,7 +821,7 @@
 
                                 ImGui.PopItemWidth();
                                 ImGui.SameLine();
-                                if (ImGui.ImageButton("DeleteTurnEntry" + i + "_" + e.ObjectID, this.DeleteIcon, Vec12x12))
+                                if (this.DeleteIcon.ImImageButton("DeleteTurnEntry" + i + "_" + e.ObjectID, Vec12x12))
                                 {
                                     new PacketDeleteTurnEntry() { EntryIndex = i }.Send();
                                 }

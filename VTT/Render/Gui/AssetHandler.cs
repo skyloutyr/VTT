@@ -856,7 +856,7 @@
                     }
 
                     ImGui.SameLine();
-                    ImGui.Image(this.Search, new Vector2(24, 24));
+                    this.Search.ImImage(new Vector2(24, 24));
 
                     Vector2 winPadding = ImGui.GetStyle().WindowPadding;
                     Vector2 framePadding = ImGui.GetStyle().FramePadding;
@@ -1034,7 +1034,7 @@
                                 (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
                             float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
                             float texelSize = 1f / this.LoadingSpinnerFrames;
-                            idlp.AddImage(a == AssetStatus.Error ? this.ErrorIcon : this.LoadingSpinner, cursorCurrent, cursorCurrent + new Vector2(96, 96), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1));
+                            idlp.AddImage(this.LoadingSpinner, cursorCurrent, cursorCurrent + new Vector2(96, 96), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1));
                             if (hover)
                             {
                                 idlp.AddRect(cursorCurrent, cursorCurrent + new Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
@@ -1042,7 +1042,15 @@
                         }
                         else
                         {
-                            idlp.AddImage(a is AssetStatus.Error or AssetStatus.NoAsset ? this.ErrorIcon : ap.GetGLTexture(), cursorCurrent, cursorCurrent + new Vector2(96, 96));
+                            if (a is AssetStatus.Error or AssetStatus.NoAsset)
+                            {
+                                idlp.AddImage(this.ErrorIcon, cursorCurrent, cursorCurrent + new Vector2(96, 96));
+                            }
+                            else
+                            {
+                                idlp.AddImage(ap.GetGLTexture(), cursorCurrent, cursorCurrent + new Vector2(96, 96));
+                            }
+
                             if (hover)
                             {
                                 idlp.AddRect(cursorCurrent, cursorCurrent + new Vector2(96, 96), ImGui.GetColorU32(ImGuiCol.ButtonHovered));
@@ -1502,11 +1510,18 @@
                         (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * this.LoadingSpinnerFrames);
                     float texelIndexStart = (float)frame / this.LoadingSpinnerFrames;
                     float texelSize = 1f / this.LoadingSpinnerFrames;
-                    ImGui.Image(a == AssetStatus.Await ? this.LoadingSpinner : a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new Vector2(48, 48), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1), new Vector4(1, 1, 1, 1));
+                    ImGui.Image(this.LoadingSpinner, new Vector2(48, 48), new Vector2(texelIndexStart, 0), new Vector2(texelIndexStart + texelSize, 1), new Vector4(1, 1, 1, 1));
                 }
                 else
                 {
-                    ImGui.Image(a == AssetStatus.Error ? this.ErrorIcon : ap.GetGLTexture(), new Vector2(48, 48), new Vector2(0, 0), new Vector2(1, 1), new Vector4(1, 1, 1, 1));
+                    if (a == AssetStatus.Error)
+                    {
+                        this.ErrorIcon.ImImage(new Vector2(48, 48));
+                    }
+                    else
+                    {
+                        ImGui.Image(ap.GetGLTexture(), new Vector2(48, 48));
+                    }
                 }
 
                 ImGui.End();

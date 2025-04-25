@@ -18,6 +18,7 @@
     using VTT.Render.Chat;
     using VTT.Render.MainMenu;
     using VTT.Util;
+    using Extensions = Util.Extensions;
 
     public partial class GuiRenderer
     {
@@ -25,71 +26,71 @@
         public Random Random { get; set; } = new Random();
 
         #region Textures
-        public Texture FolderIcon { get; set; }
-        public Texture AddIcon { get; set; }
-        public Texture CopyIcon { get; set; }
-        public Texture BackIcon { get; set; }
-        public Texture ErrorIcon { get; set; }
-        public Texture NoImageIcon { get; set; }
+        public ImCustomTexturedRect FolderIcon { get; set; }
+        public ImCustomTexturedRect AddIcon { get; set; }
+        public ImCustomTexturedRect CopyIcon { get; set; }
+        public ImCustomTexturedRect BackIcon { get; set; }
+        public ImCustomTexturedRect ErrorIcon { get; set; }
+        public ImCustomTexturedRect NoImageIcon { get; set; }
         public Texture LoadingSpinner { get; set; }
-        public Texture GotoIcon { get; set; }
-        public Texture MoveToIcon { get; set; }
-        public Texture MoveAllToIcon { get; set; }
-        public Texture DeleteIcon { get; set; }
-        public Texture RollIcon { get; set; }
-        public Texture CrossedSwordsIcon { get; set; }
-        public Texture MagicIcon { get; set; }
-        public Texture VerbalComponentIcon { get; set; }
-        public Texture SomaticComponentIcon { get; set; }
-        public Texture MaterialComponentIcon { get; set; }
-        public Texture RitualComponentIcon { get; set; }
-        public Texture ConcentrationComponentIcon { get; set; }
+        public ImCustomTexturedRect GotoIcon { get; set; }
+        public ImCustomTexturedRect MoveToIcon { get; set; }
+        public ImCustomTexturedRect MoveAllToIcon { get; set; }
+        public ImCustomTexturedRect DeleteIcon { get; set; }
+        public ImCustomTexturedRect RollIcon { get; set; }
+        public ImCustomTexturedRect CrossedSwordsIcon { get; set; }
+        public ImCustomTexturedRect MagicIcon { get; set; }
+        public ImCustomTexturedRect VerbalComponentIcon { get; set; }
+        public ImCustomTexturedRect SomaticComponentIcon { get; set; }
+        public ImCustomTexturedRect MaterialComponentIcon { get; set; }
+        public ImCustomTexturedRect RitualComponentIcon { get; set; }
+        public ImCustomTexturedRect ConcentrationComponentIcon { get; set; }
 
-        public Texture AssetModelIcon { get; set; }
-        public Texture AssetImageIcon { get; set; }
-        public Texture AssetShaderIcon { get; set; }
-        public Texture AssetGlslShaderIcon { get; set; }
-        public Texture AssetParticleIcon { get; set; }
-        public Texture AssetSoundIcon { get; set; }
-        public Texture AssetMusicIcon { get; set; }
-        public Texture AssetCompressedMusicIcon { get; set; }
+        public ImCustomTexturedRect AssetModelIcon { get; set; }
+        public ImCustomTexturedRect AssetImageIcon { get; set; }
+        public ImCustomTexturedRect AssetShaderIcon { get; set; }
+        public ImCustomTexturedRect AssetGlslShaderIcon { get; set; }
+        public ImCustomTexturedRect AssetParticleIcon { get; set; }
+        public ImCustomTexturedRect AssetSoundIcon { get; set; }
+        public ImCustomTexturedRect AssetMusicIcon { get; set; }
+        public ImCustomTexturedRect AssetCompressedMusicIcon { get; set; }
 
-        public Texture Select { get; set; }
-        public Texture Translate { get; set; }
-        public Texture Rotate { get; set; }
-        public Texture Scale { get; set; }
-        public Texture ChangeFOW { get; set; }
-        public Texture ToggleTurnOrder { get; set; }
-        public Texture Measure { get; set; }
-        public Texture PlayerStop { get; set; }
-        public Texture PlayerNext { get; set; }
+        public ImCustomTexturedRect Select { get; set; }
+        public ImCustomTexturedRect Translate { get; set; }
+        public ImCustomTexturedRect Rotate { get; set; }
+        public ImCustomTexturedRect Scale { get; set; }
+        public ImCustomTexturedRect ChangeFOW { get; set; }
+        public ImCustomTexturedRect ToggleTurnOrder { get; set; }
+        public ImCustomTexturedRect Measure { get; set; }
+        public ImCustomTexturedRect PlayerStop { get; set; }
+        public ImCustomTexturedRect PlayerNext { get; set; }
 
-        public Texture MoveGizmo { get; set; }
-        public Texture MoveArrows { get; set; }
+        public ImCustomTexturedRect MoveGizmo { get; set; }
+        public ImCustomTexturedRect MoveArrows { get; set; }
 
-        public Texture FOWRevealIcon { get; set; }
-        public Texture FOWHideIcon { get; set; }
-        public Texture FOWModeBox { get; set; }
-        public Texture FOWModePolygon { get; set; }
-        public Texture FOWModeBrush { get; set; }
+        public ImCustomTexturedRect FOWRevealIcon { get; set; }
+        public ImCustomTexturedRect FOWHideIcon { get; set; }
+        public ImCustomTexturedRect FOWModeBox { get; set; }
+        public ImCustomTexturedRect FOWModePolygon { get; set; }
+        public ImCustomTexturedRect FOWModeBrush { get; set; }
 
-        public Texture MeasureModeRuler { get; set; }
-        public Texture MeasureModeCircle { get; set; }
-        public Texture MeasureModeSphere { get; set; }
-        public Texture MeasureModeSquare { get; set; }
-        public Texture MeasureModeCube { get; set; }
-        public Texture MeasureModeCone { get; set; }
-        public Texture MeasureModeLine { get; set; }
-        public Texture MeasureModeWall { get; set; }
-        public Texture MeasureModePolyline { get; set; }
-        public Texture MeasureModeErase { get; set; }
+        public ImCustomTexturedRect MeasureModeRuler { get; set; }
+        public ImCustomTexturedRect MeasureModeCircle { get; set; }
+        public ImCustomTexturedRect MeasureModeSphere { get; set; }
+        public ImCustomTexturedRect MeasureModeSquare { get; set; }
+        public ImCustomTexturedRect MeasureModeCube { get; set; }
+        public ImCustomTexturedRect MeasureModeCone { get; set; }
+        public ImCustomTexturedRect MeasureModeLine { get; set; }
+        public ImCustomTexturedRect MeasureModeWall { get; set; }
+        public ImCustomTexturedRect MeasureModePolyline { get; set; }
+        public ImCustomTexturedRect MeasureModeErase { get; set; }
 
-        public Texture ChatSimpleRollImage { get; set; }
-        public Texture ChatSendImage { get; set; }
-        public Texture ChatLinkImage { get; set; }
-        public Texture JournalEdit { get; set; }
+        public ImCustomTexturedRect ChatSimpleRollImage { get; set; }
+        public ImCustomTexturedRect ChatSendImage { get; set; }
+        public ImCustomTexturedRect ChatLinkImage { get; set; }
+        public ImCustomTexturedRect JournalEdit { get; set; }
+
         public Texture ChatMissingAvatar { get; set; }
-
         public Texture DiceIconAtlas { get; set; }
         public DieIconData ChatIconD2 { get; set; }
         public DieIconData ChatIconD4 { get; set; }
@@ -99,8 +100,8 @@
         public DieIconData ChatIconD12 { get; set; }
         public DieIconData ChatIconD20 { get; set; }
 
-        public Texture PlayIcon { get; set; }
-        public Texture PauseIcon { get; set; }
+        public ImCustomTexturedRect PlayIcon { get; set; }
+        public ImCustomTexturedRect PauseIcon { get; set; }
 
         public Texture TurnTrackerBackground { get; set; }
         public Texture TurnTrackerBackgroundNoObject { get; set; }
@@ -111,22 +112,22 @@
 
         public Texture StatusAtlas { get; set; }
 
-        public Texture NetworkIn { get; set; }
-        public Texture NetworkOut { get; set; }
+        public ImCustomTexturedRect NetworkIn { get; set; }
+        public ImCustomTexturedRect NetworkOut { get; set; }
 
-        public Texture CameraMove { get; set; }
-        public Texture CameraRotate { get; set; }
-        public Texture FXIcon { get; set; }
+        public ImCustomTexturedRect CameraMove { get; set; }
+        public ImCustomTexturedRect CameraRotate { get; set; }
+        public ImCustomTexturedRect FXIcon { get; set; }
 
-        public Texture Search { get; set; }
+        public ImCustomTexturedRect Search { get; set; }
 
-        public Texture MagicFX { get; set; }
-        public Texture Shadow2D { get; set; }
-        public Texture OpenDoor { get; set; }
-        public Texture Shadow2DAddBlocker { get; set; }
-        public Texture Shadow2DAddBlockerPoints { get; set; }
-        public Texture Shadow2DAddSunlight { get; set; }
-        public Texture Shadow2DAddSunlightPoints { get; set; }
+        public ImCustomTexturedRect MagicFX { get; set; }
+        public ImCustomTexturedRect Shadow2D { get; set; }
+        public ImCustomTexturedRect OpenDoor { get; set; }
+        public ImCustomTexturedRect Shadow2DAddBlocker { get; set; }
+        public ImCustomTexturedRect Shadow2DAddBlockerPoints { get; set; }
+        public ImCustomTexturedRect Shadow2DAddSunlight { get; set; }
+        public ImCustomTexturedRect Shadow2DAddSunlightPoints { get; set; }
 
         public Texture SkyboxUIExample { get; set; }
 
@@ -233,54 +234,6 @@
         public void Create()
         {
             this.CurrentFolder = Client.Instance.AssetManager.Root;
-            this.FolderIcon = OpenGLUtil.LoadUIImage("icons8-folder-40");
-            this.BackIcon = OpenGLUtil.LoadUIImage("icons8-return-40");
-            this.AddIcon = OpenGLUtil.LoadUIImage("icons8-plus-math-40");
-            this.CopyIcon = OpenGLUtil.LoadUIImage("icons8-copy-40");
-            this.ErrorIcon = OpenGLUtil.LoadUIImage("icons8-error-40");
-            this.NoImageIcon = OpenGLUtil.LoadUIImage("icons8-no-image-40");
-            this.GotoIcon = OpenGLUtil.LoadUIImage("icons8-day-camera-40");
-            this.MoveToIcon = OpenGLUtil.LoadUIImage("icons8-curved-arrow-40");
-            this.MoveAllToIcon = OpenGLUtil.LoadUIImage("icons8-move-all-arrow-40");
-            this.DeleteIcon = OpenGLUtil.LoadUIImage("icons8-trash-can-40");
-            this.RollIcon = OpenGLUtil.LoadUIImage("icons8-dice-40");
-            this.LoadingSpinner = OpenGLUtil.LoadUIImage("icons8-loading-circle");
-            this.ToggleTurnOrder = OpenGLUtil.LoadUIImage("icons8-stopwatch-40");
-            this.CrossedSwordsIcon = OpenGLUtil.LoadUIImage("icons8-swords-40");
-            this.MagicIcon = OpenGLUtil.LoadUIImage("icons8-magic-64");
-            this.VerbalComponentIcon = OpenGLUtil.LoadUIImage("icons8-lips-40");
-            this.SomaticComponentIcon = OpenGLUtil.LoadUIImage("icons8-so-so-40");
-            this.MaterialComponentIcon = OpenGLUtil.LoadUIImage("icons8-money-bag-40");
-            this.RitualComponentIcon = OpenGLUtil.LoadUIImage("icons8-pentagram-64");
-            this.ConcentrationComponentIcon = OpenGLUtil.LoadUIImage("icons8-thinking-male-40");
-            this.Measure = this.MeasureModeRuler = OpenGLUtil.LoadUIImage("icons8-length-40");
-
-            this.AssetModelIcon = OpenGLUtil.LoadUIImage("icons8-3d-64");
-            this.AssetImageIcon = OpenGLUtil.LoadUIImage("icons8-picture-40");
-            this.AssetShaderIcon = OpenGLUtil.LoadUIImage("icons8-color-swatch-40");
-            this.AssetGlslShaderIcon = OpenGLUtil.LoadUIImage("icons8-fragment-shader-40");
-            this.AssetParticleIcon = OpenGLUtil.LoadUIImage("icons8-particle-40");
-            this.AssetSoundIcon = OpenGLUtil.LoadUIImage("icons8-sound-40");
-            this.AssetMusicIcon = OpenGLUtil.LoadUIImage("icons8-musical-notes-40");
-            this.AssetCompressedMusicIcon = OpenGLUtil.LoadUIImage("icons8-music-library-40");
-
-            this.Select = OpenGLUtil.LoadUIImage("icons8-cursor-40");
-            this.Translate = OpenGLUtil.LoadUIImage("icons8-drag-40");
-            this.Rotate = OpenGLUtil.LoadUIImage("icons8-process-40");
-            this.Scale = OpenGLUtil.LoadUIImage("icons8-resize-40");
-            this.ChangeFOW = OpenGLUtil.LoadUIImage("icons8-visualy-impaired-40");
-            this.PlayerStop = OpenGLUtil.LoadUIImage("icons8-stop-40");
-            this.PlayerNext = OpenGLUtil.LoadUIImage("icons8-double-right-40");
-
-            this.MoveGizmo = OpenGLUtil.LoadUIImage("icons8-abscissa-40");
-            this.MoveArrows = OpenGLUtil.LoadUIImage("icons8-move-separate-40");
-
-            this.FOWRevealIcon = OpenGLUtil.LoadUIImage("icons8-eye-40");
-            this.FOWHideIcon = OpenGLUtil.LoadUIImage("icons8-closed-eye-40");
-            this.FOWModeBox = OpenGLUtil.LoadUIImage("icons8-rectangle-40");
-            this.FOWModePolygon = OpenGLUtil.LoadUIImage("icons8-radar-plot-40");
-            this.FOWModeBrush = OpenGLUtil.LoadUIImage("icons8-paint-40");
-
             this.TurnTrackerBackground = OpenGLUtil.LoadUIImage("turn-tracker-back");
             this.TurnTrackerBackgroundNoObject = OpenGLUtil.LoadUIImage("turn-tracker-back-no-object");
             this.TurnTrackerForeground = OpenGLUtil.LoadUIImage("turn-tracker-front");
@@ -288,50 +241,14 @@
             this.TurnTrackerSeparator = OpenGLUtil.LoadUIImage("turn-tracker-separator");
             this.TurnTrackerParticle = OpenGLUtil.LoadUIImage("turn-tracker-particle");
 
-            this.MeasureModeCircle = OpenGLUtil.LoadUIImage("icons8-radius-40");
-            this.MeasureModeSphere = OpenGLUtil.LoadUIImage("icons8-sphere-58");
-            this.MeasureModeSquare = OpenGLUtil.LoadUIImage("icons8-surface-40");
-            this.MeasureModeCube = OpenGLUtil.LoadUIImage("icons8-cube-40");
-            this.MeasureModeCone = OpenGLUtil.LoadUIImage("icons8-pipeline-40");
-            this.MeasureModeLine = OpenGLUtil.LoadUIImage("icons8-vertical-line-40");
-            this.MeasureModeWall = OpenGLUtil.LoadUIImage("icons8-block-40");
-            this.MeasureModePolyline = OpenGLUtil.LoadUIImage("icons8-polyline-40");
-            this.MeasureModeErase = OpenGLUtil.LoadUIImage("icons8-erase-40");
-
-            this.ChatSimpleRollImage = OpenGLUtil.LoadUIImage("icons8-dice-60");
-            this.ChatSendImage = OpenGLUtil.LoadUIImage("icons8-paper-plane-40");
-            this.ChatLinkImage = OpenGLUtil.LoadUIImage("icons8-link-picture-40");
-            this.JournalEdit = OpenGLUtil.LoadUIImage("icons8-edit-40");
-            this.ChatMissingAvatar = OpenGLUtil.LoadUIImage("avatar_missing");
-
             this.CreateDiceIcons();
-
-            this.PlayIcon = OpenGLUtil.LoadUIImage("icons8-play-40");
-            this.PauseIcon = OpenGLUtil.LoadUIImage("icons8-pause-40");
-
-            this.NetworkIn = OpenGLUtil.LoadUIImage("icons8-incoming-data-40");
-            this.NetworkOut = OpenGLUtil.LoadUIImage("icons8-outgoing-data-40");
-
-            this.CameraMove = OpenGLUtil.LoadUIImage("icons8-video-camera-move-40");
-            this.CameraRotate = OpenGLUtil.LoadUIImage("icons8-video-camera-rotate-40");
-
-            this.Search = OpenGLUtil.LoadUIImage("icons8-search-40");
-
-            this.MagicFX = OpenGLUtil.LoadUIImage("icons8-magic-40");
-            this.Shadow2D = OpenGLUtil.LoadUIImage("icons8-shadow2d-40");
-            this.OpenDoor = OpenGLUtil.LoadUIImage("icons8-door-40");
-            this.Shadow2DAddBlocker = OpenGLUtil.LoadUIImage("icons8-newblocker-40");
-            this.Shadow2DAddSunlight = OpenGLUtil.LoadUIImage("icons8-newillumination-40");
-            this.Shadow2DAddBlockerPoints = OpenGLUtil.LoadUIImage("icons8-newblocker-points-40");
-            this.Shadow2DAddSunlightPoints = OpenGLUtil.LoadUIImage("icons8-newillumination-points-40");
 
             this.SkyboxUIExample = OpenGLUtil.LoadUIImage("skybox-ui-example");
 
-            this._modeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
-            this._rulerModeTextures = new Texture[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
-            this.Shadow2DControlModeTextures = new Texture[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
-            this._moveModeTextures = new Texture[] { this.MoveGizmo, this.MeasureModePolyline, this.MoveArrows };
+            this.LoadingSpinner = OpenGLUtil.LoadUIImage("icons8-loading-circle");
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);
+
+            this.ChatMissingAvatar = OpenGLUtil.LoadUIImage("avatar_missing");
 
             this.MainMenuRenderer = new MainMenuRenderer();
             this.MainMenuRenderer.Create();
@@ -342,10 +259,10 @@
             this.LoadStatuses();
         }
 
-        private Texture[] _modeTextures;
-        private Texture[] _rulerModeTextures;
-        private Texture[] _moveModeTextures;
-        public Texture[] Shadow2DControlModeTextures { get; private set; }
+        private ImCustomTexturedRect[] _modeTextures;
+        private ImCustomTexturedRect[] _rulerModeTextures;
+        private ImCustomTexturedRect[] _moveModeTextures;
+        public ImCustomTexturedRect[] Shadow2DControlModeTextures { get; private set; }
 
         private readonly List<string> _chatMemory = new List<string>();
         private int _cChatIndex;
@@ -1031,6 +948,95 @@
             tex.GenerateMipMaps();
             this.DiceIconAtlas = tex;
         }
+    
+        public void LoadCustomFontIcons(ImGuiHelper.UIFontIconLoader loader)
+        {
+            this.FolderIcon = loader.LoadUIIcon("icons8-folder-40");
+            this.BackIcon = loader.LoadUIIcon("icons8-return-40");
+            this.AddIcon = loader.LoadUIIcon("icons8-plus-math-40");
+            this.CopyIcon = loader.LoadUIIcon("icons8-copy-40");
+            this.ErrorIcon = loader.LoadUIIcon("icons8-error-40");
+            this.NoImageIcon = loader.LoadUIIcon("icons8-no-image-40");
+            this.GotoIcon = loader.LoadUIIcon("icons8-day-camera-40");
+            this.MoveToIcon = loader.LoadUIIcon("icons8-curved-arrow-40");
+            this.MoveAllToIcon = loader.LoadUIIcon("icons8-move-all-arrow-40");
+            this.DeleteIcon = loader.LoadUIIcon("icons8-trash-can-40");
+            this.RollIcon = loader.LoadUIIcon("icons8-dice-40");
+            this.ToggleTurnOrder = loader.LoadUIIcon("icons8-stopwatch-40");
+            this.CrossedSwordsIcon = loader.LoadUIIcon("icons8-swords-40");
+            this.MagicIcon = loader.LoadUIIcon("icons8-magic-64");
+            this.VerbalComponentIcon = loader.LoadUIIcon("icons8-lips-40");
+            this.SomaticComponentIcon = loader.LoadUIIcon("icons8-so-so-40");
+            this.MaterialComponentIcon = loader.LoadUIIcon("icons8-money-bag-40");
+            this.RitualComponentIcon = loader.LoadUIIcon("icons8-pentagram-64");
+            this.ConcentrationComponentIcon = loader.LoadUIIcon("icons8-thinking-male-40");
+            this.Measure = this.MeasureModeRuler = loader.LoadUIIcon("icons8-length-40");
+
+            this.AssetModelIcon = loader.LoadUIIcon("icons8-3d-64");
+            this.AssetImageIcon = loader.LoadUIIcon("icons8-picture-40");
+            this.AssetShaderIcon = loader.LoadUIIcon("icons8-color-swatch-40");
+            this.AssetGlslShaderIcon = loader.LoadUIIcon("icons8-fragment-shader-40");
+            this.AssetParticleIcon = loader.LoadUIIcon("icons8-particle-40");
+            this.AssetSoundIcon = loader.LoadUIIcon("icons8-sound-40");
+            this.AssetMusicIcon = loader.LoadUIIcon("icons8-musical-notes-40");
+            this.AssetCompressedMusicIcon = loader.LoadUIIcon("icons8-music-library-40");
+
+            this.Select = loader.LoadUIIcon("icons8-cursor-40");
+            this.Translate = loader.LoadUIIcon("icons8-drag-40");
+            this.Rotate = loader.LoadUIIcon("icons8-process-40");
+            this.Scale = loader.LoadUIIcon("icons8-resize-40");
+            this.ChangeFOW = loader.LoadUIIcon("icons8-visualy-impaired-40");
+            this.PlayerStop = loader.LoadUIIcon("icons8-stop-40");
+            this.PlayerNext = loader.LoadUIIcon("icons8-double-right-40");
+
+            this.MoveGizmo = loader.LoadUIIcon("icons8-abscissa-40");
+            this.MoveArrows = loader.LoadUIIcon("icons8-move-separate-40");
+
+            this.FOWRevealIcon = loader.LoadUIIcon("icons8-eye-40");
+            this.FOWHideIcon = loader.LoadUIIcon("icons8-closed-eye-40");
+            this.FOWModeBox = loader.LoadUIIcon("icons8-rectangle-40");
+            this.FOWModePolygon = loader.LoadUIIcon("icons8-radar-plot-40");
+            this.FOWModeBrush = loader.LoadUIIcon("icons8-paint-40");
+
+            this.MeasureModeCircle = loader.LoadUIIcon("icons8-radius-40");
+            this.MeasureModeSphere = loader.LoadUIIcon("icons8-sphere-58");
+            this.MeasureModeSquare = loader.LoadUIIcon("icons8-surface-40");
+            this.MeasureModeCube = loader.LoadUIIcon("icons8-cube-40");
+            this.MeasureModeCone = loader.LoadUIIcon("icons8-pipeline-40");
+            this.MeasureModeLine = loader.LoadUIIcon("icons8-vertical-line-40");
+            this.MeasureModeWall = loader.LoadUIIcon("icons8-block-40");
+            this.MeasureModePolyline = loader.LoadUIIcon("icons8-polyline-40");
+            this.MeasureModeErase = loader.LoadUIIcon("icons8-erase-40");
+
+            this.ChatSimpleRollImage = loader.LoadUIIcon("icons8-dice-60");
+            this.ChatSendImage = loader.LoadUIIcon("icons8-paper-plane-40");
+            this.ChatLinkImage = loader.LoadUIIcon("icons8-link-picture-40");
+            this.JournalEdit = loader.LoadUIIcon("icons8-edit-40");
+
+            this.PlayIcon = loader.LoadUIIcon("icons8-play-40");
+            this.PauseIcon = loader.LoadUIIcon("icons8-pause-40");
+
+            this.NetworkIn = loader.LoadUIIcon("icons8-incoming-data-40");
+            this.NetworkOut = loader.LoadUIIcon("icons8-outgoing-data-40");
+
+            this.CameraMove = loader.LoadUIIcon("icons8-video-camera-move-40");
+            this.CameraRotate = loader.LoadUIIcon("icons8-video-camera-rotate-40");
+
+            this.Search = loader.LoadUIIcon("icons8-search-40");
+
+            this.MagicFX = loader.LoadUIIcon("icons8-magic-40");
+            this.Shadow2D = loader.LoadUIIcon("icons8-shadow2d-40");
+            this.OpenDoor = loader.LoadUIIcon("icons8-door-40");
+            this.Shadow2DAddBlocker = loader.LoadUIIcon("icons8-newblocker-40");
+            this.Shadow2DAddSunlight = loader.LoadUIIcon("icons8-newillumination-40");
+            this.Shadow2DAddBlockerPoints = loader.LoadUIIcon("icons8-newblocker-points-40");
+            this.Shadow2DAddSunlightPoints = loader.LoadUIIcon("icons8-newillumination-points-40");
+
+            this._modeTextures = new ImCustomTexturedRect[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
+            this._rulerModeTextures = new ImCustomTexturedRect[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
+            this.Shadow2DControlModeTextures = new ImCustomTexturedRect[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
+            this._moveModeTextures = new ImCustomTexturedRect[] { this.MoveGizmo, this.MeasureModePolyline, this.MoveArrows };
+        }
     }
 
     public class DieIconData
@@ -1058,5 +1064,56 @@
         public Vector2 BoundsSecondaryHighlightStart { get; init; }
         public Vector2 BoundsSecondaryHighlightEnd { get; init; }
         public (Vector2, Vector2) BoundsSecondaryHighlightTuple => (this.BoundsSecondaryHighlightStart, this.BoundsSecondaryHighlightEnd);
+    }
+
+    public class ImCustomTexturedRect
+    {
+        public RectangleF TexturePixelLocation { get; set; }
+        public Vector4 GLBounds { get; set; }
+        public Vector2 ST { get; set; }
+        public Vector2 UV { get; set; }
+        public bool IsAvailable { get; set; }
+
+        private readonly Texture _customTex;
+        public IntPtr Texture => this._customTex ?? ImGui.GetIO().Fonts.TexID;
+
+        public ImCustomTexturedRect()
+        {
+            // NOOP
+        }
+
+        private ImCustomTexturedRect(Texture ctex) => this._customTex = ctex;
+
+        public void AddAsImageToDrawList(ImDrawListPtr drawList, Vector2 start, Vector2 end) => drawList.AddImage(this.Texture, start, end, this.ST, this.UV);
+        public void AddAsColoredImageToDrawList(ImDrawListPtr drawList, Vector2 start, Vector2 end, uint col) => drawList.AddImage(this.Texture, start, end, this.ST, this.UV, col);
+        public void ImImage(Vector2 size) => ImGui.Image(this.Texture, size, this.ST, this.UV);
+        public void ImImage(Vector2 size, Vector4 tintColor) => ImGui.Image(this.Texture, size, this.ST, this.UV, tintColor);
+        public bool ImImageButton(string id, Vector2 size) => ImGui.ImageButton(id, this.Texture, size, this.ST, this.UV);
+        public bool ImImageButtonCustomImageSize(string id, Vector2 btnSize, Vector2 imgStart, Vector2 imgSize)
+        {
+            Vector2 cHere = ImGui.GetCursorScreenPos();
+            Vector2 padding = ImGui.GetStyle().FramePadding;
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            Vector4 bb = Extensions.FromXyZw(cHere, cHere + btnSize + (padding * 2.0f));
+            bool r = ImGui.InvisibleButton(id, btnSize + (padding * 2.0f)); // InvisibleButton doesn't respect padding!
+            bool hover = ImGui.IsItemHovered();
+            bool active = ImGui.IsItemActive();
+            uint col = ImGui.GetColorU32((hover && active) ? ImGuiCol.ButtonActive : hover ? ImGuiCol.ButtonHovered : ImGuiCol.Button);
+            ImGuiHelper.RenderFrame(bb.Xy(), bb.Zw(), col, true, Math.Clamp((float)MathF.Min(padding.X, padding.Y), 0.0f, ImGui.GetStyle().FrameRounding));
+            drawList.AddImage(this.Texture, cHere + padding + imgStart, cHere + padding + imgStart + imgSize, this.ST, this.UV);
+            return r;
+        }
+
+        public static ImCustomTexturedRect WrapCustomTexture(Texture tex) =>
+            new ImCustomTexturedRect(tex)
+            {
+                TexturePixelLocation = new RectangleF(0, 0, tex.Size.Width, tex.Size.Height),
+                GLBounds = new Vector4(0, 0, 1, 1),
+                ST = Vector2.Zero,
+                UV = Vector2.One,
+                IsAvailable = true
+            };
+
+        public ImGuiMarkdown.MarkdownImageData ToMarkdownImageData() => new ImGuiMarkdown.MarkdownImageData() { UserTextureID = this.Texture, UV0 = this.ST, UV1 = this.UV };
     }
 }

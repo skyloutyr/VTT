@@ -7,6 +7,7 @@
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Render.Gui;
     using VTT.Util;
 
     public class ChatRendererImage : ChatRendererBase
@@ -88,8 +89,8 @@
                     Vector2 imEnd = ImGui.GetCursorPos();
                     ImGui.SetCursorPos(imPos);
                     ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    Texture btnTex = this.IsPaused ? Client.Instance.Frontend.Renderer.GuiRenderer.PlayIcon : Client.Instance.Frontend.Renderer.GuiRenderer.PauseIcon;
-                    if (ImGui.ImageButton("btnPauseChatAnimation_" + this.Container.Index, btnTex, new Vector2(20, 20), Vector2.Zero, Vector2.One, Vector4.Zero))
+                    ImCustomTexturedRect btnTex = this.IsPaused ? Client.Instance.Frontend.Renderer.GuiRenderer.PlayIcon : Client.Instance.Frontend.Renderer.GuiRenderer.PauseIcon;
+                    if (ImGui.ImageButton("btnPauseChatAnimation_" + this.Container.Index, btnTex.Texture, new Vector2(20, 20), btnTex.ST, btnTex.UV, Vector4.Zero))
                     {
                         this.IsPaused = !this.IsPaused;
                         this.PauseFrame = Client.Instance.Frontend.UpdatesExisted;
@@ -111,7 +112,7 @@
 
             if (status == AssetStatus.Error)
             {
-                ImGui.Image(Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon, new Vector2(w, h));
+                Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.ImImage(new Vector2(w, h));
             }
 
             if (status == AssetStatus.Await)

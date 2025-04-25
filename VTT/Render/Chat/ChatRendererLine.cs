@@ -292,10 +292,10 @@
                                     case AssetStatus.NoAsset:
                                     case AssetStatus.Error:
                                     {
-                                        imgTexture = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon;
+                                        imgTexture = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.Texture;
                                         imgSize = new Vector2(24, 24); // Blank for errors, have no idea of the image's size (will be 24/24 either way)
-                                        imgSt = Vector2.Zero;
-                                        imgUv = Vector2.One;
+                                        imgSt = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.ST;
+                                        imgUv = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.UV;
                                         break;
                                     }
 

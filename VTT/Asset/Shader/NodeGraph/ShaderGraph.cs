@@ -226,6 +226,7 @@
                                 sp["m_texture_normal"].Set(1);
                                 sp["m_texture_emissive"].Set(2);
                                 sp["m_texture_aomr"].Set(3);
+                                sp["tex_skybox"].Set(6);
                                 sp["unifiedTexture"].Set(12);
                             }
                             else
@@ -235,6 +236,7 @@
                                 sp["m_texture_normal"].Set(1);
                                 sp["m_texture_emissive"].Set(2);
                                 sp["m_texture_aomr"].Set(3);
+                                sp["tex_skybox"].Set(6);
                                 sp["unifiedTexture"].Set(12);
                                 sp["pl_shadow_maps"].Set(13);
                                 sp["dl_shadow_map"].Set(14);

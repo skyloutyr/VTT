@@ -900,7 +900,7 @@
                             ImGui.SetTooltip(lang.Translate("ui.properties.description.tt"));
                         }
 
-                        if (ImGui.InputTextMultiline("###Description", ref d, ushort.MaxValue, new Vector2(v.X - 108, 256)))
+                        if (ImGuiHelper.InputTextMultilinePreallocated("objdesc", "###Description", ref d, ushort.MaxValue, new Vector2(v.X - 108, 256)))
                         {
                             mo.Description = d;
                             PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Description, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, d) }, IsServer = false, Session = Client.Instance.SessionID };
@@ -916,7 +916,7 @@
                             }
 
                             string dn = mo.Notes;
-                            if (ImGui.InputTextMultiline("###Notes", ref dn, ushort.MaxValue, new Vector2(v.X - 108, 100)))
+                            if (ImGuiHelper.InputTextMultilinePreallocated("objnote", "###Notes", ref dn, ushort.MaxValue, new Vector2(v.X - 108, 100)))
                             {
                                 mo.Notes = dn;
                                 PacketMapObjectGenericData pmogd = new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.Notes, Data = new List<(Guid, Guid, object)>() { (mo.MapID, mo.ID, dn) }, IsServer = false, Session = Client.Instance.SessionID };

@@ -6,7 +6,9 @@
     using System;
     using System.Collections.Generic;
     using System.Numerics;
+    using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Text;
     using VTT.Asset;
     using VTT.GL;
     using VTT.GL.Bindings;
@@ -16,6 +18,73 @@
 
     public static class ImGuiHelper
     {
+        private static readonly Dictionary<string, ImStringMarshalBuffer> knownBuffers = new Dictionary<string, ImStringMarshalBuffer>();
+        private static readonly Dictionary<string, (ImStringMarshalBuffer, ImStringMarshalBuffer)> knownDoubleBuffers = new Dictionary<string, (ImStringMarshalBuffer, ImStringMarshalBuffer)>();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ImStringMarshalBuffer GetKnownStringMarshalBuffer(string str, bool expectFixed = false)
+        {
+            if (!knownBuffers.TryGetValue(str, out ImStringMarshalBuffer buf))
+            {
+                knownBuffers[str] = buf = new ImStringMarshalBuffer(expectFixed, 255);
+            }
+
+            return buf;
+        }
+
+        // Double buffer is for fast inputtext getters, as that always has a label+input buffer
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void GetKnownStringMarshalDoubleBuffer(string str, out ImStringMarshalBuffer labelBuf, out ImStringMarshalBuffer inputBuf)
+        {
+            if (!knownDoubleBuffers.TryGetValue(str, out (ImStringMarshalBuffer, ImStringMarshalBuffer) data))
+            {
+                knownDoubleBuffers[str] = data = (new ImStringMarshalBuffer(false, 255), new ImStringMarshalBuffer(false, 255));
+            }
+
+            labelBuf = data.Item1;
+            inputBuf = data.Item2;
+        }
+
+        // These are just a re-implementation of https://github.com/ImGuiNET/ImGui.NET/blob/master/src/ImGui.NET/ImGui.Manual.cs#L179
+        // The reason for re-implementation is that ImGui.NET re-allocates the UTF8 buffer every call
+        // For marshalling, causing a lot of performance issues (especially of maxLength is a large value)
+        // This implementation keeps the underlying buffer, only reallocating whenever necessary, and requires a unique ID string to identify the buffer
+        // In most cases using this over ImGui.NET offers a huge performance gain but is unnecessary
+        // In some cases with large maxLength buffers (object descriptions) there is too much of a performance boost to have to ignore re-implementing
+        // In favour of a cached, not re-allocated memory buffer
+        // Note that these still involve a memcpy every frame, they just don't reallocate the buffer
+        // The reason for a copy every frame is that by performance metrics simply overriding the memory is faster than a conditional copy on difference
+        // Since a comparison is a read->read->comp->jneq pipeline with complications, a basic write is a read->write with complications
+        // A comparison first would have a performance boost if a string is changed frequently at the start
+        // But most time the string isn't changed at all, and when it is the change happens at the end
+        // Overriding heap->heap turns out to be faster than conditional override if strings are not equal
+        // In practice, using this call over a ImGui.InputTextMultiline call saves ~0.1ms every frame per call! The things we do for 100 microseconds...
+        public static bool InputTextMultilinePreallocated(string bufferID, string label, ref string input, uint maxLength, Vector2 size) => InputTextMultilinePreallocated(bufferID, label, ref input, maxLength, size, ImGuiInputTextFlags.None, null, IntPtr.Zero);
+        public static bool InputTextMultilinePreallocated(string bufferID, string label, ref string input, uint maxLength, Vector2 size, ImGuiInputTextFlags flags) => InputTextMultilinePreallocated(bufferID, label, ref input, maxLength, size, flags, null, IntPtr.Zero);
+        public static bool InputTextMultilinePreallocated(string bufferID, string label, ref string input, uint maxLength, Vector2 size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback) => InputTextMultilinePreallocated(bufferID, label, ref input, maxLength, size, flags, callback, IntPtr.Zero);
+        public static unsafe bool InputTextMultilinePreallocated(string bufferID, string label, ref string input, uint maxLength, Vector2 size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, IntPtr user_data)
+        {
+            GetKnownStringMarshalDoubleBuffer(bufferID, out ImStringMarshalBuffer labelbuffer, out ImStringMarshalBuffer inputbuffer);
+            int labelUtf8CharCountExcludingNullTerminator = labelbuffer.CopyStringAsUTF8(label);
+            inputbuffer.EnsureCapacityUTF8((int)maxLength);
+            int inputUtf8CharCountExcludingNullTerminator = inputbuffer.CopyStringAsUTF8(input);
+            byte b = ImGuiNative.igInputTextMultiline(labelbuffer.Pointer, inputbuffer.Pointer, (uint)Math.Max(maxLength + 1, inputUtf8CharCountExcludingNullTerminator + 1), size, flags, callback, user_data.ToPointer());
+
+            // If heap->heap write is fast, and comparison slow, then why not do a heap->heap here?
+            // Because in this case we have a heap->managed write, which does require a realloc, and would case a MANAGED memory allocation every frame without comparisons
+            // If there is one thing worse than heap allocations, it is MANAGED memory allocations, since those need to allocate a lot of other stuff too, and register with the GC
+            // A comparison here saves MANAGED allocations, so it is all good
+            // The reason to use a comparison here vs a b != 0 is because ImGui COULD change the string yet return 0 here
+            // If ReturnTrueOnEnter is passed for example (will return 0 on string change, only returns 1 on enter pressed)
+            // Yet we need to notify our caller of a string change
+            if (!inputbuffer.CompareWithInternalString(input))
+            {
+                input = inputbuffer.GetStringFromUTF8();
+            }
+
+            return b != 0;
+        }
+
         public static void RenderFrame(Vector2 pMin, Vector2 pMax, uint fillCol, bool borders, float rounding) // imgui.cpp:L3747
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
@@ -161,6 +230,94 @@
 
                 this._buffers.Clear();
             }
+        }
+
+        private unsafe class ImStringMarshalBuffer
+        {
+            private byte* _ptr;
+            private int _bufferSize;
+            private bool _fixedSize;
+
+            public int AllocatedBufferSize => this._bufferSize;
+            public byte* Pointer => this._ptr;
+
+            public ImStringMarshalBuffer(bool isFixed, int capacityInBytes)
+            {
+                this._fixedSize = isFixed;
+                this._bufferSize = capacityInBytes + 1;
+                this._ptr = MemoryHelper.Allocate<byte>((nuint)capacityInBytes + 1);
+            }
+
+            public void EnsureCapacityUTF8(int numCharacters)
+            {
+                if (this._bufferSize < numCharacters + 1)
+                {
+                    if (this._fixedSize)
+                    {
+                        throw new IndexOutOfRangeException("Fixed buffer too small for a string provided!");
+                    }
+
+                    this._ptr = MemoryHelper.Reallocate(this._ptr, (nuint)numCharacters + 1);
+                    this._bufferSize = numCharacters + 1;
+                }
+            }
+
+            public int CopyStringAsUTF8(string s)
+            {
+                fixed (char* cptr = s) // String is internally fixed by the Encoding.GetBytes method, may as well preemptively fix here
+                {
+                    int bytesNeeded = Encoding.UTF8.GetByteCount(cptr, s.Length);
+                    if (this._bufferSize < bytesNeeded + 1)
+                    {
+                        if (this._fixedSize)
+                        {
+                            throw new IndexOutOfRangeException("Fixed buffer too small for a string provided!");
+                        }
+
+                        this._ptr = MemoryHelper.Reallocate(this._ptr, (nuint)bytesNeeded + 1);
+                        this._bufferSize = bytesNeeded + 1;
+                    }
+
+                    int r = Encoding.UTF8.GetBytes(cptr, s.Length, this._ptr, bytesNeeded);
+                    this._ptr[r] = 0; // Null terminate for ImGui
+                    return r;
+                }
+            }
+
+            public bool CompareWithInternalString(string s)
+            {
+                fixed (char* cptr = s)
+                {
+                    int currentCSStringIndex = 0;
+                    int currentNativeStringOffset = 0;
+                    byte* utf8chars = stackalloc byte[4];
+                    while (true)
+                    {
+                        if (currentCSStringIndex >= s.Length)
+                        {
+                            return this._ptr[currentNativeStringOffset] == 0; // We reached the end of the string in managed land, and we need to know if the unmanaged matches us with a \0
+                        }
+
+                        int nBytes = Encoding.UTF8.GetBytes(cptr + currentCSStringIndex++, 1, utf8chars, 4); // CS never seems to return more than 3 here, but UTF8 contains up to 4 by spec, so being careful
+                        for (int i = 0; i < nBytes; ++i)
+                        {
+                            if (currentNativeStringOffset >= this._bufferSize) // Do not read protected memory
+                            {
+                                throw new AccessViolationException();
+                            }
+
+                            byte native = this._ptr[currentNativeStringOffset++];
+                            byte own = utf8chars[i];
+                            if (native != own) // Could test for null terminator first but don't need to
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            public string GetStringFromUTF8() => Marshal.PtrToStringUTF8((IntPtr)this._ptr);
         }
 
         public class UIStreamingBuffer

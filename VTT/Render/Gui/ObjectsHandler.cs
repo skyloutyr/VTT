@@ -16,6 +16,7 @@
     public partial class GuiRenderer
     {
         private int _cSelAnimation;
+        private readonly ParticleContainerModelAttachmentPointCache _particleContainerModelAttachmentPointCache = new ParticleContainerModelAttachmentPointCache();
 
         private List<(Guid, Guid)> SelectedToPacket2(List<MapObject> os) => os.Select(x => (x.MapID, x.ID)).ToList();
         private List<(Guid, Guid, object)> SelectedToPacket3(List<MapObject> os, object data) => os.Select(x => (x.MapID, x.ID, data)).ToList();
@@ -492,95 +493,96 @@
                                 {
                                     foreach (ParticleContainer pc in mo.Particles.GetAllContainers())
                                     {
-                                        
-                                        if (ImGuiHelper.ImAssetRecepticle(lang, pc.SystemID, this.AssetParticleIcon, new Vector2(0, 28), x => x.Type == AssetType.ParticleSystem, out bool mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem)
+                                        if (ImGui.BeginChild($"##ParticleContainer_{pc.ID}", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.NavFlattened | ImGuiChildFlags.Borders))
                                         {
-                                            state.particleContainerHovered = pc;
-                                        }
-
-                                        if (mouseOver)
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.particle_containers.asset"));
-                                        }
-
-                                        ImGui.Text(lang.Translate("ui.particle_containers.offset"));
-                                        Vector3 pOff = pc.ContainerPositionOffset;
-                                        if (ImGui.DragFloat3("##ParticleContainerOffset_" + pc.ID, ref pOff, 0.01f))
-                                        {
-                                            pc.ContainerPositionOffset = pOff;
-                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                        }
-
-                                        bool pUseOrient = pc.UseContainerOrientation;
-                                        if (ImGui.Checkbox(lang.Translate("ui.particle_containers.rotate") + "###ParticleContainerUseOrientation_" + pc.ID, ref pUseOrient))
-                                        {
-                                            pc.UseContainerOrientation = pUseOrient;
-                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                        }
-
-                                        bool pDoVRot = pc.RotateVelocityByOrientation;
-                                        if (ImGui.Checkbox(lang.Translate("ui.particle.orient_velocity_by_container") + "###OrientVelocityByContainer_" + pc.ID, ref pDoVRot))
-                                        {
-                                            pc.RotateVelocityByOrientation = pDoVRot;
-                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.particle.orient_velocity_by_container.tt"));
-                                        }
-
-                                        bool pActive = pc.IsActive;
-                                        if (ImGui.Checkbox(lang.Translate("ui.particle_containers.active") + "###ParticleContainerIsActive_" + pc.ID, ref pActive))
-                                        {
-                                            pc.IsActive = pActive;
-                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                        }
-
-                                        if (!mo.AssetID.Equals(Guid.Empty))
-                                        {
-                                            if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && a.ModelGlReady)
+                                            if (ImGuiHelper.ImAssetRecepticle(lang, pc.SystemID, this.AssetParticleIcon, new Vector2(0, 28), x => x.Type == AssetType.ParticleSystem, out bool mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.ParticleSystem)
                                             {
-                                                ImGui.TextUnformatted(lang.Translate("ui.particle_containers.attachment"));
-                                                string[] arr = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
-                                                int idx = Array.IndexOf(arr, arr.FirstOrDefault(s => s.Equals(pc.AttachmentPoint), string.Empty));
-                                                if (ImGui.Combo("##ParticleContainerAttachment_" + pc.ID, ref idx, arr, arr.Length))
-                                                {
-                                                    pc.AttachmentPoint = arr[idx];
-                                                    new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                                }
+                                                state.particleContainerHovered = pc;
+                                            }
 
-                                                // Somewhat jank but if the bone index goes OOB it won't be processed anyways.
-                                                // Solution - don't have multiple armatures, there is no graceful way to make particle systems work with that as the cache will be overridden by the most recent armature used
-                                                // The cache can't be per armature for performance concerns
-                                                if (a.Model.GLMdl.Armatures.Count > 0)
+                                            if (mouseOver)
+                                            {
+                                                ImGui.SetTooltip(lang.Translate("ui.particle_containers.asset"));
+                                            }
+
+                                            ImGui.Text(lang.Translate("ui.particle_containers.offset"));
+                                            Vector3 pOff = pc.ContainerPositionOffset;
+                                            if (ImGui.DragFloat3("##ParticleContainerOffset_" + pc.ID, ref pOff, 0.01f))
+                                            {
+                                                pc.ContainerPositionOffset = pOff;
+                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                            }
+
+                                            bool pUseOrient = pc.UseContainerOrientation;
+                                            if (ImGui.Checkbox(lang.Translate("ui.particle_containers.rotate") + "###ParticleContainerUseOrientation_" + pc.ID, ref pUseOrient))
+                                            {
+                                                pc.UseContainerOrientation = pUseOrient;
+                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                            }
+
+                                            bool pDoVRot = pc.RotateVelocityByOrientation;
+                                            if (ImGui.Checkbox(lang.Translate("ui.particle.orient_velocity_by_container") + "###OrientVelocityByContainer_" + pc.ID, ref pDoVRot))
+                                            {
+                                                pc.RotateVelocityByOrientation = pDoVRot;
+                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                            }
+
+                                            if (ImGui.IsItemHovered())
+                                            {
+                                                ImGui.SetTooltip(lang.Translate("ui.particle.orient_velocity_by_container.tt"));
+                                            }
+
+                                            bool pActive = pc.IsActive;
+                                            if (ImGui.Checkbox(lang.Translate("ui.particle_containers.active") + "###ParticleContainerIsActive_" + pc.ID, ref pActive))
+                                            {
+                                                pc.IsActive = pActive;
+                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                            }
+
+                                            if (!mo.AssetID.Equals(Guid.Empty))
+                                            {
+                                                if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a) == AssetStatus.Return && a.ModelGlReady)
                                                 {
-                                                    string[] boneArr = a.Model.GLMdl.Armatures.OrderByDescending(x => x.UnsortedBones.Count).First().UnsortedBones.Select(x => x.Name).ToArray();
-                                                    if (boneArr.Length > 0)
+                                                    ImGui.TextUnformatted(lang.Translate("ui.particle_containers.attachment"));
+                                                    string[] arr = this._particleContainerModelAttachmentPointCache.GetAllMeshes(a, pc.AttachmentPoint, out int idx);
+                                                    if (ImGui.Combo("##ParticleContainerAttachment_" + pc.ID, ref idx, arr, arr.Length))
                                                     {
-                                                        idx = pc.BoneAttachmentIndex;
-                                                        ImGui.TextUnformatted(lang.Translate("ui.particle_containers.bone_attachment"));
-                                                        if (ImGui.IsItemHovered())
-                                                        {
-                                                            ImGui.SetTooltip(lang.Translate("ui.particle_containers.bone_attachment.tt"));
-                                                        }
+                                                        pc.AttachmentPoint = arr[idx];
+                                                        new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                                    }
 
-                                                        if (ImGui.Combo("##ParticleContainerBoneAttachment_" + pc.ID, ref idx, boneArr, boneArr.Length))
+                                                    // Somewhat jank but if the bone index goes OOB it won't be processed anyways.
+                                                    // Solution - don't have multiple armatures, there is no graceful way to make particle systems work with that as the cache will be overridden by the most recent armature used
+                                                    // The cache can't be per armature for performance concerns
+                                                    if (a.Model.GLMdl.Armatures.Count > 0)
+                                                    {
+                                                        string[] boneArr = a.Model.GLMdl.Armatures.OrderByDescending(x => x.UnsortedBones.Count).First().UnsortedBones.Select(x => x.Name).ToArray();
+                                                        if (boneArr.Length > 0)
                                                         {
-                                                            pc.BoneAttachmentIndex = idx;
-                                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                                            idx = pc.BoneAttachmentIndex;
+                                                            ImGui.TextUnformatted(lang.Translate("ui.particle_containers.bone_attachment"));
+                                                            if (ImGui.IsItemHovered())
+                                                            {
+                                                                ImGui.SetTooltip(lang.Translate("ui.particle_containers.bone_attachment.tt"));
+                                                            }
+
+                                                            if (ImGui.Combo("##ParticleContainerBoneAttachment_" + pc.ID, ref idx, boneArr, boneArr.Length))
+                                                            {
+                                                                pc.BoneAttachmentIndex = idx;
+                                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Edit, Container = pc.Serialize(), MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
+
+                                            if (ImGui.Button(lang.Translate("ui.particle_containers.delete") + "###DeleteParticleContainer_" + pc.ID))
+                                            {
+                                                new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Delete, MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
+                                            }
                                         }
 
-                                        if (ImGui.Button(lang.Translate("ui.particle_containers.delete") + "###DeleteParticleContainer_" + pc.ID))
-                                        {
-                                            new PacketParticleContainer() { ActionType = PacketParticleContainer.Action.Delete, MapID = mo.MapID, ObjectID = mo.ID, ParticleID = pc.ID }.Send();
-                                        }
-
-                                        ImGui.Separator();
+                                        ImGui.EndChild();
                                     }
                                 }
 
@@ -1661,6 +1663,29 @@
             catch
             {
                 // NOOP - no idea what the user has in their clipboard, could be anything
+            }
+        }
+
+        private class ParticleContainerModelAttachmentPointCache
+        {
+            private Guid _lastAssetID;
+            private string[] _cache = Array.Empty<string>();
+
+            public string[] GetAllMeshes(Asset a, string cname, out int index)
+            {
+                if (!Guid.Equals(this._lastAssetID, a.ID) || this._cache.Length != a.Model.GLMdl.Meshes.Count)
+                {
+                    this._lastAssetID = a.ID;
+                    this._cache = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();
+                }
+
+                index = Array.IndexOf(this._cache, cname);
+                if (index == -1)
+                {
+                    index = this._cache.Length - 1;
+                }
+
+                return this._cache;
             }
         }
     }

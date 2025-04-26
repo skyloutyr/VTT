@@ -1673,7 +1673,7 @@
 
             public string[] GetAllMeshes(Asset a, string cname, out int index)
             {
-                if (!Guid.Equals(this._lastAssetID, a.ID) || this._cache.Length != a.Model.GLMdl.Meshes.Count)
+                if (!Guid.Equals(this._lastAssetID, a.ID) || (this._cache.Length != a.Model.GLMdl.Meshes.Count + 1))
                 {
                     this._lastAssetID = a.ID;
                     this._cache = a.Model.GLMdl.Meshes.Select(s => s.Name).Append(string.Empty).ToArray();

@@ -102,6 +102,12 @@
                 }
 
                 this._numElements = indices.Length;
+                this.triangles = new Vector3[indices.Length];
+                for (int i = 0; i < this.triangles.Length; ++i)
+                {
+                    int j = (int)(indices[i] * 3);
+                    this.triangles[i] = new Vector3(vertices[j + 0], vertices[j + 1], vertices[j + 2]);
+                }
 
                 this._vao = new VertexArray();
                 this._vbo = new GPUBuffer(BufferTarget.Array);
@@ -222,8 +228,6 @@
                 this._vao.Reset();
                 desiredFormat.SetupVAO(this._vao);
             }
-
-
         }
 
         public void Render()

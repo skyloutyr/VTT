@@ -4,6 +4,7 @@
     using System;
     using System.IO;
     using System.Numerics;
+    using VTT.GL;
     using VTT.Render;
     using VTT.Util;
 
@@ -75,6 +76,14 @@
         public bool DisplayInfo { get; set; } = true;
 
         public long NextDeleteTime { get; set; }
+
+        #region Render Data
+        public VertexArray VAO { get; set; }
+        public GPUBuffer VBO { get; set; }
+        public GPUBuffer EBO { get; set; }
+        public int NumIndices { get; set; }
+        public bool RenderIsDirty { get; set; }
+        #endregion
 
         public void Write(BinaryWriter bw)
         {

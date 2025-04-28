@@ -326,7 +326,7 @@
                     this.Frontend.Renderer.MapRenderer.ClientCamera.Direction = map.DefaultCameraRotation;
                     this.Frontend.Renderer.MapRenderer.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                     this.Frontend.Renderer.MapRenderer.Switch2D(map.Is2D, map.DefaultCameraPosition.Z);
-                    this.Frontend.Renderer.RulerRenderer.ActiveInfos.Clear();
+                    this.Frontend.Renderer.RulerRenderer.ClearAllRulers();
                     this.Frontend.Renderer.RulerRenderer.ActiveInfos.AddRange(map.PermanentMarks);
                     this.Frontend.Renderer.MapRenderer.DrawingRenderer.FreeAll();
                     this.Frontend.Renderer.MapRenderer.DrawingRenderer.AddContainers(map.Drawings);

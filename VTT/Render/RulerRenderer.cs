@@ -32,6 +32,7 @@
         public Guid CurrentEraserMask { get; set; } = Guid.Empty;
 
         public ConcurrentQueue<RulerInfo> InfosToActUpon { get; } = new ConcurrentQueue<RulerInfo>();
+        public ConcurrentQueue<RulerInfo> InfosToRenderDelete { get; } = new ConcurrentQueue<RulerInfo>();
 
         private bool _lmbDown;
         private bool _rmbDown;
@@ -47,7 +48,6 @@
         private GPUBuffer _ebo;
 
         private int _updateTicksCtr;
-
 
         private readonly List<(MapObject, Color)> _highlightedObjects = new List<(MapObject, Color)>();
 
@@ -67,7 +67,7 @@
                 this.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
             }
 
-            bool imMouse = ImGuiNET.ImGui.GetIO().WantCaptureMouse;
+            bool imMouse = ImGui.GetIO().WantCaptureMouse;
             if (!imMouse && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure)
             {
                 if (Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !this._lmbDown)
@@ -83,7 +83,7 @@
                             Color = Extensions.FromVec4(this.CurrentColor),
                             Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(tHitOrPt, m.GridSize) : tHitOrPt,
                             End = tHitOrPt,
-                            ExtraInfo = this.CurrentExtraValue,
+                            ExtraInfo = this.CurrentExtraValue / m.GridUnit,
                             IsDead = false,
                             NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500,
                             SelfID = Guid.NewGuid(),
@@ -141,6 +141,7 @@
                     if (now != this.CurrentInfo.End)
                     {
                         this.CurrentInfo.End = now;
+                        this.CurrentInfo.RenderIsDirty = true;
                     }
                 }
 
@@ -232,6 +233,17 @@
             PacketRulerInfo pri = new PacketRulerInfo() { Info = this.CurrentInfo };
             pri.Send();
             this.CurrentInfo.NextDeleteTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + 1500;
+            this.CurrentInfo.RenderIsDirty = true;
+        }
+
+        public void ClearAllRulers()
+        {
+            foreach (RulerInfo ri in this.ActiveInfos)
+            {
+                this.InfosToRenderDelete.Enqueue(ri);
+            }
+
+            this.ActiveInfos.Clear();
         }
 
         private void ProcessAllInfos()
@@ -245,6 +257,7 @@
                     if (eInfo != null)
                     {
                         eInfo.CloneData(ri);
+                        eInfo.RenderIsDirty = true;
                     }
                     else
                     {
@@ -274,6 +287,7 @@
                     if (ri.IsDead || ri.NextDeleteTime <= cUnixTime)
                     {
                         this.ActiveInfos.RemoveAt(i);
+                        this.InfosToRenderDelete.Enqueue(ri);
                         continue;
                     }
                     else
@@ -436,14 +450,28 @@
             shader.Bind();
             shader["view"].Set(cam.View);
             shader["projection"].Set(cam.Projection);
+            shader["model"].Set(Matrix4x4.Identity);
             Matrix4x4 model;
             Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
             bool inMeasureMode = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure;
 
+            GL.DepthMask(false);
+            GL.Disable(Capability.CullFace);
+            GL.Enable(Capability.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Enable(Capability.Multisample);
+                GL.Enable(Capability.SampleAlphaToCoverage);
+            }
+
             foreach (RulerInfo ri in this.ActiveInfos)
             {
-                model = Matrix4x4.CreateScale(StartEndCapScale) * Matrix4x4.CreateTranslation(ri.Start);
-                shader["model"].Set(model);
+                if (ri.RenderIsDirty || ri.VAO == null)
+                {
+                    this.CreateRulerRenderInfo(ri);
+                }
+
                 Vector4 riClr = ri.Color.Vec4();
                 if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
                 {
@@ -456,6 +484,44 @@
                         }
                     }
                 }
+
+                if (ri.Type is RulerType.Polyline or RulerType.Ruler)
+                {
+                    shader["u_color"].Set(riClr);
+                }
+                else
+                {
+                    shader["u_color"].Set(riClr * new Vector4(1, 1, 1, 0.5f));
+                }
+
+                ri.VAO.Bind();
+                switch (ri.Type)
+                {
+                    // Spheres and cubes must be rendered twice, once all in facing triangles, once all out facing triangles.
+                    case RulerType.Sphere:
+                    case RulerType.Cube:
+                    {
+                        GL.Enable(Capability.CullFace);
+                        GL.CullFace(PolygonFaceMode.Front);
+                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.CullFace(PolygonFaceMode.Back);
+                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.Disable(Capability.CullFace);
+                        break;
+                    }
+
+                    default:
+                    {
+                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        break;
+                    }
+                }
+
+                // Old code
+                /*
+                model = Matrix4x4.CreateScale(StartEndCapScale) * Matrix4x4.CreateTranslation(ri.Start);
+                shader["model"].Set(model);
+                
 
                 shader["u_color"].Set(riClr);
                 this.ModelSphere.Render();
@@ -546,14 +612,6 @@
                         sStart.Z = MathF.Min(sStart.Z, ri.End.Z);
                         float z = MathF.Max(ri.Start.Z, ri.End.Z) + 1.0f;
                         float hZ = MathF.Max(1, MathF.Abs(z - sStart.Z));
-
-                        /*
-                        model = Matrix4.CreateScale(r * 2, r * 2, hZ * 2) * Matrix4.CreateTranslation(sStart);
-                        shader["model"].Set(model);
-                        shader["u_color"].Set(ri.Color.Vec4() * new Vector4(1, 1, 1, 0.5f));
-                        this.ModelSquare.Render();
-                        */
-
                         Vector3 ftl = new Vector3(ri.Start.X - r, ri.Start.Y - r, z);
                         Vector3 bbr = new Vector3(ri.Start.X + r, ri.Start.Y + r, sStart.Z);
                         this.CreateSquare(ftl, bbr);
@@ -619,7 +677,17 @@
                 }
 
                 GL.Enable(Capability.CullFace);
+                */
             }
+
+            GL.Disable(Capability.Blend);
+            if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
+            {
+                GL.Disable(Capability.Multisample);
+                GL.Disable(Capability.SampleAlphaToCoverage);
+            }
+
+            GL.Enable(Capability.CullFace);
 
             if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
             {
@@ -643,10 +711,188 @@
                 Client.Instance.Frontend.Renderer.ObjectRenderer.RenderHighlightBox(d.Item1, d.Item2, scaleMod);
             }
 
+            while (!this.InfosToRenderDelete.IsEmpty && this.InfosToRenderDelete.TryDequeue(out RulerInfo ri))
+            {
+                if (ri.VAO != null)
+                {
+                    ri.VAO.Dispose();
+                    ri.VBO.Dispose();
+                    ri.EBO.Dispose();
+                    ri.VAO = null;
+                }
+            }
+
+            GL.DepthMask(true);
+
             this.CPUTimer.Stop();
         }
 
         private readonly List<Vector2> _groundQuadGenTempList = new List<Vector2>();
+
+        public void CreateRulerRenderInfo(RulerInfo ri)
+        {
+            ri.RenderIsDirty = false;
+            if (ri.VAO == null)
+            {
+                ri.VAO = new VertexArray();
+                ri.VBO = new GPUBuffer(BufferTarget.Array);
+                ri.EBO = new GPUBuffer(BufferTarget.ElementArray);
+                ri.VAO.Bind();
+                ri.VBO.Bind();
+                ri.EBO.Bind();
+                ri.VAO.Reset();
+                ri.VAO.SetVertexSize<float>(3);
+                ri.VAO.PushElement(ElementType.Vec3);
+            }
+            else
+            {
+                ri.VAO.Bind(); 
+                ri.VBO.Bind();
+                ri.EBO.Bind();
+            }
+
+            Vector3 vE2S = (ri.End - ri.PreEnd).Normalized();
+            Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);
+            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitY, vE2S)).Normalized();
+
+            // Any ruler will always have a circle at the start
+            this.CreateSphere(ri.Start, StartEndCapScale);
+
+            switch (ri.Type)
+            {
+                case RulerType.Ruler:
+                case RulerType.Polyline:
+                {
+                    this.CreateArrow(ri.End, StartEndCapScale, q);
+                    if (ri.Type == RulerType.Polyline)
+                    {
+                        for (int i = 0; i < ri.Points.Length - 1; ++i)
+                        {
+                            if (i > 0)
+                            {
+                                this.CreateSphere(ri.Points[i], StartEndCapScale);
+                            }
+
+                            this.CreateLine(ri.Points[i], ri.Points[i + 1]);
+                        }
+                    }
+                    else
+                    {
+                        this.CreateLine(ri.Start, ri.End);
+                    }
+
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Circle:
+                {
+                    this.CreateCircle(ri.Start, (ri.End - ri.Start).Length(), 0.1f);
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Sphere:
+                {
+                    float radius = (ri.End - ri.Start).Length();
+                    this.CreateSphere(ri.Start, radius * 2);
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Square:
+                {
+                    Vector3 vE2Snn = ri.End - ri.Start;
+                    float r = MathF.Max(MathF.Abs(vE2Snn.X), MathF.Abs(vE2Snn.Y));
+                    Vector3 sStart = ri.Start;
+                    sStart.Z = MathF.Min(sStart.Z, ri.End.Z);
+                    float z = MathF.Max(ri.Start.Z, ri.End.Z) + 1.0f;
+                    Vector3 ftl = new Vector3(ri.Start.X - r, ri.Start.Y - r, z);
+                    Vector3 bbr = new Vector3(ri.Start.X + r, ri.Start.Y + r, sStart.Z);
+                    this.CreateSquare(ftl, bbr);
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Cube:
+                {
+                    Vector3 vE2Snn = (ri.End - ri.Start);
+                    float r = MathF.Max(MathF.Max(MathF.Abs(vE2Snn.X), MathF.Abs(vE2Snn.Y)), MathF.Abs(vE2Snn.Z));
+                    this.CreateCube(ri.Start, new Vector3(r * 2));
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Line:
+                {
+                    Vector3 vE2Snn = ri.End - ri.Start;
+                    this.CreateLine(ri.Start, ri.End);
+                    this.CreateArrow(ri.End, StartEndCapScale, q);
+                    this.CreateCube(ri.Start + ((ri.End - ri.Start) / 2), new Vector3(ri.ExtraInfo, vE2Snn.Length(), ri.ExtraInfo), q);
+                    this.SetBuffers(ri);
+                    break;
+                }
+
+                case RulerType.Cone:
+                {
+                    this.CreateCone(ri.Start, ri.End, ri.ExtraInfo);
+                    this.SetBuffers(ri);
+                    break;
+                }
+            }
+        }
+
+        public void CreateArrow(Vector3 at, float scale, Quaternion rotation)
+        {
+            Matrix4x4 mat = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rotation) * Matrix4x4.CreateTranslation(at);
+            foreach (Vector3 trianglePoint in this.ModelArrow.triangles)
+            {
+                uint vHere = (uint)this._vertexData.Count / 3;
+                Vector3 v = Vector3.Transform(trianglePoint, mat);
+                this._vertexData.Add(v.X);
+                this._vertexData.Add(v.Y);
+                this._vertexData.Add(v.Z);
+                this._indexData.Add(vHere);
+            }
+        }
+
+        public void CreateCube(Vector3 at, Vector3 scale, Quaternion rotation)
+        {
+            Matrix4x4 mat = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rotation) * Matrix4x4.CreateTranslation(at);
+            foreach (Vector3 trianglePoint in this.ModelCube.triangles)
+            {
+                uint vHere = (uint)this._vertexData.Count / 3;
+                Vector3 v = Vector3.Transform(trianglePoint, mat);
+                this._vertexData.Add(v.X);
+                this._vertexData.Add(v.Y);
+                this._vertexData.Add(v.Z);
+                this._indexData.Add(vHere);
+            }
+        }
+
+        public void CreateSphere(Vector3 start, float radius)
+        {
+            foreach (Vector3 trianglePoint in this.ModelSphere.triangles)
+            {
+                uint vHere = (uint)this._vertexData.Count / 3;
+                this._vertexData.Add((trianglePoint.X * radius) + start.X);
+                this._vertexData.Add((trianglePoint.Y * radius) + start.Y);
+                this._vertexData.Add((trianglePoint.Z * radius) + start.Z);
+                this._indexData.Add(vHere);
+            }
+        }
+
+        public void CreateCube(Vector3 start, Vector3 scale)
+        {
+            foreach (Vector3 trianglePoint in this.ModelCube.triangles)
+            {
+                uint vHere = (uint)this._vertexData.Count / 3;
+                this._vertexData.Add((trianglePoint.X * scale.X) + start.X);
+                this._vertexData.Add((trianglePoint.Y * scale.Y) + start.Y);
+                this._vertexData.Add((trianglePoint.Z * scale.Z) + start.Z);
+                this._indexData.Add(vHere);
+            }
+        }
 
         public void CreateCone(Vector3 start, Vector3 end, float radius)
         {
@@ -657,6 +903,7 @@
             }
 
             Vector4 planePerpendicular = new Vector4(planeNormal.ArbitraryOrthogonal(), 1.0f);
+            uint vOffset = (uint)(this._vertexData.Count / 3);
             this._vertexData.Add(start.X);
             this._vertexData.Add(start.Y);
             this._vertexData.Add(start.Z);
@@ -676,16 +923,16 @@
 
             for (uint i = 0; i < 36; ++i)
             {
-                this._indexData.Add(0);
-                this._indexData.Add(2u + i);
-                this._indexData.Add(2u + ((i + 1u) % 36));
+                this._indexData.Add(vOffset + 0);
+                this._indexData.Add(vOffset + 2u + i);
+                this._indexData.Add(vOffset + 2u + ((i + 1u) % 36));
             }
 
             for (uint i = 0; i < 36; ++i)
             {
-                this._indexData.Add(1);
-                this._indexData.Add(2u + i);
-                this._indexData.Add(2u + ((i + 1u) % 36));
+                this._indexData.Add(vOffset + 1);
+                this._indexData.Add(vOffset + 2u + i);
+                this._indexData.Add(vOffset + 2u + ((i + 1u) % 36));
             }
         }
 
@@ -804,6 +1051,7 @@
             float sin = MathF.Sin(angleStep);
             Vector3 v = Vector3.UnitY;
             this._groundQuadGenTempList.Clear();
+            uint lastIndex = (uint)(this._vertexData.Count / 3);
             for (int i = 0; i < numSegments; ++i)
             {
                 float dX = (v.X * cos) - (v.Y * sin);
@@ -824,13 +1072,13 @@
                 uint nB = (uint)((cB + 2) % (numSegments * 2));
                 uint nT = nB + 1;
 
-                this._indexData.Add(cB);
-                this._indexData.Add(cT);
-                this._indexData.Add(nB);
+                this._indexData.Add(lastIndex + cB);
+                this._indexData.Add(lastIndex + cT);
+                this._indexData.Add(lastIndex + nB);
 
-                this._indexData.Add(cT);
-                this._indexData.Add(nB);
-                this._indexData.Add(nT);
+                this._indexData.Add(lastIndex + cT);
+                this._indexData.Add(lastIndex + nB);
+                this._indexData.Add(lastIndex + nT);
             }
 
             int index0 = this._vertexData.Count / 3;
@@ -849,7 +1097,6 @@
                 Vector3 v2 = start + new Vector3(current.X, current.Y, 0) - (new Vector3(l.X, l.Y, 0) * outlineThickness);
                 Vector3 v3 = start + new Vector3(current.X, current.Y, zHeight) + (new Vector3(l.X, l.Y, 0) * outlineThickness);
                 Vector3 v4 = start + new Vector3(current.X, current.Y, zHeight) - (new Vector3(l.X, l.Y, 0) * outlineThickness);
-
                 this.AddVertices(v1, v2, v3, v4);
 
                 uint cBl = (uint)(index0 + (i * 4));
@@ -994,10 +1241,16 @@
             this._ebo.SetData(this._indexData.ToArray());
         }
 
-        public void RenderBuffers()
+        public void SetBuffers(RulerInfo ri)
         {
-            GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
+            ri.VBO.SetData(this._vertexData.ToArray());
+            ri.EBO.SetData(this._indexData.ToArray());
+            ri.NumIndices = this._indexData.Count;
+            this._vertexData.Clear();
+            this._indexData.Clear();
         }
+
+        public void RenderBuffers() => GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
 
         public void ClearBuffers()
         {
@@ -1024,10 +1277,13 @@
                             Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
                             float maxW = MathF.Max(tLen.X, MathF.Max(tLen2.X, tLen3.X));
                             ImGui.SetNextWindowPos(screen.Xy() - (new Vector2(maxW, tLen.Y) / 2));
-                            if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags | ImGuiWindowFlags.AlwaysAutoResize))
+                            if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
                             {
                                 float cX;
                                 float delta;
+                                float cy = ImGui.GetCursorPosY();
+                                ImGui.Dummy(new Vector2(maxW, 20));
+                                ImGui.SetCursorPosY(cy);
                                 if (tLen.X < maxW)
                                 {
                                     cX = ImGui.GetCursorPosX();
@@ -1188,15 +1444,13 @@
         public static bool IsInLine(BBBox box, Vector3 offset, Vector3 start, Vector3 end, float radius)
         {
             Vector3 vE2Snn = end - start;
-            float gFac = Client.Instance.CurrentMap?.GridUnit ?? 5;
-
             static bool IsAroundZero(float f, float eps = 1e-5f) => MathF.Abs(f) <= eps;
 
             Vector3 vE2S = vE2Snn.Normalized();
             Vector3 a = Vector3.Cross(Vector3.UnitY, vE2S);
 
             AABox originBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
-            Vector3 scale = new Vector3(radius / gFac, vE2Snn.Length(), radius / gFac);
+            Vector3 scale = new Vector3(radius, vE2Snn.Length(), radius);
             Quaternion rotation = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitY, vE2S)).Normalized();
             Vector3 translation = start + (vE2Snn / 2);
             if (IsAroundZero(scale.X) || IsAroundZero(scale.Y) || IsAroundZero(scale.Z) || float.IsNaN(rotation.X) || float.IsNaN(rotation.Y) || float.IsNaN(rotation.Z) || float.IsNaN(rotation.W))
@@ -1221,9 +1475,6 @@
         public static bool IsInCone(BBBox box, Vector3 offset, Vector3 start, Vector3 end, float radius)
         {
             Vector3 v = end - start;
-            float gFac = Client.Instance.CurrentMap?.GridUnit ?? 5;
-            radius /= gFac;
-
             foreach (Vector3 c in box)
             {
                 if (IsPointInCone(offset + c, start, v.Normalized(), v.Length(), radius))

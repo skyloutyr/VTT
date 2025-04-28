@@ -25,15 +25,19 @@
             }
             else
             {
-                for (int i = client.Frontend.Renderer.RulerRenderer.ActiveInfos.Count - 1; i >= 0; i--)
+                // Needs to be done on the render thread actually bc ActiveInfos can be shrunk or grown by the render thread
+                client.DoTask(() =>
                 {
-                    RulerInfo ri = client.Frontend.Renderer.RulerRenderer.ActiveInfos[i];
-                    if (ri.KeepAlive)
+                    for (int i = client.Frontend.Renderer.RulerRenderer.ActiveInfos.Count - 1; i >= 0; i--)
                     {
-                        ri.KeepAlive = false;
-                        ri.IsDead = true;
+                        RulerInfo ri = client.Frontend.Renderer.RulerRenderer.ActiveInfos[i];
+                        if (ri.KeepAlive)
+                        {
+                            ri.KeepAlive = false;
+                            ri.IsDead = true;
+                        }
                     }
-                }
+                });
             }
         }
 

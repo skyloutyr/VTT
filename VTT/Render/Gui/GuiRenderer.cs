@@ -308,6 +308,11 @@
                 ImGui.ShowDemoWindow(ref this._showImGuiDemoWindow);
             }
 
+            // Should be always behind others
+            this.RenderObjectOverlays();
+            Client.Instance.Frontend.Renderer.RulerRenderer?.RenderUI(cMap);
+
+            // Sidebar
             this.RenderSidebar(cMap, lang, window_flags, mor, this.FrameState);
             this.RenderDebugInfo(time, window_flags, this.FrameState);
             this.RenderFOWControls(mor, lang, window_flags, this.FrameState);
@@ -317,6 +322,8 @@
             this.RenderDrawControls(mor, lang, window_flags, this.FrameState);
             this.RenderFXControls(mor, lang, window_flags, this.FrameState);
             this.RenderShadows2DControls(mor.Shadow2DRenderer, lang, window_flags, this.FrameState);
+
+            // Rest of the UI
             this.RenderChat(lang, this.FrameState);
             this.RenderMaps(lang, this.FrameState);
             this.RenderObjectProperties(lang, this.FrameState, time);
@@ -325,112 +332,23 @@
             this.RenderAssets(lang, this.FrameState);
             this.RenderNetworkAdminPanel(lang, this.FrameState);
             this.RenderMusicPlayer(lang, this.FrameState, time);
-            this.ParticleEditorRenderer.Render(this._editedParticleSystemId, this._draggedRef, this.FrameState);
-            this.ShaderEditorRenderer.Render(this._editedShaderId, this._draggedRef, this.FrameState);
             this.RenderLogs(lang);
             this.RenderTurnTrackerControls(cMap, lang, this.FrameState);
             this.RenderTurnTrackerOverlay(cMap, window_flags, this.FrameState);
             this.RenderPerformanceMonitor(lang);
 
+            // Should be always in front of others
+            this.ParticleEditorRenderer.Render(this._editedParticleSystemId, this._draggedRef, this.FrameState);
+            this.ShaderEditorRenderer.Render(this._editedShaderId, this._draggedRef, this.FrameState);
+
             string ok = lang.Translate("ui.generic.ok");
             string cancel = lang.Translate("ui.generic.cancel");
             string close = lang.Translate("ui.generic.close");
-            this.RenderObjectOverlays();
             this.RenderDraggedAssetRef();
 
             if (this.FrameState.moveTo != null)
             {
                 this.CurrentFolder = Client.Instance.AssetManager.GetDirAt(this.FrameState.moveTo.GetPath());
-            }
-
-            RulerRenderer rr = Client.Instance.Frontend.Renderer.RulerRenderer;
-            if (rr != null && cMap != null)
-            {
-                foreach (RulerInfo ri in rr.ActiveInfos)
-                {
-                    if (!ri.IsDead && ri.DisplayInfo)
-                    {
-                        if (ri.KeepAlive)
-                        {
-                            Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace((ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start) + Vector3.UnitZ);
-                            if (screen.Z >= 0)
-                            {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
-                                string text = len.ToString("0.00");
-                                Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
-                                Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
-                                Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
-                                float maxW = MathF.Max(tLen.X, MathF.Max(tLen2.X, tLen3.X));
-                                ImGui.SetNextWindowPos(screen.Xy() - (new Vector2(maxW, tLen.Y) / 2));
-                                ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
-                                if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
-                                {
-                                    float cX;
-                                    float delta;
-                                    if (tLen.X < maxW)
-                                    {
-                                        cX = ImGui.GetCursorPosX();
-                                        delta = maxW - tLen.X;
-                                        ImGui.SetCursorPosX(cX + (delta / 2));
-                                    }
-
-                                    ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
-                                    ImGui.TextUnformatted(ri.OwnerName);
-                                    ImGui.PopStyleColor();
-                                    if (!string.IsNullOrEmpty(ri.Tooltip))
-                                    {
-                                        if (tLen2.X < maxW)
-                                        {
-                                            cX = ImGui.GetCursorPosX();
-                                            delta = maxW - tLen2.X;
-                                            ImGui.SetCursorPosX(cX + (delta / 2));
-                                        }
-
-                                        ImGui.TextUnformatted(ri.Tooltip);
-                                    }
-
-
-                                    if (tLen3.X < maxW)
-                                    {
-                                        cX = ImGui.GetCursorPosX();
-                                        delta = maxW - tLen3.X;
-                                        ImGui.SetCursorPosX(cX + (delta / 2));
-                                    }
-
-                                    if (len > 0.01f)
-                                    {
-                                        ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
-                                        ImGui.TextUnformatted(text);
-                                        ImGui.PopStyleColor();
-                                    }
-                                }
-
-                                ImGui.End();
-                            }
-                        }
-                        else
-                        {
-                            Vector3 half = ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start + ((ri.End - ri.Start) / 2f);
-                            Vector3 halfScreen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half);
-                            if (halfScreen.Z >= 0)
-                            {
-                                float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
-                                string text = len.ToString("0.00");
-                                Vector2 tLen = ImGuiHelper.CalcTextSize(text);
-                                ImGui.SetNextWindowPos(halfScreen.Xy() - (tLen / 2));
-                                ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoSavedSettings;
-                                if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
-                                {
-                                    ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
-                                    ImGui.TextUnformatted(text);
-                                    ImGui.PopStyleColor();
-                                }
-
-                                ImGui.End();
-                            }
-                        }
-                    }
-                }
             }
 
             // Right click context menu

@@ -1,5 +1,6 @@
 ﻿namespace VTT.Render
 {
+    using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Concurrent;
@@ -1004,6 +1005,94 @@
             this._indexData.Clear();
         }
 
+        public void RenderUI(Map cMap)
+        {
+            ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings;
+            foreach (RulerInfo ri in this.ActiveInfos)
+            {
+                if (!ri.IsDead && ri.DisplayInfo)
+                {
+                    if (ri.KeepAlive)
+                    {
+                        Vector3 screen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace((ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start) + Vector3.UnitZ);
+                        if (screen.Z >= 0)
+                        {
+                            float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
+                            string text = len.ToString("0.00");
+                            Vector2 tLen = ImGuiHelper.CalcTextSize(ri.OwnerName);
+                            Vector2 tLen2 = ImGuiHelper.CalcTextSize(ri.Tooltip);
+                            Vector2 tLen3 = ImGuiHelper.CalcTextSize(text);
+                            float maxW = MathF.Max(tLen.X, MathF.Max(tLen2.X, tLen3.X));
+                            ImGui.SetNextWindowPos(screen.Xy() - (new Vector2(maxW, tLen.Y) / 2));
+                            if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags | ImGuiWindowFlags.AlwaysAutoResize))
+                            {
+                                float cX;
+                                float delta;
+                                if (tLen.X < maxW)
+                                {
+                                    cX = ImGui.GetCursorPosX();
+                                    delta = maxW - tLen.X;
+                                    ImGui.SetCursorPosX(cX + (delta / 2));
+                                }
+
+                                ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                ImGui.TextUnformatted(ri.OwnerName);
+                                ImGui.PopStyleColor();
+                                if (!string.IsNullOrEmpty(ri.Tooltip))
+                                {
+                                    if (tLen2.X < maxW)
+                                    {
+                                        cX = ImGui.GetCursorPosX();
+                                        delta = maxW - tLen2.X;
+                                        ImGui.SetCursorPosX(cX + (delta / 2));
+                                    }
+
+                                    ImGui.TextUnformatted(ri.Tooltip);
+                                }
+
+
+                                if (tLen3.X < maxW)
+                                {
+                                    cX = ImGui.GetCursorPosX();
+                                    delta = maxW - tLen3.X;
+                                    ImGui.SetCursorPosX(cX + (delta / 2));
+                                }
+
+                                if (len > 0.01f)
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                    ImGui.TextUnformatted(text);
+                                    ImGui.PopStyleColor();
+                                }
+                            }
+
+                            ImGui.End();
+                        }
+                    }
+                    else
+                    {
+                        Vector3 half = ri.Type == RulerType.Polyline ? ri.CumulativeCenter : ri.Start + ((ri.End - ri.Start) / 2f);
+                        Vector3 halfScreen = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(half);
+                        if (halfScreen.Z >= 0)
+                        {
+                            float len = ri.Type == RulerType.Polyline ? ri.CumulativeLength * cMap.GridUnit : (ri.End - ri.Start).Length() * cMap.GridUnit;
+                            string text = len.ToString("0.00");
+                            Vector2 tLen = ImGuiHelper.CalcTextSize(text);
+                            ImGui.SetNextWindowPos(halfScreen.Xy() - (tLen / 2));
+                            if (ImGui.Begin("TextOverlayData_" + ri.SelfID.ToString(), flags))
+                            {
+                                ImGui.PushStyleColor(ImGuiCol.Text, ri.Color.Abgr());
+                                ImGui.TextUnformatted(text);
+                                ImGui.PopStyleColor();
+                            }
+
+                            ImGui.End();
+                        }
+                    }
+                }
+            }
+        }
+
         private static bool IsInCircle(BBBox box, Vector3 offset, Vector3 point, float rSq)
         {
             Vector2 cPoint = point.Xy() - offset.Xy();
@@ -1158,6 +1247,7 @@
             float orthoDist = (point - start - (cDist * dir)).Length();
             return orthoDist < cRad;
         }
+    
     }
 
     public enum RulerType

@@ -1234,7 +1234,7 @@
                     }
 
                     int h = (renderName ? 32 : 8) + barsHeight + (hasNp && !(renderBars && mo.Bars.Count > 0) ? -8 : 0);
-                    ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoSavedSettings;
+                    ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings;
                     if (mo.DisableNameplateBackground)
                     {
                         flags |= ImGuiWindowFlags.NoBackground;
@@ -1253,54 +1253,56 @@
                         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
                     }
 
-                    ImGui.Begin("Overlay_" + mo.ID.ToString(), flags | ImGuiWindowFlags.AlwaysAutoResize);
-                    if (hasNp)
-                    {
-                        if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
-                        {
-                            Vector2 cPn = ImGui.GetCursorPos();
-                            ImDrawListPtr backList = ImGui.GetWindowDrawList();
-                            Vector2 oPs = ImGui.GetStyle().WindowPadding;
-                            GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
-                            if (tex.IsAsyncReady)
-                            {
-                                VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
-                                Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
-                                backList.AddImage(tex, dc, dc + new Vector2(tX, 32), frame.LocationUniform.Xy(), frame.LocationUniform.Xy() + frame.LocationUniform.Zw());
-                                ImGui.SetCursorPos(cPn + customPadding);
-                            }
-                        }
-                    }
-
-                    if (renderName)
-                    {
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + (tX * 0.5f) - (nS * 0.5f));
-
-                        uint nClr = mo.NameColor.Abgr();
-                        if (mo.NameColor.Alpha() < 0.5f)
-                        {
-                            nClr = ImGui.GetColorU32(ImGuiCol.Text);
-                        }
-
-                        ImGui.PushStyleColor(ImGuiCol.Text, nClr);
-                        ImGui.TextUnformatted(mo.Name);
-                        ImGui.PopStyleColor();
-                    }
-
-                    if (renderBars)
+                    if (ImGui.Begin("Overlay_" + mo.ID.ToString(), flags | ImGuiWindowFlags.AlwaysAutoResize))
                     {
                         if (hasNp)
                         {
-                            ImGui.Dummy(customPadding);
+                            if (Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.CustomNameplateID, AssetType.Texture, out Asset a) == AssetStatus.Return && a != null && a.Type == AssetType.Texture && a.Texture != null && a.Texture.glReady)
+                            {
+                                Vector2 cPn = ImGui.GetCursorPos();
+                                ImDrawListPtr backList = ImGui.GetWindowDrawList();
+                                Vector2 oPs = ImGui.GetStyle().WindowPadding;
+                                GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
+                                if (tex.IsAsyncReady)
+                                {
+                                    VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
+                                    Vector2 dc = ImGui.GetCursorScreenPos() - oPs;
+                                    backList.AddImage(tex, dc, dc + new Vector2(tX, 32), frame.LocationUniform.Xy(), frame.LocationUniform.Xy() + frame.LocationUniform.Zw());
+                                    ImGui.SetCursorPos(cPn + customPadding);
+                                }
+                            }
                         }
 
-                        bool prevWasRound = false;
-                        float penX = 0;
-                        for (int i = 0; i < mo.Bars.Count; i++)
+                        if (renderName)
                         {
-                            DisplayBar db = mo.Bars[i];
-                            float mW = MathF.Max(112, tX - 16);
-                            RenderBar(db.CurrentValue, db.MaxValue, db.RenderMode, db.DrawColor, hasNp, customPadding, mW, tX, ref prevWasRound, ref penX);
+                            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - customPadding.X + (tX * 0.5f) - (nS * 0.5f));
+
+                            uint nClr = mo.NameColor.Abgr();
+                            if (mo.NameColor.Alpha() < 0.5f)
+                            {
+                                nClr = ImGui.GetColorU32(ImGuiCol.Text);
+                            }
+
+                            ImGui.PushStyleColor(ImGuiCol.Text, nClr);
+                            ImGui.TextUnformatted(mo.Name);
+                            ImGui.PopStyleColor();
+                        }
+
+                        if (renderBars)
+                        {
+                            if (hasNp)
+                            {
+                                ImGui.Dummy(customPadding);
+                            }
+
+                            bool prevWasRound = false;
+                            float penX = 0;
+                            for (int i = 0; i < mo.Bars.Count; i++)
+                            {
+                                DisplayBar db = mo.Bars[i];
+                                float mW = MathF.Max(112, tX - 16);
+                                RenderBar(db.CurrentValue, db.MaxValue, db.RenderMode, db.DrawColor, hasNp, customPadding, mW, tX, ref prevWasRound, ref penX);
+                            }
                         }
                     }
 

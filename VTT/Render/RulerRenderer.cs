@@ -1260,6 +1260,11 @@
 
         public void RenderUI(Map cMap)
         {
+            if (cMap == null)
+            {
+                return;
+            }
+
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoSavedSettings;
             foreach (RulerInfo ri in this.ActiveInfos)
             {

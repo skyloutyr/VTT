@@ -874,3 +874,4 @@ menu.settings.draw_sidebar_layer_controls=Sidebar Layer Controls
 ui.particle_containers.bone_attachment=Attachment Bone
 ui.particle_containers.bone_attachment.tt=Only applicable for bone emission mode
 ui.particle.emission.bone=Bone
+menu.settings.ui_buffers_capacity=Maximum UI Buffers

@@ -874,3 +874,4 @@ menu.settings.draw_sidebar_layer_controls=Управление Слоями Сб
 ui.particle_containers.bone_attachment=Кость Выделения
 ui.particle_containers.bone_attachment.tt=Применимо только при режиме выделения "кость"
 ui.particle.emission.bone=Кость
+menu.settings.ui_buffers_capacity=Максимум Буфферов Интерфейса

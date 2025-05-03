@@ -58,7 +58,13 @@ void main()
 
         private ShaderProgram _shader;
         private Texture _fontTexture;
-        private UIStreamingBufferCollection _uiBuffers = new UIStreamingBufferCollection();
+        private readonly UIStreamingBufferCollection _uiBuffers = new UIStreamingBufferCollection();
+        public int UIBuffersCapacity
+        {
+            get => this._uiBuffers.MaximumCapacity; 
+            set => this._uiBuffers.MaximumCapacity = Math.Clamp(value, 1, ushort.MaxValue);
+        }
+
         private ClientSettings.UISkin? _skinChangeTo;
 
         public Stopwatch CPUTimer { get; set; }
@@ -91,6 +97,7 @@ void main()
             ImGui.GetIO().DisplayFramebufferScale = new Vector2(1, 1);
             this.SetupGl();
             ImGui.LoadIniSettingsFromDisk(Path.Combine(IOVTT.AppDir, "imgui.ini"));
+            this.UIBuffersCapacity = Client.Instance.Settings.UIDrawBuffersCapacity;
         }
 
         public void ChangeSkin(ClientSettings.UISkin skin) => this._skinChangeTo = skin;

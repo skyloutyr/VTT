@@ -1421,6 +1421,14 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    int uiBufCap = Client.Instance.Settings.UIDrawBuffersCapacity;
+                    if (ImGui.InputInt($"{lang.Translate("menu.settings.ui_buffers_capacity")}###UIBufferCapacity", ref uiBufCap))
+                    {
+                        Client.Instance.Settings.UIDrawBuffersCapacity = uiBufCap;
+                        Client.Instance.Frontend.GuiWrapper.UIBuffersCapacity = uiBufCap;
+                        Client.Instance.Settings.Save();
+                    }
+
                     if (!bDebug)
                     {
                         ImGui.EndDisabled();

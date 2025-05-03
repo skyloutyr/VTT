@@ -822,6 +822,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool DrawSidebarLayerControls { get; set; } = true;
 
+        [DefaultValue(16)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public int UIDrawBuffersCapacity { get; set; } = 16;
+
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
         {
             mem.UseFrequency = lastChatIndex;
@@ -961,6 +965,7 @@
                 UnifyChatDiceRendering = false,
                 DiceRollMemory = new List<ChatDiceRollMemory>(),
                 DrawSidebarLayerControls = true,
+                UIDrawBuffersCapacity = 16
             };
 
             ret.Save();

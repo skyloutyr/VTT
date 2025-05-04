@@ -433,7 +433,7 @@
             }
 
             SelectionManager sm = Client.Instance.Frontend.Renderer.SelectionManager;
-            if (this.EditMode == EditMode.Translate && this.MovementMode == TranslationMode.Path && sm.ObjectMovementPath.Count > 0 && sm.IsDraggingObjects)
+            if (this.EditMode == EditMode.Translate && this.MovementMode == TranslationMode.Path && sm.ObjectMovementPath.Count > 0 && sm.IsDraggingObjects && sm.SelectedObjects.Count > 0)
             {
                 RulerRenderer rr = Client.Instance.Frontend.Renderer.RulerRenderer;
                 this.OverlayShader.Bind();

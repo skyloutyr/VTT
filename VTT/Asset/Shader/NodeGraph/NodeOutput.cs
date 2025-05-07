@@ -31,7 +31,7 @@
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("ID");
+            this.ID = e.GetGuidLegacy("ID");
             this.Name = e.GetString("Name");
             this.SelfType = e.GetEnum<NodeValueType>("Type");
         }

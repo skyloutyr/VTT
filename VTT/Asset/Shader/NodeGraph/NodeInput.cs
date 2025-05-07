@@ -115,10 +115,10 @@
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("ID");
+            this.ID = e.GetGuidLegacy("ID");
             this.Name = e.GetString("Name");
             this.SelfType = e.GetEnum<NodeValueType>("Type");
-            this.ConnectedOutput = e.GetGuid("Connected");
+            this.ConnectedOutput = e.GetGuidLegacy("Connected");
             switch (this.SelfType)
             {
                 case NodeValueType.Int:
@@ -147,19 +147,19 @@
 
                 case NodeValueType.Vec2:
                 {
-                    this.CurrentValue = e.GetVec2("Value");
+                    this.CurrentValue = e.GetVec2Legacy("Value");
                     break;
                 }
 
                 case NodeValueType.Vec3:
                 {
-                    this.CurrentValue = e.GetVec3("Value");
+                    this.CurrentValue = e.GetVec3Legacy("Value");
                     break;
                 }
 
                 case NodeValueType.Vec4:
                 {
-                    this.CurrentValue = e.GetVec4("Value");
+                    this.CurrentValue = e.GetVec4Legacy("Value");
                     break;
                 }
             }

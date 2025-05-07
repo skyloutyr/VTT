@@ -112,16 +112,16 @@
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
-            ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) => c.SetGuid(n, v));
+            ret.SetPrimitiveArray("Textures", this.ExtraTexturesAttachments.ToArray());
             return ret;
         }
 
-        public void SerializeCompatibility(DataElement ret) => ret.SetArray("Textures", this.ExtraTexturesAttachments.ToArray(), (n, c, v) => c.SetGuid(n, v));
+        public void SerializeCompatibility(DataElement ret) => ret.SetPrimitiveArray("Textures", this.ExtraTexturesAttachments.ToArray());
 
         public void Deserialize(DataElement e)
         {
             this.ExtraTexturesAttachments.Clear();
-            this.ExtraTexturesAttachments.AddRange(e.GetArray("Textures", (n, c) => c.GetGuid(n), Array.Empty<Guid>()));
+            this.ExtraTexturesAttachments.AddRange(e.GetPrimitiveArrayWithLegacySupport("Textures", (n, c) => c.GetGuidLegacy(n), Array.Empty<Guid>()));
         }
 
         public void DeserializeCompatibility(DataElement e) => this.Deserialize(e);

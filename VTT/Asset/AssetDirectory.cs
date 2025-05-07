@@ -123,8 +123,8 @@
 
         public void Deserialize(DataElement e)
         {
-            this.AssetID = e.GetGuid("ID");
-            this.AssetPreviewID = e.GetGuid("Preview");
+            this.AssetID = e.GetGuidLegacy("ID");
+            this.AssetPreviewID = e.GetGuidLegacy("Preview");
             this.Meta = new AssetMetadata();
             this.Meta.Deserialize(e.GetMap("Meta"));
         }

@@ -45,9 +45,9 @@ namespace VTT.Control
 
         public void Deserialize(DataElement e)
         {
-            this.Offset = e.GetVec4("Offset");
+            this.Offset = e.GetVec4Legacy("Offset");
             this.UseObjectTransform = e.GetBool("UCO");
-            this.Color = e.GetVec4("Color");
+            this.Color = e.GetVec4Legacy("Color");
             this.Enabled = e.GetBool("Enabled");
             this.Intensity = e.GetSingle("Intensity", 1.0f);
         }

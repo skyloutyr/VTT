@@ -326,7 +326,7 @@
 
             public void Deserialize(DataElement e)
             {
-                this.ObjectID = e.GetGuid("ID");
+                this.ObjectID = e.GetGuidLegacy("ID");
                 this.NumericValue = e.GetSingle("Value");
                 this.readTeamName = e.GetString("Team");
             }

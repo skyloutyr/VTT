@@ -235,7 +235,7 @@
                 this.SampleRate = e.GetInt("Frequency");
                 this.NumChannels = e.GetInt("Channels");
                 this.TotalDuration = e.GetDouble("Duration", double.NaN);
-                this.CompressedChunkOffsets = e.GetArray("Offsets", (n, c) => c.GetLong(n), Array.Empty<long>());
+                this.CompressedChunkOffsets = e.GetPrimitiveArrayWithLegacySupport("Offsets", (n, c) => c.GetLong(n), Array.Empty<long>());
                 this.SoundAssetName = e.GetString("Name", " ");
             }
 
@@ -248,7 +248,7 @@
                 ret.SetInt("Frequency", this.SampleRate);
                 ret.SetInt("Channels", this.NumChannels);
                 ret.SetDouble("Duration", this.TotalDuration);
-                ret.SetArray("Offsets", this.CompressedChunkOffsets, (n, c, v) => c.SetLong(n, v));
+                ret.SetPrimitiveArray("Offsets", this.CompressedChunkOffsets);
                 ret.SetString("Name", this.SoundAssetName);
                 return ret;
             }

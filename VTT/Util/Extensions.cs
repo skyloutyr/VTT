@@ -271,6 +271,14 @@
             bw.Write(vec.W);
         }
 
+        public static void Write(this BinaryWriter bw, Quaternion vec)
+        {
+            bw.Write(vec.X);
+            bw.Write(vec.Y);
+            bw.Write(vec.Z);
+            bw.Write(vec.W);
+        }
+
         public static void WriteArray<T>(this BinaryWriter bw, T[] collection, Action<BinaryWriter, T> writer)
         {
             bw.Write(collection.Length);
@@ -295,6 +303,7 @@
         public static SVec2 ReadVec2(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle());
         public static SVec3 ReadVec3(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
         public static SVec4 ReadVec4(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+        public static Quaternion ReadQuat(this BinaryReader br) => new(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
 
         public static Matrix4x4 ClearRotation(this Matrix4x4 self)
         {

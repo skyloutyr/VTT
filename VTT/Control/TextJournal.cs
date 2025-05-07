@@ -17,8 +17,8 @@
 
         public void Deserialize(DataElement e)
         {
-            this.SelfID = e.GetGuid("SelfID");
-            this.OwnerID = e.GetGuid("OwnerID");
+            this.SelfID = e.GetGuidLegacy("SelfID");
+            this.OwnerID = e.GetGuidLegacy("OwnerID");
             this.IsPublic = e.GetBool("IsPublic");
             this.IsEditable = e.GetBool("IsEditable");
             this.Title = e.GetString("Title");

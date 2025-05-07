@@ -212,20 +212,20 @@
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("ID");
+            this.ID = e.GetGuidLegacy("ID");
             this.Name = e.GetString("Name");
             this.IsNameVisible = e.GetBool("IsNameVisible");
             this.IsCrossedOut = e.GetBool("IsCrossedOut");
             this.Description = e.GetString("Desc");
             this.Notes = e.GetString("Notes");
-            this.AssetID = e.GetGuid("AssetID");
-            this.ShaderID = e.GetGuid("ShaderID");
-            this.OwnerID = e.GetGuid("OwnerID");
-            this.MapID = e.GetGuid("MapID");
+            this.AssetID = e.GetGuidLegacy("AssetID");
+            this.ShaderID = e.GetGuidLegacy("ShaderID");
+            this.OwnerID = e.GetGuidLegacy("OwnerID");
+            this.MapID = e.GetGuidLegacy("MapID");
             this.MapLayer = e.GetInt("MapLayer");
-            this.Position = e.GetVec3("Position", Vector3.Zero);
-            this.Rotation = e.GetQuaternion("Rotation", Quaternion.Identity);
-            this.Scale = e.GetVec3("Scale", Vector3.One);
+            this.Position = e.GetVec3Legacy("Position", Vector3.Zero);
+            this.Rotation = e.GetQuaternionLegacy("Rotation", Quaternion.Identity);
+            this.Scale = e.GetVec3Legacy("Scale", Vector3.One);
             this.LightsEnabled = e.GetBool("LightsEnabled");
             this.LightsCastShadows = e.GetBool("LightsCastShadows");
             this.LightsSelfCastsShadow = e.GetBool("SelfCastsShadow");
@@ -258,16 +258,16 @@
 
             this.Particles.Deserialize(e);
             this.HasCustomNameplate = e.GetBool("HasCustomNameplate", false);
-            this.CustomNameplateID = e.GetGuid("CustomNameplate", Guid.Empty);
+            this.CustomNameplateID = e.GetGuidLegacy("CustomNameplate", Guid.Empty);
             this.IsInfoObject = e.GetBool("IsInfoObject");
             this.CustomProperties = e.GetMap("Props");
             this.AnimationContainer.Deserialize(e.GetMap("AnimationData", new DataElement()));
             this.UseMarkdownForDescription = e.GetBool("DescMarkdown", false);
             this.HideFromSelection = e.GetBool("HideFromSelection", false);
             this.IsShadow2DViewpoint = e.GetBool("IsShadow2DViewpoint", false);
-            this.Shadow2DViewpointData = e.GetVec2("Shadow2DViewpointData", new Vector2(6, 12));
+            this.Shadow2DViewpointData = e.GetVec2Legacy("Shadow2DViewpointData", new Vector2(6, 12));
             this.IsShadow2DLightSource = e.GetBool("IsShadow2DLightSource", false);
-            this.Shadow2DLightSourceData = e.GetVec2("Shadow2DLightSourceData", new Vector2(6, 12));
+            this.Shadow2DLightSourceData = e.GetVec2Legacy("Shadow2DLightSourceData", new Vector2(6, 12));
             this.DisableNameplateBackground = e.GetBool("DisableNameplateBackground", false);
         }
 

@@ -112,22 +112,8 @@
             ret.SetSingle("InitialVelocityRandomAngle", this.InitialVelocityRandomAngle);
             ret.SetVec3("Gravity", this.Gravity);
             ret.SetSingle("VelocityDampenFactor", this.VelocityDampenFactor);
-            ret.SetArray("ColorOverLifetime", this.ColorOverLifetime.Select(x =>
-            {
-                DataElement ret = new DataElement();
-                ret.SetSingle("k", x.Key);
-                ret.SetVec4("v", x.Value);
-                return ret;
-            }).ToArray(), (n, c, e) => c.SetMap(n, e));
-
-            ret.SetArray("ScaleOverLifetime", this.ScaleOverLifetime.Select(x =>
-            {
-                DataElement ret = new DataElement();
-                ret.SetSingle("k", x.Key);
-                ret.SetSingle("v", x.Value);
-                return ret;
-            }).ToArray(), (n, c, e) => c.SetMap(n, e));
-
+            ret.SetPrimitiveArray("ColorOverLifetime", this.ColorOverLifetime.ToArray());
+            ret.SetPrimitiveArray("ScaleOverLifetime", this.ScaleOverLifetime.ToArray());
             ret.SetGuid("AssetID", this.AssetID);
             ret.SetBool("DoBillboard", this.DoBillboard);
             ret.SetBool("ClusterEmission", this.ClusterEmission);
@@ -145,32 +131,42 @@
             DataElement de = new DataElement(br);
             this.EmissionType = de.GetEnum<EmissionMode>("EmissionType");
             this.EmissionRadius = de.GetSingle("EmissionRadius");
-            this.EmissionVolume = de.GetVec3("EmissionVolume");
+            this.EmissionVolume = de.GetVec3Legacy("EmissionVolume");
             this.EmissionChance = de.GetSingle("EmissionChance");
             this.EmissionAmount = new RangeInt(de.GetInt("EmissionAmountLo"), de.GetInt("EmissionAmountHi"));
             this.EmissionCooldown = new RangeInt(de.GetInt("EmissionCooldownLo"), de.GetInt("EmissionCooldownHi"));
             this.Lifetime = new RangeInt(de.GetInt("LifetimeLo"), de.GetInt("LifetimeHi"));
             this.ScaleVariation = new RangeSingle(de.GetSingle("ScaleVariationLo"), de.GetSingle("ScaleVariationHi"));
             this.MaxParticles = de.GetInt("MaxParticles");
-            this.InitialVelocity = new RangeVector3(de.GetVec3("InitialVelocityLo"), de.GetVec3("InitialVelocityHi"));
+            this.InitialVelocity = new RangeVector3(de.GetVec3Legacy("InitialVelocityLo"), de.GetVec3Legacy("InitialVelocityHi"));
             this.InitialVelocityRandomAngle = de.GetSingle("InitialVelocityRandomAngle");
-            this.Gravity = de.GetVec3("Gravity");
+            this.Gravity = de.GetVec3Legacy("Gravity");
             this.VelocityDampenFactor = de.GetSingle("VelocityDampenFactor");
-            DataElement[] col = de.GetArray("ColorOverLifetime", (n, c) => c.GetMap(n), Array.Empty<DataElement>());
             this.ColorOverLifetime.Clear();
-            foreach (DataElement e in col)
+            KeyValuePair<float, Vector4>[] colKvs = de.GetPrimitiveArrayWithLegacySupport("ColorOverLifetime", (n, c) =>
             {
-                this.ColorOverLifetime[e.GetSingle("k")] = e.GetVec4("v");
+                DataElement de = c.GetMap(n);
+                return new KeyValuePair<float, Vector4>(de.GetSingle("k"), de.GetVec4Legacy("v"));
+            }, Array.Empty<KeyValuePair<float, Vector4>>());
+
+            foreach (KeyValuePair<float, Vector4> kv in colKvs)
+            {
+                this.ColorOverLifetime[kv.Key] = kv.Value;
             }
 
-            col = de.GetArray("ScaleOverLifetime", (n, c) => c.GetMap(n), Array.Empty<DataElement>());
             this.ScaleOverLifetime.Clear();
-            foreach (DataElement e in col)
+            KeyValuePair<float, float>[] solKvs = de.GetPrimitiveArrayWithLegacySupport("ScaleOverLifetime", (n, c) =>
             {
-                this.ScaleOverLifetime[e.GetSingle("k")] = e.GetSingle("v");
+                DataElement de = c.GetMap(n);
+                return new KeyValuePair<float, float>(de.GetSingle("k"), de.GetSingle("v"));
+            }, Array.Empty<KeyValuePair<float, float>>());
+
+            foreach (KeyValuePair<float, float> kv in solKvs)
+            {
+                this.ScaleOverLifetime[kv.Key] = kv.Value;
             }
 
-            this.AssetID = de.GetGuid("AssetID");
+            this.AssetID = de.GetGuidLegacy("AssetID");
             this.DoBillboard = de.GetBool("DoBillboard", true);
             this.ClusterEmission = de.GetBool("ClusterEmission", false);
             this.DoFow = de.GetBool("DoFow", false);
@@ -180,8 +176,8 @@
                 this.SpriteData.Deserialize(de.GetMap("SpriteSheetData"));
             }
 
-            this.CustomShaderID = de.GetGuid("CustomShaderID", Guid.Empty);
-            this.MaskID = de.GetGuid("MaskID", Guid.Empty);
+            this.CustomShaderID = de.GetGuidLegacy("CustomShaderID", Guid.Empty);
+            this.MaskID = de.GetGuidLegacy("MaskID", Guid.Empty);
             this.SpriteSheetIsAnimation = de.GetBool("SpriteSheetIsAnimation", false);
         }
 
@@ -338,7 +334,7 @@
                 ret.SetInt("nR", this.NumRows);
                 ret.SetInt("nS", this.NumSprites);
                 ret.SetEnum("sM", this.Selection);
-                ret.SetArray("sC", this.SelectionWeights, (n, c, v) => c.SetInt(n, v));
+                ret.SetPrimitiveArray("sC", this.SelectionWeights);
                 return ret;
             }
 
@@ -348,7 +344,7 @@
                 this.NumRows = e.GetInt("nR");
                 this.NumSprites = e.GetInt("nS");
                 this.Selection = e.GetEnum<SelectionMode>("sM");
-                this.SelectionWeights = e.GetArray("sC", (n, c) => c.GetInt(n, 0), Array.Empty<int>());
+                this.SelectionWeights = e.GetPrimitiveArrayWithLegacySupport("sC", (n, c) => c.GetInt(n), Array.Empty<int>());
                 this.SelectionWeightsList.Clear();
                 for (int i = 0; i < this.SelectionWeights.Length; ++i)
                 {

@@ -171,18 +171,34 @@
             ret.SetGuid("oid", this.OwnerID);
             ret.SetSingle("r", this.Radius);
             ret.SetVec4("c", this.Color);
-            ret.SetArray("pts", this.Points.ToArray(), (n, c, v) => c.SetVec3(n, new Vector3(v.x, v.y, v.z)));
+            ret.SetPrimitiveArray("pts", this.Points.ToArray());
             return ret;
         }
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("id");
-            this.OwnerID = e.GetGuid("oid");
+            this.ID = e.GetGuidLegacy("id");
+            this.OwnerID = e.GetGuidLegacy("oid");
             this.Radius = e.GetSingle("r");
-            this.Color = e.GetVec4("c");
+            this.Color = e.GetVec4Legacy("c");
             this.Points.Clear();
-            this.Points.AddRange(e.GetArray("pts", (n, c) => new DrawingPoint(c.GetVec3(n)), Array.Empty<DrawingPoint>()));
+            if (e.GetType("pts", out DataType dt))
+            {
+                switch (dt)
+                {
+                    case DataType.Map:
+                    {
+                        this.Points.AddRange(e.GetArray("pts", (n, c) => new DrawingPoint(c.GetVec3Legacy(n)), Array.Empty<DrawingPoint>())); // Legacy
+                        break;
+                    }
+
+                    case DataType.PrimitiveArray:
+                    {
+                        this.Points.AddRange(e.GetPrimitiveArray("pts", Array.Empty<DrawingPoint>()));
+                        break;
+                    }
+                }
+            }
         }
 
         public DrawingPointContainer Clone()

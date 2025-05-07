@@ -22,8 +22,60 @@
 
         public DataElement(BinaryReader br) : this() => this.Read(br);
 
+        private static unsafe byte[] ConvertPrimitiveArrayTo<T>(T[] fArr) where T : unmanaged
+        {
+            if (typeof(T) == typeof(byte))
+            {
+                return (byte[])(object)fArr;
+            }
+
+            int bpe = sizeof(T);
+            byte[] ret = new byte[fArr.Length * bpe];
+            fixed (byte* bptr = ret)
+            {
+                fixed (T* tptr = fArr)
+                {
+                    Buffer.MemoryCopy(tptr, bptr, ret.Length, ret.Length);
+                }
+            }
+
+            return ret;
+        }
+
+        private static unsafe T[] ConvertPrimitiveArrayFrom<T>(byte[] bArr) where T : unmanaged
+        {
+            if (typeof(T) == typeof(byte))
+            {
+                return (T[])(object)bArr;
+            }
+
+            int bpe = sizeof(T);
+            T[] ret = new T[bArr.Length / bpe];
+            fixed (byte* bptr = bArr)
+            {
+                fixed (T* tptr = ret)
+                {
+                    Buffer.MemoryCopy(bptr, tptr, bArr.Length, bArr.Length);
+                }
+            }
+
+            return ret;
+        }
+
         public bool Has(string name, DataType type) => this._dataMap.ContainsKey(name) && this._dataMap[name].Type == type;
         public bool GetIfPresent(string name, DataType type, out DataElement de) => this._dataMap.TryGetValue(name, out de) && de.Type == type;
+        public bool GetRaw(string name, out DataElement de) => this._dataMap.TryGetValue(name, out de);
+        public bool GetType(string name, out DataType type)
+        {
+            if (this._dataMap.TryGetValue(name, out DataElement de))
+            {
+                type = de.Type;
+                return true;
+            }
+
+            type = DataType.Map;
+            return false;
+        }
 
         public void Remove(string name) => this._dataMap.Remove(name);
 
@@ -39,8 +91,191 @@
         public float GetSingle(string name, float defaultVal = 0) => this.GetIfPresent(name, DataType.Float, out DataElement de) ? de._val.fVal : defaultVal;
         public double GetDouble(string name, double defaultVal = 0) => this.GetIfPresent(name, DataType.Double, out DataElement de) ? de._val.dVal : defaultVal;
         public string GetString(string name, string defaultVal = "") => this.GetIfPresent(name, DataType.String, out DataElement de) ? de._stVal : defaultVal;
-        public byte[] GetByteArray(string name, byte[] defaultVal = null) => this.GetIfPresent(name, DataType.ByteArray, out DataElement de) ? de._bArrVal : defaultVal;
+        public Guid GetGuid(string name, Guid defaultVal = default) => this.GetIfPresent(name, DataType.Guid, out DataElement de) ? de._val.gVal : defaultVal;
+        public Vector2 GetVec2(string name, Vector2 defaultVal = default) => this.GetIfPresent(name, DataType.Vec2, out DataElement de) ? de._val.v2Val : defaultVal;
+        public Vector3 GetVec3(string name, Vector3 defaultVal = default) => this.GetIfPresent(name, DataType.Vec3, out DataElement de) ? de._val.v3Val : defaultVal;
+        public Vector4 GetVec4(string name, Vector4 defaultVal = default) => this.GetIfPresent(name, DataType.Vec4, out DataElement de) ? de._val.v4Val : defaultVal;
+        public Quaternion GetQuaternion(string name, Quaternion defaultVal = default) => this.GetIfPresent(name, DataType.Quaternion, out DataElement de) ? de._val.qVal : defaultVal;
+        public T[] GetPrimitiveArray<T>(string name, T[] defaultVal = null) where T : unmanaged => this.GetIfPresent(name, DataType.PrimitiveArray, out DataElement de) ? ConvertPrimitiveArrayFrom<T>(de._bArrVal) : defaultVal;
         public DataElement GetMap(string name, DataElement defaultVal = null) => this.GetIfPresent(name, DataType.Map, out DataElement de) ? de : defaultVal;
+
+        #region Legacy Pre-1.2.28 Support
+        public Guid GetGuidLegacy(string name, Guid defaultVal = default)
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.PrimitiveArray:
+                    {
+                        return new Guid(de._bArrVal);
+                    }
+
+                    case DataType.Guid:
+                    {
+                        return de._val.gVal;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+
+        public Vector2 GetVec2Legacy(string name, Vector2 defaultVal = default)
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.Map:
+                    {
+                        return new Vector2(de.GetSingle("x"), de.GetSingle("y"));
+                    }
+
+                    case DataType.Vec2:
+                    {
+                        return de._val.v2Val;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+
+        public Vector3 GetVec3Legacy(string name, Vector3 defaultVal = default)
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.Map:
+                    {
+                        return new Vector3(de.GetSingle("x"), de.GetSingle("y"), de.GetSingle("z"));
+                    }
+
+                    case DataType.Vec3:
+                    {
+                        return de._val.v3Val;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+
+        public Vector4 GetVec4Legacy(string name, Vector4 defaultVal = default)
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.Map:
+                    {
+                        return new Vector4(de.GetSingle("x"), de.GetSingle("y"), de.GetSingle("z"), de.GetSingle("w"));
+                    }
+
+                    case DataType.Vec4:
+                    {
+                        return de._val.v4Val;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+
+        public Quaternion GetQuaternionLegacy(string name, Quaternion defaultVal = default)
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.Map:
+                    {
+                        return new Quaternion(de.GetSingle("x"), de.GetSingle("y"), de.GetSingle("z"), de.GetSingle("w"));
+                    }
+
+                    case DataType.Quaternion:
+                    {
+                        return de._val.qVal;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+
+        public T[] GetPrimitiveArrayWithLegacySupport<T>(string name, Func<string, DataElement, T> dataConverter, T[] defaultVal = default) where T : unmanaged
+        {
+            if (this.GetRaw(name, out DataElement de))
+            {
+                switch (de.Type)
+                {
+                    case DataType.PrimitiveArray:
+                    {
+                        return ConvertPrimitiveArrayFrom<T>(de._bArrVal);
+                    }
+
+                    case DataType.Map:
+                    {
+                        int amt = de.GetInt("_amount");
+                        T[] ret = new T[amt];
+                        while (--amt >= 0)
+                        {
+                            string eName = "_e" + amt;
+                            ret[amt] = dataConverter(eName, de);
+                        }
+
+                        return ret;
+                    }
+
+                    default:
+                    {
+                        return defaultVal;
+                    }
+                }
+            }
+            else
+            {
+                return defaultVal;
+            }
+        }
+        #endregion
 
         public void SetBool(string name, bool value, bool overrideVals = true)
         {
@@ -198,16 +433,16 @@
             this._dataMap[name] = ret;
         }
 
-        public void SetByteArray(string name, byte[] value, bool overrideVals = true)
+        public void SetPrimitiveArray<T>(string name, T[] value, bool overrideVals = true) where T : unmanaged
         {
-            const DataType dt = DataType.ByteArray;
+            const DataType dt = DataType.PrimitiveArray;
             if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
             {
                 return; // Data type doesn't match and override is disabled
             }
 
             DataElement ret = new() { Type = dt };
-            ret._bArrVal = value;
+            ret._bArrVal = ConvertPrimitiveArrayTo(value);
             this._dataMap[name] = ret;
         }
 
@@ -220,6 +455,71 @@
             }
 
             this._dataMap[name] = value;
+        }
+
+        public void SetGuid(string name, Guid value, bool overrideVals = true)
+        {
+            const DataType dt = DataType.Guid;
+            if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
+            {
+                return; // Data type doesn't match and override is disabled
+            }
+
+            DataElement ret = new() { Type = dt };
+            ret._val.gVal = value;
+            this._dataMap[name] = ret;
+        }
+
+        public void SetVec2(string name, Vector2 value, bool overrideVals = true)
+        {
+            const DataType dt = DataType.Vec2;
+            if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
+            {
+                return; // Data type doesn't match and override is disabled
+            }
+
+            DataElement ret = new() { Type = dt };
+            ret._val.v2Val = value;
+            this._dataMap[name] = ret;
+        }
+
+        public void SetVec3(string name, Vector3 value, bool overrideVals = true)
+        {
+            const DataType dt = DataType.Vec3;
+            if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
+            {
+                return; // Data type doesn't match and override is disabled
+            }
+
+            DataElement ret = new() { Type = dt };
+            ret._val.v3Val = value;
+            this._dataMap[name] = ret;
+        }
+
+        public void SetVec4(string name, Vector4 value, bool overrideVals = true)
+        {
+            const DataType dt = DataType.Vec4;
+            if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
+            {
+                return; // Data type doesn't match and override is disabled
+            }
+
+            DataElement ret = new() { Type = dt };
+            ret._val.v4Val = value;
+            this._dataMap[name] = ret;
+        }
+
+        public void SetQuaternion(string name, Quaternion value, bool overrideVals = true)
+        {
+            const DataType dt = DataType.Quaternion;
+            if (this._dataMap.TryGetValue(name, out DataElement de) && de.Type != dt && !overrideVals)
+            {
+                return; // Data type doesn't match and override is disabled
+            }
+
+            DataElement ret = new() { Type = dt };
+            ret._val.qVal = value;
+            this._dataMap[name] = ret;
         }
 
         public void Write(string file)
@@ -299,10 +599,40 @@
                     break;
                 }
 
-                case DataType.ByteArray:
+                case DataType.PrimitiveArray:
                 {
                     bw.Write(this._bArrVal.Length);
                     bw.Write(this._bArrVal);
+                    break;
+                }
+
+                case DataType.Guid:
+                {
+                    bw.Write(this._val.gVal);
+                    break;
+                }
+
+                case DataType.Vec2:
+                {
+                    bw.Write(this._val.v2Val);
+                    break;
+                }
+
+                case DataType.Vec3:
+                {
+                    bw.Write(this._val.v3Val);
+                    break;
+                }
+
+                case DataType.Vec4:
+                {
+                    bw.Write(this._val.v4Val);
+                    break;
+                }
+
+                case DataType.Quaternion:
+                {
+                    bw.Write(this._val.qVal);
                     break;
                 }
 
@@ -392,9 +722,39 @@
                     break;
                 }
 
-                case DataType.ByteArray:
+                case DataType.PrimitiveArray:
                 {
                     this._bArrVal = br.ReadBytes(br.ReadInt32());
+                    break;
+                }
+
+                case DataType.Guid:
+                {
+                    this._val.gVal = br.ReadGuid();
+                    break;
+                }
+
+                case DataType.Vec2:
+                {
+                    this._val.v2Val = br.ReadVec2();
+                    break;
+                }
+
+                case DataType.Vec3:
+                {
+                    this._val.v3Val = br.ReadVec3();
+                    break;
+                }
+
+                case DataType.Vec4:
+                {
+                    this._val.v4Val = br.ReadVec4();
+                    break;
+                }
+
+                case DataType.Quaternion:
+                {
+                    this._val.qVal = br.ReadQuat();
                     break;
                 }
 
@@ -428,11 +788,16 @@
         Float,
         Double,
         String,
-        ByteArray,
-        Map
+        PrimitiveArray,
+        Map,
+        Guid,
+        Vec2,
+        Vec3,
+        Vec4,
+        Quaternion,
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 32)]
     public struct PrimitiveDataUnion
     {
 
@@ -456,6 +821,16 @@
         internal float fVal;
         [FieldOffset(0)]
         internal double dVal;
+        [FieldOffset(0)]
+        internal Guid gVal;
+        [FieldOffset(0)]
+        internal Vector2 v2Val;
+        [FieldOffset(0)]
+        internal Vector3 v3Val;
+        [FieldOffset(0)]
+        internal Vector4 v4Val;
+        [FieldOffset(0)]
+        internal Quaternion qVal;
     }
 
     public interface ISerializable
@@ -466,39 +841,6 @@
 
     public static class DataElementExt
     {
-        public static void SetGuid(this DataElement self, string name, Guid value, bool overrideVals = true)
-        {
-            byte[] valB = value.ToByteArray();
-            self.SetByteArray(name, valB, overrideVals);
-        }
-
-        public static void SetVec2(this DataElement self, string name, Vector2 value, bool overrideVals = true)
-        {
-            DataElement e = new DataElement();
-            e.SetSingle("x", value.X);
-            e.SetSingle("y", value.Y);
-            self.SetMap(name, e, overrideVals);
-        }
-
-        public static void SetVec3(this DataElement self, string name, Vector3 value, bool overrideVals = true)
-        {
-            DataElement e = new DataElement();
-            e.SetSingle("x", value.X);
-            e.SetSingle("y", value.Y);
-            e.SetSingle("z", value.Z);
-            self.SetMap(name, e, overrideVals);
-        }
-
-        public static void SetVec4(this DataElement self, string name, Vector4 value, bool overrideVals = true)
-        {
-            DataElement e = new DataElement();
-            e.SetSingle("x", value.X);
-            e.SetSingle("y", value.Y);
-            e.SetSingle("z", value.Z);
-            e.SetSingle("w", value.W);
-            self.SetMap(name, e, overrideVals);
-        }
-
         public static void SetColor(this DataElement self, string name, Color value, bool overrideVals = true)
         {
             Rgba32 pixel = value.ToPixel<Rgba32>();
@@ -518,67 +860,7 @@
             self.SetMap(name, e, overrideVals);
         }
 
-        public static void SetQuaternion(this DataElement self, string name, Quaternion value, bool overrideVals = true)
-        {
-            DataElement e = new DataElement();
-            e.SetSingle("x", value.X);
-            e.SetSingle("y", value.Y);
-            e.SetSingle("z", value.Z);
-            e.SetSingle("w", value.W);
-            self.SetMap(name, e, overrideVals);
-        }
-
         public static void SetEnum<T>(this DataElement self, string name, T value, bool overrideVals = true) where T : struct, Enum => self.SetInt(name, Convert.ToInt32(value), overrideVals);
-
-        public static Guid GetGuid(this DataElement self, string name, Guid defaultVal = default)
-        {
-            byte[] rDat = self.GetByteArray(name, defaultVal.ToByteArray());
-            return new Guid(rDat);
-        }
-
-        public static Vector2 GetVec2(this DataElement self, string name, Vector2 defaultVal = default)
-        {
-            if (self.Has(name, DataType.Map))
-            {
-                DataElement e = self.GetMap(name);
-                return new Vector2(e.GetSingle("x"), e.GetSingle("y"));
-            }
-
-            return defaultVal;
-        }
-
-        public static Vector3 GetVec3(this DataElement self, string name, Vector3 defaultVal = default)
-        {
-            if (self.Has(name, DataType.Map))
-            {
-                DataElement e = self.GetMap(name);
-                return new Vector3(e.GetSingle("x"), e.GetSingle("y"), e.GetSingle("z"));
-            }
-
-            return defaultVal;
-        }
-
-        public static Vector4 GetVec4(this DataElement self, string name, Vector4 defaultVal = default)
-        {
-            if (self.Has(name, DataType.Map))
-            {
-                DataElement e = self.GetMap(name);
-                return new Vector4(e.GetSingle("x"), e.GetSingle("y"), e.GetSingle("z"), e.GetSingle("w"));
-            }
-
-            return defaultVal;
-        }
-
-        public static Quaternion GetQuaternion(this DataElement self, string name, Quaternion defaultVal = default)
-        {
-            if (self.Has(name, DataType.Map))
-            {
-                DataElement e = self.GetMap(name);
-                return new Quaternion(e.GetSingle("x"), e.GetSingle("y"), e.GetSingle("z"), e.GetSingle("w"));
-            }
-
-            return defaultVal;
-        }
 
         public static Color GetColor(this DataElement self, string name, Color defaultVal = default)
         {

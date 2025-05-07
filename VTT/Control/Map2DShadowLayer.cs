@@ -514,9 +514,9 @@
 
         public void Deserialize(DataElement e)
         {
-            this.BoxID = e.GetGuid("id");
-            this.Start = e.GetVec2("s");
-            this.End = e.GetVec2("e");
+            this.BoxID = e.GetGuidLegacy("id");
+            this.Start = e.GetVec2Legacy("s");
+            this.End = e.GetVec2Legacy("e");
             this.Rotation = e.GetSingle("r");
             this.IsActive = e.GetBool("a");
             this.BoxType = e.GetEnum<ShadowBoxType>("t");

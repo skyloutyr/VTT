@@ -892,8 +892,8 @@
         public void Deserialize(DataElement e)
         {
             this.SearchQuery = e.GetString("SearchQuery", string.Empty);
-            this.SenderQuery = e.GetGuid("SenderQuery", Guid.Empty);
-            this.RecepientQuery = e.GetGuid("RecepientQuery", Guid.Empty);
+            this.SenderQuery = e.GetGuidLegacy("SenderQuery", Guid.Empty);
+            this.RecepientQuery = e.GetGuidLegacy("RecepientQuery", Guid.Empty);
             this.TimeFromQuery = e.GetDateTime("TimeFromQuery", DateTime.UnixEpoch);
             this.TimeToQuery = e.GetDateTime("TimeToQuery", DateTime.MaxValue);
             this.Flags = e.GetEnum("Flags", SearchQueryFlags.MatchAll);

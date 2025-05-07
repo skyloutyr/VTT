@@ -18,11 +18,11 @@
 
         public void Deserialize(DataElement e)
         {
-            this.OwnerID = e.GetGuid("OwnerID");
+            this.OwnerID = e.GetGuidLegacy("OwnerID");
             this.DeathTime = e.GetLong("DeathTime");
             this.OwnerName = e.GetString("OwnerName");
             this.OwnerColor = e.GetColor("OwnerColor");
-            this.Position = e.GetVec3("Position");
+            this.Position = e.GetVec3Legacy("Position");
             this.Type = (PingType)e.GetByte("Type");
         }
 

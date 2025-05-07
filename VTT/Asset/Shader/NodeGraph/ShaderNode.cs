@@ -23,12 +23,12 @@
 
         public void Deserialize(DataElement e)
         {
-            this.NodeID = e.GetGuid("ID");
+            this.NodeID = e.GetGuidLegacy("ID");
             this.Name = e.GetString("Name");
-            this.Location = e.GetVec2("Location");
-            this.Size = e.GetVec2("Size");
+            this.Location = e.GetVec2Legacy("Location");
+            this.Size = e.GetVec2Legacy("Size");
             this.Deletable = e.GetBool("Deletable");
-            this.TemplateID = e.GetGuid("Template");
+            this.TemplateID = e.GetGuidLegacy("Template");
             this.Inputs = new List<NodeInput>(e.GetArray("Ins", (n, c) => { NodeInput i = new NodeInput(); i.Deserialize(c.GetMap(n)); return i; }, Array.Empty<NodeInput>()));
             this.Outputs = new List<NodeOutput>(e.GetArray("Outs", (n, c) => { NodeOutput i = new NodeOutput(); i.Deserialize(c.GetMap(n)); return i; }, Array.Empty<NodeOutput>()));
         }

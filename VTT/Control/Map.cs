@@ -176,7 +176,7 @@
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("ID");
+            this.ID = e.GetGuidLegacy("ID");
             this.Name = e.GetString("Name");
             this.Folder = e.GetString("Folder", string.Empty);
             this.GridEnabled = e.GetBool("GridEnabled");
@@ -195,8 +195,8 @@
             this.EnableShadows = e.GetBool("EnableShadows");
             this.EnableDirectionalShadows = e.GetBool("EnableDirectionalShadows");
             this.EnableDarkvision = e.GetBool("EnableDarkvision");
-            this.DefaultCameraPosition = e.GetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
-            this.DefaultCameraRotation = e.GetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
+            this.DefaultCameraPosition = e.GetVec3Legacy("DefaultCameraPosition", this.DefaultCameraPosition);
+            this.DefaultCameraRotation = e.GetVec3Legacy("DefaultCameraRotation", this.DefaultCameraRotation);
             if (this.DefaultCameraPosition.HasAnyNans())
             {
                 this.DefaultCameraPosition = new Vector3(5, 5, 5);
@@ -209,10 +209,10 @@
 
             this.EnableDrawing = e.GetBool("EnableDrawing", true);
             this.Has2DShadows = e.GetBool("Has2DShadows", false);
-            (Guid, Guid, float)[] dvData = e.GetArray("DarkvisionData", (n, c) =>
+            (Guid, Guid, float)[] dvData = e.GetPrimitiveArrayWithLegacySupport("DarkvisionData", (n, c) =>
             {
                 DataElement de = c.GetMap(n);
-                return (de.GetGuid("k"), de.GetGuid("o"), de.GetSingle("v"));
+                return (de.GetGuidLegacy("k"), de.GetGuidLegacy("o"), de.GetSingle("v"));
             }, Array.Empty<(Guid, Guid, float)>());
             this.DarkvisionData.Clear();
             foreach ((Guid, Guid, float) kv in dvData)
@@ -240,12 +240,12 @@
 
             this.Is2D = e.GetBool("Is2D", false);
             this.Camera2DHeight = e.GetSingle("Camera2DHeight", 5.0f);
-            this.AmbientSoundID = e.GetGuid("AmbientSoundID", Guid.Empty);
+            this.AmbientSoundID = e.GetGuidLegacy("AmbientSoundID", Guid.Empty);
             this.AmbientSoundVolume = e.GetSingle("AmbientVolume", 1.0f);
             this.ShadowLayer2D.Deserialize(e.GetMap("ShadowLayer2D", new DataElement()));
-            this.DaySkyboxAssetID = e.GetGuid("DaySkyboxAssetID", Guid.Empty);
+            this.DaySkyboxAssetID = e.GetGuidLegacy("DaySkyboxAssetID", Guid.Empty);
             this.DaySkyboxColors.Deserialize(e.GetMap("DaySkyboxColors", new DataElement()));
-            this.NightSkyboxAssetID = e.GetGuid("NightSkyboxAssetID", Guid.Empty);
+            this.NightSkyboxAssetID = e.GetGuidLegacy("NightSkyboxAssetID", Guid.Empty);
             this.NightSkyboxColors.Deserialize(e.GetMap("NightSkyboxColors", new DataElement()));
 
             if (this.IsServer)
@@ -305,15 +305,7 @@
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
             ret.SetBool("EnableDrawing", this.EnableDrawing);
             ret.SetBool("Has2DShadows", this.Has2DShadows);
-            ret.SetArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray(), (n, c, e) =>
-            {
-                DataElement d = new DataElement();
-                d.SetGuid("k", e.Key);
-                d.SetGuid("o", e.Item2);
-                d.SetSingle("v", e.Item3);
-                c.SetMap(n, d);
-            });
-
+            ret.SetPrimitiveArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray());
             ret.SetArray("PermanentMarks", this.PermanentMarks.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
             ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
             ret.SetBool("Is2D", this.Is2D);
@@ -526,29 +518,26 @@
         public void Deserialize(DataElement e)
         {
             this.OwnType = e.GetEnum("Kind", ColorsPointerType.DefaultSky);
-            DataElement[] col = e.GetArray("Gradient", (n, c) => c.GetMap(n), Array.Empty<DataElement>());
-            this.ColorGradient.Clear();
-            foreach (DataElement de in col)
+            KeyValuePair<float, Vector3>[] col = e.GetPrimitiveArrayWithLegacySupport("Gradient", (n, c) =>
             {
-                this.ColorGradient[de.GetSingle("k")] = de.GetVec3("v");
+                DataElement de = c.GetMap(n);
+                return new KeyValuePair<float, Vector3>(de.GetSingle("k"), de.GetVec3Legacy("v"));
+            }, Array.Empty<KeyValuePair<float, Vector3>>());
+            this.ColorGradient.Clear();
+            foreach (KeyValuePair<float, Vector3> kv in col)
+            {
+                this.ColorGradient[kv.Key] = kv.Value;
             }
 
-            this.SolidColor = e.GetVec3("SolidColor", Vector3.One);
-            this.GradientAssetID = e.GetGuid("AssetID", Guid.Empty);
+            this.SolidColor = e.GetVec3Legacy("SolidColor", Vector3.One);
+            this.GradientAssetID = e.GetGuidLegacy("AssetID", Guid.Empty);
         }
 
         public DataElement Serialize()
         {
             DataElement ret = new DataElement();
             ret.SetEnum("Kind", this.OwnType);
-            ret.SetArray("Gradient", this.ColorGradient.Select(x =>
-            {
-                DataElement ret = new DataElement();
-                ret.SetSingle("k", x.Key);
-                ret.SetVec3("v", x.Value);
-                return ret;
-            }).ToArray(), (n, c, e) => c.SetMap(n, e));
-
+            ret.SetPrimitiveArray("Gradient", this.ColorGradient.ToArray());
             ret.SetVec3("SolidColor", this.SolidColor);
             ret.SetGuid("AssetID", this.GradientAssetID);
             return ret;

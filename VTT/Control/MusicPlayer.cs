@@ -156,7 +156,7 @@
                 this.Tracks.AddRange(e.GetArray("Tracks", (n, c) =>
                 {
                     DataElement m = c.GetMap(n, null);
-                    return m != null ? (m.GetGuid("id"), m.GetSingle("v")) : ((Guid, float))(Guid.Empty, 0);
+                    return m != null ? (m.GetGuidLegacy("id"), m.GetSingle("v")) : ((Guid, float))(Guid.Empty, 0);
 
                 }, Array.Empty<(Guid, float)>()));
 

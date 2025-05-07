@@ -155,7 +155,7 @@
             ret.SetEnum("Type", this.Type);
             ret.SetSingle("ExtraInfo", this.ExtraInfo);
             ret.SetBool("DisplayInfo", this.DisplayInfo);
-            ret.SetArray("Points", this.Points, (n, c, v) => c.SetVec3(n, v));
+            ret.SetPrimitiveArray("Points", this.Points);
             return ret;
         }
 
@@ -163,25 +163,25 @@
         {
             this.IsDead = false;
             this.KeepAlive = true;
-            this.SelfID = e.GetGuid("SelfID");
-            this.OwnerID = e.GetGuid("OwnerID");
+            this.SelfID = e.GetGuidLegacy("SelfID");
+            this.OwnerID = e.GetGuidLegacy("OwnerID");
             this.OwnerName = e.GetString("OwnerName");
             this.Tooltip = e.GetString("Tooltip");
             this.Color = e.GetColor("Color");
             this.Type = e.GetEnum<RulerType>("Type");
-            this.Start = e.GetVec3("Start");
-            this.End = e.GetVec3("End");
+            this.Start = e.GetVec3Legacy("Start");
+            this.End = e.GetVec3Legacy("End");
             this.ExtraInfo = e.GetSingle("ExtraInfo");
             this.DisplayInfo = e.GetBool("DisplayInfo", true);
             if (e.Has("Start", DataType.Map))
             {
                 this.Points = new Vector3[2];
-                this.Points[0] = e.GetVec3("Start");
-                this.Points[1] = e.GetVec3("End");
+                this.Points[0] = e.GetVec3Legacy("Start");
+                this.Points[1] = e.GetVec3Legacy("End");
             }
             else
             {
-                this.Points = e.GetArray("Points", (n, c) => c.GetVec3(n), new Vector3[2]);
+                this.Points = e.GetPrimitiveArrayWithLegacySupport("Points", (n, c) => c.GetVec3Legacy(n), new Vector3[2]);
             }
         }
     }

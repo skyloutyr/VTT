@@ -103,14 +103,14 @@
 
         public void Deserialize(DataElement e)
         {
-            this.ID = e.GetGuid("ID");
-            this.SystemID = e.GetGuid("SystemID");
+            this.ID = e.GetGuidLegacy("ID");
+            this.SystemID = e.GetGuidLegacy("SystemID");
             if (this._psIns != null)
             {
                 this._psInsDispose = true;
             }
 
-            this.ContainerPositionOffset = e.GetVec3("Pos");
+            this.ContainerPositionOffset = e.GetVec3Legacy("Pos");
             this.UseContainerOrientation = e.GetBool("UseOrientation");
             this.IsActive = e.GetBool("Active");
             this.AttachmentPoint = e.GetString("Attach");

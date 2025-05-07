@@ -34,13 +34,14 @@
             }
             else
             {
-                if (!client.CurrentMap?.ID.Equals(this.MapID) ?? false)
+                Map m = client.CurrentMap;
+                if (!m?.ID.Equals(this.MapID) ?? false)
                 {
                     l.Log(LogLevel.Warn, "Server asked to remove all drawings for non-current map!");
                     return;
                 }
 
-                client.CurrentMap.Drawings.Clear();
+                m.Drawings.Clear();
                 client.DoTask(() => Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.FreeAll());
             }
         }

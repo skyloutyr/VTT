@@ -55,20 +55,21 @@
             }
             else
             {
-                if (!client.CurrentMap?.ID.Equals(this.MapID) ?? false)
+                Map m = client.CurrentMap;
+                if (!m?.ID.Equals(this.MapID) ?? false)
                 {
                     l.Log(LogLevel.Warn, "Server asked to remove a drawing but provided a non-current map!");
                     return;
                 }
 
-                DrawingPointContainer drawing = client.CurrentMap.Drawings.Find(d => d.ID.Equals(this.DrawingID));
+                DrawingPointContainer drawing = m.Drawings.Find(d => d.ID.Equals(this.DrawingID));
                 if (drawing == null)
                 {
                     l.Log(LogLevel.Error, $"Server asked to remove a non-existant drawing!");
                     return;
                 }
 
-                client.CurrentMap.Drawings.Remove(drawing);
+                m.Drawings.Remove(drawing);
                 client.DoTask(() => Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.RemoveContainer(drawing.ID));
             }
         }

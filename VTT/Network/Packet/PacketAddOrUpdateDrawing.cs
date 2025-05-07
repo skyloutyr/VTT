@@ -60,13 +60,14 @@
             }
             else
             {
-                if (!client.CurrentMap?.ID.Equals(this.MapID) ?? false)
+                Map m = client.CurrentMap;
+                if (!m?.ID.Equals(this.MapID) ?? false)
                 {
                     l.Log(LogLevel.Warn, "Server asked to add a drawing but provided a non-current map!");
                     return;
                 }
 
-                DrawingPointContainer lDpc = client.CurrentMap.Drawings.Find(x => x.ID.Equals(this.DPC.ID));
+                DrawingPointContainer lDpc = m.Drawings.Find(x => x.ID.Equals(this.DPC.ID));
                 if (lDpc != null)
                 {
                     lDpc.UpdateFrom(this.DPC);
@@ -74,7 +75,7 @@
                 }
                 else
                 {
-                    client.CurrentMap.Drawings.Add(this.DPC);
+                    m.Drawings.Add(this.DPC);
                     client.DoTask(() => Client.Instance.Frontend.Renderer.MapRenderer.DrawingRenderer.AddContainer(this.DPC));
                 }
             }

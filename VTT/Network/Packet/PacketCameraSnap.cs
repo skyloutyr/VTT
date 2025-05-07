@@ -20,7 +20,7 @@
             }
             else
             {
-                Map m = Client.Instance.CurrentMap;
+                Map m = client.CurrentMap;
                 if (m != null)
                 {
                     if (m.Is2D)

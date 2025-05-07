@@ -41,13 +41,13 @@
             }
             else
             {
-                if (!this.MapID.Equals(client.CurrentMap.ID))
+                m = client.CurrentMap;
+                if (!m?.ID.Equals(this.MapID) ?? false)
                 {
                     l.Log(LogLevel.Warn, "Server asked for animation change on a different map, ignoring!");
                     return;
                 }
 
-                m = client.CurrentMap;
                 if (!m.GetObject(this.ObjectID, out mo))
                 {
                     l.Log(LogLevel.Warn, "Server asked to change animation data for a non-existing object!");

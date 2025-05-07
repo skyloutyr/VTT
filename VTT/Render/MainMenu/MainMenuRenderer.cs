@@ -1042,6 +1042,19 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    float zoom2drate = Client.Instance.Settings.CameraZoomSpeed2D;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.2d_camera_zoom_rate"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.2d_camera_zoom_rate.tt"));
+                    }
+
+                    if (ImGui.SliderFloat("##CameraZoomRate2D", ref zoom2drate, 0.5f, 10f))
+                    {
+                        Client.Instance.Settings.CameraZoomSpeed2D = zoom2drate;
+                        Client.Instance.Settings.Save();
+                    }
+
                     ImGui.TreePop();
                 }
 

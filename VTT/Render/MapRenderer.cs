@@ -25,7 +25,7 @@
         public Vector3? TerrainHit => this.TerrainRaycastResult ?? this.GroundHitscanResult;
 
         public int CurrentLayer { get; set; }
-        public float ZoomOrtho => this.camera2dzoom;
+        public float ZoomOrtho => this._currentCamera2dzoom;
         public CameraControlMode CameraControlMode { get; set; } = CameraControlMode.Standard;
 
         public void Update(Map m)
@@ -49,6 +49,25 @@
             if (m != null)
             {
                 this.GroundHitscanResult = TryHitscanGround(this.ClientCamera, out Vector3 cw) ? cw : null;
+                if (this._camera2dZoomA != 1)
+                {
+                    float fact = Client.Instance.Settings.CameraZoomSpeed2D;
+                    if (fact <= float.Epsilon)
+                    {
+                        fact = float.PositiveInfinity;
+                    }
+
+                    this._camera2dZoomA += Client.Instance.Frontend.GameHandle.RenderDt * fact;
+                    this._camera2dZoomA = Math.Clamp(this._camera2dZoomA, 0, 1);
+                    if (double.IsNaN(this._camera2dZoomA)) // Sanity check
+                    {
+                        this._camera2dZoomA = 1;
+                    }
+
+                    float a = (float)(-(Math.Cos(Math.PI * this._camera2dZoomA) - 1d) / 2f);
+                    this._currentCamera2dzoom = ((this._camera2dZoomTarget * a) + (this._camera2dZoomTargetFrom * (1f - a)));
+                    this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+                }
             }
         }
 
@@ -98,7 +117,7 @@
             }
             else
             {
-                float zoom = this.camera2dzoom;
+                float zoom = this._currentCamera2dzoom;
                 this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitY);
             }
@@ -114,7 +133,10 @@
             }
             else
             {
-                this.camera2dzoom = to;
+                this._currentCamera2dzoom = to;
+                this._camera2dZoomTarget = to;
+                this._camera2dZoomTargetFrom = to;
+                this._camera2dZoomA = 1;
                 this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             }
         }
@@ -132,7 +154,10 @@
             int h = Client.Instance.Frontend.Height;
             if (b)
             {
-                this.camera2dzoom = zoom;
+                this._currentCamera2dzoom = zoom;
+                this._camera2dZoomTarget = zoom;
+                this._camera2dZoomTargetFrom = zoom;
+                this._camera2dZoomA = 1;
                 this.ClientCamera.Projection = Matrix4x4.CreateOrthographicOffCenter(-w * 0.5f * zoom, w * 0.5f * zoom, -h * 0.5f * zoom, h * 0.5f * zoom, -this.Get2DMapHeightOrDefault(), this.Get2DMapHeightOrDefault());
                 this.ClientCamera.Direction = -Vector3.UnitZ;
                 this.ClientCamera.Position = new Vector3(this.ClientCamera.Position.X, this.ClientCamera.Position.Y, m.Camera2DHeight);
@@ -171,7 +196,10 @@
         private bool _mmbPressed;
         private Vector3 _pt;
         private float _mouseWheelDY;
-        private float camera2dzoom = 0.01f;
+        private float _currentCamera2dzoom = 0.01f;
+        private float _camera2dZoomTarget = 0.01f;
+        private float _camera2dZoomTargetFrom = 0.01f;
+        private double _camera2dZoomA = 1;
 
         public void ScrollCamera(float dy)
         {
@@ -189,7 +217,7 @@
                 float mX = (Client.Instance.Frontend.MouseX - (w * 0.5f)) / (w * 0.5f);
                 float h = Client.Instance.Frontend.Height;
                 float mY = -(Client.Instance.Frontend.MouseY - (h * 0.5f)) / (h * 0.5f);
-                float zoom = this.camera2dzoom;
+                float zoom = this._currentCamera2dzoom;
                 Vector3 right = this.ClientCamera.Right;
                 Vector3 up = this.ClientCamera.Up;
                 float rX = (mX * (w / 2) * zoom) + this.ClientCamera.Position.X;
@@ -437,7 +465,9 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + (m * (1f / 60f));
+                        this._currentCamera2dzoom /= 1.0f + (m * (1f / 60f));
+                        this._camera2dZoomTarget = this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 1;
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -451,7 +481,9 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + (m * (1f / 60f));
+                        this._currentCamera2dzoom *= 1.0f + (m * (1f / 60f));
+                        this._camera2dZoomTarget = this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 1;
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -465,7 +497,9 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom /= 1.0f + (m * (1f / 60f));
+                        this._currentCamera2dzoom /= 1.0f + (m * (1f / 60f));
+                        this._camera2dZoomTarget = this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 1;
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -479,7 +513,9 @@
                     else
                     {
                         float m = spacebarDown ? 0.3f : 1f;
-                        this.camera2dzoom *= 1.0f + (m * (1f / 60f));
+                        this._currentCamera2dzoom *= 1.0f + (m * (1f / 60f));
+                        this._camera2dZoomTarget = this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 1;
                         this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                     }
                 }
@@ -537,7 +573,7 @@
                 camMovement *= sensitivity;
                 if (this.IsOrtho)
                 {
-                    camMovement *= this.camera2dzoom * 100f;
+                    camMovement *= this._currentCamera2dzoom * 100f;
                 }
 
                 if (!camMovement.Equals(default))
@@ -614,14 +650,16 @@
                     mod *= sensitivity;
                     if (MathF.Sign(this._mouseWheelDY) > 0)
                     {
-                        this.camera2dzoom /= 1.0f + mod;
+                        this._camera2dZoomTarget /= 1.0f + mod;
+                        this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 0;
                     }
                     else
                     {
-                        this.camera2dzoom *= 1.0f + mod;
+                        this._camera2dZoomTarget *= 1.0f + mod;
+                        this._camera2dZoomTargetFrom = this._currentCamera2dzoom;
+                        this._camera2dZoomA = 0;
                     }
-
-                    this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                 }
 
                 this._mouseWheelDY = 0;

@@ -826,6 +826,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int UIDrawBuffersCapacity { get; set; } = 16;
 
+        [DefaultValue(2f)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public float CameraZoomSpeed2D { get; set; } = 2f;
+
+
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
         {
             mem.UseFrequency = lastChatIndex;
@@ -965,7 +970,8 @@
                 UnifyChatDiceRendering = false,
                 DiceRollMemory = new List<ChatDiceRollMemory>(),
                 DrawSidebarLayerControls = true,
-                UIDrawBuffersCapacity = 16
+                UIDrawBuffersCapacity = 16,
+                CameraZoomSpeed2D = 2
             };
 
             ret.Save();

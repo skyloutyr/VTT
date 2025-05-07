@@ -227,6 +227,9 @@
         public bool IsAnyAltDown() => this.IsKeyDown(Keys.LeftAlt) || this.IsKeyDown(Keys.RightAlt);
         public bool IsAnyControlDown() => this.IsKeyDown(Keys.LeftCtrl) || this.IsKeyDown(Keys.RightCtrl);
         public void Close() => Glfw.SetWindowShouldClose(this._nativeWindow, true);
+
+        public double RenderDt { get; set; }
+
         public void Run()
         {
             Glfw.MakeContextCurrent(this._nativeWindow);
@@ -347,6 +350,7 @@
                 Glfw.PollEvents();
 
                 ulong delta = (ulong)DateTime.Now.Ticks - now;
+                this.RenderDt = (double)delta / TimeSpan.TicksPerSecond;
                 this.MetricsFramerate.AddTick(delta);
                 if (this.MetricsFramerate.CheckCumulative(TimeSpan.TicksPerSecond))
                 {

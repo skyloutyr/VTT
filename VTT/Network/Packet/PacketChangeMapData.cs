@@ -3,16 +3,16 @@
     using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeMapData : PacketBase
+    public class PacketChangeMapData : PacketBaseWithCodec
     {
+        public override uint PacketID => 15;
+
         public DataType Type { get; set; }
         public Guid MapID { get; set; }
         public object Data { get; set; }
-        public override uint PacketID => 15;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -241,16 +241,16 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Type = (DataType)br.ReadByte();
-            this.MapID = new Guid(br.ReadBytes(16));
+            this.Type = c.Lookup(this.Type);
+            this.MapID = c.Lookup(this.MapID);
             switch (this.Type)
             {
                 case DataType.Name:
                 case DataType.Folder:
                 {
-                    this.Data = br.ReadString();
+                    this.Data = c.LookupBox<string>(this.Data, c.Lookup);
                     break;
                 }
 
@@ -264,7 +264,7 @@
                 case DataType.EnableDrawing:
                 case DataType.Enable2DShadows:
                 {
-                    this.Data = br.ReadBoolean();
+                    this.Data = c.LookupBox<bool>(this.Data, c.Lookup);
                     break;
                 }
 
@@ -277,7 +277,7 @@
                 case DataType.Camera2DHeight:
                 case DataType.AmbientVolume:
                 {
-                    this.Data = br.ReadSingle();
+                    this.Data = c.LookupBox<float>(this.Data, c.Lookup);
                     break;
                 }
 
@@ -286,90 +286,20 @@
                 case DataType.AmbientColor:
                 case DataType.SunColor:
                 {
-                    uint v = br.ReadUInt32();
-                    this.Data = Extensions.FromArgb(v);
+                    this.Data = c.LookupBox<Color>(this.Data, c.Lookup);
                     break;
                 }
 
                 case DataType.CameraPosition:
                 case DataType.CameraDirection:
                 {
-                    this.Data = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                    this.Data = c.LookupBox<Vector3>(this.Data, c.Lookup);
                     break;
                 }
 
                 case DataType.AmbientSoundID:
                 {
-                    this.Data = br.ReadGuid();
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((byte)this.Type);
-            bw.Write(this.MapID.ToByteArray());
-            switch (this.Type)
-            {
-                case DataType.Name:
-                case DataType.Folder:
-                {
-                    bw.Write((string)this.Data);
-                    break;
-                }
-
-                case DataType.GridEnabled:
-                case DataType.GridDrawn:
-                case DataType.EnableShadows:
-                case DataType.EnableDirectionalShadows:
-                case DataType.SunEnabled:
-                case DataType.DarkvisionEnabled:
-                case DataType.Is2D:
-                case DataType.EnableDrawing:
-                case DataType.Enable2DShadows:
-                {
-                    bw.Write((bool)this.Data);
-                    break;
-                }
-
-                case DataType.GridSize:
-                case DataType.GridUnits:
-                case DataType.SunYaw:
-                case DataType.SunPitch:
-                case DataType.SunIntensity:
-                case DataType.AmbietIntensity:
-                case DataType.Camera2DHeight:
-                case DataType.AmbientVolume:
-                {
-                    bw.Write((float)this.Data);
-                    break;
-                }
-
-                case DataType.GridColor:
-                case DataType.SkyColor:
-                case DataType.AmbientColor:
-                case DataType.SunColor:
-                {
-                    Color c = (Color)this.Data;
-                    uint v = c.Argb();
-                    bw.Write(v);
-                    break;
-                }
-
-                case DataType.CameraPosition:
-                case DataType.CameraDirection:
-                {
-                    Vector3 d = (Vector3)this.Data;
-                    bw.Write(d.X);
-                    bw.Write(d.Y);
-                    bw.Write(d.Z);
-                    break;
-                }
-
-                case DataType.AmbientSoundID:
-                {
-                    bw.Write((Guid)this.Data);
+                    this.Data = c.LookupBox<Guid>(this.Data, c.Lookup);
                     break;
                 }
             }

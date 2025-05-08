@@ -5,11 +5,11 @@
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketAssetDelete : PacketBase
+    public class PacketAssetDelete : PacketBaseWithCodec
     {
-        public Guid RefID { get; set; }
-
         public override uint PacketID => 62;
+
+        public Guid RefID { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -101,7 +101,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.RefID = br.ReadGuid();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.RefID);
+        public override void LookupData(Codec c) => this.RefID = c.Lookup(this.RefID);
     }
 }

@@ -1,10 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Util;
 
-    public class PacketPlaySoundAsset : PacketBase
+    public class PacketPlaySoundAsset : PacketBaseWithCodec
     {
         public override uint PacketID => 69;
 
@@ -42,16 +41,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.SoundID = br.ReadGuid();
-            this.Stop = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.SoundID);
-            bw.Write(this.Stop);
+            this.SoundID = c.Lookup(this.SoundID);
+            this.Stop = c.Lookup(this.Stop);
         }
     }
 }

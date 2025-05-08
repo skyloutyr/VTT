@@ -6,12 +6,12 @@
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketChangeTextureMetadata : PacketBase
+    public class PacketChangeTextureMetadata : PacketBaseWithCodec
     {
-        public Guid RefID { get; set; }
-        public Guid AssetID { get; set; }
         public override uint PacketID => 18;
 
+        public Guid RefID { get; set; }
+        public Guid AssetID { get; set; }
         public TextureData.Metadata Metadata { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
@@ -65,19 +65,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.RefID = br.ReadGuid();
-            this.AssetID = br.ReadGuid();
-            this.Metadata = new TextureData.Metadata();
-            this.Metadata.Deserialize(new DataElement(br));
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.RefID);
-            bw.Write(this.AssetID);
-            this.Metadata.Serialize().Write(bw);
+            this.RefID = c.Lookup(this.RefID);
+            this.AssetID = c.Lookup(this.AssetID);
+            c.Lookup(this.Metadata ??= new TextureData.Metadata());
         }
     }
 }

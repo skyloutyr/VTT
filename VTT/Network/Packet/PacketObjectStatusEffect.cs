@@ -1,19 +1,19 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketObjectStatusEffect : PacketBase
+    public class PacketObjectStatusEffect : PacketBaseWithCodec
     {
+        public override uint PacketID => 50;
+
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public string EffectName { get; set; }
         public bool Remove { get; set; }
         public float S { get; set; }
         public float T { get; set; }
-        public override uint PacketID => 50;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -74,29 +74,16 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = new Guid(br.ReadBytes(16));
-            this.ObjectID = new Guid(br.ReadBytes(16));
-            this.EffectName = br.ReadString();
-            this.Remove = br.ReadBoolean();
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.EffectName = c.Lookup(this.EffectName);
+            this.Remove = c.Lookup(this.Remove);
             if (!this.Remove)
             {
-                this.S = br.ReadSingle();
-                this.T = br.ReadSingle();
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID.ToByteArray());
-            bw.Write(this.ObjectID.ToByteArray());
-            bw.Write(this.EffectName);
-            bw.Write(this.Remove);
-            if (!this.Remove)
-            {
-                bw.Write(this.S);
-                bw.Write(this.T);
+                this.S = c.Lookup(this.S);
+                this.T = c.Lookup(this.T);
             }
         }
     }

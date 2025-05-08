@@ -1,11 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketSoundBuffer : PacketBase
+    public class PacketSoundBuffer : PacketBaseWithCodec
     {
         public override uint PacketID => 68;
         public override bool Compressed => true;
@@ -31,7 +30,7 @@
             }
             else // Got buffer response from server
             {
-                if (this.ServerReturnStatus == AssetStatus.Return && this.ServerChunkData != null)
+                if (this.ServerReturnStatus == AssetStatus.Return && this.ServerChunkData != null && this.ServerChunkData.Length > 0)
                 {
                     client.Frontend.Sound.ReceiveSoundBuffer(this.SoundID, this.AssetID, this.ChunkIndex, this.ServerChunkData);
                 }
@@ -42,30 +41,13 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.SoundID = br.ReadGuid();
-            this.AssetID = br.ReadGuid();
-            this.ChunkIndex = br.ReadInt32();
-            this.ServerReturnStatus = br.ReadEnumSmall<AssetStatus>();
-            int n = br.ReadInt32();
-            if (n > 0)
-            {
-                this.ServerChunkData = br.ReadBytes(n);
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.SoundID);
-            bw.Write(this.AssetID);
-            bw.Write(this.ChunkIndex);
-            bw.WriteEnumSmall(this.ServerReturnStatus);
-            bw.Write(this.ServerChunkData?.Length ?? 0);
-            if (this.ServerChunkData != null)
-            {
-                bw.Write(this.ServerChunkData);
-            }
+            this.SoundID = c.Lookup(this.SoundID);
+            this.AssetID = c.Lookup(this.AssetID);
+            this.ChunkIndex = c.Lookup(this.ChunkIndex);
+            this.ServerReturnStatus = c.Lookup(this.ServerReturnStatus);
+            this.ServerChunkData = c.Lookup(this.ServerChunkData);
         }
     }
 }

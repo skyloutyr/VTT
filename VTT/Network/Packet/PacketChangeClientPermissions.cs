@@ -2,16 +2,15 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using VTT.Util;
 
-    public class PacketChangeClientPermissions : PacketBase
+    public class PacketChangeClientPermissions : PacketBaseWithCodec
     {
-        public Guid ChangeeID { get; set; }
+        public override uint PacketID => 66;
+
+        public Guid ChangeeID { get; set; } // Not a typo!
         public PermissionType ChangeType { get; set; }
         public bool ChangeValue { get; set; }
-
-        public override uint PacketID => 66;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -92,18 +91,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ChangeeID = br.ReadGuid();
-            this.ChangeType = br.ReadEnumSmall<PermissionType>();
-            this.ChangeValue = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.ChangeeID);
-            bw.WriteEnumSmall(this.ChangeType);
-            bw.Write(this.ChangeValue);
+            this.ChangeeID = c.Lookup(this.ChangeeID);
+            this.ChangeType = c.Lookup(this.ChangeType);
+            this.ChangeValue = c.Lookup(this.ChangeValue);
         }
 
         public enum PermissionType

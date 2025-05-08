@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketRemoveAllDrawings : PacketBase
+    public class PacketRemoveAllDrawings : PacketBaseWithCodec
     {
-        public Guid MapID { get; set; }
         public override uint PacketID => 65;
+
+        public Guid MapID { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -46,8 +46,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.MapID = br.ReadGuid();
-
-        public override void Encode(BinaryWriter bw) => bw.Write(this.MapID);
+        public override void LookupData(Codec c) => this.MapID = c.Lookup(this.MapID);
     }
 }

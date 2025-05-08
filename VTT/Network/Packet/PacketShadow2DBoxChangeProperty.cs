@@ -1,12 +1,11 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketShadow2DBoxChangeProperty : PacketBase
+    public class PacketShadow2DBoxChangeProperty : PacketBaseWithCodec
     {
         public override uint PacketID => 75;
 
@@ -101,55 +100,28 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.BoxID = br.ReadGuid();
-            this.ChangeType = br.ReadEnumSmall<PropertyType>();
+            this.MapID = c.Lookup(this.MapID);
+            this.BoxID = c.Lookup(this.BoxID);
+            this.ChangeType = c.Lookup(this.ChangeType);
             switch (this.ChangeType)
             {
                 case PropertyType.Position:
                 {
-                    this.Property = br.ReadVec4();
+                    this.Property = c.LookupBox<Vector4>(this.Property, c.Lookup);
                     break;
                 }
 
                 case PropertyType.Rotation:
                 {
-                    this.Property = br.ReadSingle();
+                    this.Property = c.LookupBox<float>(this.Property, c.Lookup);
                     break;
                 }
 
                 case PropertyType.IsActive:
                 {
-                    this.Property = br.ReadBoolean();
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.BoxID);
-            bw.WriteEnumSmall(this.ChangeType);
-            switch (this.ChangeType)
-            {
-                case PropertyType.Position:
-                {
-                    bw.Write((Vector4)this.Property);
-                    break;
-                }
-
-                case PropertyType.Rotation:
-                {
-                    bw.Write((float)this.Property);
-                    break;
-                }
-
-                case PropertyType.IsActive:
-                {
-                    bw.Write((bool)this.Property);
+                    this.Property = c.LookupBox<bool>(this.Property, c.Lookup);
                     break;
                 }
             }

@@ -1,12 +1,12 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
 
-    public class PacketKeepalivePing : PacketBase
+    public class PacketKeepalivePing : PacketBaseWithCodec
     {
-        public bool Side { get; set; }
         public override uint PacketID => 41;
+
+        public bool Side { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -42,7 +42,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.Side = br.ReadBoolean();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.Side);
+        public override void LookupData(Codec c) => this.Side = c.Lookup(this.Side);
     }
 }

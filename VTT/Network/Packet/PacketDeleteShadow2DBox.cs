@@ -1,13 +1,13 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketDeleteShadow2DBox : PacketBase
+    public class PacketDeleteShadow2DBox : PacketBaseWithCodec
     {
         public override uint PacketID => 76;
+
         public Guid MapID { get; set; }
         public Guid BoxID { get; set; }
 
@@ -72,16 +72,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.BoxID = br.ReadGuid();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.BoxID);
+            this.MapID = c.Lookup(this.MapID);
+            this.BoxID = c.Lookup(this.BoxID);
         }
     }
 }

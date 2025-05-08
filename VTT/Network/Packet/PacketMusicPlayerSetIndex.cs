@@ -1,11 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMusicPlayerSetIndex : PacketBase
+    public class PacketMusicPlayerSetIndex : PacketBaseWithCodec
     {
         public override uint PacketID => 71;
 
@@ -60,7 +59,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.Index = br.ReadInt32();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.Index);
+        public override void LookupData(Codec c) => this.Index = c.Lookup(this.Index);
     }
 }

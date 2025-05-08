@@ -1,19 +1,19 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using System.Numerics;
     using VTT.Control;
 
-    public class PacketCameraSnap : PacketBase
+    public class PacketCameraSnap : PacketBaseWithCodec
     {
+        public override uint PacketID => 12;
+
         public Vector3 CameraPosition { get; set; }
         public Vector3 CameraDirection { get; set; }
-        public override uint PacketID => 12;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            this.            ContextLogger.Log(Util.LogLevel.Debug, "Got camera snap request");
+            this.ContextLogger.Log(Util.LogLevel.Debug, "Got camera snap request");
             if (isServer)
             {
                 this.Broadcast(c => c.ClientMapID.Equals(this.Sender.ClientMapID));
@@ -40,19 +40,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.CameraPosition = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-            this.CameraDirection = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-        }
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.CameraPosition.X);
-            bw.Write(this.CameraPosition.Y);
-            bw.Write(this.CameraPosition.Z);
-            bw.Write(this.CameraDirection.X);
-            bw.Write(this.CameraDirection.Y);
-            bw.Write(this.CameraDirection.Z);
+            this.CameraPosition = c.Lookup(this.CameraPosition);
+            this.CameraDirection = c.Lookup(this.CameraDirection);
         }
     }
 }

@@ -1,13 +1,13 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
 
-    public class PacketObjectRequest : PacketBase
+    public class PacketObjectRequest : PacketBaseWithCodec
     {
-        public Guid ObjectID { get; set; }
         public override uint PacketID => 49;
+
+        public Guid ObjectID { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -27,8 +27,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.ObjectID = new Guid(br.ReadBytes(16));
-
-        public override void Encode(BinaryWriter bw) => bw.Write(this.ObjectID.ToByteArray());
+        public override void LookupData(Codec c) => this.ObjectID = c.Lookup(this.ObjectID);
     }
 }

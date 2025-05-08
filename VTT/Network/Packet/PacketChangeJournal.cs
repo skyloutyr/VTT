@@ -1,17 +1,17 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeJournal : PacketBase
+    public class PacketChangeJournal : PacketBaseWithCodec
     {
+        public override uint PacketID => 13;
+        public override bool Compressed => true;
+
         public Guid JournalID { get; set; }
         public FieldType Change { get; set; }
         public object Value { get; set; }
-        public override uint PacketID => 13;
-        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -88,45 +88,23 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.JournalID = new Guid(br.ReadBytes(16));
-            this.Change = (FieldType)br.ReadByte();
+            this.JournalID = c.Lookup(this.JournalID);
+            this.Change = c.Lookup(this.Change);
             switch (this.Change)
             {
                 case FieldType.Title:
                 case FieldType.Text:
                 {
-                    this.Value = br.ReadString();
+                    this.Value = c.LookupBox<string>(this.Value, c.Lookup);
                     break;
                 }
 
                 case FieldType.IsEditable:
                 case FieldType.IsPublic:
                 {
-                    this.Value = br.ReadBoolean();
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.JournalID.ToByteArray());
-            bw.Write((byte)this.Change);
-            switch (this.Change)
-            {
-                case FieldType.Title:
-                case FieldType.Text:
-                {
-                    bw.Write((string)this.Value);
-                    break;
-                }
-
-                case FieldType.IsEditable:
-                case FieldType.IsPublic:
-                {
-                    bw.Write((bool)this.Value);
+                    this.Value = c.LookupBox<bool>(this.Value, c.Lookup);
                     break;
                 }
             }

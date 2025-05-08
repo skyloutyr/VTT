@@ -1,13 +1,13 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMusicPlayerAction : PacketBase
+    public class PacketMusicPlayerAction : PacketBaseWithCodec
     {
         public override uint PacketID => 72;
+
         public int IndexMain { get; set; }
         public int IndexMoveTo { get; set; }
         public (Guid, float) Data { get; set; }
@@ -153,43 +153,23 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ActionType = br.ReadEnumSmall<Type>();
-            this.IndexMain = br.ReadInt32();
+            this.ActionType = c.Lookup(this.ActionType);
+            this.IndexMain = c.Lookup(this.IndexMain);
             if (this.ActionType is Type.Add or Type.ChangeVolume or Type.PlayerVolumeChange)
             {
-                this.Data = (br.ReadGuid(), br.ReadSingle());
+                this.Data = (c.Lookup(this.Data.Item1), c.Lookup(this.Data.Item2));
             }
 
             if (this.ActionType == Type.Move)
             {
-                this.IndexMoveTo = br.ReadInt32();
+                this.IndexMoveTo = c.Lookup(this.IndexMoveTo);
             }
 
             if (this.ActionType == Type.SetMode)
             {
-                this.LoopMode = br.ReadEnumSmall<MusicPlayer.LoopMode>();
-            }
-        }
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.WriteEnumSmall(this.ActionType);
-            bw.Write(this.IndexMain);
-            if (this.ActionType is Type.Add or Type.ChangeVolume or Type.PlayerVolumeChange)
-            {
-                bw.Write(this.Data.Item1);
-                bw.Write(this.Data.Item2);
-            }
-
-            if (this.ActionType == Type.Move)
-            {
-                bw.Write(this.IndexMoveTo);
-            }
-
-            if (this.ActionType == Type.SetMode)
-            {
-                bw.WriteEnumSmall(this.LoopMode);
+                this.LoopMode = c.Lookup(this.LoopMode);
             }
         }
 

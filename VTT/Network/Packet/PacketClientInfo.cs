@@ -2,13 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
 
-    public class PacketClientInfo : PacketBase
+    public class PacketClientInfo : PacketBaseWithCodec
     {
+        public override uint PacketID => 25;
+
         public bool IsAdmin { get; set; }
         public bool IsObserver { get; set; }
-        public override uint PacketID => 25;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -23,16 +23,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.IsAdmin = br.ReadBoolean();
-            this.IsObserver = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.IsAdmin);
-            bw.Write(this.IsObserver);
+            this.IsAdmin = c.Lookup(this.IsAdmin);
+            this.IsObserver = c.Lookup(this.IsObserver);
         }
     }
 }

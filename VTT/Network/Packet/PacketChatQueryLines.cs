@@ -9,8 +9,8 @@
     public class PacketChatQueryLines : PacketBase
     {
         public const int ChatLinesRequestedForQuery = 25;
-
         public override uint PacketID => 81;
+
         public Guid QueryID { get; set; }
         public List<ChatLine> Lines { get; } = new List<ChatLine>();
 

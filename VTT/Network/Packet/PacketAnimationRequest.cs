@@ -1,11 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketAnimationRequest : PacketBase
+    public class PacketAnimationRequest : PacketBaseWithCodec
     {
         public override uint PacketID => 67;
 
@@ -94,57 +93,29 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.ObjectID = br.ReadGuid();
-            this.Action = br.ReadEnumSmall<ActionType>();
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.Action = c.Lookup(this.Action);
             switch (this.Action)
             {
                 case ActionType.TogglePause:
                 {
-                    this.Data = br.ReadBoolean();
+                    this.Data = c.LookupBox<bool>(this.Data, c.Lookup);
                     break;
                 }
 
                 case ActionType.SetDefaultAnimation:
                 case ActionType.SwitchToAnimationNow:
                 {
-                    this.Data = br.ReadString();
+                    this.Data = c.LookupBox<string>(this.Data, c.Lookup);
                     break;
                 }
 
                 case ActionType.SetPlayRate:
                 {
-                    this.Data = br.ReadSingle();
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.ObjectID);
-            bw.WriteEnumSmall(this.Action);
-            switch (this.Action)
-            {
-                case ActionType.TogglePause:
-                {
-                    bw.Write((bool)this.Data);
-                    break;
-                }
-
-                case ActionType.SetDefaultAnimation:
-                case ActionType.SwitchToAnimationNow:
-                {
-                    bw.Write((string)this.Data);
-                    break;
-                }
-
-                case ActionType.SetPlayRate:
-                {
-                    bw.Write((float)this.Data);
+                    this.Data = c.LookupBox<float>(this.Data, c.Lookup);
                     break;
                 }
             }

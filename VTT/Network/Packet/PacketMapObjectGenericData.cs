@@ -3,16 +3,16 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMapObjectGenericData : PacketBase
+    public class PacketMapObjectGenericData : PacketBaseWithCodec
     {
+        public override uint PacketID => 45;
+
         public DataType ChangeType { get; set; }
         public List<(Guid, Guid, object)> Data { get; set; } = new List<(Guid, Guid, object)>();
-        public override uint PacketID => 45;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -209,160 +209,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.ChangeType = (DataType)br.ReadByte();
-            int count = br.ReadInt32();
-            while (count-- > 0)
-            {
-                Guid mID = new Guid(br.ReadBytes(16));
-                Guid oID = new Guid(br.ReadBytes(16));
-                object o;
-                switch (this.ChangeType)
-                {
-                    case DataType.IsNameVisible:
-                    case DataType.LightsEnabled:
-                    case DataType.LightsCastShadows:
-                    case DataType.SelfCastsShadow:
-                    case DataType.IsCrossedOut:
-                    case DataType.HasCustomNameplate:
-                    case DataType.CastsShadow:
-                    case DataType.IsInfo:
-                    case DataType.DoNotDraw:
-                    case DataType.DescriptionIsMarkdown:
-                    case DataType.HideSelection:
-                    case DataType.IsShadow2DViewport:
-                    case DataType.IsShadow2DLightSource:
-                    case DataType.DisableNameplateBackground:
-                    {
-                        o = br.ReadBoolean();
-                        break;
-                    }
-
-                    case DataType.Name:
-                    case DataType.Description:
-                    case DataType.Notes:
-                    {
-                        o = br.ReadString();
-                        break;
-                    }
-
-                    case DataType.MapLayer:
-                    {
-                        o = br.ReadInt32();
-                        break;
-                    }
-
-                    case DataType.Owner:
-                    case DataType.CustomNameplateID:
-                    case DataType.ShaderID:
-                    {
-                        o = new Guid(br.ReadBytes(16));
-                        break;
-                    }
-
-                    case DataType.TintColor:
-                    case DataType.NameColor:
-                    {
-                        o = Extensions.FromArgb(br.ReadUInt32());
-                        break;
-                    }
-
-                    case DataType.Shadow2DViewportData:
-                    case DataType.Shadow2DLightSourceData:
-                    {
-                        o = br.ReadVec2();
-                        break;
-                    }
-
-                    default:
-                    {
-                        DataElement de = new DataElement();
-                        de.Read(br);
-                        o = de;
-                        break;
-                    }
-                }
-
-                this.Data.Add((mID, oID, o));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((byte)this.ChangeType);
-            bw.Write(this.Data.Count);
-            foreach ((Guid, Guid, object) d in this.Data)
-            {
-                bw.Write(d.Item1.ToByteArray());
-                bw.Write(d.Item2.ToByteArray());
-                switch (this.ChangeType)
-                {
-                    case DataType.IsNameVisible:
-                    case DataType.LightsEnabled:
-                    case DataType.LightsCastShadows:
-                    case DataType.SelfCastsShadow:
-                    case DataType.IsCrossedOut:
-                    case DataType.HasCustomNameplate:
-                    case DataType.CastsShadow:
-                    case DataType.IsInfo:
-                    case DataType.DoNotDraw:
-                    case DataType.DescriptionIsMarkdown:
-                    case DataType.HideSelection:
-                    case DataType.IsShadow2DViewport:
-                    case DataType.IsShadow2DLightSource:
-                    case DataType.DisableNameplateBackground:
-                    {
-                        bw.Write((bool)d.Item3);
-                        break;
-                    }
-
-                    case DataType.Name:
-                    case DataType.Description:
-                    case DataType.Notes:
-                    {
-                        bw.Write((string)d.Item3);
-                        break;
-                    }
-
-                    case DataType.MapLayer:
-                    {
-                        bw.Write((int)d.Item3);
-                        break;
-                    }
-
-                    case DataType.Owner:
-                    case DataType.CustomNameplateID:
-                    case DataType.ShaderID:
-                    {
-                        bw.Write(((Guid)d.Item3).ToByteArray());
-                        break;
-                    }
-
-                    case DataType.TintColor:
-                    case DataType.NameColor:
-                    {
-                        bw.Write(((Color)d.Item3).Argb());
-                        break;
-                    }
-
-                    case DataType.Properties:
-                    {
-                        DataElement de = (DataElement)d.Item3;
-                        de.Write(bw);
-                        break;
-                    }
-
-                    case DataType.Shadow2DViewportData:
-                    case DataType.Shadow2DLightSourceData:
-                    {
-                        bw.Write((Vector2)d.Item3);
-                        break;
-                    }
-                }
-            }
-        }
-
         public IEnumerable<(Map, MapObject, object)> ListObjects()
         {
             Logger l = this.IsServer ? this.Server.Logger : this.Client.Logger;
@@ -406,6 +252,87 @@
             }
 
             yield break;
+        }
+
+        public override void LookupData(Codec c)
+        {
+            this.ChangeType = c.Lookup(this.ChangeType);
+            this.Data = c.Lookup(this.Data, x => 
+            {
+                Guid i1 = c.Lookup(x.Item1);
+                Guid i2 = c.Lookup(x.Item2);
+                object i3;
+                switch (this.ChangeType)
+                {
+                    case DataType.IsNameVisible:
+                    case DataType.LightsEnabled:
+                    case DataType.LightsCastShadows:
+                    case DataType.SelfCastsShadow:
+                    case DataType.IsCrossedOut:
+                    case DataType.HasCustomNameplate:
+                    case DataType.CastsShadow:
+                    case DataType.IsInfo:
+                    case DataType.DoNotDraw:
+                    case DataType.DescriptionIsMarkdown:
+                    case DataType.HideSelection:
+                    case DataType.IsShadow2DViewport:
+                    case DataType.IsShadow2DLightSource:
+                    case DataType.DisableNameplateBackground:
+                    {
+                        i3 = c.LookupBox<bool>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.Name:
+                    case DataType.Description:
+                    case DataType.Notes:
+                    {
+                        i3 = c.LookupBox<string>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.MapLayer:
+                    {
+                        i3 = c.LookupBox<int>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.Owner:
+                    case DataType.CustomNameplateID:
+                    case DataType.ShaderID:
+                    {
+                        i3 = c.LookupBox<Guid>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.TintColor:
+                    case DataType.NameColor:
+                    {
+                        i3 = c.LookupBox<Color>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.Properties:
+                    {
+                        i3 = c.Lookup(x.Item3 as DataElement);
+                        break;
+                    }
+
+                    case DataType.Shadow2DViewportData:
+                    case DataType.Shadow2DLightSourceData:
+                    {
+                        i3 = c.LookupBox<Vector2>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    default:
+                    {
+                        throw new NotSupportedException($"The specified DataType {this.ChangeType} doesn't have a conversion defined!");
+                    }
+                }
+
+                return x = (i1, i2, i3);
+            });
         }
 
         public enum DataType

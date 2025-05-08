@@ -6,14 +6,15 @@
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketAssetUpload : PacketBase
+    public class PacketAssetUpload : PacketBaseWithCodec
     {
+        public override uint PacketID => 10;
+        public override bool Compressed => true;
+
         public byte[] AssetBinary { get; set; }
         public byte[] AssetPreview { get; set; }
         public string Path { get; set; }
         public AssetMetadata Meta { get; set; }
-        public override uint PacketID => 10;
-        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -46,25 +47,12 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.AssetBinary = br.ReadBytes(br.ReadInt32());
-            this.AssetPreview = br.ReadBytes(br.ReadInt32());
-            this.Path = br.ReadString();
-            this.Meta = new AssetMetadata();
-            DataElement e = new DataElement(br);
-            this.Meta.Deserialize(e);
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.AssetBinary.Length);
-            bw.Write(this.AssetBinary);
-            bw.Write(this.AssetPreview.Length);
-            bw.Write(this.AssetPreview);
-            bw.Write(this.Path);
-            DataElement e = this.Meta.Serialize();
-            e.Write(bw);
+            this.AssetBinary = c.Lookup(this.AssetBinary);
+            this.AssetPreview = c.Lookup(this.AssetPreview);
+            this.Path = c.Lookup(this.Path);
+            c.Lookup(this.Meta ??= new AssetMetadata());
         }
     }
 }

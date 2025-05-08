@@ -10,7 +10,6 @@
     using System.Numerics;
     using System.Runtime.InteropServices;
     using System.Text;
-    using System.Xml.Linq;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.GLFW;

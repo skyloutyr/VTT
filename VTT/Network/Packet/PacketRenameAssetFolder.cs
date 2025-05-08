@@ -4,11 +4,12 @@
     using System.IO;
     using VTT.Asset;
 
-    public class PacketRenameAssetFolder : PacketBase
+    public class PacketRenameAssetFolder : PacketBaseWithCodec
     {
+        public override uint PacketID => 53;
+
         public string Path { get; set; }
         public string Name { get; set; }
-        public override uint PacketID => 53;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -52,16 +53,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Path = br.ReadString();
-            this.Name = br.ReadString();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Path);
-            bw.Write(this.Name);
+            this.Path = c.Lookup(this.Path);
+            this.Name = c.Lookup(this.Name);
         }
     }
 }

@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketDeleteTurnEntry : PacketBase
+    public class PacketDeleteTurnEntry : PacketBaseWithCodec
     {
-        public int EntryIndex { get; set; }
         public override uint PacketID => 34;
+
+        public int EntryIndex { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -41,8 +41,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.EntryIndex = br.ReadInt32();
-
-        public override void Encode(BinaryWriter bw) => bw.Write(this.EntryIndex);
+        public override void LookupData(Codec c) => this.EntryIndex = c.Lookup(this.EntryIndex);
     }
 }

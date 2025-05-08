@@ -1,10 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Util;
 
-    public class PacketChatQuery : PacketBase
+    public class PacketChatQuery : PacketBaseWithCodec
     {
         public override uint PacketID => 80;
 
@@ -25,18 +24,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.QueryID = br.ReadGuid();
-            this.ConstructNewQuery = br.ReadBoolean();
-            this.QueryData = new DataElement(br);
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.QueryID);
-            bw.Write(this.ConstructNewQuery);
-            this.QueryData.Write(bw);
+            this.QueryID = c.Lookup(this.QueryID);
+            this.ConstructNewQuery = c.Lookup(this.ConstructNewQuery);
+            this.QueryData = c.Lookup(this.QueryData);
         }
     }
 }

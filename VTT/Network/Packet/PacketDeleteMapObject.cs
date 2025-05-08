@@ -2,15 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    internal class PacketDeleteMapObject : PacketBase
+    internal class PacketDeleteMapObject : PacketBaseWithCodec
     {
-        public List<(Guid, Guid)> DeletedObjects { get; set; } = new List<(Guid, Guid)>();
-        public Guid SenderID { get; set; }
         public override uint PacketID => 33;
+
+        public List<(Guid, Guid)> DeletedObjects { get; set; } = new List<(Guid, Guid)>();
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -49,7 +48,7 @@
                 }
 
                 server.Logger.Log(LogLevel.Info, "Notifying clients of " + broadcastChanges.Count + " deletions");
-                new PacketDeleteMapObject() { DeletedObjects = broadcastChanges, SenderID = this.SenderID }.Broadcast();
+                new PacketDeleteMapObject() { DeletedObjects = broadcastChanges }.Broadcast();
             }
             else
             {
@@ -76,27 +75,14 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.SenderID = new Guid(br.ReadBytes(16));
-            int amt = br.ReadInt32();
-            while (amt-- > 0)
+            this.DeletedObjects = c.Lookup(this.DeletedObjects, x =>
             {
-                Guid mID = new Guid(br.ReadBytes(16));
-                Guid oID = new Guid(br.ReadBytes(16));
-                this.DeletedObjects.Add((mID, oID));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.SenderID.ToByteArray());
-            bw.Write(this.DeletedObjects.Count);
-            foreach ((Guid, Guid) id in this.DeletedObjects)
-            {
-                bw.Write(id.Item1.ToByteArray());
-                bw.Write(id.Item2.ToByteArray());
-            }
+                Guid i1 = c.Lookup(x.Item1);
+                Guid i2 = c.Lookup(x.Item2);
+                return x = (i1, i2);
+            });
         }
     }
 }

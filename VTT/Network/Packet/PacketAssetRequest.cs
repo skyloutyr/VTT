@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Asset;
 
-    public class PacketAssetRequest : PacketBase
+    public class PacketAssetRequest : PacketBaseWithCodec
     {
+        public override uint PacketID => 7;
+
         public Guid AssetID { get; set; }
         public AssetType AssetType { get; set; }
-        public override uint PacketID => 7;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -47,16 +47,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.AssetID = new Guid(br.ReadBytes(16));
-            this.AssetType = (AssetType)br.ReadInt32();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.AssetID.ToByteArray());
-            bw.Write((int)this.AssetType);
+            this.AssetID = c.Lookup(this.AssetID);
+            this.AssetType = c.Lookup(this.AssetType);
         }
     }
 }

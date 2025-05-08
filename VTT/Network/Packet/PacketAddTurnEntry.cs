@@ -1,18 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Network.UndoRedo;
     using VTT.Util;
 
-    public class PacketAddTurnEntry : PacketBase
+    public class PacketAddTurnEntry : PacketBaseWithCodec
     {
+        public override uint PacketID => 2;
+
         public Guid ObjectID { get; set; }
         public float Value { get; set; }
         public string TeamName { get; set; }
         public int AdditionIndex { get; set; }
-        public override uint PacketID => 2;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -47,20 +47,12 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ObjectID = new Guid(br.ReadBytes(16));
-            this.Value = br.ReadSingle();
-            this.TeamName = br.ReadString();
-            this.AdditionIndex = br.ReadInt32();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.ObjectID.ToByteArray());
-            bw.Write(this.Value);
-            bw.Write(this.TeamName);
-            bw.Write(this.AdditionIndex);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.Value = c.Lookup(this.Value);
+            this.TeamName = c.Lookup(this.TeamName);
+            this.AdditionIndex = c.Lookup(this.AdditionIndex);
         }
     }
 }

@@ -1,16 +1,16 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeObjectAsset : PacketBase
+    public class PacketChangeObjectAsset : PacketBaseWithCodec
     {
+        public override uint PacketID => 16;
+
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public Guid AssetID { get; set; }
-        public override uint PacketID => 16;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -72,18 +72,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.ObjectID = br.ReadGuid();
-            this.AssetID = br.ReadGuid();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.ObjectID);
-            bw.Write(this.AssetID);
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.AssetID = c.Lookup(this.AssetID);
         }
     }
 }

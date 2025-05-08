@@ -1,11 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
-    using VTT.Util;
 
-    public class PacketChatReaction : PacketBase
+    public class PacketChatReaction : PacketBaseWithCodec
     {
         public override uint PacketID => 79;
 
@@ -39,20 +37,12 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Reacter = br.ReadGuid();
-            this.CLIndex = br.ReadInt32();
-            this.EmojiIndex = br.ReadInt32();
-            this.IsAddition = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Reacter);
-            bw.Write(this.CLIndex);
-            bw.Write(this.EmojiIndex);
-            bw.Write(this.IsAddition);
+            this.Reacter = c.Lookup(this.Reacter);
+            this.CLIndex = c.Lookup(this.CLIndex);
+            this.EmojiIndex = c.Lookup(this.EmojiIndex);
+            this.IsAddition = c.Lookup(this.IsAddition);
         }
     }
 }

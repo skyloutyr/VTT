@@ -1,17 +1,16 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeTurnEntryProperty : PacketBase
+    public class PacketChangeTurnEntryProperty : PacketBaseWithCodec
     {
-        public ChangeType Type { get; set; }
+        public override uint PacketID => 19;
 
+        public ChangeType Type { get; set; }
         public int EntryIndex { get; set; }
         public Guid EntryRefID { get; set; }
-
         public string NewTeam { get; set; }
         public string ValueExpression
         {
@@ -20,7 +19,6 @@
         }
 
         public float NewValue { get; set; }
-        public override uint PacketID => 19;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -108,33 +106,18 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Type = (ChangeType)br.ReadByte();
-            this.EntryIndex = br.ReadInt32();
-            this.EntryRefID = new Guid(br.ReadBytes(16));
+            this.Type = c.Lookup(this.Type);
+            this.EntryIndex = c.Lookup(this.EntryIndex);
+            this.EntryRefID = c.Lookup(this.EntryRefID);
             if (this.Type is ChangeType.Team or ChangeType.ValueExpression)
             {
-                this.NewTeam = br.ReadString();
+                this.NewTeam = c.Lookup(this.NewTeam);
             }
             else
             {
-                this.NewValue = br.ReadSingle();
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((byte)this.Type);
-            bw.Write(this.EntryIndex);
-            bw.Write(this.EntryRefID.ToByteArray());
-            if (this.Type is ChangeType.Team or ChangeType.ValueExpression)
-            {
-                bw.Write(this.NewTeam);
-            }
-            else
-            {
-                bw.Write(this.NewValue);
+                this.NewValue = c.Lookup(this.NewValue);
             }
         }
 

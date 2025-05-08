@@ -1,15 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketCommunique : PacketBase
+    /// <summary>
+    /// Obsolete without the attribute for now - was supposed to be a generic two way message for communications but there was never a need for such a packet.
+    /// </summary>
+    public class PacketCommunique : PacketBaseWithCodec
     {
+        public override uint PacketID => 27;
+
         public RequestType Request { get; set; }
         public int RequestData { get; set; }
-        public override uint PacketID => 27;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -63,16 +66,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Request = (RequestType)br.ReadInt32();
-            this.RequestData = br.ReadInt32();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((int)this.Request);
-            bw.Write(this.RequestData);
+            this.Request = c.Lookup(this.Request);
+            this.RequestData = c.Lookup(this.RequestData);
         }
     }
 

@@ -1,19 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketDarkvisionData : PacketBase
+    public class PacketDarkvisionData : PacketBaseWithCodec
     {
+        public override uint PacketID => 30;
+
         public Guid MapID { get; set; }
         public Guid PlayerID { get; set; }
         public Guid ObjectID { get; set; }
         public float Value { get; set; }
-
         public bool Deletion { get; set; }
-        public override uint PacketID => 30;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -64,27 +63,15 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = new Guid(br.ReadBytes(16));
-            this.PlayerID = new Guid(br.ReadBytes(16));
-            this.Deletion = br.ReadBoolean();
+            this.MapID = c.Lookup(this.MapID);
+            this.PlayerID = c.Lookup(this.PlayerID);
+            this.Deletion = c.Lookup(this.Deletion);
             if (!this.Deletion)
             {
-                this.ObjectID = new Guid(br.ReadBytes(16));
-                this.Value = br.ReadSingle();
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID.ToByteArray());
-            bw.Write(this.PlayerID.ToByteArray());
-            bw.Write(this.Deletion);
-            if (!this.Deletion)
-            {
-                bw.Write(this.ObjectID.ToByteArray());
-                bw.Write(this.Value);
+                this.ObjectID = c.Lookup(this.ObjectID);
+                this.Value = c.Lookup(this.Value);
             }
         }
     }

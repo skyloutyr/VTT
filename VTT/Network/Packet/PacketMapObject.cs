@@ -1,15 +1,15 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMapObject : PacketBase
+    public class PacketMapObject : PacketBaseWithCodec
     {
-        public MapObject Obj { get; set; }
         public override uint PacketID => 43;
         public override bool Compressed => true;
+
+        public MapObject Obj { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -74,18 +74,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.Obj = new MapObject();
-            DataElement de = new DataElement();
-            de.Read(br);
-            this.Obj.Deserialize(de);
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            DataElement de = this.Obj.Serialize();
-            de.Write(bw);
-        }
+        public override void LookupData(Codec c) => c.Lookup(this.Obj ??= new MapObject());
     }
 }

@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChatMessage : PacketBase
+    public class PacketChatMessage : PacketBaseWithCodec
     {
-        public string Message { get; set; }
         public override uint PacketID => 21;
+
+        public string Message { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -37,7 +37,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.Message = br.ReadString();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.Message);
+        public override void LookupData(Codec c) => this.Message = c.Lookup(this.Message);
     }
 }

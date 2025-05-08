@@ -5,7 +5,6 @@
     using System.Numerics;
     using VTT.Asset;
     using VTT.Control;
-    using VTT.GL;
     using VTT.Network;
     using VTT.Render.Gui;
     using VTT.Util;

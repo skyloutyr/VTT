@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Util;
 
-    public class PacketClientOnlineNotification : PacketBase
+    public class PacketClientOnlineNotification : PacketBaseWithCodec
     {
+        public override uint PacketID => 26;
+
         public Guid ClientID { get; set; }
         public bool Status { get; set; }
-        public override uint PacketID => 26;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -25,16 +25,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ClientID = br.ReadGuid();
-            this.Status = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.ClientID);
-            bw.Write(this.Status);
+            this.ClientID = c.Lookup(this.ClientID);
+            this.Status = c.Lookup(this.Status);
         }
     }
 }

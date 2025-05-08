@@ -1,18 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Asset;
 
-    public class PacketAssetResponse : PacketBase
+    public class PacketAssetResponse : PacketBaseWithCodec
     {
+        public override uint PacketID => 8;
+        public override bool Compressed => true;
+
         public Guid AssetID { get; set; }
         public byte[] Binary { get; set; }
         public AssetMetadata Metadata { get; set; }
         public AssetType AssetType { get; set; }
         public AssetResponseType ResponseType { get; set; }
-        public override uint PacketID => 8;
-        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -31,23 +31,13 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.AssetID = new Guid(br.ReadBytes(16));
-            this.AssetType = (AssetType)br.ReadInt32();
-            this.ResponseType = (AssetResponseType)br.ReadInt32();
-            this.Binary = br.ReadBytes(br.ReadInt32());
-            this.Metadata = new AssetMetadata(br);
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.AssetID.ToByteArray());
-            bw.Write((int)this.AssetType);
-            bw.Write((int)this.ResponseType);
-            bw.Write(this.Binary.Length);
-            bw.Write(this.Binary);
-            this.Metadata.Serialize().Write(bw);
+            this.AssetID = c.Lookup(this.AssetID);
+            this.AssetType = c.Lookup(this.AssetType);
+            this.ResponseType = c.Lookup(this.ResponseType);
+            this.Binary = c.Lookup(this.Binary);
+            c.Lookup(this.Metadata ??= new AssetMetadata());
         }
     }
 }

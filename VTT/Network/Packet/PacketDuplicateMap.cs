@@ -1,11 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketDuplicateMap : PacketBase
+    public class PacketDuplicateMap : PacketBaseWithCodec
     {
         public override uint PacketID => 82;
 
@@ -44,7 +43,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.MapID = br.ReadGuid();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.MapID);
+        public override void LookupData(Codec c) => this.MapID = c.Lookup(this.MapID);
     }
 }

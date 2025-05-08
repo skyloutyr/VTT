@@ -5,7 +5,6 @@
     using System.Text;
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
-    using VTT.GL;
     using VTT.Network;
     using VTT.Render;
     using VTT.Sound;

@@ -516,7 +516,7 @@
 
                     if (ImGui.MenuItem(lang.Translate("ui.popup.object_actions.delete") + "###Delete"))
                     {
-                        PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
+                        PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), IsServer = false, Session = Client.Instance.SessionID };
                         pdmo.Send();
                     }
 

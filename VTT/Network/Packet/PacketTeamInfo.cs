@@ -2,17 +2,17 @@
 {
     using SixLabors.ImageSharp;
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketTeamInfo : PacketBase
+    public class PacketTeamInfo : PacketBaseWithCodec
     {
+        public override uint PacketID => 57;
+
         public ActionType Action { get; set; }
         public string Name { get; set; }
         public int Index { get; set; }
         public Color Color { get; set; }
-        public override uint PacketID => 57;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -103,33 +103,18 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Action = (ActionType)br.ReadByte();
-            this.Name = br.ReadString();
+            this.Action = c.Lookup(this.Action);
+            this.Name = c.Lookup(this.Name);
             if (this.Action is ActionType.Add or ActionType.UpdateColor)
             {
-                this.Color = Extensions.FromArgb(br.ReadUInt32());
+                this.Color = c.Lookup(this.Color);
             }
 
             if (this.Action == ActionType.UpdateName)
             {
-                this.Index = br.ReadInt32();
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((byte)this.Action);
-            bw.Write(this.Name);
-            if (this.Action is ActionType.Add or ActionType.UpdateColor)
-            {
-                bw.Write(this.Color.Argb());
-            }
-
-            if (this.Action == ActionType.UpdateName)
-            {
-                bw.Write(this.Index);
+                this.Index = c.Lookup(this.Index);
             }
         }
 

@@ -1,13 +1,12 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using System.Numerics;
     using VTT.Control;
     using VTT.Network.UndoRedo;
     using VTT.Util;
 
-    public class PacketAddOrUpdateDrawing : PacketBase
+    public class PacketAddOrUpdateDrawing : PacketBaseWithCodec
     {
         public override uint PacketID => 63;
 
@@ -81,19 +80,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            DataElement de = new DataElement(br);
-            this.DPC = new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, Vector4.Zero);
-            this.DPC.Deserialize(de);
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            DataElement de = DPC.Serialize();
-            de.Write(bw);
+            this.MapID = c.Lookup(this.MapID);
+            c.Lookup(this.DPC ??= new DrawingPointContainer(Guid.Empty, Guid.Empty, 0, Vector4.Zero));
         }
     }
 }

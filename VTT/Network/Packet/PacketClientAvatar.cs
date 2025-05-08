@@ -4,9 +4,8 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
-    using System.IO;
 
-    public class PacketClientAvatar : PacketBase
+    public class PacketClientAvatar : PacketBaseWithCodec
     {
         public override uint PacketID => 73;
 
@@ -33,30 +32,6 @@
             new PacketClientData() { InfosToUpdate = new List<ClientInfo>() { value } }.Broadcast();
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            int len = br.ReadInt32();
-            if (len != 0)
-            {
-                byte[] arr = br.ReadBytes(len);
-                this.Image = SixLabors.ImageSharp.Image.Load<Rgba32>(arr);
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            if (this.Image != null)
-            {
-                using MemoryStream ms = new MemoryStream();
-                this.Image.SaveAsPng(ms);
-                byte[] arr = ms.ToArray();
-                bw.Write(arr.Length);
-                bw.Write(arr);
-            }
-            else
-            {
-                bw.Write(0);
-            }
-        }
+        public override void LookupData(Codec c) => this.Image = c.Lookup(this.Image);
     }
 }

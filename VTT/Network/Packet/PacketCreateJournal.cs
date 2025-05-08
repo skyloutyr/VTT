@@ -1,16 +1,16 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketCreateJournal : PacketBase
+    public class PacketCreateJournal : PacketBaseWithCodec
     {
+        public override uint PacketID => 28;
+
         public Guid JournalID { get; set; }
         public Guid CreatorID { get; set; }
         public string Title { get; set; }
-        public override uint PacketID => 28;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -45,18 +45,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.JournalID = new Guid(br.ReadBytes(16));
-            this.CreatorID = new Guid(br.ReadBytes(16));
-            this.Title = br.ReadString();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.JournalID.ToByteArray());
-            bw.Write(this.CreatorID.ToByteArray());
-            bw.Write(this.Title);
+            this.JournalID = c.Lookup(this.JournalID);
+            this.CreatorID = c.Lookup(this.CreatorID);
+            this.Title = c.Lookup(this.Title);
         }
     }
 }

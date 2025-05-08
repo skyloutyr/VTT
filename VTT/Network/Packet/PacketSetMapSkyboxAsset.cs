@@ -1,11 +1,10 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketSetMapSkyboxAsset : PacketBase
+    public class PacketSetMapSkyboxAsset : PacketBaseWithCodec
     {
         public override uint PacketID => 83;
 
@@ -47,18 +46,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.IsNightSkybox = br.ReadBoolean();
-            this.AssetID = br.ReadGuid();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.IsNightSkybox);
-            bw.Write(this.AssetID);
+            this.MapID = c.Lookup(this.MapID);
+            this.IsNightSkybox = c.Lookup(this.IsNightSkybox);
+            this.AssetID = c.Lookup(this.AssetID);
         }
     }
 }

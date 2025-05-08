@@ -1,16 +1,16 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketRemoveDrawing : PacketBase
+    public class PacketRemoveDrawing : PacketBaseWithCodec
     {
+        public override uint PacketID => 64;
+
         public Guid MapID { get; set; }
         public Guid DrawingID { get; set; }
 
-        public override uint PacketID => 64;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -74,16 +74,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.DrawingID = br.ReadGuid();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.DrawingID);
+            this.MapID = c.Lookup(this.MapID);
+            this.DrawingID = c.Lookup(this.DrawingID);
         }
     }
 }

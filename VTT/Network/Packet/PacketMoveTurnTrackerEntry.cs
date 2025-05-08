@@ -1,15 +1,15 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMoveTurnTrackerEntry : PacketBase
+    public class PacketMoveTurnTrackerEntry : PacketBaseWithCodec
     {
+        public override uint PacketID => 48;
+
         public int IndexFrom { get; set; }
         public int IndexTo { get; set; }
-        public override uint PacketID => 48;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -41,17 +41,10 @@
             }
         }
 
-
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.IndexFrom = br.ReadInt32();
-            this.IndexTo = br.ReadInt32();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.IndexFrom);
-            bw.Write(this.IndexTo);
+            this.IndexFrom = c.Lookup(this.IndexFrom);
+            this.IndexTo = c.Lookup(this.IndexTo);
         }
     }
 }

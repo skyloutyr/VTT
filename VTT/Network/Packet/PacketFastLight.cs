@@ -1,19 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
-    using SixLabors.ImageSharp;
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketFastLight : PacketBase
+    public class PacketFastLight : PacketBaseWithCodec
     {
+        public override uint PacketID => 60;
+
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public int Index { get; set; }
         public FastLight Light { get; set; }
         public Action ActionType { get; set; }
-        public override uint PacketID => 60;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -92,38 +91,19 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.ObjectID = br.ReadGuid();
-            this.ActionType = br.ReadEnumSmall<Action>();
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.ActionType = c.Lookup(this.ActionType);
             if (this.ActionType != Action.Add)
             {
-                this.Index = br.ReadInt32();
+                this.Index = c.Lookup(this.Index);
             }
 
             if (this.ActionType != Action.Delete)
             {
-                DataElement de = new DataElement();
-                de.Read(br);
-                this.Light = FastLight.FromData(de);
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.ObjectID);
-            bw.WriteEnumSmall(this.ActionType);
-            if (this.ActionType != Action.Add)
-            {
-                bw.Write(this.Index);
-            }
-
-            if (this.ActionType != Action.Delete)
-            {
-                DataElement de = this.Light.Serialize();
-                de.Write(bw);
+                c.Lookup(this.Light ??= new FastLight());
             }
         }
 

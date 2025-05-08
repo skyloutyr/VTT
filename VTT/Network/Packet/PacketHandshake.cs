@@ -1,17 +1,17 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using System.Linq;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketHandshake : PacketBase
+    public class PacketHandshake : PacketBaseWithCodec
     {
+        public override uint PacketID => 0;
+
         public Guid ClientID { get; set; }
         public ulong ClientVersion { get; set; }
         public byte[] ClientSecret { get; set; }
-        public override uint PacketID => 0;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -156,21 +156,14 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ClientID = br.ReadGuid();
-            this.ClientVersion = br.ReadUInt64();
-            if (br.BaseStream.CanRead)
+            this.ClientID = c.Lookup(this.ClientID);
+            this.ClientVersion = c.Lookup(this.ClientVersion);
+            if (c.Lookup(this.ClientSecret != null))
             {
-                this.ClientSecret = br.ReadBytes(32);
+                this.ClientSecret = c.Lookup(this.ClientSecret);
             }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.ClientID);
-            bw.Write(this.ClientVersion);
-            bw.Write(this.ClientSecret);
         }
     }
 

@@ -4,15 +4,15 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
-    using System.IO;
 
-    public class PacketFOWData : PacketBase
+    public class PacketFOWData : PacketBaseWithCodec
     {
+        public override uint PacketID => 37;
+        public override bool Compressed => true;
+
         public bool Status { get; set; }
         public Guid MapID { get; set; }
         public Image<Rgba64> Image { get; set; }
-        public override uint PacketID => 37;
-        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -38,23 +38,13 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Status = br.ReadBoolean();
-            this.MapID = new Guid(br.ReadBytes(16));
+            this.Status = c.Lookup(this.Status);
+            this.MapID = c.Lookup(this.MapID);
             if (this.Status)
             {
-                this.Image = SixLabors.ImageSharp.Image.Load<Rgba64>(br.BaseStream);
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Status);
-            bw.Write(this.MapID.ToByteArray());
-            if (this.Status)
-            {
-                this.Image.SaveAsPng(bw.BaseStream);
+                this.Image = c.Lookup(this.Image);
             }
         }
     }

@@ -46,7 +46,7 @@
 
                         if (this.DeleteIcon.ImImageButton("btnDeleteObject", new Vector2(16, 16)) && canEdit)
                         {
-                            PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = SelectedToPacket2(os), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
+                            PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = SelectedToPacket2(os), IsServer = false, Session = Client.Instance.SessionID };
                             pdmo.Send();
                         }
 

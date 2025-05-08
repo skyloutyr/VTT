@@ -1,18 +1,17 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketAssetDef : PacketBase
+    public class PacketAssetDef : PacketBaseWithCodec
     {
+        public override uint PacketID => 3;
+
         public AssetDefActionType ActionType { get; set; }
         public AssetDirectory Dir { get; set; }
         public AssetRef Ref { get; set; }
         public string Root { get; set; }
-        public override uint PacketID => 3;
-
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -78,81 +77,35 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.ActionType = (AssetDefActionType)br.ReadInt32();
+            this.ActionType = c.Lookup(this.ActionType);
             switch (this.ActionType)
             {
                 case AssetDefActionType.Initialize:
                 {
-                    DataElement e = new DataElement();
-                    this.Dir = new AssetDirectory();
-                    e.Read(br);
-                    this.Dir.Deserialize(e);
+                    c.Lookup(this.Dir ??= new AssetDirectory());
                     break;
                 }
 
                 case AssetDefActionType.Add:
                 case AssetDefActionType.Remove:
                 {
-                    this.Root = br.ReadString();
-                    DataElement e = new DataElement();
-                    e.Read(br);
-                    this.Ref = new AssetRef();
-                    this.Ref.Deserialize(e);
+                    this.Root = c.Lookup(this.Root);
+                    c.Lookup(this.Ref ??= new AssetRef());
                     break;
                 }
 
                 case AssetDefActionType.AddDir:
                 {
-                    this.Root = br.ReadString();
-                    DataElement e = new DataElement();
-                    e.Read(br);
-                    this.Dir = new AssetDirectory();
-                    this.Dir.Deserialize(e);
+                    this.Root = c.Lookup(this.Root);
+                    c.Lookup(this.Dir ??= new AssetDirectory());
                     break;
                 }
 
                 case AssetDefActionType.RemoveDir:
                 {
-                    this.Root = br.ReadString();
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((int)this.ActionType);
-            switch (this.ActionType)
-            {
-                case AssetDefActionType.Initialize:
-                {
-                    DataElement e = this.Dir.Serialize();
-                    e.Write(bw);
-                    break;
-                }
-
-                case AssetDefActionType.Add:
-                case AssetDefActionType.Remove:
-                {
-                    bw.Write(this.Root);
-                    DataElement e = this.Ref.Serialize();
-                    e.Write(bw);
-                    break;
-                }
-
-                case AssetDefActionType.AddDir:
-                {
-                    bw.Write(this.Root);
-                    DataElement e = this.Dir.Serialize();
-                    e.Write(bw);
-                    break;
-                }
-
-                case AssetDefActionType.RemoveDir:
-                {
-                    bw.Write(this.Root);
+                    this.Root = c.Lookup(this.Root);
                     break;
                 }
             }

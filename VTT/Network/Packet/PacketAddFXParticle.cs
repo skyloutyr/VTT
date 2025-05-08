@@ -1,11 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using System.Numerics;
-    using VTT.Util;
 
-    public class PacketAddFXParticle : PacketBase
+    public class PacketAddFXParticle : PacketBaseWithCodec
     {
         public override uint PacketID => 74;
 
@@ -28,18 +26,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.SystemID = br.ReadGuid();
-            this.NumParticles = br.ReadInt32();
-            this.Location = br.ReadVec3();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.SystemID);
-            bw.Write(this.NumParticles);
-            bw.Write(this.Location);
+            this.SystemID = c.Lookup(this.SystemID);
+            this.NumParticles = c.Lookup(this.NumParticles);
+            this.Location = c.Lookup(this.Location);
         }
     }
 }

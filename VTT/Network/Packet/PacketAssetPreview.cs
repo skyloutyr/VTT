@@ -5,11 +5,12 @@
 
     public class PacketAssetPreview : PacketBase
     {
+        public override uint PacketID => 5;
+        public override bool Compressed => true;
+
         public Guid ID { get; set; }
         public byte[] ImageBinary { get; set; }
         public AssetResponseType Response { get; set; }
-        public override uint PacketID => 5;
-        public override bool Compressed => true;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {

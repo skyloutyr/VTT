@@ -1,14 +1,14 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMoveTurnToIndex : PacketBase
+    public class PacketMoveTurnToIndex : PacketBaseWithCodec
     {
-        public int Index { get; set; }
         public override uint PacketID => 47;
+
+        public int Index { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -37,7 +37,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br) => this.Index = br.ReadInt32();
-        public override void Encode(BinaryWriter bw) => bw.Write(this.Index);
+        public override void LookupData(Codec c) => this.Index = c.Lookup(this.Index);
     }
 }

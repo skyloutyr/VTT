@@ -6,11 +6,12 @@
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketAssetRename : PacketBase
+    public class PacketAssetRename : PacketBaseWithCodec
     {
+        public override uint PacketID => 6;
+
         public Guid RefID { get; set; }
         public string Name { get; set; }
-        public override uint PacketID => 6;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -96,16 +97,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.RefID = new Guid(br.ReadBytes(16));
-            this.Name = br.ReadString();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.RefID.ToByteArray());
-            bw.Write(this.Name);
+            this.RefID = c.Lookup(this.RefID);
+            this.Name = c.Lookup(this.Name);
         }
     }
 }

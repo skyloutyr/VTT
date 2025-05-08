@@ -4,12 +4,13 @@
     using System.IO;
     using VTT.Asset;
 
-    public class PacketAddRemoveAssetFolder : PacketBase
+    public class PacketAddRemoveAssetFolder : PacketBaseWithCodec
     {
+        public override uint PacketID => 1;
+
         public string Path { get; set; } // Where to add/remove
         public string Name { get; set; } // Name of thing to add/remove
         public bool Remove { get; set; }
-        public override uint PacketID => 1;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -43,18 +44,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Path = br.ReadString();
-            this.Name = br.ReadString();
-            this.Remove = br.ReadBoolean();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Path);
-            bw.Write(this.Name);
-            bw.Write(this.Remove);
+            this.Path = c.Lookup(this.Path);
+            this.Name = c.Lookup(this.Name);
+            this.Remove = c.Lookup(this.Remove);
         }
     }
 }

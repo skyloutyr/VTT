@@ -1,15 +1,15 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketFullJournal : PacketBase
+    public class PacketFullJournal : PacketBaseWithCodec
     {
-        public TextJournal Journal { get; set; }
         public override uint PacketID => 39;
         public override bool Compressed => true;
+
+        public TextJournal Journal { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -42,12 +42,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            this.Journal = new TextJournal();
-            this.Journal.Deserialize(new DataElement(br));
-        }
-
-        public override void Encode(BinaryWriter bw) => this.Journal.Serialize().Write(bw);
+        public override void LookupData(Codec c) => c.Lookup(this.Journal ??= new TextJournal());
     }
 }

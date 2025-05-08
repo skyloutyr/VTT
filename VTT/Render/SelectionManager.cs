@@ -51,7 +51,7 @@
             {
                 if (Client.Instance.IsAdmin)
                 {
-                    PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = this.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), SenderID = Client.Instance.ID, IsServer = false, Session = Client.Instance.SessionID };
+                    PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = this.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), IsServer = false, Session = Client.Instance.SessionID };
                     pdmo.Send();
                 }
 

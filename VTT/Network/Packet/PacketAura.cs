@@ -2,20 +2,20 @@
 {
     using SixLabors.ImageSharp;
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Network.UndoRedo;
     using VTT.Util;
 
-    public class PacketAura : PacketBase
+    public class PacketAura : PacketBaseWithCodec
     {
+        public override uint PacketID => 11;
+
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public int Index { get; set; } = -1;
         public Color AuraColor { get; set; }
         public float AuraRange { get; set; }
         public Action ActionType { get; set; }
-        public override uint PacketID => 11;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -118,37 +118,20 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.ObjectID = br.ReadGuid();
-            this.ActionType = br.ReadEnumSmall<Action>();
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.ActionType = c.Lookup(this.ActionType);
             if (this.ActionType != Action.Add)
             {
-                this.Index = br.ReadInt32();
+                this.Index = c.Lookup(this.Index);
             }
 
             if (this.ActionType != Action.Delete)
             {
-                this.AuraColor = br.ReadColor();
-                this.AuraRange = br.ReadSingle();
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.ObjectID);
-            bw.WriteEnumSmall(this.ActionType);
-            if (this.ActionType != Action.Add)
-            {
-                bw.Write(this.Index);
-            }
-
-            if (this.ActionType != Action.Delete)
-            {
-                bw.Write(this.AuraColor);
-                bw.Write(this.AuraRange);
+                this.AuraColor = c.Lookup(this.AuraColor);
+                this.AuraRange = c.Lookup(this.AuraRange);
             }
         }
 

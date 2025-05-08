@@ -1,13 +1,13 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
 
-    public class PacketRulerInfo : PacketBase
+    public class PacketRulerInfo : PacketBaseWithCodec
     {
-        public RulerInfo Info { get; set; }
         public override uint PacketID => 54;
+
+        public RulerInfo Info { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -45,14 +45,6 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
-        {
-            RulerInfo i = new RulerInfo();
-            i.SelfID = new Guid(br.ReadBytes(16));
-            i.Read(br);
-            this.Info = i;
-        }
-
-        public override void Encode(BinaryWriter bw) => this.Info.Write(bw);
+        public override void LookupData(Codec c) => c.Lookup(this.Info ??= new RulerInfo());
     }
 }

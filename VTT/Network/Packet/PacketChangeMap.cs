@@ -5,11 +5,12 @@
     using System.IO;
     using VTT.Util;
 
-    public class PacketChangeMap : PacketBase
+    public class PacketChangeMap : PacketBaseWithCodec
     {
+        public override uint PacketID => 14;
+
         public Guid NewMapID { get; set; }
         public Guid[] Clients { get; set; }
-        public override uint PacketID => 14;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -80,24 +81,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.NewMapID = new Guid(br.ReadBytes(16));
-            this.Clients = new Guid[br.ReadInt32()];
-            for (int i = 0; i < this.Clients.Length; ++i)
-            {
-                this.Clients[i] = new Guid(br.ReadBytes(16));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.NewMapID.ToByteArray());
-            bw.Write(this.Clients.Length);
-            foreach (Guid id in this.Clients)
-            {
-                bw.Write(id.ToByteArray());
-            }
+            this.NewMapID = c.Lookup(this.NewMapID);
+            this.Clients = c.Lookup(this.Clients);
         }
     }
 }

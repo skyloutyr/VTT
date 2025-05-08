@@ -2,14 +2,14 @@
 {
     using System.Numerics;
     using System;
-    using System.IO;
     using VTT.Control;
 
-    public class PacketEnableDisableFow : PacketBase
+    public class PacketEnableDisableFow : PacketBaseWithCodec
     {
+        public override uint PacketID => 36;
+
         public bool Status { get; set; }
         public Vector2 Size { get; set; }
-        public override uint PacketID => 36;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -56,17 +56,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Status = br.ReadBoolean();
-            this.Size = new Vector2(br.ReadSingle(), br.ReadSingle());
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Status);
-            bw.Write(this.Size.X);
-            bw.Write(this.Size.Y);
+            this.Status = c.Lookup(this.Status);
+            this.Size = c.Lookup(this.Size);
         }
     }
 }

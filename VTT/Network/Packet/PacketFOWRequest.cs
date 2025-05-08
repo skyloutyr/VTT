@@ -3,14 +3,14 @@
     using System.Numerics;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using VTT.Control;
 
-    public class PacketFOWRequest : PacketBase
+    public class PacketFOWRequest : PacketBaseWithCodec
     {
+        public override uint PacketID => 38;
+
         public bool RequestType { get; set; }
         public List<Vector2> Polygon { get; set; } = new List<Vector2>();
-        public override uint PacketID => 38;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -47,25 +47,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.RequestType = br.ReadBoolean();
-            int amt = br.ReadInt32();
-            while (amt-- > 0)
-            {
-                this.Polygon.Add(new Vector2(br.ReadSingle(), br.ReadSingle()));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.RequestType);
-            bw.Write(this.Polygon.Count);
-            foreach (Vector2 v in this.Polygon)
-            {
-                bw.Write(v.X);
-                bw.Write(v.Y);
-            }
+            this.RequestType = c.Lookup(this.RequestType);
+            this.Polygon = c.Lookup(this.Polygon, c.Lookup);
         }
     }
 }

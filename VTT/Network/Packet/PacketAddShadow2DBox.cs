@@ -1,13 +1,13 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketAddShadow2DBox : PacketBase
+    public class PacketAddShadow2DBox : PacketBaseWithCodec
     {
         public override uint PacketID => 77;
+
         public Guid MapID { get; set; }
         public Shadow2DBox Box { get; set; }
 
@@ -72,17 +72,10 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.Box = new Shadow2DBox();
-            this.Box.Deserialize(new DataElement(br));
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            this.Box.Serialize().Write(bw);
+            this.MapID = c.Lookup(this.MapID);
+            c.Lookup(this.Box ??= new Shadow2DBox());
         }
     }
 }

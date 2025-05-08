@@ -1,18 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketParticleContainer : PacketBase
+    public class PacketParticleContainer : PacketBaseWithCodec
     {
+        public override uint PacketID => 51;
+
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
         public Guid ParticleID { get; set; }
         public Action ActionType { get; set; }
         public DataElement Container { get; set; }
-        public override uint PacketID => 51;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -94,57 +94,29 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MapID = br.ReadGuid();
-            this.ObjectID = br.ReadGuid();
-            this.ActionType = br.ReadEnumSmall<Action>();
+            this.MapID = c.Lookup(this.MapID);
+            this.ObjectID = c.Lookup(this.ObjectID);
+            this.ActionType = c.Lookup(this.ActionType);
             switch (this.ActionType)
             {
                 case Action.Delete:
                 {
-                    this.ParticleID = br.ReadGuid();
+                    this.ParticleID = c.Lookup(this.ParticleID);
                     break;
                 }
 
                 case Action.Add:
                 {
-                    this.Container = new DataElement(br);
+                    this.Container = c.Lookup(this.Container);
                     break;
                 }
 
                 case Action.Edit:
                 {
-                    this.ParticleID = br.ReadGuid();
-                    this.Container = new DataElement(br);
-                    break;
-                }
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MapID);
-            bw.Write(this.ObjectID);
-            bw.WriteEnumSmall(this.ActionType);
-            switch (this.ActionType)
-            {
-                case Action.Delete:
-                {
-                    bw.Write(this.ParticleID);
-                    break;
-                }
-
-                case Action.Add:
-                {
-                    this.Container.Write(bw);
-                    break;
-                }
-
-                case Action.Edit:
-                {
-                    bw.Write(this.ParticleID);
-                    this.Container.Write(bw);
+                    this.ParticleID = c.Lookup(this.ParticleID);
+                    this.Container = c.Lookup(this.Container);
                     break;
                 }
             }

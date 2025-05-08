@@ -1,6 +1,7 @@
 ﻿namespace VTT.Network.Packet
 {
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -82,6 +83,35 @@
             {
                 this.Lookup(ref value);
                 return value;
+            }
+
+            public void Lookup(ref byte[] array)
+            {
+                int amt = this.Lookup(array?.Length ?? 0);
+                if (amt > 0)
+                {
+                    if (this._isWrite)
+                    {
+                        this._bw.Write(array);
+                    }
+                    else
+                    {
+                        array = this._br.ReadBytes(amt);
+                    }
+                }
+                else
+                {
+                    if (!this._isWrite)
+                    {
+                        array = Array.Empty<byte>();
+                    }
+                }
+            }
+
+            public byte[] Lookup(byte[] array)
+            {
+                this.Lookup(ref array);
+                return array;
             }
 
             public void Lookup(ref short value)
@@ -264,6 +294,43 @@
                 return value;
             }
 
+            public void Lookup(ref Guid[] array)
+            {
+                int amt = this.Lookup(array?.Length ?? 0);
+                if (amt > 0)
+                {
+                    if (this._isWrite)
+                    {
+                        for (int i = 0; i < amt; ++i)
+                        {
+                            this._bw.Write(array[i]);
+                        }
+                    }
+                    else
+                    {
+                        array = array?.Length == amt ? array : new Guid[amt];
+                        for (int i = 0; i < amt; ++i)
+                        {
+                            array[i] = this._br.ReadGuid();
+                            this._bw.Write(array[i]);
+                        }
+                    }
+                }
+                else
+                {
+                    if (!this._isWrite)
+                    {
+                        array = Array.Empty<Guid>();
+                    }
+                }
+            }
+
+            public Guid[] Lookup(Guid[] array)
+            {
+                this.Lookup(ref array);
+                return array;
+            }
+
             public void Lookup<T>(ref T value) where T : struct, Enum
             {
                 if (this._isWrite)
@@ -419,6 +486,114 @@
             {
                 this.Lookup(ref list, serializer); 
                 return list;
+            }
+
+            public void Lookup<T>(ref T[] array, Func<T, T> serializer)
+            {
+                int cnt = this.Lookup(array?.Length ?? 0);
+                if (this._isWrite)
+                {
+                    if (cnt != 0)
+                    {
+                        for (int i = 0; i < array.Length; i++)
+                        {
+                            T item = array[i];
+                            serializer(item);
+                        }
+                    }
+                }
+                else
+                {
+                    if (array?.Length != cnt)
+                    {
+                        array = new T[cnt];
+                    }
+
+                    for (int i = 0; i < cnt; ++i)
+                    {
+                        array[i] = serializer(default);
+                    }
+                }
+            }
+
+            public T[] Lookup<T>(T[] array, Func<T, T> serializer)
+            {
+                this.Lookup(ref array, serializer);
+                return array;
+            }
+
+            public void LookupBox<P>(ref object box, Func<P, P> boxer) where P : notnull
+            {
+                P p = box != null ? (P)box : default;
+                p = boxer(p);
+                box = p;
+            }
+
+            public object LookupBox<P>(object box, Func<P, P> boxer) where P : notnull
+            {
+                this.LookupBox(ref box, boxer);
+                return box;
+            }
+
+            public void Lookup(ref Image img)
+            {
+                if (this._isWrite)
+                {
+                    using MemoryStream ms = new MemoryStream();
+                    img.SaveAsPng(ms);
+                    this._bw.Write((int)ms.Length);
+                    this._bw.Write(ms.ToArray());
+                }
+                else
+                {
+                    byte[] arr = this._br.ReadBytes(this._br.ReadInt32());
+                    using MemoryStream ms = new MemoryStream(arr);
+                    img = Image.Load(ms);
+                }
+            }
+
+            public Image Lookup(Image img)
+            {
+                this.Lookup(ref img);
+                return img;
+            }
+
+            public void Lookup<TPixel>(ref Image<TPixel> img) where TPixel : unmanaged, IPixel<TPixel>
+            {
+                if (this._isWrite)
+                {
+                    if (img == null)
+                    {
+                        this._bw.Write(0);
+                    }
+                    else
+                    {
+                        using MemoryStream ms = new MemoryStream();
+                        img.SaveAsPng(ms);
+                        this._bw.Write((int)ms.Length);
+                        this._bw.Write(ms.ToArray());
+                    }
+                }
+                else
+                {
+                    int l = this._br.ReadInt32();
+                    if (l == 0)
+                    {
+                        img = null;
+                    }
+                    else
+                    {
+                        byte[] arr = this._br.ReadBytes(l);
+                        using MemoryStream ms = new MemoryStream(arr);
+                        img = Image.Load<TPixel>(ms);
+                    }
+                }
+            }
+
+            public Image<TPixel> Lookup<TPixel>(Image<TPixel> img) where TPixel : unmanaged, IPixel<TPixel>
+            {
+                this.Lookup(ref img);
+                return img;
             }
         }
     }

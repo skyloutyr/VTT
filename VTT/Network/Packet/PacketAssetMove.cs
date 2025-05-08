@@ -5,12 +5,13 @@
     using VTT.Asset;
     using VTT.Util;
 
-    public class PacketAssetMove : PacketBase
+    public class PacketAssetMove : PacketBaseWithCodec
     {
+        public override uint PacketID => 4;
+
         public Guid MovedRefID { get; set; }
         public string MovedFrom { get; set; }
         public string MovedTo { get; set; }
-        public override uint PacketID => 4;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -59,18 +60,11 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MovedRefID = new Guid(br.ReadBytes(16));
-            this.MovedFrom = br.ReadString();
-            this.MovedTo = br.ReadString();
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MovedRefID.ToByteArray());
-            bw.Write(this.MovedFrom);
-            bw.Write(this.MovedTo);
+            this.MovedRefID = c.Lookup(this.MovedRefID);
+            this.MovedFrom = c.Lookup(this.MovedFrom);
+            this.MovedTo = c.Lookup(this.MovedTo);
         }
     }
 }

@@ -241,8 +241,20 @@
             return new Color(r);
         }
 
-        public static Guid ReadGuid(this BinaryReader reader) => new Guid(reader.ReadBytes(16));
-        public static void Write(this BinaryWriter writer, Guid id) => writer.Write(id.ToByteArray());
+        public static Guid ReadGuid(this BinaryReader reader)
+        {
+            Span<byte> span = stackalloc byte[16];
+            reader.Read(span);
+            return new Guid(span);
+        }
+
+        public static void Write(this BinaryWriter writer, Guid id)
+        {
+            Span<byte> span = stackalloc byte[16];
+            id.TryWriteBytes(span);
+            writer.Write(span);
+        }
+
         public static Color ReadColor(this BinaryReader reader) => FromArgb(reader.ReadUInt32());
         public static void Write(this BinaryWriter writer, Color c) => writer.Write(c.Argb());
         public static T ReadEnumSmall<T>(this BinaryReader reader) where T : struct, Enum => (T)Enum.ToObject(typeof(T), reader.ReadByte());

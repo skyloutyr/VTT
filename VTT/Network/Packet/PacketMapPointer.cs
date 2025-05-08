@@ -2,13 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
 
-    public class PacketMapPointer : PacketBase
+    public class PacketMapPointer : PacketBaseWithCodec
     {
+        public override uint PacketID => 46;
+
         public bool Remove { get; set; }
         public List<(Guid, string, string)> Data { get; set; } = new List<(Guid, string, string)>();
-        public override uint PacketID => 46;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -45,29 +45,16 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.Remove = br.ReadBoolean();
-            int amt = br.ReadInt32();
-            while (amt-- > 0)
+            this.Remove = c.Lookup(this.Remove);
+            this.Data = c.Lookup(this.Data, x =>
             {
-                Guid id = new Guid(br.ReadBytes(16));
-                string folder = br.ReadString();
-                string name = br.ReadString();
-                this.Data.Add((id, folder, name));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.Remove);
-            bw.Write(this.Data.Count);
-            foreach ((Guid, string, string) d in this.Data)
-            {
-                bw.Write(d.Item1.ToByteArray());
-                bw.Write(d.Item2);
-                bw.Write(d.Item3);
-            }
+                Guid i1 = c.Lookup(x.Item1);
+                string i2 = c.Lookup(x.Item2);
+                string i3 = c.Lookup(x.Item3);
+                return x = (i1, i2, i3);
+            });
         }
     }
 }

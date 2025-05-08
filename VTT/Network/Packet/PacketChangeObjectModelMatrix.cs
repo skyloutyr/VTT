@@ -3,16 +3,16 @@
     using System.Numerics;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeObjectModelMatrix : PacketBase
+    public class PacketChangeObjectModelMatrix : PacketBaseWithCodec
     {
+        public override uint PacketID => 17;
+
         public ChangeType Type { get; set; }
         public Guid MovementInducerID { get; set; }
         public List<(Guid, Guid, Vector4)> MovedObjects { get; set; } = new List<(Guid, Guid, Vector4)>();
-        public override uint PacketID => 17;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -162,34 +162,17 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.MovementInducerID = new Guid(br.ReadBytes(16));
-            this.Type = (ChangeType)br.ReadByte();
-            int amt = br.ReadInt32();
-            while (amt-- > 0)
+            this.MovementInducerID = c.Lookup(this.MovementInducerID);
+            this.Type = c.Lookup(this.Type);
+            this.MovedObjects = c.Lookup(this.MovedObjects, x =>
             {
-                Guid mId = new Guid(br.ReadBytes(16));
-                Guid oId = new Guid(br.ReadBytes(16));
-                Vector4 p = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                this.MovedObjects.Add((mId, oId, p));
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write(this.MovementInducerID.ToByteArray());
-            bw.Write((byte)this.Type);
-            bw.Write(MovedObjects.Count);
-            foreach ((Guid, Guid, Vector4) d in this.MovedObjects)
-            {
-                bw.Write(d.Item1.ToByteArray());
-                bw.Write(d.Item2.ToByteArray());
-                bw.Write(d.Item3.X);
-                bw.Write(d.Item3.Y);
-                bw.Write(d.Item3.Z);
-                bw.Write(d.Item3.W);
-            }
+                Guid i1 = c.Lookup(x.Item1);
+                Guid i2 = c.Lookup(x.Item2);
+                Vector4 i3 = c.Lookup(x.Item3);
+                return x = (i1, i2, i3);
+            });
         }
 
         public enum ChangeType

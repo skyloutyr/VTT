@@ -1,18 +1,18 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketMapObjectBar : PacketBase
+    public class PacketMapObjectBar : PacketBaseWithCodec
     {
+        public override uint PacketID => 44;
+
         public Action BarAction { get; set; }
         public Guid MapID { get; set; }
         public Guid ContainerID { get; set; }
         public DisplayBar Bar { get; set; }
         public int Index { get; set; }
-        public override uint PacketID => 44;
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -131,30 +131,15 @@
             }
         }
 
-        public override void Decode(BinaryReader br)
+        public override void LookupData(Codec c)
         {
-            this.BarAction = (Action)br.ReadByte();
-            this.Index = br.ReadInt32();
-            this.MapID = new Guid(br.ReadBytes(16));
-            this.ContainerID = new Guid(br.ReadBytes(16));
+            this.BarAction = c.Lookup(this.BarAction);
+            this.Index = c.Lookup(this.Index);
+            this.MapID = c.Lookup(this.MapID);
+            this.ContainerID = c.Lookup(this.ContainerID);
             if (this.BarAction != Action.Delete)
             {
-                DataElement de = new DataElement();
-                de.Read(br);
-                this.Bar = DisplayBar.FromData(de);
-            }
-        }
-
-        public override void Encode(BinaryWriter bw)
-        {
-            bw.Write((byte)this.BarAction);
-            bw.Write(this.Index);
-            bw.Write(this.MapID.ToByteArray());
-            bw.Write(this.ContainerID.ToByteArray());
-            if (this.BarAction != Action.Delete)
-            {
-                DataElement de = this.Bar.Serialize();
-                de.Write(bw);
+                c.Lookup(this.Bar ??= new DisplayBar());
             }
         }
 

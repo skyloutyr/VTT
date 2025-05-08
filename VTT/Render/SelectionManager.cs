@@ -49,9 +49,12 @@
 
             if (!ImGui.GetIO().WantCaptureKeyboard && !this._deleteDown && Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Delete))
             {
-                if (Client.Instance.IsAdmin)
+                bool isAdmin = Client.Instance.IsAdmin;
+                Guid cId = Client.Instance.ID;
+                List<(Guid, Guid)> o2delete = (isAdmin ? this.SelectedObjects : this.SelectedObjects.Where(x => x.CanEdit(cId))).Select(o => (o.MapID, o.ID)).ToList();
+                if (o2delete.Count > 0)
                 {
-                    PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = this.SelectedObjects.Select(o => (o.MapID, o.ID)).ToList(), IsServer = false, Session = Client.Instance.SessionID };
+                    PacketDeleteMapObject pdmo = new PacketDeleteMapObject() { DeletedObjects = o2delete, IsServer = false, Session = Client.Instance.SessionID };
                     pdmo.Send();
                 }
 

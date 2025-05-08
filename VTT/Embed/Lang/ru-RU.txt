@@ -875,5 +875,5 @@ ui.particle_containers.bone_attachment=Кость Выделения
 ui.particle_containers.bone_attachment.tt=Применимо только при режиме выделения "кость"
 ui.particle.emission.bone=Кость
 menu.settings.ui_buffers_capacity=Максимум Буфферов Интерфейса
-menu.settings.2d_camera_zoom_rate=Скорость Приближения 2D
-menu.settings.2d_camera_zoom_rate.tt=Устанавливает скорость интерполяции приближения и отдаления камеры на 2d картах.\nМожет быть установлено на 0 вручную (с ctlr-нажатием) чтобы отключить интерполяцию.
+menu.settings.camera_interpolation_rate=Скорость Интерполяции Камеры
+menu.settings.camera_interpolation_rate.tt=Устанавливает скорость интерполяции приближения и отдаления камеры при использовании колеса мыши.\nМожет быть установлено на 0 вручную (с ctlr-нажатием) чтобы отключить интерполяцию.

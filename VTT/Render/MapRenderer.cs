@@ -51,7 +51,7 @@
                 this.GroundHitscanResult = TryHitscanGround(this.ClientCamera, out Vector3 cw) ? cw : null;
                 if (this._camera2dZoomA != 1)
                 {
-                    float fact = Client.Instance.Settings.CameraZoomSpeed2D;
+                    float fact = Client.Instance.Settings.CameraInterpolationSpeed;
                     if (fact <= float.Epsilon)
                     {
                         fact = float.PositiveInfinity;
@@ -67,6 +67,25 @@
                     float a = (float)(1d - Math.Pow(1d - this._camera2dZoomA, 3));
                     this._currentCamera2dzoom = ((this._camera2dZoomTarget * a) + (this._camera2dZoomTargetFrom * (1f - a)));
                     this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+                }
+
+                if (this._camera3dScrollA != 1)
+                {
+                    float fact = Client.Instance.Settings.CameraInterpolationSpeed;
+                    if (fact <= float.Epsilon)
+                    {
+                        fact = float.PositiveInfinity;
+                    }
+
+                    this._camera3dScrollA += Client.Instance.Frontend.GameHandle.RenderDt * fact;
+                    this._camera3dScrollA = Math.Clamp(this._camera3dScrollA, 0, 1);
+                    if (double.IsNaN(this._camera3dScrollA)) // Sanity check
+                    {
+                        this._camera3dScrollA = 1;
+                    }
+
+                    float a = (float)(1d - Math.Pow(1d - this._camera3dScrollA, 3));
+                    this.ClientCamera.MoveCamera((this._camera3DScrollTarget * a) + (this._camera3DScrollStart * (1f - a)));
                 }
             }
         }
@@ -130,6 +149,11 @@
             {
                 this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                if (this._camera3dScrollA != 1)
+                {
+                    this.ClientCamera.MoveCamera(this._camera3DScrollTarget);
+                    this._camera3dScrollA = 1;
+                }
             }
             else
             {
@@ -173,6 +197,9 @@
                 this.ClientCamera.Projection = Matrix4x4.CreatePerspectiveFieldOfView(60.0f * MathF.PI / 180, (float)w / h, 0.01f, 100f);
                 this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
             }
+
+            this._camera3DScrollStart = this._camera3DScrollTarget = this.ClientCamera.Position;
+            this._camera3dScrollA = 1;
         }
 
         public void Change2DMapHeight(float to)
@@ -200,6 +227,10 @@
         private float _camera2dZoomTarget = 0.01f;
         private float _camera2dZoomTargetFrom = 0.01f;
         private double _camera2dZoomA = 1;
+
+        private Vector3 _camera3DScrollTarget = Vector3.Zero;
+        private Vector3 _camera3DScrollStart = Vector3.Zero;
+        private double _camera3dScrollA = 1;
 
         public void ScrollCamera(float dy)
         {
@@ -533,6 +564,8 @@
                         Vector3 newPosVec = this.ClientCamera.Position + (keyboardMoveVec * (1f / 60f) * 3.0f);
                         this.ClientCamera.Position = newPosVec;
                         this.ClientCamera.RecalculateData();
+                        this._camera3DScrollStart = this._camera3DScrollTarget = newPosVec;
+                        this._camera3dScrollA = 1;
                     }
                 }
             }
@@ -581,6 +614,8 @@
                     // Not a bug: note that the timestep here is fixed for smooth motion regardless of framerate!
                     this.ClientCamera.Position += camMovement * 1/60f * 0.75f; 
                     this.ClientCamera.RecalculateData();
+                    this._camera3DScrollStart = this._camera3DScrollTarget = this.ClientCamera.Position;
+                    this._camera3dScrollA = 1;
                 }
             }
 
@@ -617,6 +652,9 @@
                             this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
                             point2camera = this.ClientCamera.Position - this._pt;
                         }
+
+                        this._camera3DScrollStart = this._camera3DScrollTarget = this.ClientCamera.Position;
+                        this._camera3dScrollA = 1;
                     }
                 }
 
@@ -633,6 +671,8 @@
                     this.ClientCamera.Position = this._pt + np2c;
                     this.ClientCamera.Direction = -np2c.Normalized();
                     this.ClientCamera.RecalculateData(assumedUpAxis: Vector3.UnitZ);
+                    this._camera3DScrollStart = this._camera3DScrollTarget = this.ClientCamera.Position;
+                    this._camera3dScrollA = 1;
                 }
             }
 
@@ -642,7 +682,9 @@
                 mod *= sensitivity;
                 if (!this.IsOrtho)
                 {
-                    this.ClientCamera.MoveCamera((this.ClientCamera.Direction * this._mouseWheelDY * mod) + this.ClientCamera.Position, true);
+                    this._camera3DScrollStart = this.ClientCamera.Position;
+                    this._camera3DScrollTarget = (this.ClientCamera.Direction * this._mouseWheelDY * mod) + (this._camera3dScrollA == 1 ? this.ClientCamera.Position : this._camera3DScrollTarget);
+                    this._camera3dScrollA = 0;
                 }
                 else
                 {

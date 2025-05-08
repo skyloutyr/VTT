@@ -1042,16 +1042,16 @@
                         Client.Instance.Settings.Save();
                     }
 
-                    float zoom2drate = Client.Instance.Settings.CameraZoomSpeed2D;
-                    ImGui.TextUnformatted(lang.Translate("menu.settings.2d_camera_zoom_rate"));
+                    float cameraInterpolationRate = Client.Instance.Settings.CameraInterpolationSpeed;
+                    ImGui.TextUnformatted(lang.Translate("menu.settings.camera_interpolation_rate"));
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(lang.Translate("menu.settings.2d_camera_zoom_rate.tt"));
+                        ImGui.SetTooltip(lang.Translate("menu.settings.camera_interpolation_rate.tt"));
                     }
 
-                    if (ImGui.SliderFloat("##CameraZoomRate2D", ref zoom2drate, 0.5f, 10f))
+                    if (ImGui.SliderFloat("##CameraInterpolationRate", ref cameraInterpolationRate, 0.5f, 10f))
                     {
-                        Client.Instance.Settings.CameraZoomSpeed2D = zoom2drate;
+                        Client.Instance.Settings.CameraInterpolationSpeed = cameraInterpolationRate;
                         Client.Instance.Settings.Save();
                     }
 

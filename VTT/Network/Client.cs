@@ -828,7 +828,7 @@
 
         [DefaultValue(2f)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
-        public float CameraZoomSpeed2D { get; set; } = 2f;
+        public float CameraInterpolationSpeed { get; set; } = 2f;
 
 
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
@@ -971,7 +971,7 @@
                 DiceRollMemory = new List<ChatDiceRollMemory>(),
                 DrawSidebarLayerControls = true,
                 UIDrawBuffersCapacity = 16,
-                CameraZoomSpeed2D = 2
+                CameraInterpolationSpeed = 2
             };
 
             ret.Save();

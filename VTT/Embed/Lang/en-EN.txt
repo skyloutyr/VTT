@@ -875,5 +875,5 @@ ui.particle_containers.bone_attachment=Attachment Bone
 ui.particle_containers.bone_attachment.tt=Only applicable for bone emission mode
 ui.particle.emission.bone=Bone
 menu.settings.ui_buffers_capacity=Maximum UI Buffers
-menu.settings.2d_camera_zoom_rate=2D Zoom Rate
-menu.settings.2d_camera_zoom_rate.tt=Controls the rate of zoom interpolation on 2d maps.\nCan be manually set to 0 with ctrl-click to disable smooth interpolation.
+menu.settings.camera_interpolation_rate=Camera Interpolation Rate
+menu.settings.camera_interpolation_rate.tt=Controls the rate of zoom interpolation on 2d maps and scrollwheel movement on 3d maps.\nCan be manually set to 0 with ctrl-click to disable smooth interpolation.

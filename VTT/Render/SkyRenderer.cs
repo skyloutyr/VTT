@@ -190,6 +190,7 @@
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(Capability.DepthTest);
 
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             Vector3 sunDir = this.GetCurrentSunDirection();
@@ -203,6 +204,7 @@
             this._vao.Bind();
 
             GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
+            GL.Disable(Capability.DepthTest);
             GL.Disable(Capability.Blend);
         }
 

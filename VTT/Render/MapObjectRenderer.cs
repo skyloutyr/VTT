@@ -113,6 +113,9 @@
             this._noAssetVao.PushElement(ElementType.Vec2);
 
             this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment);
+            this.OverlayShader.Bind();
+            this.OverlayShader["do_fow"].Set(false);
+            this.OverlayShader["fow_texture"].Set(15);
             this.HighlightShader = OpenGLUtil.LoadShader("highlight", ShaderType.Vertex, ShaderType.Fragment);
             this.PrecomputeSelectionBox();
 
@@ -383,6 +386,9 @@
             this.OverlayShader["u_color"].Set(Color.Red.Vec4());
             this.OverlayShader["view"].Set(cam.View);
             this.OverlayShader["projection"].Set(cam.Projection);
+            this.OverlayShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+            this.OverlayShader["do_fow"].Set(Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.OverlayShader);
             GL.Disable(Capability.DepthTest);
             foreach (MapObject mo in this._crossedOutObjects)
             {
@@ -393,6 +399,7 @@
                 this.Cross.Render();
             }
 
+            this.OverlayShader["do_fow"].Set(false);
             GL.Enable(Capability.DepthTest);
 
             GL.Disable(Capability.CullFace);

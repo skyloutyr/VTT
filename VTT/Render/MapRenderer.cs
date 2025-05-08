@@ -64,7 +64,7 @@
                         this._camera2dZoomA = 1;
                     }
 
-                    float a = (float)(-(Math.Cos(Math.PI * this._camera2dZoomA) - 1d) / 2f);
+                    float a = (float)(1d - Math.Pow(1d - this._camera2dZoomA, 3));
                     this._currentCamera2dzoom = ((this._camera2dZoomTarget * a) + (this._camera2dZoomTargetFrom * (1f - a)));
                     this.Resize(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
                 }

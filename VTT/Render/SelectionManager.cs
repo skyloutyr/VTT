@@ -457,9 +457,27 @@
                             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                             if (em != EditMode.Select)
                             {
-                                List<(Guid, Guid, Vector4)> changes = this.SelectedObjects.Select(o => (o.MapID, o.ID, em == EditMode.Translate ? new Vector4(o.Position, 1.0f) : em == EditMode.Scale ? new Vector4(o.Scale, 1.0f) : new Vector4(o.Rotation.X, o.Rotation.Y, o.Rotation.Z, o.Rotation.W))).ToList();
-                                PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = (PacketChangeObjectModelMatrix.ChangeType)((int)em - 1) };
-                                pmo.Send();
+                                // TODO path movement here!
+                                if (em == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Path)
+                                {
+                                    List<Vector3> pathCpy = new List<Vector3>(this.ObjectMovementPath);
+                                    if (this.SelectedObjects.Count > 0)
+                                    {
+                                        pathCpy.Add(this.SelectedObjects[0].Position);
+                                    }
+                                    else // Should never happen but just in case
+                                    {
+                                        pathCpy.Add(Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView());
+                                    }
+
+                                    new PacketObjectPathMovement() { MapID = cMap.ID, ObjectIDs = this.SelectedObjects.Select(o => o.ID).ToList(), Path = pathCpy }.Send(); // Copy the path bc it will be cleared this frame before the packet gets serialized
+                                }
+                                else
+                                {
+                                    List<(Guid, Guid, Vector4)> changes = this.SelectedObjects.Select(o => (o.MapID, o.ID, em == EditMode.Translate ? new Vector4(o.Position, 1.0f) : em == EditMode.Scale ? new Vector4(o.Scale, 1.0f) : new Vector4(o.Rotation.X, o.Rotation.Y, o.Rotation.Z, o.Rotation.W))).ToList();
+                                    PacketChangeObjectModelMatrix pmo = new PacketChangeObjectModelMatrix() { IsServer = false, Session = Client.Instance.SessionID, MovedObjects = changes, MovementInducerID = Client.Instance.ID, Type = (PacketChangeObjectModelMatrix.ChangeType)((int)em - 1) };
+                                    pmo.Send();
+                                }
                             }
 
                             if (em == EditMode.Rotate && this.SelectedObjects.Count > 1)

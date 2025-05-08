@@ -130,6 +130,8 @@
         public Vector3 ClientDragMoveInitialPosition { get; set; }
         public Vector3 ClientDragMoveServerInducedNewPosition { get; set; }
         public float ClientDragMoveServerInducedPositionChangeProgress { get; set; } = -1;
+        public bool ClientDragMoveIsPath { get; set; } = false;
+        public Gradient<Vector3> ClientDragMovePath { get; set; }
 
         public Vector3 ClientDragMoveInitialScale { get; set; }
         public Vector3 ClientDragMoveServerInducedNewScale { get; set; }
@@ -328,6 +330,38 @@
             this.cameraCullerSphere = new FrustumCullingSphere(this.CameraCullerBox.Center + this.Position, this.CameraCullerBox.Size.Length() * 0.5f);
         }
 
+        public void ClientSetPathMovementChanges(List<Vector3> path)
+        {
+            Vector3 pStart = path[0];
+            Vector3 endPoint = this.Position + (path[^1] - pStart);
+            this.ClientDragMoveInitialPosition = this.Position;
+            this.ClientDragMoveServerInducedNewPosition = endPoint;
+            UnsafeArray<Vector4> v4s = new UnsafeArray<Vector4>(path.Count);
+            v4s[0] = new Vector4(this.Position, 0);
+            float totalPathLength = 0;
+            for (int i = 1; i < path.Count; ++i)
+            {
+                Vector3 c = path[i];
+                Vector3 p = path[i - 1];
+                Vector3 d = p - c;
+                float l = d.Length();
+                totalPathLength += l;
+                v4s[i] = new Vector4(this.Position + (c - pStart), totalPathLength);
+            }
+
+            lock (this.Lock)
+            {
+                this.ClientDragMovePath = new Gradient<Vector3>();
+                foreach (Vector4 v4 in v4s)
+                {
+                    this.ClientDragMovePath.Add(v4.W / totalPathLength, v4.Xyz());
+                }
+            }
+
+            this.ClientDragMoveIsPath = true;
+            this.ClientDragMoveServerInducedPositionChangeProgress = 1;
+        }
+
         public void Update() // Client-only
         {
             if (this.ClientRenderedThisFrame) // TODO test if the animatio needs to be updated regardless of object's render visibility
@@ -337,13 +371,42 @@
 
             if (this.ClientDragMoveServerInducedPositionChangeProgress > 0)
             {
-                this.ClientDragMoveServerInducedPositionChangeProgress -= (1f / 60f);
-                Vector3 nPos = Vector3.Lerp(this.ClientDragMoveServerInducedNewPosition, this.ClientDragMoveInitialPosition, this.ClientDragMoveServerInducedPositionChangeProgress);
-                this.Position = nPos;
-                if (this.ClientDragMoveServerInducedPositionChangeProgress <= 0)
+                if (this.ClientDragMoveIsPath)
                 {
-                    this.Position = this.ClientDragMoveServerInducedNewPosition;
-                    this.ClientDragMoveServerInducedPositionChangeProgress = -1;
+                    this.ClientDragMoveServerInducedPositionChangeProgress -= 1f / 60f;
+                    Gradient<Vector3> gPath = this.ClientDragMovePath; // Gradient is never cleared, only dereferenced, and once it is built up we always have it full, so make a copy here
+                    if (gPath != null) // Sanity check
+                    {
+                        Vector3 cPos = this.ClientDragMovePath.Interpolate(1f - this.ClientDragMoveServerInducedPositionChangeProgress, GradientInterpolators.LerpVec3);
+                        this.Position = cPos;
+                        if (this.ClientDragMoveServerInducedPositionChangeProgress <= 0)
+                        {
+                            this.Position = this.ClientDragMoveServerInducedNewPosition;
+                            this.ClientDragMoveServerInducedPositionChangeProgress = -1;
+                            this.ClientDragMoveIsPath = false;
+                            lock (this.Lock) // Somewhat iffy in update, but just in case
+                            {
+                                this.ClientDragMovePath = null;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        this.Position = this.ClientDragMoveServerInducedNewPosition;
+                        this.ClientDragMoveServerInducedPositionChangeProgress = -1;
+                        this.ClientDragMoveIsPath = false;
+                    }
+                }
+                else
+                {
+                    this.ClientDragMoveServerInducedPositionChangeProgress -= 1f / 60f;
+                    Vector3 nPos = Vector3.Lerp(this.ClientDragMoveServerInducedNewPosition, this.ClientDragMoveInitialPosition, this.ClientDragMoveServerInducedPositionChangeProgress);
+                    this.Position = nPos;
+                    if (this.ClientDragMoveServerInducedPositionChangeProgress <= 0)
+                    {
+                        this.Position = this.ClientDragMoveServerInducedNewPosition;
+                        this.ClientDragMoveServerInducedPositionChangeProgress = -1;
+                    }
                 }
             }
 

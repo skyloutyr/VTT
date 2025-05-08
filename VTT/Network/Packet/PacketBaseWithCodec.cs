@@ -2,6 +2,7 @@
 {
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Numerics;
     using VTT.Util;
@@ -381,6 +382,43 @@
                 {
                     serializable.Deserialize(this.Lookup(new DataElement()));
                 }
+            }
+
+            public void Lookup<T>(ref List<T> list, Func<T, T> serializer)
+            {
+                int cnt = this.Lookup(list?.Count ?? 0);
+                if (this._isWrite)
+                {
+                    if (cnt != 0)
+                    {
+                        foreach (T item in list)
+                        {
+                            serializer(item);
+                        }
+                    }
+                }
+                else
+                {
+                    if (list != null)
+                    {
+                        list.Clear();
+                    }
+                    else
+                    {
+                        list = new List<T>();
+                    }
+
+                    for (int i = 0; i < cnt; ++i)
+                    {
+                        list.Add(serializer(default));
+                    }
+                }
+            }
+
+            public List<T> Lookup<T>(List<T> list, Func<T, T> serializer)
+            {
+                this.Lookup(ref list, serializer); 
+                return list;
             }
         }
     }

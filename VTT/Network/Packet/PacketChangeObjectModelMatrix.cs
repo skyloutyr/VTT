@@ -122,6 +122,7 @@
                                     case ChangeType.Position:
                                     {
                                         mo.ClientDragMoveServerInducedPositionChangeProgress = 1;
+                                        mo.ClientDragMoveIsPath = false;
                                         mo.ClientDragMoveInitialPosition = mo.Position;
                                         mo.ClientDragMoveServerInducedNewPosition = d.Item3.Xyz();
                                         break;

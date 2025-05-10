@@ -13,11 +13,13 @@
         public abstract void LookupData(Codec c);
 
         public override void Encode(BinaryWriter bw) => this.LookupData(new Codec(bw));
-        public override void Decode(BinaryReader br) => this.LookupData(new Codec(br)); public class Codec
+        public override void Decode(BinaryReader br) => this.LookupData(new Codec(br)); 
+        
+        public class Codec
         {
-            private BinaryWriter _bw;
-            private BinaryReader _br;
-            private bool _isWrite;
+            private readonly BinaryWriter _bw;
+            private readonly BinaryReader _br;
+            private readonly bool _isWrite;
 
             public Codec(BinaryReader br)
             {
@@ -85,30 +87,63 @@
                 return value;
             }
 
-            public void Lookup(ref byte[] array)
+            public void Lookup<T>(ref T[] array) where T : unmanaged
             {
                 int amt = this.Lookup(array?.Length ?? 0);
                 if (amt > 0)
                 {
                     if (this._isWrite)
                     {
-                        this._bw.Write(array);
+                        unsafe
+                        {
+                            fixed (T* tptr = array)
+                            {
+                                Span<byte> bspan = new Span<byte>(tptr, amt * sizeof(T));
+                                this._bw.Write(bspan);
+                            }
+                        }
                     }
                     else
                     {
-                        array = this._br.ReadBytes(amt);
+                        if ((array?.Length ?? 0) != amt)
+                        {
+                            array = new T[amt];
+                        }
+
+                        unsafe
+                        {
+                            fixed (T* tptr = array)
+                            {
+                                int nRead = 0;
+                                int needed = amt * sizeof(T);
+                                Span<byte> bspan = new Span<byte>(tptr, needed); // This being a regular int is iffy but a Span<T> only accepts an int
+                                while (true)
+                                {
+                                    nRead += this._br.Read(bspan[nRead..]);
+                                    if (nRead >= needed)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                if (nRead > needed) // Sanity check
+                                {
+                                    throw new OverflowException("Read more bytes than expected!");
+                                }
+                            }
+                        }
                     }
                 }
                 else
                 {
                     if (!this._isWrite)
                     {
-                        array = Array.Empty<byte>();
+                        array = Array.Empty<T>();
                     }
                 }
             }
 
-            public byte[] Lookup(byte[] array)
+            public T[] Lookup<T>(T[] array) where T : unmanaged
             {
                 this.Lookup(ref array);
                 return array;

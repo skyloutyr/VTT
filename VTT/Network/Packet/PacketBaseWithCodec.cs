@@ -347,7 +347,6 @@
                         for (int i = 0; i < amt; ++i)
                         {
                             array[i] = this._br.ReadGuid();
-                            this._bw.Write(array[i]);
                         }
                     }
                 }

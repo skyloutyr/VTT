@@ -96,11 +96,11 @@
             mat.OcclusionMetallicRoughnessAnimation = new TextureAnimation(null);
             mat.RoughnessFactor = 1f;
             mat.AlphaCutoff = 0f;
-            mat.BaseColorTexture = tData.GetOrCreateGLTexture(false, out TextureAnimation dta);
+            mat.BaseColorTexture = tData.GetOrCreateGLTexture(true, false, out TextureAnimation dta);
             mat.BaseColorAnimation = dta;
             if (tData.Meta.AlbedoIsEmissive)
             {
-                mat.EmissionTexture = tData.GetOrCreateGLTexture(false, out dta);
+                mat.EmissionTexture = tData.GetOrCreateGLTexture(true, false, out dta);
                 mat.EmissionAnimation = dta;
             }
             else

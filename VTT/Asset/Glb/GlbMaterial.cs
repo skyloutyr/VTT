@@ -130,7 +130,7 @@
 
     public class TextureAnimation
     {
-        private readonly uint _totalDuration;
+        private uint _totalDuration;
         public Frame[] Frames { get; set; }
 
         public TextureAnimation(Frame[] frames)
@@ -161,6 +161,39 @@
                 dS += fPd;
                 f._allPrevElementsWeight = dS;
             }
+        }
+
+        public void SetFrameData(Frame[] frames)
+        {
+            if (frames == null || frames.Length == 0)
+            {
+                frames = new Frame[] { new Frame() { Duration = 1, Location = new RectangleF(0, 0, 1, 1) } };
+            }
+
+            uint i = 0;
+            uint td = 0;
+            foreach (Frame f in frames)
+            {
+                f.Index = i++;
+                if (f.Duration == 0)
+                {
+                    f.Duration = 1;
+                }
+
+               td += f.Duration;
+            }
+
+            double dS = 0;
+            foreach (Frame f in frames)
+            {
+                double fPd = (double)f.Duration / td;
+                f._allPrevElementsWeightNoSelf = dS;
+                dS += fPd;
+                f._allPrevElementsWeight = dS;
+            }
+
+            this._totalDuration = td;
+            this.Frames = frames;
         }
 
         public Frame FindFrameForIndex(double idx)

@@ -437,10 +437,9 @@
                         if (a.Type == AssetType.Texture && (a?.Texture?.glReady ?? false))
                         {
                             // Safe to do as CopyGlTexture will call GetOrCreateGLTexture anyway. GetOrCreate will not queue multiple times if texture is not ready
-                            Texture t1 = a.Texture.GetOrCreateGLTexture(false, out TextureAnimation anim);
-                            if (t1.IsAsyncReady)
+                            Texture t1 = a.Texture.GetOrCreateGLTexture(true, false, out TextureAnimation anim);
+                            if (t1.IsAsyncReady && a.Texture.TryCopyGlTexture(SizedInternalFormat.Rgba8, out Texture tex))
                             {
-                                Texture tex = a.Texture.CopyGlTexture(SizedInternalFormat.Rgba8);
                                 AssetPreview prev = new AssetPreview() { GLTex = tex };
                                 prev.CopyFromAnimation(anim, tex.Size);
                                 values[id] = value = prev;

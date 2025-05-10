@@ -1263,7 +1263,7 @@
                                 Vector2 cPn = ImGui.GetCursorPos();
                                 ImDrawListPtr backList = ImGui.GetWindowDrawList();
                                 Vector2 oPs = ImGui.GetStyle().WindowPadding;
-                                GL.Texture tex = a.Texture.GetOrCreateGLTexture(false, out VTT.Asset.Glb.TextureAnimation anim);
+                                GL.Texture tex = a.Texture.GetOrCreateGLTexture(true, false, out VTT.Asset.Glb.TextureAnimation anim);
                                 if (tex.IsAsyncReady)
                                 {
                                     VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);

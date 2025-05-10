@@ -301,6 +301,7 @@
         public static void* MapBufferRange(BufferTarget target, nint offset, nint length, BufferRangeAccessMask access) => mapBufferRangeO((uint)target, offset, length, (uint)access);
         public static bool UnmapBuffer(BufferTarget target) => unmapBufferO((uint)target);
         public static void CompressedTexImage2D(TextureTarget target, int level, SizedInternalFormat internalFormat, int w, int h, int imageSize, void* data) => compressedTexImage2DO((uint)target, level, (uint)internalFormat, w, h, 0, imageSize, data);
+        public static void CompressedTexSubImage2D(TextureTarget target, int level, int xoffset, int yoffset, int width, int height, SizedInternalFormat format, int imageSize, void* data) => compressedTexSubImage2DO((uint)target, level, xoffset, yoffset, width, height, (uint)format, imageSize, data);
         public static void* GenFenceSync() => fenceSyncO(0x9117, 0);
         public static bool IsTexture(uint tex) => isTextureO(tex);
         public static ReadOnlySpan<int> GetInteger(GLPropertyName prop)
@@ -470,6 +471,7 @@
         public static void BindRenderbuffer(uint rbo) => bindRenderbufferO(0x8D41, rbo);
         public static void RenderbufferStorage(SizedInternalFormat internalFormat, int w, int h) => renderbufferStorageO(0x8D41, (uint)internalFormat, w, h);
         public static void FramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, uint rbo) => framebufferRenderbufferO((uint)target, (uint)attachment, 0x8D41, rbo);
+        public static void Finish() => finishO();
     }
 
     public enum UniformDataType

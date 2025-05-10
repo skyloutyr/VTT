@@ -212,7 +212,7 @@
                             bool haveTextureReadyHere = false;
                             if (isAssetRef && a != null && a.Texture != null && a.Texture.glReady)
                             {
-                                Texture t = a.Texture.GetOrCreateGLTexture(true, out VTT.Asset.Glb.TextureAnimation animationData);
+                                Texture t = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
                                 haveTextureReadyHere = t.IsAsyncReady;
                             }
 
@@ -242,7 +242,7 @@
 
                                         if (isAssetRef)
                                         {
-                                            Texture t = a.Texture.GetOrCreateGLTexture(true, out VTT.Asset.Glb.TextureAnimation animationData);
+                                            Texture t = a.Texture.GetOrCreateGLTexture(false,true, out VTT.Asset.Glb.TextureAnimation animationData);
                                             imgTexture = t;
                                             if (animationData != null && animationData.Frames.Length > 1)
                                             {

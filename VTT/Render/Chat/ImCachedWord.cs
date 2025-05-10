@@ -36,7 +36,7 @@
                     {
                         if (a.Type == AssetType.Texture && a.Texture != null)
                         {
-                            Texture tex = a.Texture.GetOrCreateGLTexture(true, out VTT.Asset.Glb.TextureAnimation animData);
+                            Texture tex = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animData);
                             if (tex != null && tex.IsAsyncReady)
                             {
                                 if (animData != null && animData.Frames.Length > 1)

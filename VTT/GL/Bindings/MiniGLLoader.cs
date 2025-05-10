@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
+    using static VTT.GL.Bindings.MiniGLLoader;
 
     public static unsafe class MiniGLLoader
     {
@@ -143,6 +144,8 @@
             waitSyncO = ToDelegate<waitSyncD>(addressGetter("glWaitSync"));
             clientWaitSyncO = ToDelegate<clientWaitSyncD>(addressGetter("glClientWaitSync"));
             mapBufferRangeO = ToDelegate<mapBufferRangeD>(addressGetter("glMapBufferRange"));
+            compressedTexSubImage2DO = ToDelegate<compressedTexSubImage2DD>(addressGetter("glCompressedTexSubImage2D"));
+            finishO = ToDelegate<finishD>(addressGetter("glFinish"));
         }
 
         internal delegate void clearColorD(float r, float g, float b, float a);
@@ -395,6 +398,10 @@
         internal static clientWaitSyncD clientWaitSyncO;
         internal delegate void* mapBufferRangeD(uint target, nint offset, nint length, uint access);
         internal static mapBufferRangeD mapBufferRangeO;
+        internal delegate void compressedTexSubImage2DD(uint target, int level, int xoffset, int yoffset, int width, int height, uint format, int imageSize, void* pixels);
+        internal static compressedTexSubImage2DD compressedTexSubImage2DO;
+        internal delegate void finishD();
+        internal static finishD finishO;
 
         private static T ToDelegate<T>(IntPtr ptr) where T : Delegate => IntPtr.Zero.Equals(ptr) ? null : Marshal.GetDelegateForFunctionPointer<T>(ptr);
     }

@@ -2,8 +2,10 @@
 {
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections.Concurrent;
     using System.Numerics;
     using System.Runtime.InteropServices;
+    using System.Threading;
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Util;
@@ -21,10 +23,13 @@
         private readonly GameWindowSettings _gameWindowSettings;
         private readonly NativeWindowSettings _nativeWindowSettings;
         private readonly IntPtr _nativeWindow;
+        private IntPtr _offscreenCtxWindow;
         private readonly bool _haveVTearExt = false;
         private bool _needsFboResize = false;
         private bool _needsWinResize = false;
         private bool _focused = true;
+        private readonly Version _glApiVersion;
+        private readonly bool _ctxForwardCompatible;
 
         public bool IsFocused => this._focused;
         public bool IsFullscreen => Glfw.GetWindowMonitor(this._nativeWindow) != IntPtr.Zero;
@@ -61,6 +66,8 @@
                 throw new Exception("GLFW failed to initialize!");
             }
 
+            this._glApiVersion = nws.APIVersion;
+            this._ctxForwardCompatible = nws.ForwardCompatible;
             IntPtr w = IntPtr.Zero;
             Glfw.WindowHint(WindowCreationHint.ClientAPI, nws.API);
             Glfw.WindowHint(WindowCreationHint.ContextCreationAPI, ContextCreationAPI.Native);
@@ -116,7 +123,7 @@
 
             Glfw.SetWindowFocusCallback(w, this.FocusedCallback);
             Glfw.SetMouseButtonCallback(w, this.MouseButtonCallback);
-
+            //this.CreateOffscreenContext(); Experimented for offscreen texture loading but unfortunately cross-platform portability becomes broken due to poor implementation of object sharing between GL context by various drivers.
             Glfw.MakeContextCurrent(w);
             Glfw.SetWindowIcon(w, nws.Icon);
             GL.Bindings.MiniGLLoader.Load(GLFWLoader.glfwGetProcAddress);
@@ -229,6 +236,52 @@
         public void Close() => Glfw.SetWindowShouldClose(this._nativeWindow, true);
 
         public double RenderDt { get; set; }
+
+        private readonly BlockingCollection<Action> _offscreenCtxActions = new BlockingCollection<Action>();
+        private void CreateOffscreenContext()
+        {
+            if (this._offscreenCtxWindow == IntPtr.Zero)
+            {
+                Glfw.WindowHint(WindowCreationHint.ClientAPI, ClientAPI.OpenGL);
+                Glfw.WindowHint(WindowCreationHint.ContextCreationAPI, ContextCreationAPI.Native);
+                Glfw.WindowHint(WindowCreationHint.ContextVersionMajor, this._glApiVersion.Major);
+                Glfw.WindowHint(WindowCreationHint.ContextVersionMinor, this._glApiVersion.Minor);
+                Glfw.WindowHint(WindowCreationHint.OpenGLForwardCompatible, this._ctxForwardCompatible);
+                Glfw.WindowHint(WindowCreationHint.OpenGLProfile, OpenGLProfile.Core);
+                Glfw.WindowHint(WindowCreationHint.ContextDebug, false);
+                Glfw.WindowHint(WindowCreationHint.Samples, 0);
+                Glfw.WindowHint(WindowCreationHint.DoubleBuffer, false);
+                Glfw.WindowHint(WindowCreationHint.Visible, false);
+                Glfw.WindowHint(WindowCreationHint.Decorated, false);
+                Glfw.WindowHint(WindowCreationHint.RefreshRate, 0);
+                IntPtr win = this._offscreenCtxWindow = Glfw.CreateWindow(1, 1, string.Empty, IntPtr.Zero, this._nativeWindow);
+                if (win == IntPtr.Zero)
+                {
+                    throw new Exception("Could not create offscreen glfw context!");
+                }
+
+                new Thread(this.RunOffscreen) { IsBackground = true, CurrentCulture = Thread.CurrentThread.CurrentCulture, CurrentUICulture = Thread.CurrentThread.CurrentUICulture }.Start();
+            }
+        }
+
+        private void RunOffscreen()
+        {
+            while (!Glfw.WindowShouldClose(this._offscreenCtxWindow))
+            {
+                Action a = this._offscreenCtxActions.Take();
+                if (a == null)
+                {
+                    break; // Empty action passed means we die
+                }
+
+                Glfw.MakeContextCurrent(this._offscreenCtxWindow);
+                a();
+                Glfw.MakeContextCurrent(IntPtr.Zero);
+            }
+        }
+
+        public bool HasOffscreenContext => this._offscreenCtxWindow != IntPtr.Zero;
+        public bool DoOffscreenAction(Action a) => this._offscreenCtxActions.TryAdd(a);
 
         public void Run()
         {
@@ -360,6 +413,12 @@
 
             Glfw.MakeContextCurrent(this._nativeWindow);
             Glfw.DestroyWindow(this._nativeWindow);
+            if (this._offscreenCtxWindow != IntPtr.Zero)
+            {
+                this._offscreenCtxActions.TryAdd(null);
+                Glfw.DestroyWindow(this._offscreenCtxWindow);
+            }
+
             Glfw.Terminate();
         }
     }

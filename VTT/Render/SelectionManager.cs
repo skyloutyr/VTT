@@ -460,7 +460,6 @@
                             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                             if (em != EditMode.Select)
                             {
-                                // TODO path movement here!
                                 if (em == EditMode.Translate && Client.Instance.Frontend.Renderer.ObjectRenderer.MovementMode == TranslationMode.Path)
                                 {
                                     List<Vector3> pathCpy = new List<Vector3>(this.ObjectMovementPath);

@@ -102,8 +102,8 @@ namespace VTT.Render
             string displayLabel = hiddenLabel ? label[2..] : label;
             if (label.Contains("###", StringComparison.InvariantCultureIgnoreCase))
             {
-                myLabel = label.Substring(label.IndexOf("###") + 3);
-                displayLabel = label.Substring(0, label.IndexOf("###"));
+                myLabel = label[(label.IndexOf("###") + 3)..];
+                displayLabel = label[..label.IndexOf("###")];
             }
 
             if (!hiddenLabel)
@@ -174,7 +174,7 @@ namespace VTT.Render
                 ImGui.PushStyleColor(ImGuiCol.Border, new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
                 ImGui.BeginDisabled(IsMinDate(v));
 
-                if (ImGui.Button("◂###ArrowLeft_" + myLabel, new Vector2(arrowSize, arrowSize))) // TODO size missing here!
+                if (ImGui.Button("◂###ArrowLeft_" + myLabel, new Vector2(arrowSize, arrowSize)))
                 {
                     v = v.AddMonths(-1);
                     res = true;

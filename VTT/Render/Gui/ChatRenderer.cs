@@ -130,7 +130,6 @@
                 float bscX = ImGui.GetCursorPosX();
                 ImGui.SetCursorPosX(bscX);
                 ImGui.SetCursorPosY(cSize.Y - 100);
-                // TODO uv issues with ImImageButton and custom ImCustomRects! Should be new Vector2(-0.5f, -0.25f), new Vector2(1.5f, 1.25f)
                 if (this.Search.ImImageButtonCustomImageSize("btnChatSearch", Vec48x24, new Vector2(14, 2), new Vector2(20, 20)))
                 {
                     state.chatSearchPopup = true;

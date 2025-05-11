@@ -471,7 +471,6 @@
 
             GL.Enable(Capability.CullFace);
 
-            // TODO render preview
             AssetRef draggedRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
             if (draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture))
             {

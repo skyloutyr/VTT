@@ -21,10 +21,7 @@
 
         public static implicit operator bool(RaycastResut self) => self.Result;
 
-        public static RaycastResut Raycast(Ray r, Map env, Predicate<MapObject> selector = null)
-        {
-            return Raycast(r, env.IterateObjects(null), selector);
-        }
+        public static RaycastResut Raycast(Ray r, Map env, Predicate<MapObject> selector = null) => Raycast(r, env.IterateObjects(null), selector);
 
         private static readonly List<(MapObject, Asset.Asset)> hitsBroad = new List<(MapObject, Asset.Asset)>();
         private static readonly ConcurrentBag<(MapObject, Vector3)> hitResults = new ConcurrentBag<(MapObject, Vector3)>();

@@ -364,7 +364,7 @@
 
         public void Update() // Client-only
         {
-            if (this.ClientRenderedThisFrame) // TODO test if the animatio needs to be updated regardless of object's render visibility
+            if (this.ClientRenderedThisFrame) // Updating animation outside of render visibility is pointless as no animation data is loaded, thus no changes occur anyway
             {
                 this.AnimationContainer.Update(this.LastRenderModel);
             }

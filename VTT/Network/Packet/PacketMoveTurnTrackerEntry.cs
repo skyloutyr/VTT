@@ -22,7 +22,12 @@
                 return;
             }
 
-            if (this.IndexTo < 0 || this.IndexTo >= m.TurnTracker.Entries.Count)
+            if (this.IndexFrom == this.IndexTo)
+            {
+                return;
+            }
+
+            if (this.IndexTo < 0)
             {
                 l.Log(LogLevel.Warn, "Invalid turn tracker moveTo index!");
             }

@@ -728,12 +728,47 @@
                                 ImGui.PushStyleColor(ImGuiCol.Border, borderColor);
                             }
 
-                            if (ImGui.BeginChild("turnTrackerNav_" + i, new Vec2(wC.X - 32, 32), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings))
+                            bool isCurrentlyDragging = false;
+                            ImGuiPayloadPtr dragPtr = ImGui.GetDragDropPayload();
+                            if (dragPtr.NativePtr != null && dragPtr.IsDataType("TT-TE"))
                             {
+                                isCurrentlyDragging = true;
+                            }
+
+                            Vec2 cursorBeforeChild = ImGui.GetCursorScreenPos();
+                            bool dragAndHover = false;
+                            bool dragAndHoverOverHalf = false;
+                            Vec2 childSize = new Vec2(wC.X - 32, 32);
+                            if (ImGui.BeginChild("turnTrackerNav_" + i, childSize, ImGuiChildFlags.Borders, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings))
+                            {
+                                if (ImGui.IsMouseHoveringRect(cursorBeforeChild, cursorBeforeChild + childSize) && isCurrentlyDragging)
+                                {
+                                    dragAndHover = true;
+                                    Vec2 mc = ImGui.GetMousePos();
+                                    dragAndHoverOverHalf = mc.Y > (cursorBeforeChild.Y + childSize.Y * 0.5f);
+                                }
+
+                                if (dragAndHover)
+                                {
+                                    const uint clrFull = 0x55ffffff;
+                                    const uint clrEmpty = 0x00ffffff;
+                                    Vec2 cursorNow = ImGui.GetCursorScreenPos();
+                                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                                    if (!dragAndHoverOverHalf)
+                                    {
+                                        drawList.AddRectFilledMultiColor(cursorBeforeChild, cursorBeforeChild + (childSize * new Vec2(1, 0.5f)), clrFull, clrFull, clrEmpty, clrEmpty);
+                                        //drawList.AddLine(cursorBeforeChild + new Vec2(0, -2), cursorBeforeChild + new Vec2(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X * 2, -2), 0xffffffff);
+                                    }
+                                    else
+                                    {
+                                        drawList.AddRectFilledMultiColor(cursorBeforeChild + (childSize * new Vec2(0, 0.5f)), cursorBeforeChild + childSize, clrEmpty, clrEmpty, clrFull, clrFull);
+                                    }
+                                }
+
                                 if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                                 {
                                     IntPtr sIdx = new IntPtr(&i);
-                                    ImGui.SetDragDropPayload("TurnTrackerDragDropPayload", sIdx, sizeof(int));
+                                    ImGui.SetDragDropPayload("TT-TE", sIdx, sizeof(int));
                                     ImGui.TextUnformatted(oName);
                                     ImGui.EndDragDropSource();
                                 }
@@ -842,11 +877,12 @@
                             {
                                 try
                                 {
-                                    ImGuiPayloadPtr res = ImGui.AcceptDragDropPayload("TurnTrackerDragDropPayload");
+                                    ImGuiPayloadPtr res = ImGui.AcceptDragDropPayload("TT-TE");
                                     if (res.NativePtr != null)
                                     {
-                                        int idx = Marshal.ReadInt32(res.Data);
-                                        new PacketMoveTurnTrackerEntry() { IndexFrom = idx, IndexTo = i }.Send();
+                                        int from = Marshal.ReadInt32(res.Data);
+                                        int to = dragAndHoverOverHalf ? i + 1 : i;
+                                        new PacketMoveTurnTrackerEntry() { IndexFrom = from, IndexTo = to }.Send();
                                     }
                                 }
                                 catch (Exception managedEx)

@@ -103,7 +103,24 @@
 
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(lang.Translate("ui.maps.layer.tt"));
+                        ImGui.BeginTooltip();
+                        ImGui.TextUnformatted(lang.Translate("ui.maps.layer.tt.intro"));
+                        for (int j = 2; j >= -2; --j)
+                        {
+                            if (j == cLayer)
+                            {
+                                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextLink));
+                            }
+
+                            ImGui.TextUnformatted(lang.Translate($"ui.maps.layer.tt.{j}"));
+
+                            if (j == cLayer)
+                            {
+                                ImGui.PopStyleColor();
+                            }
+                        }
+
+                        ImGui.EndTooltip();
                     }
 
                     string mName = state.clientMap.Name;

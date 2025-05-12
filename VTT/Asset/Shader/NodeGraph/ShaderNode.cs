@@ -74,14 +74,9 @@
             }
 
             recursionProtection.Remove(this);
-            if (ShaderNodeTemplate.TemplatesByID.TryGetValue(this.TemplateID, out ShaderNodeTemplate val))
-            {
-                return val.Simulator(ctx, ins, index);
-            }
-            else
-            {
-                throw new Exception("Invalid shader node template!");
-            }
+            return ShaderNodeTemplate.TemplatesByID.TryGetValue(this.TemplateID, out ShaderNodeTemplate val)
+                ? val.Simulator(ctx, ins, index)
+                : throw new Exception("Invalid shader node template!");
         }
 
         public void ConnectInput(int inputIndex, ShaderNode provider, int providerOutputIndex) => this.Inputs[inputIndex].ConnectedOutput = provider.Outputs[providerOutputIndex].ID;

@@ -21,7 +21,7 @@
         public Metadata Meta { get; set; }
 
         private Texture _glTex;
-        private TextureAnimation _cachedAnim = new TextureAnimation(null);
+        private readonly TextureAnimation _animationData = new TextureAnimation(null);
 
         public bool glReady;
 
@@ -317,11 +317,11 @@
                 }
             }
 
-            animationData = this._cachedAnim;
+            animationData = this._animationData;
             return this._glTex;
         }
 
-        public TextureAnimation CachedAnimation => this._cachedAnim;
+        public TextureAnimation CachedAnimation => this._animationData;
         private Image<Rgba32> _cachedImage;
 
         public Image<Rgba32> CompoundAndCacheImage()
@@ -406,14 +406,14 @@
                 }
             }
 
-            this._cachedAnim.SetFrameData(allFrames);
+            this._animationData.SetFrameData(allFrames);
             return img;
         }
 
         public void Dispose()
         {
             this._glTex?.Dispose();
-            this._cachedAnim.SetFrameData(null);
+            this._animationData.SetFrameData(null);
             this._cachedImage?.Dispose();
         }
 

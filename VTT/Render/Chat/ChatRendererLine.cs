@@ -25,7 +25,7 @@
         {
         }
 
-        private static ImDrawCallback GammaSetterCallback = SetGammaCallback;
+        private static readonly ImDrawCallback GammaSetterCallback = SetGammaCallback;
         private static void SetGammaCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight, IntPtr userData) => Client.Instance.Frontend.GuiWrapper.ToggleGamma(userData.ToInt32() != 0);
 
         public override void Cache(Vector2 windowSize, out float width, out float height)

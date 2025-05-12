@@ -573,7 +573,7 @@
                             }
                             else
                             {
-                                ImGui.BulletText(lang.Translate(err.Substring(0, atIdx), err.Substring(atIdx + 1)));
+                                ImGui.BulletText(lang.Translate(err[..atIdx], err[(atIdx + 1)..]));
                             }
                         }
 
@@ -594,7 +594,7 @@
                             }
                             else
                             {
-                                ImGui.BulletText(lang.Translate(warn.Substring(0, atIdx), warn.Substring(atIdx + 1)));
+                                ImGui.BulletText(lang.Translate(warn[..atIdx], warn[(atIdx + 1)..]));
                             }
                         }
 
@@ -802,22 +802,14 @@
         private void ShaderLine(ImDrawListPtr drawPtr, SVec2 from, NodeValueType valFrom, SVec2 to, float xOffset, NodeValueType valTo, bool mOverAny)
         {
             Color cF = GetColorForType(valFrom);
-            Color cT = GetColorForType(valTo);
-            uint lineColorFrom = cF.Abgr();
-            uint lineColorTo = cT.Abgr();
-            uint lineColorAvgTo = cT.Mix(cF, 0.75f).Abgr();
-            uint lineColorAvgFrom = cF.Mix(cT, 0.75f).Abgr();
+            uint loneColor = cF.Abgr();
             if (mOverAny)
             {
-                lineColorFrom = lineColorTo = lineColorAvgFrom = lineColorAvgTo = ColorAbgr.RoyalBlue;
+                loneColor = ColorAbgr.RoyalBlue;
             }
 
             CubicBezier curve = this.GetCurve(from, to, 0.1f);
-            drawPtr.AddBezierCubic(curve.P0, curve.P1, curve.P2, curve.P3, lineColorFrom, 2f);
-            //drawPtr.AddLine(to, to + new SVec2(-10 + xOffset, 0), lineColorTo);
-            //drawPtr.AddLine(from, from + new SVec2(10, 0), lineColorFrom);
-            //drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, to.Y), new SVec2(to.X - 10 + xOffset, from.Y), lineColorAvgFrom);
-            //drawPtr.AddLine(new SVec2(to.X - 10 + xOffset, from.Y), new SVec2(from.X + 10, from.Y), lineColorAvgTo);
+            drawPtr.AddBezierCubic(curve.P0, curve.P1, curve.P2, curve.P3, loneColor, 2f);
         }
 
         // https://github.com/Nelarius/imnodes/blob/master/imnodes.cpp#L116

@@ -109,7 +109,7 @@
             drawList.AddRectFilled(lHere + new Vector2(24, 0), lHere + new Vector2(tw, 20), ImGui.GetColorU32(ImGuiCol.FrameBg));
             drawList.AddRectFilled(lHere + new Vector2(26, 2), lHere + new Vector2(26, 2) + new Vector2((tw - 26) * fillVal, 16), ImGui.GetColorU32(ImGuiCol.ButtonActive));
             Vector2 musicValSize = ImGui.CalcTextSize(timeVal);
-            drawList.AddText(lHere + new Vector2(tw / 2 - musicValSize.X / 2, 10 - musicValSize.Y / 2), ImGui.GetColorU32(ImGuiCol.Text), timeVal);
+            drawList.AddText(lHere + new Vector2((tw / 2) - (musicValSize.X / 2), 10 - (musicValSize.Y / 2)), ImGui.GetColorU32(ImGuiCol.Text), timeVal);
             ImGui.SetCursorPos(here);
             ImGui.Dummy(new Vector2(320, 40));
         }

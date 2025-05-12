@@ -4,10 +4,7 @@
     {
         private ulong _val;
 
-        public ULongCounter(ulong v = 0)
-        {
-            this._val = v;
-        }
+        public ULongCounter(ulong v = 0) => this._val = v;
 
         public void Increment(ulong by = 1) => this._val += by;
         public void Decrement(ulong by = 1) => this._val -= by;

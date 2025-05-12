@@ -261,10 +261,7 @@
         }
 
         // Only call this method when changing maps, descyncs internal state for client objects!
-        public void ClearParticles(Map m)
-        {
-            this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.FullClear, null));
-        }
+        public void ClearParticles(Map m) => this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.FullClear, null));
 
         public void RenderAll()
         {

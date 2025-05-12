@@ -189,6 +189,7 @@
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Assignment happens when breaking out of a while(1) loop, value unused outside of loop for now, may be useful later. Assignment to a _ is syntax sugar anyway (or if an impl chooses to noop the assignment instead then the JIT should be able to NOOP these too)")]
         public static bool ParseBlock(string text, Color userColor, ref Color color, ref Color descColor, ref string tooltip, ref int idx, ref string username, ref string destname, ref Guid destID, ref Guid portraitID, ref ChatLine.RenderType renderType, out ChatBlock cb)
         {
             if (idx >= text.Length)
@@ -492,15 +493,12 @@
                 case BlockMode.Recursive:
                 {
                     string t = sb.ToString();
-
                     int rIdx = 0;
-                    List<ChatBlock> blocks = new List<ChatBlock>();
                     Color c = color;
                     string tt = string.Empty;
                     ChatLine.RenderType rRenderType = ChatLine.RenderType.Line;
                     string rline = string.Empty;
                     ChatBlockExpressionRollContents compoundContents = ChatBlockExpressionRollContents.None;
-
                     while (ParseBlock(t, userColor, ref c, ref descColor, ref tt, ref rIdx, ref username, ref destname, ref destID, ref portraitID, ref rRenderType, out ChatBlock rCb))
                     {
                         if (rCb != null)
@@ -517,8 +515,7 @@
                 case BlockMode.DestinationSpecifier:
                 {
                     string t = sb.ToString();
-                    Guid id = Guid.Empty;
-                    if (!Guid.TryParse(t, out id))
+                    if (!Guid.TryParse(t, out Guid id))
                     {
                         if (t.ToLower().Equals("gm"))
                         {
@@ -587,7 +584,7 @@
                 case BlockMode.InlineImage:
                 {
                     string t = sb.ToString();
-                    if (Guid.TryParse(t, out Guid aId))
+                    if (Guid.TryParse(t, out _)) // Try parse just to check that we have a valid GUID passed here
                     {
                         cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
                         return true;

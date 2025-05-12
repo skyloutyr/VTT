@@ -1310,10 +1310,7 @@
                 this.Reactions.Read(br);
             }
 
-            public void Apply(ChatLine line)
-            {
-                line.Reactions.CopyFrom(this.Reactions);
-            }
+            public void Apply(ChatLine line) => line.Reactions.CopyFrom(this.Reactions);
         }
     }
 }

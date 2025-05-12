@@ -133,7 +133,7 @@
                     DrawScrollingText(ImGui.GetWindowDrawList(), ImGui.GetCursorScreenPos(), new Vector2(390, 32), musicName, true);
                     ImGui.ProgressBar(musicDurationPercentage, new Vector2(winContentRegion.X - paddingX, 16), " ");
                     Vector2 musicNameSize = ImGuiHelper.CalcTextSize(musicDuration);
-                    ImGui.SetCursorPosX(winContentRegion.X / 2 - (musicNameSize.X / 2));
+                    ImGui.SetCursorPosX((winContentRegion.X / 2) - (musicNameSize.X / 2));
                     ImGui.TextUnformatted(musicDuration);
                     if (Client.Instance.IsAdmin)
                     {

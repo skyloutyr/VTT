@@ -728,10 +728,7 @@
         public void Update() => this.UpdateTurnTrackerParticles();
 
         private bool _escapeCapturedThisFrame;
-        public void NotifyOfEscapeCaptureThisFrame()
-        {
-            this._escapeCapturedThisFrame = true;
-        }
+        public void NotifyOfEscapeCaptureThisFrame() => this._escapeCapturedThisFrame = true;
 
         private void CreateDiceIcons()
         {

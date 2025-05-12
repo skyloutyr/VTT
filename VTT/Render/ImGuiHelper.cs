@@ -236,7 +236,7 @@
         {
             private byte* _ptr;
             private int _bufferSize;
-            private bool _fixedSize;
+            private readonly bool _fixedSize;
 
             public int AllocatedBufferSize => this._bufferSize;
             public byte* Pointer => this._ptr;
@@ -328,8 +328,8 @@
             private int _vboAllocatedSize;
             private int _eboAllocatedSize;
 
-            private int _drawVertSize;
-            private int _drawIdxSize;
+            private readonly int _drawVertSize;
+            private readonly int _drawIdxSize;
 
             public UIStreamingBuffer()
             {

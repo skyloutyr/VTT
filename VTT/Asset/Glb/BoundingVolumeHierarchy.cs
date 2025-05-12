@@ -77,7 +77,7 @@
                     axis = 2;
                 }
 
-                float splitPos = GetVectorElement(this.Bounds.Start, axis) + GetVectorElement(extent, axis) * 0.5f;
+                float splitPos = GetVectorElement(this.Bounds.Start, axis) + (GetVectorElement(extent, axis) * 0.5f);
                 int i = this.TriangleSliceStart;
                 int j = i + this.TriangleSliceLength - 1;
                 while (i <= j)

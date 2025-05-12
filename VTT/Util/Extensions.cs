@@ -359,9 +359,6 @@
         public static bool HasAnyNans(this SVec3 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z);
 
         public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);
-        public static uint ArgbToAbgr(this uint self)
-        {
-            return (self & 0xff00ff00) | ((self & 0x000000ff) << 16) | ((self & 0x00ff0000) >> 16);
-        }
+        public static uint ArgbToAbgr(this uint self) => (self & 0xff00ff00) | ((self & 0x000000ff) << 16) | ((self & 0x00ff0000) >> 16);
     }
 }

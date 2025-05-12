@@ -60,7 +60,7 @@
                 drawList.AddRectFilled(cHere + new Vector2((size.X / 2) - 2, padding), cHere + new Vector2((size.X / 2) + 2, size.Y - padding), ImGui.GetColorU32(ImGuiCol.FrameBg), 200f);
                 for (int j = 0; j < 5; ++j)
                 {
-                    Vector2 linePos = cHere + new Vector2(size.X / 2 - 3, Math.Clamp(size.Y * (j / 4f), padding, size.Y - padding));
+                    Vector2 linePos = cHere + new Vector2((size.X / 2) - 3, Math.Clamp(size.Y * (j / 4f), padding, size.Y - padding));
                     drawList.AddLine(linePos, linePos + new Vector2(5, 0), ImGui.GetColorU32(ImGuiCol.Border));
                 }
 

@@ -1252,7 +1252,7 @@
             }
         }
 
-        private ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
+        private readonly ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
         private TextureData.Metadata _editedTextureMetadataCopy;
         private ModelData.Metadata _editedModelMetadataCopy;
         private Vector3 _initialEditedFastLightColor;

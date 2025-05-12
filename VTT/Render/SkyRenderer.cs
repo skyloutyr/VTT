@@ -230,7 +230,7 @@
             const float cutoutPointDayToNightEnd = 21f;
             float dayNightFactor =
                 dayProgress < cutoutPointNightToDayStart ? 1.0f
-                : dayProgress < cutoutPointNightToDayEnd ? 1.0f - (dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart)
+                : dayProgress < cutoutPointNightToDayEnd ? 1.0f - ((dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart))
                 : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
                 : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
             return Extensions.FromVec3(Vector3.Lerp(map.DaySkyboxColors.GetColor(map, dayProgress), map.NightSkyboxColors.GetColor(map, dayProgress), dayNightFactor));
@@ -410,7 +410,7 @@
                 const float cutoutPointDayToNightEnd = 21f;
                 float dayNightFactor =
                     dayProgress < cutoutPointNightToDayStart ? 1.0f
-                    : dayProgress < cutoutPointNightToDayEnd ? 1.0f - (dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart)
+                    : dayProgress < cutoutPointNightToDayEnd ? 1.0f - ((dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart))
                     : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
                     : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
 

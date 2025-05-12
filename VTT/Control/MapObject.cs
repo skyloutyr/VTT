@@ -148,10 +148,7 @@
         public bool IsRemoved { get; set; }
         #endregion
 
-        public MapObject()
-        {
-            this.Particles = new ParticleRepository(this);
-        }
+        public MapObject() => this.Particles = new ParticleRepository(this);
 
         public DataElement Serialize()
         {
@@ -441,10 +438,7 @@
             private readonly Dictionary<Guid, ParticleContainer> _containers = new Dictionary<Guid, ParticleContainer>();
             private readonly object _lock = new object();
 
-            public ParticleRepository(MapObject container) 
-            {
-                this.Container = container;
-            }
+            public ParticleRepository(MapObject container) => this.Container = container;
 
             public IEnumerable<ParticleContainer> GetAllContainers()
             {

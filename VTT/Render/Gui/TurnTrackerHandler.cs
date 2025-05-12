@@ -745,7 +745,7 @@
                                 {
                                     dragAndHover = true;
                                     Vec2 mc = ImGui.GetMousePos();
-                                    dragAndHoverOverHalf = mc.Y > (cursorBeforeChild.Y + childSize.Y * 0.5f);
+                                    dragAndHoverOverHalf = mc.Y > (cursorBeforeChild.Y + (childSize.Y * 0.5f));
                                 }
 
                                 if (dragAndHover)

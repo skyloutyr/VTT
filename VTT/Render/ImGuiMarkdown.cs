@@ -569,10 +569,7 @@ namespace VTT.Render
         {
             public float indentX;
 
-            public void Free()
-            {
-                this.ResetIndent();
-            }
+            public void Free() => this.ResetIndent();
 
             // ImGui::TextWrapped will wrap at the starting position
             // so to work around this we render using our own wrapping for the first line
@@ -586,7 +583,7 @@ namespace VTT.Render
                     indexTo = text.Length;
                 }
 
-                ImGui.TextUnformatted(text.Substring(0, indexTo));
+                ImGui.TextUnformatted(text[..indexTo]);
                 if(bIndentToHere)
                 {
                     float indentNeeded = ImGui.GetContentRegionAvail().X - widthLeft;
@@ -610,7 +607,7 @@ namespace VTT.Render
                     indexTo = text.Length - leftovers.Length;
                     if (indexTo > 0)
                     {
-                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(text.Substring(0, indexTo)));
+                        ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(text[..indexTo]));
                     }
                     else
                     {
@@ -650,27 +647,25 @@ namespace VTT.Render
                 {
                     if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && mdConfig.LinkCallback != null)
                     {
-                        mdConfig.LinkCallback.Invoke(new MarkdownLinkCallbackData() {
+                        mdConfig.LinkCallback.Invoke(new MarkdownLinkCallbackData() 
+                        {
                             Text = markdown.Substring(link.text.start, link.text.Size),
                             Link = markdown.Substring(link.url.start, link.url.Size),
                             IsImage = false
                         });
                     }
 
-                    if (mdConfig.TooltipCallback != null)
+                    mdConfig.TooltipCallback?.Invoke(new MarkdownTooltipCallbackData() 
                     {
-                        mdConfig.TooltipCallback(new MarkdownTooltipCallbackData()
+                        LinkData = new MarkdownLinkCallbackData()
                         {
-                            LinkData = new MarkdownLinkCallbackData()
-                            {
-                                Text = markdown.Substring(link.text.start, link.text.Size),
-                                Link = markdown.Substring(link.url.start, link.url.Size),
-                                IsImage = false
-                            },
+                            Text = markdown.Substring(link.text.start, link.text.Size),
+                            Link = markdown.Substring(link.url.start, link.url.Size),
+                            IsImage = false
+                        },
 
-                            LinkIcon = mdConfig.LinkIcon
-                        });
-                    }
+                        LinkIcon = mdConfig.LinkIcon
+                    });
                 }
 
                 return bThisItemHovered;
@@ -693,7 +688,7 @@ namespace VTT.Render
                     {
                         // see if we can do a better cut.
                         float widthNextLine = ImGui.GetContentRegionAvail().X;
-                        int endNextLineIndex = TextWrapFromFont(ImGui.GetFont(), scale, text, widthNextLine, out string endNextLine);
+                        int endNextLineIndex = TextWrapFromFont(ImGui.GetFont(), scale, text, widthNextLine, out _);
                         if (endNextLineIndex >= text.Length - 1 || (endNextLineIndex <= text.Length - 1 && !IsCharInsideWord(text[endNextLineIndex])))
                         {
                             // can possibly do better if go to next line
@@ -707,7 +702,7 @@ namespace VTT.Render
                     endLineIndex = text.Length;
                 }
 
-                bool bHovered = RenderLinkText(text.Substring(0, endLineIndex), link, markdown, mdConfig, ref linkHoverStart);
+                bool bHovered = RenderLinkText(text[..endLineIndex], link, markdown, mdConfig, ref linkHoverStart);
                 if (bIndentToHere)
                 {
                     float indentNeeded = ImGui.GetContentRegionAvail().X - widthLeft;
@@ -724,7 +719,7 @@ namespace VTT.Render
                     text = endLine;
                     if (text[0] == ' ') 
                     { 
-                        text = text.Substring(1);  // skip a space at start of line
+                        text = text[1..];  // skip a space at start of line
                     }
 
                     endLineIndex = TextWrapFromFont(ImGui.GetFont(), scale, text, widthLeft, out endLine);
@@ -733,7 +728,7 @@ namespace VTT.Render
                         ++endLineIndex;
                     }
 
-                    bool bThisLineHovered = RenderLinkText(text.Substring(0, endLineIndex), link, markdown, mdConfig, ref linkHoverStart);
+                    bool bThisLineHovered = this.RenderLinkText(text[..endLineIndex], link, markdown, mdConfig, ref linkHoverStart);
                     bHovered = bHovered || bThisLineHovered;
                 }
 
@@ -874,14 +869,7 @@ namespace VTT.Render
         private static int TextWrapFromFont(ImFontPtr font, float scale, string text, float wrapWidth, out string leftovers)
         {
             leftovers = font.CalcWordWrapPositionA(scale, text, wrapWidth);
-            if (leftovers == null || string.IsNullOrEmpty(leftovers))
-            {
-                return -1;
-            }
-            else
-            {
-                return text.Length - leftovers.Length;
-            }
+            return string.IsNullOrEmpty(leftovers) ? -1 : text.Length - leftovers.Length;
         }
 
         private static void DefaultMarkdownFormatCallback(MarkdownFormatInfo markdownFormatInfo, bool start)
@@ -935,15 +923,10 @@ namespace VTT.Render
 
                 case MarkdownFormatType.Heading:
                 {
-                    MarkdownHeadingFormat fmt = new MarkdownHeadingFormat();
-                    if (markdownFormatInfo.Level > MarkdownConfig.NumHeadings)
-                    {
-                        fmt = markdownFormatInfo.Config.HeadingFormats[MarkdownConfig.NumHeadings - 1];
-                    }
-                    else
-                    {
-                        fmt = markdownFormatInfo.Config.HeadingFormats[markdownFormatInfo.Level - 1];
-                    }
+                    MarkdownHeadingFormat fmt = markdownFormatInfo.Level > MarkdownConfig.NumHeadings
+                        ? markdownFormatInfo.Config.HeadingFormats[MarkdownConfig.NumHeadings - 1]
+                        : markdownFormatInfo.Config.HeadingFormats[markdownFormatInfo.Level - 1];
+
                     if (start)
                     {
                         if (fmt.Font != null)

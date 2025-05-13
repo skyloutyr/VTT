@@ -2,6 +2,7 @@
 {
     using System;
     using VTT.Control;
+    using VTT.Util;
 
     public class PacketRulerInfo : PacketBaseWithCodec
     {
@@ -45,6 +46,6 @@
             }
         }
 
-        public override void LookupData(Codec c) => c.Lookup(this.Info ??= new RulerInfo());
+        public override void LookupData(Codec c) => c.Lookup((ICustomNetworkHandler)(this.Info ??= new RulerInfo()));
     }
 }

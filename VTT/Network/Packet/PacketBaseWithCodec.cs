@@ -485,6 +485,18 @@
                 }
             }
 
+            public void Lookup(ICustomNetworkHandler icnh)
+            {
+                if (this._isWrite)
+                {
+                    icnh.Write(this._bw);
+                }
+                else
+                {
+                    icnh.Read(this._br);
+                }
+            }
+
             public void Lookup<T>(ref List<T> list, Func<T, T> serializer)
             {
                 int cnt = this.Lookup(list?.Count ?? 0);

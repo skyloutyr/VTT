@@ -8,7 +8,7 @@
     using VTT.Render;
     using VTT.Util;
 
-    public class RulerInfo : ISerializable
+    public class RulerInfo : ISerializable, ICustomNetworkHandler
     {
         public Guid SelfID { get; set; }
         public Guid OwnerID { get; set; }
@@ -87,8 +87,8 @@
 
         public void Write(BinaryWriter bw)
         {
-            bw.Write(this.SelfID.ToByteArray());
-            bw.Write(this.OwnerID.ToByteArray());
+            bw.Write(this.SelfID);
+            bw.Write(this.OwnerID);
             bw.Write(this.OwnerName);
             bw.Write(this.Tooltip);
             bw.Write(this.Color.Argb());
@@ -100,9 +100,10 @@
             bw.Write(this.DisplayInfo);
         }
 
-        public void Read(BinaryReader br) // Assume SelfID already read
+        public void Read(BinaryReader br)
         {
-            this.OwnerID = new Guid(br.ReadBytes(16));
+            this.SelfID = br.ReadGuid();
+            this.OwnerID = br.ReadGuid();
             this.OwnerName = br.ReadString();
             this.Tooltip = br.ReadString();
             this.Color = Extensions.FromArgb(br.ReadUInt32());
@@ -161,8 +162,6 @@
 
         public void Deserialize(DataElement e)
         {
-            this.IsDead = false;
-            this.KeepAlive = true;
             this.SelfID = e.GetGuidLegacy("SelfID");
             this.OwnerID = e.GetGuidLegacy("OwnerID");
             this.OwnerName = e.GetString("OwnerName");

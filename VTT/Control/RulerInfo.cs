@@ -182,6 +182,9 @@
             {
                 this.Points = e.GetPrimitiveArrayWithLegacySupport("Points", (n, c) => c.GetVec3Legacy(n), new Vector3[2]);
             }
+
+            this.IsDead = false;
+            this.KeepAlive = true;
         }
     }
 }

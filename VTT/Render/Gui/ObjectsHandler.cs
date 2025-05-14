@@ -1057,20 +1057,22 @@
                     this.Search.ImImage(new Vector2(24, 24));
 
                     int currentLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
-                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-                    ImGui.TextUnformatted(lang.Translate("ui.object_layer." + currentLayer));
-                    ImGui.PopStyleColor();
-                    foreach (MapObject mo in state.clientMap.IterateObjects(currentLayer).OrderBy(x => x.Name))
+                    if (ImGui.TreeNode(lang.Translate("ui.object_layer." + currentLayer)))
                     {
-                        if (!string.IsNullOrEmpty(this._objectSearchText))
+                        foreach (MapObject mo in state.clientMap.IterateObjects(currentLayer).OrderBy(x => x.Name))
                         {
-                            if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                            if (!string.IsNullOrEmpty(this._objectSearchText))
                             {
-                                continue;
+                                if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    continue;
+                                }
                             }
+
+                            RenderObjectInfo(mo, true);
                         }
 
-                        RenderObjectInfo(mo, true);
+                        ImGui.TreePop();
                     }
 
                     if (Client.Instance.IsAdmin)
@@ -1082,20 +1084,22 @@
                                 continue;
                             }
 
-                            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-                            ImGui.TextUnformatted(lang.Translate("ui.object_layer." + i));
-                            ImGui.PopStyleColor();
-                            foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
+                            if (ImGui.TreeNode(lang.Translate("ui.object_layer." + i)))
                             {
-                                if (!string.IsNullOrEmpty(this._objectSearchText))
+                                foreach (MapObject mo in state.clientMap.IterateObjects(i).OrderBy(x => x.Name))
                                 {
-                                    if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                                    if (!string.IsNullOrEmpty(this._objectSearchText))
                                     {
-                                        continue;
+                                        if (!mo.ID.ToString().Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase) && !mo.Name.Contains(this._objectSearchText, StringComparison.InvariantCultureIgnoreCase))
+                                        {
+                                            continue;
+                                        }
                                     }
+
+                                    RenderObjectInfo(mo, false);
                                 }
 
-                                RenderObjectInfo(mo, false);
+                                ImGui.TreePop();
                             }
                         }
                     }

@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.IO.Compression;
+    using ZstdSharp;
 
     public class PacketNetworkManager
     {
@@ -97,7 +97,7 @@
                         if ((compressedFlag & 1) == 1)
                         {
                             ms.Position = 3; // 3 is packet ID (2 bytes) + compressed flag (1 byte)
-                            using DeflateStream ds = new DeflateStream(ms, CompressionMode.Decompress);
+                            using DecompressionStream ds = new DecompressionStream(ms);
                             using BinaryReader br2 = new BinaryReader(ds);
                             pb.Decode(br2);
                         }

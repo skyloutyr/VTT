@@ -3,9 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.IO.Compression;
     using System.Reflection;
     using VTT.Util;
+    using ZstdSharp;
 
     public abstract class PacketBase
     {
@@ -98,7 +98,7 @@
             bw.Write((byte)(this.Compressed ? 1 : 0));
             if (this.Compressed)
             {
-                using DeflateStream ds = new DeflateStream(ms, System.IO.Compression.CompressionMode.Compress);
+                using CompressionStream ds = new CompressionStream(ms, 3);
                 using BinaryWriter bw2 = new BinaryWriter(ds);
                 this.Encode(bw2);
             }

@@ -521,6 +521,7 @@
     <PackageReference Include="NVorbis" Version="0.10.5" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
     <PackageReference Include="Ultz.Native.GLFW" Version="3.4.0" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.5" />
   </ItemGroup>
 
   <ItemGroup>

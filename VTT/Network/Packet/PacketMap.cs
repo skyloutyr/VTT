@@ -8,7 +8,7 @@
     public class PacketMap : PacketBase
     {
         public override uint PacketID => 42;
-        public override bool Compressed => false;
+        public override bool Compressed => true;
 
         public Map Map { get; set; }
 

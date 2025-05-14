@@ -332,7 +332,6 @@
             if (this.ObjectMouseOver == null && this.ObjectListObjectMouseOver != null)
             {
                 this.ObjectMouseOver = this.ObjectListObjectMouseOver;
-                this.ObjectListObjectMouseOver = null;
             }
         }
 

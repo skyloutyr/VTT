@@ -3,60 +3,12 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Runtime.InteropServices;
-
-    public class WeightedRandom
-    {
-        internal static readonly Random rand = new Random();
-
-        public static WeightedItem<T> GetWeightedItem<T>(IEnumerable<WeightedItem<T>> collection, Random rand = null)
-        {
-            rand = rand ?? WeightedRandom.rand;
-            int weight = rand.Next(collection.Sum(w => w.Weight)) + 1;
-            Queue<WeightedItem<T>> q = new Queue<WeightedItem<T>>(collection);
-            WeightedItem<T> wi = q.Dequeue();
-            while (true)
-            {
-                weight -= wi.Weight;
-                if (weight > 0)
-                {
-                    wi = q.Dequeue();
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return wi;
-        }
-
-        public static WeightedItem<T> GetWeightedItem<T>(WeightedList<T> collection, Random rand)
-        {
-            rand = rand ?? WeightedRandom.rand;
-            int weight = rand.Next(collection.TotalWeight) + 1;
-            int idx = 0;
-            WeightedItem<T> wi = collection[idx];
-            while (true)
-            {
-                weight -= wi.Weight;
-                if (weight > 0)
-                {
-                    wi = collection[++idx];
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return wi;
-        }
-    }
 
     public class WeightedList<T> : IList<WeightedItem<T>>
     {
+        internal static readonly Random rand = new Random();
+
         private readonly List<WeightedItem<T>> _list = new List<WeightedItem<T>>();
         private int _totalWeight;
 
@@ -83,6 +35,21 @@
             }
         }
 
+        public WeightedList()
+        {
+        }
+
+        public WeightedList(WeightedList<T> copyFrom) => this.FullCopyFrom(copyFrom);
+
+        public void FullCopyFrom(WeightedList<T> copyFrom)
+        {
+            this.Clear();
+            foreach (WeightedItem<T> itm in copyFrom)
+            {
+                this._list.Add(itm.Clone());
+            }
+        }
+
         public void Add(WeightedItem<T> item)
         {
             item.localCumulativeWeight = this._totalWeight + item.Weight;
@@ -106,7 +73,7 @@
 
         public WeightedItem<T> GetRandomItem(Random rand = null)
         {
-            rand ??= WeightedRandom.rand;
+            rand ??= WeightedList<T>.rand;
             int weight = rand.Next(this.TotalWeight) + 1;
             if (this.Count < 16) // Arbitrary, for small collections a quick check may be faster
             {
@@ -216,5 +183,7 @@
             this.Weight = weight;
             this.localCumulativeWeight = weight;
         }
+
+        public readonly WeightedItem<T> Clone() => new WeightedItem<T>(this.Item, this.Weight) { localCumulativeWeight = this.localCumulativeWeight };
     }
 }

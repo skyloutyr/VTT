@@ -299,7 +299,7 @@
 
             public int[] SelectionWeights { get; set; } = new int[1] { 1 };
 
-            public List<WeightedItem<int>> SelectionWeightsList { get; } = new List<WeightedItem<int>>() { new WeightedItem<int>(0, 1) };
+            public WeightedList<int> SelectionWeightsList { get; } = new WeightedList<int> { new WeightedItem<int>(0, 1) };
 
             public void ReallocateSelectionWeights()
             {
@@ -363,8 +363,7 @@
                     SelectionWeights = (int[])this.SelectionWeights.Clone(),
                 };
 
-                ret.SelectionWeightsList.Clear();
-                ret.SelectionWeightsList.AddRange(this.SelectionWeightsList);
+                ret.SelectionWeightsList.FullCopyFrom(this.SelectionWeightsList);
                 return ret;
             }
 
@@ -475,7 +474,7 @@
             GL.ActiveTexture(0);
         }
 
-        private readonly List<WeightedItem<GlbMesh>> _meshRefs = new List<WeightedItem<GlbMesh>>();
+        private readonly WeightedList<GlbMesh> _meshRefs = new WeightedList<GlbMesh>();
 
         public void Update(Vector3 cameraPosition)
         {
@@ -562,7 +561,7 @@
 
                             case ParticleSystem.SpriteSheetData.SelectionMode.Random:
                             {
-                                p->spriteIndex = WeightedRandom.GetWeightedItem(this.Template.SpriteData.SelectionWeightsList, this._rand).Item;
+                                p->spriteIndex = this.Template.SpriteData.SelectionWeightsList.GetRandomItem(this._rand).Item;
                                 break;
                             }
 
@@ -887,7 +886,7 @@
 
                                 if (this._meshRefs.Count > 0)
                                 {
-                                    GlbMesh sMesh = WeightedRandom.GetWeightedItem(this._meshRefs, this._rand).Item;
+                                    GlbMesh sMesh = this._meshRefs.GetRandomItem(this._rand).Item;
                                     float totalArea = sMesh.areaSums[^1];
                                     float rArea = this._rand.NextSingle() * totalArea;
                                     //int rIdx = this._rand.Next(sMesh.simplifiedTriangles.Length / 3) * 3;

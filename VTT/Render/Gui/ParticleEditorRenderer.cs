@@ -18,8 +18,8 @@
     {
         internal bool popupState = false;
 
-        private GradientPoint<Vector4> _editedColorPt;
-        private Gradient<Vector4> _editedColor;
+        private LinearGradient<Vector4>.LinearGradientPoint _editedColorPt;
+        private LinearGradient<Vector4> _editedColor;
         private bool editColorPopup = false;
 
         public void Render(Guid particleSystemId, AssetRef draggedRef, GuiState state)
@@ -291,19 +291,18 @@
                             }
 
                             ImGui.Text(lang.Translate("ui.particle.color"));
-                            ImGradient(pr.CurrentlyEditedSystem.ColorOverLifetime, ref npLbm, ref npRmb);
+                            ImLinearGradient(pr.CurrentlyEditedSystem.ColorOverLifetime, ref npLbm, ref npRmb);
 
                             ImGui.Text(lang.Translate("ui.particle.scale"));
-                            ImGradientSingle(pr.CurrentlyEditedSystem.ScaleOverLifetime, ref npLbm, ref npRmb);
+                            ImLinearGradientSingle(pr.CurrentlyEditedSystem.ScaleOverLifetime, ref npLbm, ref npRmb);
 
-                            float f = _editedValueSingle?.Color ?? 0f;
+                            float f = linearEditedValueSingle?.Value ?? 0f;
                             if (ImGui.DragFloat("##DragFloatEditedValue", ref f, 0.01f))
                             {
-                                if (_editedValueSingle.HasValue)
+                                if (linearEditedValueSingle != null)
                                 {
-                                    pr.CurrentlyEditedSystem.ScaleOverLifetime.Remove(_editedValueSingle.Value.Key);
-                                    _editedValueSingle = new GradientPoint<float>(_editedValueSingle.Value.Key, f);
-                                    pr.CurrentlyEditedSystem.ScaleOverLifetime.Add(_editedValueSingle.Value);
+                                    pr.CurrentlyEditedSystem.ScaleOverLifetime.RemoveInternalPoint(linearEditedValueSingle);
+                                    linearEditedValueSingle = pr.CurrentlyEditedSystem.ScaleOverLifetime.Add(linearEditedValueSingle.Key, f);                                    
                                 }
                             }
 
@@ -447,15 +446,15 @@
             {
                 _lmbDown = false;
                 _imDraggedGradientKey = 0;
-                _lastClicked = null;
-                _lastClickedSingle = null;
+                linearLastClicked = null;
+                linearLastClickedSingle = null;
             }
 
             if (!Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Right) && _rmbDown)
             {
                 _rmbDown = false;
-                _lastClicked = null;
-                _lastClickedSingle = null;
+                linearLastClicked = null;
+                linearLastClickedSingle = null;
             }
 
             if (this.editColorPopup)
@@ -465,10 +464,10 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.generic.color") + "###Edit Gradient Color"))
             {
-                Vector4 c = this._editedColorPt.Color;
+                Vector4 c = this._editedColorPt.Value;
                 if (ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###GradColor", ref c))
                 {
-                    this._editedColorPt = new GradientPoint<Vector4>(this._editedColorPt.Key, c);
+                    this._editedColorPt = new (c, this._editedColorPt.Key, 0);
                 }
 
                 bool bc = ImGui.Button(lang.Translate("ui.generic.cancel"));
@@ -482,8 +481,7 @@
 
                 if (bo)
                 {
-                    this._editedColor.Remove(this._editedColorPt.Key);
-                    this._editedColor.Add(this._editedColorPt);
+                    this._editedColorPt = this._editedColor.Add(this._editedColorPt.Key, c);
                 }
 
                 ImGui.EndPopup();
@@ -493,11 +491,11 @@
         private static float _imDraggedGradientKey;
         private static bool _lmbDown;
         private static bool _rmbDown;
-        private static GradientPoint<Vector4>? _lastClicked;
-        private static GradientPoint<float>? _lastClickedSingle;
-        private static GradientPoint<float>? _editedValueSingle;
+        private static LinearGradient<Vector4>.LinearGradientPoint linearLastClicked;
+        private static LinearGradient<float>.LinearGradientPoint linearLastClickedSingle;
+        private static LinearGradient<float>.LinearGradientPoint linearEditedValueSingle;
 
-        private bool ImGradient(Gradient<Vector4> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
+        private bool ImLinearGradient(LinearGradient<Vector4> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             float w = 208;
@@ -510,14 +508,14 @@
 
             bool processedRmb = false;
 
-            for (int i = 0; i < grad.InternalList.Count; i++)
+            for (int i = 0; i < grad.Count; i++)
             {
-                GradientPoint<Vector4> curr = grad.InternalList[i];
-                GradientPoint<Vector4> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
+                LinearGradient<Vector4>.LinearGradientPoint curr = grad.GetInternalPointAt(i);
+                LinearGradient<Vector4>.LinearGradientPoint next = grad.GetInternalPointAt((i + 1) % grad.Count);
                 float fS = curr.Key * w;
                 float fN = (next.Key < curr.Key ? 1 : next.Key) * w;
-                uint clrL = Extensions.FromVec4(curr.Color).Abgr();
-                uint clrR = Extensions.FromVec4(next.Color).Abgr();
+                uint clrL = curr.Value.Abgr();
+                uint clrR = next.Value.Abgr();
                 drawList.AddRectFilledMultiColor(
                     new Vector2(curWin.X + fS, curWin.Y),
                     new Vector2(curWin.X + fN, curWin.Y + 24),
@@ -531,18 +529,18 @@
                     new Vector2(curWin.X + fS + 4, curWin.Y + 40)
                 );
 
-                if (needsProcessLmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
+                if (needsProcessLmb && hoverTri && i != 0 && i != grad.Count - 1)
                 {
                     needsProcessLmb = false;
-                    _lastClicked = curr;
+                    linearLastClicked = curr;
                     _imDraggedGradientKey = curr.Key;
                 }
 
-                if (needsProcessRmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
+                if (needsProcessRmb && hoverTri && i != 0 && i != grad.Count - 1)
                 {
                     needsProcessRmb = false;
                     processedRmb = true;
-                    _lastClicked = curr;
+                    linearLastClicked = curr;
                 }
 
                 drawList.AddTriangleFilled(
@@ -581,15 +579,13 @@
                 }
             }
 
-            if (_lmbDown && _lastClicked.HasValue)
+            if (_lmbDown && linearLastClicked != null)
             {
                 float mV = Math.Clamp((Client.Instance.Frontend.MouseX - curWin.X) / w, 0f, 1f);
                 if (MathF.Abs(mV - _imDraggedGradientKey) > float.Epsilon)
                 {
-                    grad.InternalList.Remove(_lastClicked.Value);
-                    GradientPoint<Vector4> nPt = new GradientPoint<Vector4>(mV, _lastClicked.Value.Color);
-                    grad.Add(nPt);
-                    _lastClicked = nPt;
+                    grad.RemoveInternalPoint(linearLastClicked);
+                    linearLastClicked = grad.Add(mV, linearLastClicked.Value);
                     _imDraggedGradientKey = mV;
                 }
             }
@@ -599,16 +595,16 @@
                 if (ImGui.IsMouseHoveringRect(new Vector2(curWin.X, curWin.Y), new Vector2(curWin.X + w, curWin.Y + 24)))
                 {
                     float mV = Math.Clamp((ImGui.GetMousePos().X - curWin.X) / w, 0f, 1f);
-                    Vector4 v = grad.Interpolate(mV, GradientInterpolators.LerpVec4);
+                    Vector4 v = grad.Interpolate(mV);
                     grad.Add(mV, v);
                     needsProcessLmb = false;
-                    _lastClicked = null;
+                    linearLastClicked = null;
                 }
             }
 
-            if (_rmbDown && processedRmb && _lastClicked.HasValue)
+            if (_rmbDown && processedRmb && linearLastClicked != null)
             {
-                grad.Remove(_lastClicked.Value.Key);
+                grad.RemoveInternalPoint(linearLastClicked);
             }
 
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 64);
@@ -616,7 +612,7 @@
             return false;
         }
 
-        private bool ImGradientSingle(Gradient<float> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
+        private bool ImLinearGradientSingle(LinearGradient<float> grad, ref bool needsProcessLmb, ref bool needsProcessRmb)
         {
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             float w = 208;
@@ -628,16 +624,16 @@
             );
 
             bool processedRmb = false;
-            float maxVal = grad.Values.Max();
+            float maxVal = grad.Max(x => x.Value);
 
-            for (int i = 0; i < grad.InternalList.Count; i++)
+            for (int i = 0; i < grad.Count; i++)
             {
-                GradientPoint<float> curr = grad.InternalList[i];
-                GradientPoint<float> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
+                LinearGradient<float>.LinearGradientPoint curr = grad.GetInternalPointAt(i);
+                LinearGradient<float>.LinearGradientPoint next = grad.GetInternalPointAt((i + 1) % grad.Count);
                 float fS = curr.Key * w;
                 float fN = (next.Key < curr.Key ? 1 : next.Key) * w;
-                float fYS = curr.Color / maxVal;
-                float fYN = next.Color / maxVal;
+                float fYS = curr.Value / maxVal;
+                float fYN = next.Value / maxVal;
                 drawList.AddLine(
                     new Vector2(curWin.X + fS, curWin.Y + 24 - (fYS * 24)),
                     new Vector2(curWin.X + fN, curWin.Y + 24 - (fYN * 24)),
@@ -651,20 +647,20 @@
                     new Vector2(curWin.X + fS + 4, curWin.Y + 40)
                 );
 
-                if (needsProcessLmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
+                if (needsProcessLmb && hoverTri && i != 0 && i != grad.Count - 1)
                 {
                     needsProcessLmb = false;
-                    _lastClickedSingle = curr;
+                    linearLastClickedSingle = curr;
                     _imDraggedGradientKey = curr.Key;
-                    _editedValueSingle = curr;
+                    linearEditedValueSingle = curr;
                 }
 
-                if (needsProcessRmb && hoverTri && i != 0 && i != grad.InternalList.Count - 1)
+                if (needsProcessRmb && hoverTri && i != 0 && i != grad.Count - 1)
                 {
                     needsProcessRmb = false;
                     processedRmb = true;
-                    _lastClickedSingle = curr;
-                    _editedValueSingle = null;
+                    linearLastClickedSingle = curr;
+                    linearEditedValueSingle = null;
                 }
 
                 drawList.AddTriangleFilled(
@@ -697,21 +693,18 @@
                 if (needsProcessLmb && hoverQuad)
                 {
                     needsProcessLmb = false;
-                    _editedValueSingle = curr;
+                    linearEditedValueSingle = curr;
                 }
             }
 
-            if (_lmbDown && _lastClickedSingle.HasValue)
+            if (_lmbDown && linearLastClickedSingle != null)
             {
                 float mV = Math.Clamp((Client.Instance.Frontend.MouseX - curWin.X) / w, 0f, 1f);
                 if (MathF.Abs(mV - _imDraggedGradientKey) > float.Epsilon)
                 {
-                    grad.InternalList.Remove(_lastClickedSingle.Value);
-                    GradientPoint<float> nPt = new GradientPoint<float>(mV, _lastClickedSingle.Value.Color);
-                    grad.Add(nPt);
-                    _lastClickedSingle = nPt;
+                    grad.RemoveInternalPoint(linearLastClickedSingle);
+                    linearEditedValueSingle = linearLastClickedSingle = grad.Add(mV, linearLastClickedSingle.Value);
                     _imDraggedGradientKey = mV;
-                    _editedValueSingle = nPt;
                 }
             }
 
@@ -720,17 +713,15 @@
                 if (ImGui.IsMouseHoveringRect(new Vector2(curWin.X, curWin.Y), new Vector2(curWin.X + w, curWin.Y + 24)))
                 {
                     float mV = Math.Clamp((Client.Instance.Frontend.MouseX - curWin.X) / w, 0f, 1f);
-                    float v = grad.Interpolate(mV, GradientInterpolators.Lerp);
-                    GradientPoint<float> pt = new GradientPoint<float>(mV, v);
-                    grad.Add(pt);
-                    _editedValueSingle = pt;
+                    float v = grad.Interpolate(mV);
+                    linearEditedValueSingle = grad.Add(mV, v);
                     needsProcessLmb = false;
                 }
             }
 
-            if (_rmbDown && processedRmb && _lastClickedSingle.HasValue)
+            if (_rmbDown && processedRmb && linearLastClickedSingle != null)
             {
-                grad.Remove(_lastClickedSingle.Value.Key);
+                grad.RemoveInternalPoint(linearLastClickedSingle);
             }
 
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 64);

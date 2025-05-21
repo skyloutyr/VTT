@@ -40,8 +40,8 @@
         public Vector3 Gravity { get; set; } = new Vector3(0, 0, -1 / 60.0f);
         public float VelocityDampenFactor { get; set; } = 0.98f;
 
-        public Gradient<Vector4> ColorOverLifetime { get; set; } = new Gradient<Vector4>() { [0] = Vector4.One, [1] = new Vector4(1, 1, 1, 0) };
-        public Gradient<float> ScaleOverLifetime { get; set; } = new Gradient<float>() { [0] = 1f, [1] = 1f };
+        public LinearGradient<Vector4> ColorOverLifetime { get; set; } = new LinearGradient<Vector4>(Vector4.Lerp) { [0] = Vector4.One, [1] = new Vector4(1, 1, 1, 0) };
+        public LinearGradient<float> ScaleOverLifetime { get; set; } = new LinearGradient<float>((l, r, a) => (l * (1.0f - a)) + (r * a)) { [0] = 1f, [1] = 1f };
         public bool IsSpriteSheet { get; set; } = false;
         public SpriteSheetData SpriteData { get; set; } = new SpriteSheetData();
         public bool SpriteSheetIsAnimation { get; set; } = false;
@@ -74,14 +74,14 @@
             bw.Write(this.Gravity);
             bw.Write(this.VelocityDampenFactor);
             bw.Write(this.ColorOverLifetime.Count);
-            foreach (KeyValuePair<float, Vector4> kv in this.ColorOverLifetime)
+            foreach (LinearGradient<Vector4>.LinearGradientPoint kv in this.ColorOverLifetime)
             {
                 bw.Write(kv.Key);
                 bw.Write(kv.Value);
             }
 
             bw.Write(this.ScaleOverLifetime.Count);
-            foreach (KeyValuePair<float, float> kv in this.ScaleOverLifetime)
+            foreach (LinearGradient<float>.LinearGradientPoint kv in this.ScaleOverLifetime)
             {
                 bw.Write(kv.Key);
                 bw.Write(kv.Value);
@@ -112,8 +112,8 @@
             ret.SetSingle("InitialVelocityRandomAngle", this.InitialVelocityRandomAngle);
             ret.SetVec3("Gravity", this.Gravity);
             ret.SetSingle("VelocityDampenFactor", this.VelocityDampenFactor);
-            ret.SetPrimitiveArray("ColorOverLifetime", this.ColorOverLifetime.ToArray());
-            ret.SetPrimitiveArray("ScaleOverLifetime", this.ScaleOverLifetime.ToArray());
+            ret.SetPrimitiveArray("ColorOverLifetime", this.ColorOverLifetime.Select(x => (KeyValuePair<float, Vector4>)x).ToArray());
+            ret.SetPrimitiveArray("ScaleOverLifetime", this.ScaleOverLifetime.Select(x => (KeyValuePair<float, float>)x).ToArray());
             ret.SetGuid("AssetID", this.AssetID);
             ret.SetBool("DoBillboard", this.DoBillboard);
             ret.SetBool("ClusterEmission", this.ClusterEmission);
@@ -142,30 +142,20 @@
             this.InitialVelocityRandomAngle = de.GetSingle("InitialVelocityRandomAngle");
             this.Gravity = de.GetVec3Legacy("Gravity");
             this.VelocityDampenFactor = de.GetSingle("VelocityDampenFactor");
-            this.ColorOverLifetime.Clear();
             KeyValuePair<float, Vector4>[] colKvs = de.GetPrimitiveArrayWithLegacySupport("ColorOverLifetime", (n, c) =>
             {
                 DataElement de = c.GetMap(n);
                 return new KeyValuePair<float, Vector4>(de.GetSingle("k"), de.GetVec4Legacy("v"));
             }, Array.Empty<KeyValuePair<float, Vector4>>());
 
-            foreach (KeyValuePair<float, Vector4> kv in colKvs)
-            {
-                this.ColorOverLifetime[kv.Key] = kv.Value;
-            }
-
-            this.ScaleOverLifetime.Clear();
+            this.ColorOverLifetime.FromEnumerable(colKvs);
             KeyValuePair<float, float>[] solKvs = de.GetPrimitiveArrayWithLegacySupport("ScaleOverLifetime", (n, c) =>
             {
                 DataElement de = c.GetMap(n);
                 return new KeyValuePair<float, float>(de.GetSingle("k"), de.GetSingle("v"));
             }, Array.Empty<KeyValuePair<float, float>>());
 
-            foreach (KeyValuePair<float, float> kv in solKvs)
-            {
-                this.ScaleOverLifetime[kv.Key] = kv.Value;
-            }
-
+            this.ScaleOverLifetime.FromEnumerable(solKvs);
             this.AssetID = de.GetGuidLegacy("AssetID");
             this.DoBillboard = de.GetBool("DoBillboard", true);
             this.ClusterEmission = de.GetBool("ClusterEmission", false);
@@ -197,14 +187,14 @@
             this.Gravity = br.ReadVec3();
             this.VelocityDampenFactor = br.ReadSingle();
             int c = br.ReadInt32();
-            this.ColorOverLifetime = new Gradient<Vector4>();
+            this.ColorOverLifetime.Clear();
             while (c-- > 0)
             {
                 this.ColorOverLifetime[br.ReadSingle()] = br.ReadVec4();
             }
 
             c = br.ReadInt32();
-            this.ScaleOverLifetime = new Gradient<float>();
+            this.ScaleOverLifetime.Clear();
             while (c-- > 0)
             {
                 this.ScaleOverLifetime[br.ReadSingle()] = br.ReadSingle();
@@ -231,8 +221,8 @@
             InitialVelocityRandomAngle = this.InitialVelocityRandomAngle,
             Gravity = new Vector3(this.Gravity.X, this.Gravity.Y, this.Gravity.Z),
             VelocityDampenFactor = this.VelocityDampenFactor,
-            ColorOverLifetime = new Gradient<Vector4>(this.ColorOverLifetime),
-            ScaleOverLifetime = new Gradient<float>(this.ScaleOverLifetime),
+            ColorOverLifetime = new(this.ColorOverLifetime),
+            ScaleOverLifetime = new(this.ScaleOverLifetime),
             AssetID = this.AssetID,
             CustomShaderID = this.CustomShaderID,
             MaskID = this.MaskID,
@@ -524,10 +514,10 @@
                     Particle* p = this.FindFirstDeactivatedParticle();
                     p->active = 1;
                     p->age = 0;
-                    p->color = this.Template.ColorOverLifetime.Interpolate(0, GradientInterpolators.LerpVec4);
+                    p->color = this.Template.ColorOverLifetime.Interpolate(0);
                     p->lifespan = this.Template.Lifetime.Value(this._rand.NextSingle());
                     p->scaleMod = this.Template.ScaleVariation.Value(this._rand.NextSingle());
-                    p->scale = this.Template.ScaleOverLifetime.Interpolate(0, GradientInterpolators.Lerp);
+                    p->scale = this.Template.ScaleOverLifetime.Interpolate(0);
                     p->spriteIndex = 0;
 
 
@@ -1197,8 +1187,8 @@
             this.velocity += instance.Template.Gravity;
             float a = (float)this.age / this.lifespan;
 
-            this.color = instance.Template.ColorOverLifetime.Interpolate(a, GradientInterpolators.LerpVec4);
-            this.scale = instance.Template.ScaleOverLifetime.Interpolate(a, GradientInterpolators.Lerp) * this.scaleMod;
+            this.color = instance.Template.ColorOverLifetime.Interpolate(a);
+            this.scale = instance.Template.ScaleOverLifetime.Interpolate(a) * this.scaleMod;
             if (instance.Template.SpriteSheetIsAnimation)
             {
                 this.spriteIndex = (int)MathF.Floor(a * instance.Template.SpriteData.NumSprites);

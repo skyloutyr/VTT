@@ -976,6 +976,11 @@
         private string _objectSearchText = "";
         private unsafe void RenderObjectsList(GuiState state, SimpleLanguage lang)
         {
+            if (Client.Instance.Frontend?.Renderer?.ObjectRenderer?.ObjectListObjectMouseOver != null)
+            {
+                Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectListObjectMouseOver = null;
+            }
+
             if (ImGui.Begin(lang.Translate("ui.objects") + "###Objects"))
             {
                 Vector2 wC = ImGui.GetWindowSize();

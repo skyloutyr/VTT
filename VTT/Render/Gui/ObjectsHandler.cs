@@ -1172,7 +1172,6 @@
             // Object names and bars overlay
             foreach (MapObject mo in objectsSelected)
             {
-
                 if (mo != null && mo.ClientRenderedThisFrame)
                 {
                     bool renderName = mo.CanEdit(Client.Instance.ID) || Client.Instance.IsAdmin || mo.IsNameVisible;
@@ -1185,7 +1184,7 @@
 
                     mo.ClientGuiOverlayDrawnThisFrame = true;
                     bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
-                    float cbby = (mo.ClientRaycastBox.End.Y - mo.ClientRaycastBox.Start.Y) * mo.Scale.Y;
+                    float cbby = mo.ClientRaycastOOBB.Size.Y;
                     Vector3 screen = is2d ?
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                         Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));
@@ -1354,7 +1353,7 @@
                     if (mo.CanEdit(Client.Instance.ID))
                     {
                         bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
-                        float cbby = (mo.ClientRaycastBox.End.Y - mo.ClientRaycastBox.Start.Y) * mo.Scale.Y;
+                        float cbby = mo.ClientRaycastOOBB.Size.Y;
                         Vector3 screen = is2d ?
                             Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, cbby * 0.5f, 0)) :
                             Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera.ToScreenspace(mo.Position + new Vector3(0, 0, 1));

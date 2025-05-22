@@ -12,10 +12,12 @@
 
     public class MapObject : ISerializable
     {
-        private Vector3 position = Vector3.Zero;
-        private Quaternion rotation = Quaternion.Identity;
-        private Vector3 scale = Vector3.One;
-        private AABox clientBoundingBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+        private Vector3 _position = Vector3.Zero;
+        private Quaternion _rotation = Quaternion.Identity;
+        private Vector3 _scale = Vector3.One;
+        private AABox _clientBoundingBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+        private AABox _clientRaycastBox = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+        private BBBox _clientRaycastOOBB = new BBBox(new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f), Quaternion.Identity);
 
         public Guid ID { get; set; }
 
@@ -36,30 +38,30 @@
         public int MapLayer { get; set; }
         public Vector3 Position
         {
-            get => this.position;
+            get => this._position;
             set
             {
-                this.position = value;
+                this._position = value;
                 this.RecalculateModelMatrix();
             }
         }
 
         public Quaternion Rotation
         {
-            get => this.rotation;
+            get => this._rotation;
             set
             {
-                this.rotation = value;
+                this._rotation = value;
                 this.RecalculateModelMatrix();
             }
         }
 
         public Vector3 Scale
         {
-            get => this.scale;
+            get => this._scale;
             set
             {
-                this.scale = value;
+                this._scale = value;
                 this.RecalculateModelMatrix();
             }
         }
@@ -102,15 +104,25 @@
         #region Client Data
         public AABox ClientBoundingBox
         {
-            get => this.clientBoundingBox;
+            get => this._clientBoundingBox;
             set
             {
-                this.clientBoundingBox = value;
+                this._clientBoundingBox = value;
                 this.RecalculateModelMatrix();
             }
         }
 
-        public AABox ClientRaycastBox { get; set; }
+        public AABox ClientModelRaycastBox
+        {
+            get => this._clientRaycastBox;
+            set
+            {
+                this._clientRaycastBox = value;
+                this.RecalculateModelMatrix();
+            }
+        }
+
+        public BBBox ClientRaycastOOBB => this._clientRaycastOOBB;
 
         public AABox CameraCullerBox { get; set; } = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
         public FrustumCullingSphere cameraCullerSphere = new FrustumCullingSphere(Vector3.Zero, 0.5f);
@@ -322,7 +334,8 @@
 
         public void RecalculateModelMatrix()
         {
-            this.ClientCachedModelMatrix = Matrix4x4.CreateScale(this.scale) * Matrix4x4.CreateFromQuaternion(this.rotation) * Matrix4x4.CreateTranslation(this.position);
+            this.ClientCachedModelMatrix = Matrix4x4.CreateScale(this._scale) * Matrix4x4.CreateFromQuaternion(this._rotation) * Matrix4x4.CreateTranslation(this._position);
+            this._clientRaycastOOBB = new BBBox(this._clientRaycastBox, this.Rotation).Scale(this.Scale);
             this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).Bounds;
             this.cameraCullerSphere = new FrustumCullingSphere(this.CameraCullerBox.Center + this.Position, this.CameraCullerBox.Size.Length() * 0.5f);
         }

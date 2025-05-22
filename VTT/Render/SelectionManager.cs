@@ -435,8 +435,7 @@
 
                         if (Client.Instance.IsAdmin || mo.CanEdit(Client.Instance.ID) || Client.Instance.IsObserver)
                         {
-                            AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
-                            BBBox box = new BBBox(cBB.Start, cBB.End, mo.Rotation);
+                            BBBox box = mo.ClientRaycastOOBB;
                             Vector3 moPos = mo.Position;
                             if (TriRectTester.Intersects(in rect, in box, in moPos, Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera))
                             {
@@ -931,8 +930,7 @@
                             continue;
                         }
 
-                        AABox cBB = mo.ClientRaycastBox.Scale(mo.Scale);
-                        BBBox box = new BBBox(cBB.Start, cBB.End, mo.Rotation);
+                        BBBox box = mo.ClientRaycastOOBB;
                         Vector3 moPos = mo.Position;
                         if (TriRectTester.Intersects(in rect, in box, in moPos, Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera))
                         {

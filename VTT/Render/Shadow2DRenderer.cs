@@ -713,8 +713,8 @@
                                 // Clients can move the cursor within their object's bounds
                                 if (mainSelectCandidate.ClientAssignedModelBounds) // Have bounds
                                 {
-                                    AABox cBB = mainSelectCandidate.ClientRaycastBox.Scale(mainSelectCandidate.Scale);
-                                    Vector3 cAvg = cBB.Start + ((cBB.End - cBB.Start) * 0.5f);
+                                    AABox cBB = mainSelectCandidate.ClientModelRaycastBox.Scale(mainSelectCandidate.Scale);
+                                    Vector3 cAvg = cBB.Center;
                                     cBB = cBB.Offset(cAvg).Offset(mainSelectCandidate.Position);
                                     Vector2 v0 = cBB.Start.Xy();
                                     Vector2 v1 = cBB.End.Xy();

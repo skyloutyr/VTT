@@ -299,7 +299,7 @@
                                 float radiusSq = (ri.End.Xy() - ri.Start.Xy()).LengthSquared();
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInCircle(rBB, mo.Position, ri.Start, radiusSq))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));
@@ -314,7 +314,7 @@
                                 float radiusSq = (ri.End - ri.Start).LengthSquared();
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInSphere(rBB, mo.Position, ri.Start, radiusSq))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));
@@ -328,7 +328,7 @@
                             {
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInSquare(rBB, mo.Position, ri.Start, ri.End))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));
@@ -342,7 +342,7 @@
                             {
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInCube(rBB, mo.Position, ri.Start, ri.End))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));
@@ -361,7 +361,7 @@
 
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInLine(rBB, mo.Position, ri.Start, ri.End, ri.ExtraInfo))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));
@@ -379,7 +379,7 @@
                                     Vector3 end = ri.Points[j + 1];
                                     foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                     {
-                                        BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                        BBBox rBB = mo.ClientRaycastOOBB;
                                         if (IsInLine(rBB, mo.Position, start, end, ri.ExtraInfo))
                                         {
                                             this._highlightedObjects.Add((mo, ri.Color));
@@ -399,7 +399,7 @@
 
                                 foreach (MapObject mo in m.IterateObjects(Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer))
                                 {
-                                    BBBox rBB = new BBBox(mo.ClientRaycastBox.Scale(mo.Scale), mo.Rotation);
+                                    BBBox rBB = mo.ClientRaycastOOBB;
                                     if (IsInCone(rBB, mo.Position, ri.Start, ri.End, ri.ExtraInfo))
                                     {
                                         this._highlightedObjects.Add((mo, ri.Color));

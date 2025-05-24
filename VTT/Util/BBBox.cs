@@ -102,6 +102,21 @@
 
         public readonly Vector3? Intersects(Ray ray, Vector3 offset = default)
         {
+            Matrix4x4 modelMatrix = Matrix4x4.CreateFromQuaternion(this.Rotation);
+
+            // A little hack to avoid one matrix multiplication - since no scale is applied translation can be written into the matrix directly
+            modelMatrix.M41 = offset.X;
+            modelMatrix.M42 = offset.Y;
+            modelMatrix.M43 = offset.Z;
+
+            return Matrix4x4.Invert(modelMatrix, out Matrix4x4 inverseModelMatrix)
+                ? this._internalAABB.Intersects(new Ray(
+                    Vector4.Transform(new Vector4(ray.Origin, 1.0f), inverseModelMatrix).Xyz(),
+                    Vector4.Normalize(Vector4.Transform(new Vector4(ray.Direction, 0.0f), inverseModelMatrix)).Xyz()
+                ))
+                : null;
+
+            /* Old code - had a bug in it, and was not more performant than the standard method of inverting the ray
             Matrix4x4 modelMatrix = Matrix4x4.CreateFromQuaternion(this.Rotation) * Matrix4x4.CreateTranslation(offset);
 
             float tMin = 0.0f;
@@ -190,6 +205,7 @@
             }
 
             return ray.Origin + (ray.Direction * tMin);
+            */
         }
 
         public readonly bool Equals(BBBox other) => other.Start.Equals(this.Start) && other.End.Equals(this.End);

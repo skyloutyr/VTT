@@ -36,14 +36,17 @@
             {
                 if (selector(mo))
                 {
-                    BBBox box = mo.ClientRaycastOOBB;
-                    Vector3? vec = box.Intersects(r, mo.Position);
-                    if (vec.HasValue)
+                    if (mo.cameraCullerSphere.Intersects(r))
                     {
-                        Guid aID = mo.AssetID;
-                        if (!Guid.Empty.Equals(aID) && Client.Instance.AssetManager.ClientAssetLibrary.Assets.TryGetWithoutRequest(aID, out Asset.Asset a))
+                        BBBox box = mo.ClientRaycastOOBB;
+                        Vector3? vec = box.Intersects(r, mo.Position);
+                        if (vec.HasValue)
                         {
-                            hitsBroad.Add((mo, a));
+                            Guid aID = mo.AssetID;
+                            if (!Guid.Empty.Equals(aID) && Client.Instance.AssetManager.ClientAssetLibrary.Assets.TryGetWithoutRequest(aID, out Asset.Asset a))
+                            {
+                                hitsBroad.Add((mo, a));
+                            }
                         }
                     }
                 }

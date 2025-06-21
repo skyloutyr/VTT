@@ -39,6 +39,7 @@
         public bool EnableDarkvision { get; set; }
         public bool EnableDrawing { get; set; } = true;
         public bool Has2DShadows { get; set; } = false;
+        public bool Shadows2DObjectVisionStrict { get; set; } = false;
 
         public bool Is2D { get; set; }
         public float Camera2DHeight { get; set; } = 5.0f;
@@ -209,6 +210,7 @@
 
             this.EnableDrawing = e.GetBool("EnableDrawing", true);
             this.Has2DShadows = e.GetBool("Has2DShadows", false);
+            this.Shadows2DObjectVisionStrict = e.GetBool("Strict2DShadows", false);
             (Guid, Guid, float)[] dvData = e.GetPrimitiveArrayWithLegacySupport("DarkvisionData", (n, c) =>
             {
                 DataElement de = c.GetMap(n);
@@ -305,6 +307,7 @@
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
             ret.SetBool("EnableDrawing", this.EnableDrawing);
             ret.SetBool("Has2DShadows", this.Has2DShadows);
+            ret.SetBool("Strict2DShadows", this.Shadows2DObjectVisionStrict);
             ret.SetPrimitiveArray("DarkvisionData", this.DarkvisionData.Select(kv => (kv.Key, kv.Value.Item1, kv.Value.Item2)).ToArray());
             ret.SetArray("PermanentMarks", this.PermanentMarks.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
             ret.SetArray("Drawings", this.Drawings.ToArray(), (n, c, e) => c.SetMap(n, e.Serialize()));
@@ -357,6 +360,7 @@
                 EnableDarkvision = this.EnableDarkvision,
                 EnableDrawing = this.EnableDrawing,
                 Has2DShadows = this.Has2DShadows,
+                Shadows2DObjectVisionStrict = this.Shadows2DObjectVisionStrict,
                 Is2D = this.Is2D,
                 Camera2DHeight = this.Camera2DHeight,
                 AmbientSoundID = this.AmbientSoundID,

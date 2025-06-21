@@ -835,6 +835,19 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.shadows_2d.tt"));
                     }
 
+                    bool m2DShadowsStrict = state.clientMap.Shadows2DObjectVisionStrict;
+                    if (ImGui.Checkbox(lang.Translate("ui.maps.shadows_2d_strict") + "###Strict 2D Shadows", ref m2DShadowsStrict))
+                    {
+                        state.clientMap.Shadows2DObjectVisionStrict = m2DShadowsStrict;
+                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = m2DShadowsStrict, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.Shadows2DObjectVisionStrict };
+                        pcmd.Send();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.maps.shadows_2d_strict.tt"));
+                    }
+
                     float mShadow2DMod = Client.Instance.Settings.Shadows2DAdmin;
                     if (ImGui.SliderFloat(lang.Translate("ui.maps.shadows_2d_opacity") + "###2D Shadow Opacity", ref mShadow2DMod, 0.0f, 1.0f))
                     {

@@ -554,6 +554,13 @@
             this._cursorCandidates.Clear();
             this._nonAdminOwnedCursorCandidates.Clear();
 
+            static Vector2 GetObjectPosition(MapObject mo, Map m)
+            {
+                return m.Shadows2DObjectVisionStrict
+                    ? Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode != EditMode.Scale ? mo.ClientDragMoveResetInitialPosition.Xy() : mo.Position.Xy()
+                    : mo.Position.Xy();
+            }
+
             if (m != null)
             {
                 if (m.Has2DShadows && m.Is2D)
@@ -656,7 +663,7 @@
                                         MapObject c = null;
                                         foreach (MapObject mo in this._nonAdminOwnedCursorCandidates)
                                         {
-                                            Vector2 p = mo.Position.Xy();
+                                            Vector2 p = GetObjectPosition(mo, m);
                                             float d = (p - this._cursorWorldLastUpdate).Length();
                                             if (d < dstMin)
                                             {
@@ -683,7 +690,7 @@
                                 MapObject c = null;
                                 foreach (MapObject mo in this._cursorCandidates)
                                 {
-                                    Vector2 p = mo.Position.Xy();
+                                    Vector2 p = GetObjectPosition(mo, m);
                                     float d = (p - this._cursorWorldLastUpdate).Length();
                                     if (d < dstMin)
                                     {
@@ -706,7 +713,7 @@
                                 vDim = MathF.Max(vDim, mainSelectCandidate.Shadow2DLightSourceData.X);
                             }
 
-                            lightCursor = mainSelectCandidate.Position.Xy();
+                            lightCursor = GetObjectPosition(mainSelectCandidate, m);
                             // In addition to this
                             if (Client.Instance.Frontend.GameHandle.IsAnyShiftDown())
                             {
@@ -715,7 +722,7 @@
                                 {
                                     AABox cBB = mainSelectCandidate.ClientModelRaycastBox.Scale(mainSelectCandidate.Scale);
                                     Vector3 cAvg = cBB.Center;
-                                    cBB = cBB.Offset(cAvg).Offset(mainSelectCandidate.Position);
+                                    cBB = cBB.Offset(cAvg).Offset(new Vector3(lightCursor, 0));
                                     Vector2 v0 = cBB.Start.Xy();
                                     Vector2 v1 = cBB.End.Xy();
                                     Vector2 p = Vector2.Min(Vector2.Max(this._cursorWorldLastUpdate, v0), v1);

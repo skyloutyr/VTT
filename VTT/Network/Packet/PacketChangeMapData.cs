@@ -205,6 +205,12 @@
                         break;
                     }
 
+                    case DataType.Shadows2DObjectVisionStrict:
+                    {
+                        m.Shadows2DObjectVisionStrict = (bool)this.Data;
+                        break;
+                    }
+
                     case DataType.AmbientSoundID:
                     {
                         m.AmbientSoundID = (Guid)this.Data;
@@ -263,6 +269,7 @@
                 case DataType.Is2D:
                 case DataType.EnableDrawing:
                 case DataType.Enable2DShadows:
+                case DataType.Shadows2DObjectVisionStrict:
                 {
                     this.Data = c.LookupBox<bool>(this.Data, c.Lookup);
                     break;
@@ -332,7 +339,8 @@
             EnableDrawing,
             Enable2DShadows,
             AmbientSoundID,
-            AmbientVolume
+            AmbientVolume,
+            Shadows2DObjectVisionStrict
         }
     }
 }

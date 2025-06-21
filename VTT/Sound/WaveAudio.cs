@@ -118,8 +118,15 @@
                 return false;
             }
 
+            s.Seek(-4, SeekOrigin.Current); // Revert stream reading
+            // First we check for ID3 header. This is NOT up to spec (ID3 SHOULD be placed at the end of the file (https://id3.org/ID3v1)
+            // But it is known that audacity export places ID3v2 at the beginning of the file for some reason messing up the validator
+            if (header[0] == 0x49 && header[1] == 0x44 && header[2] == 0x33) // ID3 header - metadata info. Do not bother determining if this is ID3v1 or ID3v2 and skipping forward, ID3 is most likely mp3, so pass here
+            {
+                return true;
+            }
+
             MpegFrameHeader headerNfo = new MpegFrameHeader(BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(header)));
-            s.Seek(-4, SeekOrigin.Current);
             return headerNfo.Validate();
         }
 

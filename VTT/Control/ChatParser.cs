@@ -1484,6 +1484,13 @@
                             int fumblesAt = exploding ? args.Parameters.Length > 4 ? (int)args.Parameters[4].Evaluate() : 1 : args.Parameters.Length > 3 ? (int)args.Parameters[3].Evaluate() : 1;
                             string accumStr = string.Empty;
                             string expr = $"{name}({num}, {side}";
+                            if (num <= 0 || side <= 0)
+                            {
+                                args.HasResult = false;
+                                args.Result = 0;
+                                break;
+                            }
+
                             if (exploding)
                             {
                                 if (args.Parameters.Length > 2)
@@ -1573,6 +1580,13 @@
                             int totalRolls = 0;
                             string accumStr = string.Empty;
                             string expr = $"{name}({num}, {side}, {numToKeep}";
+                            if (num <= 0 || side <= 0)
+                            {
+                                args.HasResult = false;
+                                args.Result = 0;
+                                break;
+                            }
+
                             if (exploding)
                             {
                                 if (args.Parameters.Length > 3)

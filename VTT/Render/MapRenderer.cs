@@ -414,7 +414,7 @@
                             MovementInducerID = Client.Instance.ID,
                             Type = PacketChangeObjectModelMatrix.ChangeType.Position,
                             MovedObjects = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Select(o => (o.MapID, o.ID, new Vector4(
-                                alt ? SnapToGrid(o.Position + gridMoveVec, cmap.GridSize) : o.Position + gridMoveVec, 1.0f
+                                alt ? SnapToGrid(cmap.GridType, o.Position + gridMoveVec, cmap.GridSize) : o.Position + gridMoveVec, 1.0f
                             ))).ToList()
                         };
 
@@ -735,20 +735,43 @@
             return lookingAtGround;
         }
 
-        public static Vector3 SnapToGrid(Vector3 world, float gridSize, Vector3 isBigObjectAxis = default)
+        public static Vector3 SnapToGrid(MapGridType gType, Vector3 world, float gridSize, Vector3 isBigObjectAxis = default)
         {
-            float halfGrid = gridSize / 2;
-            int fX = (int)MathF.Round(world.X / gridSize);
-            int fY = (int)MathF.Round(world.Y / gridSize);
-            int fZ = (int)MathF.Round(world.Z / gridSize);
+            if (gType == MapGridType.Square)
+            {
+                float halfGrid = gridSize / 2;
+                float fX = (int)MathF.Round(world.X / gridSize) * gridSize;
+                float fY = (int)MathF.Round(world.Y / gridSize) * gridSize;
+                float fZ = (int)MathF.Round(world.Z / gridSize) * gridSize;
 
-            Vector3 ret = new Vector3(
-                fX - (isBigObjectAxis.X * halfGrid),
-                fY - (isBigObjectAxis.Y * halfGrid),
-                Client.Instance.Frontend.Renderer.MapRenderer?.IsOrtho ?? false ? world.Z : fZ - (isBigObjectAxis.Z * halfGrid)
-            );
+                Vector3 ret = new Vector3(
+                    fX - (isBigObjectAxis.X * halfGrid),
+                    fY - (isBigObjectAxis.Y * halfGrid),
+                    Client.Instance.Frontend.Renderer.MapRenderer?.IsOrtho ?? false ? world.Z : fZ - (isBigObjectAxis.Z * halfGrid)
+                );
 
-            return ret;
+                return ret;
+            }
+
+            bool horizontal = gType == MapGridType.HexHorizontal;
+            float hfx = gridSize * (horizontal ? 1.7320508f * 0.5f : 1f);
+            float hfy = gridSize * (horizontal ? 1f : 1.7320508f * 0.5f);
+            float gX = (int)MathF.Round(world.X / hfx) * hfx;
+            float gY = (int)MathF.Round(world.Y / hfy) * hfy;
+            float gZ = (int)MathF.Round(world.Z / gridSize) * gridSize;
+            int row = (int)(gY / hfy);
+            int column = (int)(gX / hfx);
+            if (horizontal && (column & 1) == 1)
+            {
+                gY = ((int)MathF.Round((world.Y + (hfy * 0.5f)) / hfy) * hfy) - (hfy * 0.5f);
+            }
+
+            if (!horizontal && (row & 1) == 1)
+            {
+                gX = ((int)MathF.Round((world.X + (hfx * 0.5f)) / hfx) * hfx) - (hfx * 0.5f);
+            }
+
+            return new Vector3(gX, gY, Client.Instance.Frontend.Renderer.MapRenderer?.IsOrtho ?? false ? world.Z : gZ);
         }
     }
 

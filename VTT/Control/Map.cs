@@ -25,6 +25,7 @@
         public float GridSize { get; set; } = 1;
         public float GridUnit { get; set; } = 5;
         public Color GridColor { get; set; }
+        public MapGridType GridType { get; set; } = MapGridType.Square;
         public Color AmbientColor { get; set; }
         public Color SunColor { get; set; }
 
@@ -185,6 +186,7 @@
             this.GridSize = e.GetSingle("GridSize");
             this.GridUnit = e.GetSingle("GridUnit", 5.0f);
             this.GridColor = e.GetColor("GridColor");
+            this.GridType = e.GetEnum("GridType", MapGridType.Square);
             this.SunColor = e.GetColor("SunColor", new Color(new Rgba32(0.2f, 0.2f, 0.2f, 1.0f)));
             this.AmbientColor = e.GetColor("AmbientColor", new Color(new Rgba32(0.03f, 0.03f, 0.03f, 0.03f)));
             this.SunEnabled = e.GetBool("SunEnabled", true);
@@ -292,6 +294,7 @@
             ret.SetSingle("GridSize", this.GridSize);
             ret.SetSingle("GridUnit", this.GridUnit);
             ret.SetColor("GridColor", this.GridColor);
+            ret.SetEnum("GridType", this.GridType);
             ret.SetColor("AmbientColor", this.AmbientColor);
             ret.SetColor("SunColor", this.SunColor);
             ret.SetBool("SunEnabled", this.SunEnabled);
@@ -348,6 +351,7 @@
                 GridSize = this.GridSize,
                 GridUnit = this.GridUnit,
                 GridColor = this.GridColor,
+                GridType = this.GridType,
                 AmbientColor = this.AmbientColor,
                 SunColor = this.SunColor,
                 SunEnabled = this.SunEnabled,
@@ -556,5 +560,12 @@
             CustomGradient,
             CustomImage
         }
+    }
+
+    public enum MapGridType : uint
+    {
+        Square = 0,
+        HexHorizontal = 1,
+        HexVertical = 2
     }
 }

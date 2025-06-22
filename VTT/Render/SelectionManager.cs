@@ -577,7 +577,7 @@
                 bool shift = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.RightShift) || Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Space);
                 bool alt = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.LeftAlt);
                 pCurrent = cw != null && !shift
-                    ? cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(cw.Value, m.GridSize) : cw.Value).Xy()
+                    ? cam.ToScreenspace(alt ? MapRenderer.SnapToGrid(m.GridType, cw.Value, m.GridSize) : cw.Value).Xy()
                     : new Vector2(Client.Instance.Frontend.MouseX, Client.Instance.Frontend.MouseY);
 
                 Vector3 min = this.SelectedObjects[0].Position;
@@ -623,7 +623,7 @@
 
                         if (alt)
                         {
-                            mo.Position = MapRenderer.SnapToGrid(mo.Position, m.GridSize, bigScale);
+                            mo.Position = MapRenderer.SnapToGrid(m.GridType, mo.Position, m.GridSize, bigScale);
                         }
                     }
                 }
@@ -739,7 +739,7 @@
                                     mo.Scale = mo.ClientDragMoveResetInitialPosition + delta;
                                     if (alt)
                                     {
-                                        mo.Scale = MapRenderer.SnapToGrid(mo.Scale, map.GridSize);
+                                        mo.Scale = MapRenderer.SnapToGrid(map.GridType, mo.Scale, map.GridSize);
                                     }
                                 }
                                 else
@@ -753,7 +753,7 @@
                                         msz - 0.075f <= 0 || (map.GridSize * 2) - msz <= 0.075f ? 1 : 0
                                     );
 
-                                    mo.Position = alt ? MapRenderer.SnapToGrid(mo.ClientDragMoveResetInitialPosition + delta, map.GridSize, bigScale) : mo.ClientDragMoveResetInitialPosition + delta;
+                                    mo.Position = alt ? MapRenderer.SnapToGrid(map.GridType, mo.ClientDragMoveResetInitialPosition + delta, map.GridSize, bigScale) : mo.ClientDragMoveResetInitialPosition + delta;
                                 }
                             }
                         }
@@ -872,7 +872,7 @@
                             }
                             else
                             {
-                                mo.Position = alt ? MapRenderer.SnapToGrid(intersection.Value, map.GridSize) : intersection.Value;
+                                mo.Position = alt ? MapRenderer.SnapToGrid(map.GridType, intersection.Value, map.GridSize) : intersection.Value;
                             }
                         }
                     }

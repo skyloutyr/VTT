@@ -33,6 +33,7 @@
             public Vector4UniformWrapper TintColor { get; init; }
             public FloatUniformWrapper Alpha { get; init; }
             public FloatUniformWrapper GridAlpha { get; init; }
+            public UnsignedIntegerUniformWrapper GridType { get; init; }
 
             public CommonUniforms(ShaderProgram prog)
             {
@@ -44,6 +45,7 @@
                 this.TintColor = new Vector4UniformWrapper(prog["tint_color"]);
                 this.Alpha = new FloatUniformWrapper(prog["alpha"]);
                 this.GridAlpha = new FloatUniformWrapper(prog["grid_alpha"]);
+                this.GridType = new UnsignedIntegerUniformWrapper(prog["grid_type"]);
             }
         }
 

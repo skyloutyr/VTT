@@ -284,6 +284,15 @@
                         ImGui.SetTooltip(lang.Translate("ui.maps.grid_units.tt"));
                     }
 
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.grid_type"));
+                    int mGridType = (int)state.clientMap.GridType;
+                    string[] gridTypes = new string[] { lang.Translate("ui.maps.grid_type.square"), lang.Translate("ui.maps.grid_type.hhex"), lang.Translate("ui.maps.grid_type.vhex") };
+                    if (ImGui.Combo("##MapGridType", ref mGridType, gridTypes, gridTypes.Length))
+                    {
+                        state.clientMap.GridType = (MapGridType)mGridType;
+                        new PacketChangeMapData() { Type = PacketChangeMapData.DataType.GridType, MapID = state.clientMap.ID, Data = (uint)mGridType }.Send();
+                    }
+
                     bool mEnableFow = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW;
                     Vector2 fowSize = Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.FOWWorldSize;
                     int fowSizeX = (int)fowSize.X;

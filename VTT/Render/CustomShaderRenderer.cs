@@ -60,6 +60,7 @@
                     shader.Essentials.TintColor.Set(passthroughData.TintColor);
                     shader.Essentials.Alpha.Set(passthroughData.Alpha);
                     shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
+                    shader.Essentials.GridType.Set(passthroughData.GridType);
                     if (a.Type == Asset.AssetType.Shader) // Custom GLSL shaders can't define extra textures due to being raw GLSL data
                     {
                         GL.ActiveTexture(12);
@@ -91,6 +92,7 @@
     {
         public float Alpha { get; set; }
         public float GridAlpha { get; set; }
+        public uint GridType { get; set; }
         public Vector4 TintColor { get; set; }
     }
 }

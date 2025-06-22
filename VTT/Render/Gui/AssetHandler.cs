@@ -1315,7 +1315,7 @@
 
                         if (ImGui.IsKeyDown(ImGuiKey.LeftAlt))
                         {
-                            worldVec = MapRenderer.SnapToGrid(worldVec.Value, state.clientMap.GridSize);
+                            worldVec = MapRenderer.SnapToGrid(state.clientMap.GridType, worldVec.Value, state.clientMap.GridSize);
                         }
 
                         MapObject mo = new MapObject()

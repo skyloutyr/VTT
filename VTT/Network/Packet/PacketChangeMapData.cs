@@ -227,6 +227,12 @@
 
                         break;
                     }
+
+                    case DataType.GridType:
+                    {
+                        m.GridType = (MapGridType)(uint)this.Data;
+                        break;
+                    }
                 }
 
                 if (isServer)
@@ -309,6 +315,12 @@
                     this.Data = c.LookupBox<Guid>(this.Data, c.Lookup);
                     break;
                 }
+
+                case DataType.GridType:
+                {
+                    this.Data = c.LookupBox<uint>(this.Data, c.Lookup);
+                    break;
+                }
             }
         }
 
@@ -340,7 +352,8 @@
             Enable2DShadows,
             AmbientSoundID,
             AmbientVolume,
-            Shadows2DObjectVisionStrict
+            Shadows2DObjectVisionStrict,
+            GridType
         }
     }
 }

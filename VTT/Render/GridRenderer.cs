@@ -151,9 +151,10 @@
             this._shader["projection"].Set(cam.Projection);
             this._shader["model"].Set(modelMatrix);
             this._shader["camera_position"].Set(cam.Position);
-            this._shader["g_color"].Set(m == null ? Color.White.Vec4() : m.GridColor.Vec4());
-            this._shader["g_alpha"].Set(1f);
-            this._shader["g_size"].Set(m == null ? 1 : m.GridSize);
+            this._shader["grid_color"].Set(m == null ? Color.White.Vec4() : m.GridColor.Vec4());
+            this._shader["grid_alpha"].Set(1f);
+            this._shader["grid_size"].Set(m == null ? 1 : m.GridSize);
+            this._shader["grid_type"].Set(m == null ? 0u : (uint)m.GridType);
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
             this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();

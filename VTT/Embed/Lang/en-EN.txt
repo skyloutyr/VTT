@@ -879,3 +879,7 @@ menu.settings.camera_interpolation_rate=Camera Interpolation Rate
 menu.settings.camera_interpolation_rate.tt=Controls the rate of zoom interpolation on 2d maps and scrollwheel movement on 3d maps.\nCan be manually set to 0 with ctrl-click to disable smooth interpolation.
 ui.maps.shadows_2d_strict=Strict 2D Shadows
 ui.maps.shadows_2d_strict.tt=Makes the 2d shadow view origin always located at the object's server position.\nPrevents users from viewing the map by dragging their view object around.
+ui.maps.grid_type=Grid Type
+ui.maps.grid_type.square=Square
+ui.maps.grid_type.hhex=Horizontal Hexagon (Flat)
+ui.maps.grid_type.vhex=Vertical Hexagon (Pointy)

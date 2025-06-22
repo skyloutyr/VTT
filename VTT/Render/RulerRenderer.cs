@@ -81,7 +81,7 @@
                             OwnerName = Client.Instance.Settings.Name,
                             Tooltip = this.CurrentTooltip,
                             Color = Extensions.FromVec4(this.CurrentColor),
-                            Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(tHitOrPt, m.GridSize) : tHitOrPt,
+                            Start = Client.Instance.Frontend.GameHandle.IsAnyAltDown() ? MapRenderer.SnapToGrid(m.GridType, tHitOrPt, m.GridSize) : tHitOrPt,
                             End = tHitOrPt,
                             ExtraInfo = this.CurrentExtraValue / m.GridUnit,
                             IsDead = false,
@@ -130,7 +130,7 @@
 
                     if (Client.Instance.Frontend.GameHandle.IsAnyAltDown())
                     {
-                        now = MapRenderer.SnapToGrid(now, m.GridSize);
+                        now = MapRenderer.SnapToGrid(m.GridType, now, m.GridSize);
                     }
 
                     if (Client.Instance.Frontend.GameHandle.IsAnyControlDown())

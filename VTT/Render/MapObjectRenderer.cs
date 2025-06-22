@@ -494,7 +494,7 @@
 
                     if (ImGui.IsKeyDown(ImGuiKey.LeftAlt))
                     {
-                        worldVec = MapRenderer.SnapToGrid(worldVec.Value, m.GridSize);
+                        worldVec = MapRenderer.SnapToGrid(m.GridType, worldVec.Value, m.GridSize);
                     }
 
                     Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(worldVec.Value);
@@ -958,6 +958,7 @@
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
                         shader.Essentials.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
+                        shader.Essentials.GridType.Set((uint)m.GridType);
                         shader.Essentials.TintColor.Set(mo.TintColor.Vec4());
                         mo.LastRenderModel = a.Model.GLMdl;
                         a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
@@ -1009,8 +1010,10 @@
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                 this._passthroughData.Alpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
+                this._passthroughData.GridType = (uint)m.GridType;
                 shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
                 shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
+                shader.Essentials.GridType.Set(this._passthroughData.GridType);
                 this._forwardLists[i + 2].Sort((l, r) => r.CameraDistanceToThisFrameForDeferredRejects.CompareTo(l.CameraDistanceToThisFrameForDeferredRejects));
                 foreach (MapObject mo in this._forwardLists[i + 2])
                 {
@@ -1090,6 +1093,7 @@
                 shader["sky_color"].Set(clearColor.Xyz());
                 shader["grid_color"].Set(Vector4.Zero);
                 shader["grid_alpha"].Set(0.0f);
+                shader["grid_type"].Set(0u);
                 shader["grid_size"].Set(1.0f);
                 shader["cursor_position"].Set(Vector3.Zero);
                 shader["dv_data"].Set(Vector4.Zero);

@@ -149,6 +149,7 @@
     <None Remove="Embed\icons8-music-library-40.png" />
     <None Remove="Embed\icons8-musical-notes-40.png" />
     <None Remove="Embed\icons8-newblocker-40.png" />
+    <None Remove="Embed\icons8-newblocker-line-40.png" />
     <None Remove="Embed\icons8-newblocker-points-40.png" />
     <None Remove="Embed\icons8-newillumination-40.png" />
     <None Remove="Embed\icons8-newillumination-points-40.png" />
@@ -340,6 +341,7 @@
     <EmbeddedResource Include="Embed\icons8-music-library-40.png" />
     <EmbeddedResource Include="Embed\icons8-musical-notes-40.png" />
     <EmbeddedResource Include="Embed\icons8-newblocker-40.png" />
+    <EmbeddedResource Include="Embed\icons8-newblocker-line-40.png" />
     <EmbeddedResource Include="Embed\icons8-newblocker-points-40.png" />
     <EmbeddedResource Include="Embed\icons8-newillumination-40.png" />
     <EmbeddedResource Include="Embed\icons8-newillumination-points-40.png" />

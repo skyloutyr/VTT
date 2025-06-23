@@ -126,6 +126,7 @@
         public ImCustomTexturedRect OpenDoor { get; set; }
         public ImCustomTexturedRect Shadow2DAddBlocker { get; set; }
         public ImCustomTexturedRect Shadow2DAddBlockerPoints { get; set; }
+        public ImCustomTexturedRect Shadow2DAddBlockerLine { get; set; }
         public ImCustomTexturedRect Shadow2DAddSunlight { get; set; }
         public ImCustomTexturedRect Shadow2DAddSunlightPoints { get; set; }
 
@@ -945,11 +946,12 @@
             this.Shadow2DAddBlocker = loader.LoadUIIcon("icons8-newblocker-40");
             this.Shadow2DAddSunlight = loader.LoadUIIcon("icons8-newillumination-40");
             this.Shadow2DAddBlockerPoints = loader.LoadUIIcon("icons8-newblocker-points-40");
+            this.Shadow2DAddBlockerLine = loader.LoadUIIcon("icons8-newblocker-line-40");
             this.Shadow2DAddSunlightPoints = loader.LoadUIIcon("icons8-newillumination-points-40");
 
             this._modeTextures = new ImCustomTexturedRect[] { this.Select, this.Translate, this.Rotate, this.Scale, this.ChangeFOW, this.Measure, this.FOWModeBrush, this.MagicFX, this.Shadow2D };
             this._rulerModeTextures = new ImCustomTexturedRect[] { this.MeasureModeRuler, this.MeasureModeCircle, this.MeasureModeSphere, this.MeasureModeSquare, this.MeasureModeCube, this.MeasureModeLine, this.MeasureModeCone, this.MeasureModePolyline, this.MeasureModeErase };
-            this.Shadow2DControlModeTextures = new ImCustomTexturedRect[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
+            this.Shadow2DControlModeTextures = new ImCustomTexturedRect[] { this.Select, this.Translate, this.Rotate, this.OpenDoor, this.Shadow2DAddBlocker, this.Shadow2DAddBlockerPoints, this.Shadow2DAddBlockerLine, this.Shadow2DAddSunlight, this.Shadow2DAddSunlightPoints, this.DeleteIcon };
             this._moveModeTextures = new ImCustomTexturedRect[] { this.MoveGizmo, this.MeasureModePolyline, this.MoveArrows };
         }
     }

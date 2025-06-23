@@ -883,3 +883,5 @@ ui.maps.grid_type=Grid Type
 ui.maps.grid_type.square=Square
 ui.maps.grid_type.hhex=Horizontal Hexagon (Flat)
 ui.maps.grid_type.vhex=Vertical Hexagon (Pointy)
+ui.shadow2d.mode_addblockerline.tt=Add Blocker from Lines\nAdds a new blocking box to the map.\nClick the left mouse button once to denote the start of the line, and again to denote the end of the line.
+ui.shadow2d.line_width=Line Width

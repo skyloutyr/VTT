@@ -658,18 +658,36 @@
                 if (ImGui.Begin("##Shadow2DControls", window_flags))
                 {
                     Shadow2DControlMode currentMode = renderer.ControlMode;
-                    for (int i = 0; i < 9; ++i)
+                    for (int i = 0; i < 10; ++i)
                     {
                         if (this.ImSidebarBtn($"##Shadow2DModeBtn_{i}", Vec32x32, Client.Instance.Frontend.Renderer.GuiRenderer.Shadow2DControlModeTextures[i], (Shadow2DControlMode)i == currentMode, out bool hovered))
                         {
                             renderer.ControlMode = (Shadow2DControlMode)i;
                         }
 
-                        ImGui.SameLine();
+                        if (i != 9)
+                        {
+                            ImGui.SameLine();
+                        }
+
                         if (hovered)
                         {
                             ImGui.SetTooltip(lang.Translate("ui.shadow2d.mode_" + Enum.GetName((Shadow2DControlMode)i).ToLower() + ".tt"));
                         }
+                    }
+                    if (Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.ControlMode == Shadow2DControlMode.AddBlockerLine)
+                    {
+                        float radius = Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.LineModeLineWidth;
+                        ImGui.TextUnformatted(lang.Translate("ui.shadow2d.line_width"));
+                        ImGui.PushStyleColor(ImGuiCol.FrameBg, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vector4(1, 1, 1, 0.4f));
+                        ImGui.PushStyleColor(ImGuiCol.FrameBgActive, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgActive) * new Vector4(1, 1, 1, 0.4f));
+                        ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, *ImGui.GetStyleColorVec4(ImGuiCol.FrameBgHovered) * new Vector4(1, 1, 1, 0.4f));
+                        if (ImGui.SliderFloat("##LineModeLineWidth", ref radius, 0.01f, 10f))
+                        {
+                            Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.LineModeLineWidth = MathF.Max(0.01f, radius);
+                        }
+
+                        ImGui.PopStyleColor(3);
                     }
                 }
 

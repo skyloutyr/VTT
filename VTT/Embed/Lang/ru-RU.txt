@@ -883,3 +883,5 @@ ui.maps.grid_type=Тип Сетки
 ui.maps.grid_type.square=Квадрат
 ui.maps.grid_type.hhex=Горизонтальный Шестиугольник
 ui.maps.grid_type.vhex=Вертикальный Шестиугольник
+ui.shadow2d.mode_addblockerline.tt=Добавить Блокировщик Линией\nДобавляет новый блокирующий обзор прямоугольник на карту.\nВ этом режиме первое нажатие ЛКМ указывает начало отрезка, а второе - его конец.
+ui.shadow2d.line_width=Ширина Отрезка

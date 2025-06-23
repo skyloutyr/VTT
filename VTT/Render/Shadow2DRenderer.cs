@@ -8,6 +8,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
+    using System.Runtime.ConstrainedExecution;
     using System.Text;
     using VTT.Control;
     using VTT.GL;
@@ -79,6 +80,12 @@
 
         public int SimulationWidth { get; set; }
         public int SimulationHeight { get; set; }
+
+        public float LineModeLineWidth
+        {
+            get => this._lineModeLineWidth;
+            set => this._lineModeLineWidth = value;
+        }
 
         public void Create()
         {
@@ -174,6 +181,8 @@
         private Vector2 _initialBoxStart;
         private Vector2 _initialBoxEnd;
         private Vector2 _cursorWorldLastUpdate;
+        private Vector2? _lineModeFirstPoint;
+        private float _lineModeLineWidth = 0.01f;
         private float _initialBoxRotation;
         private bool _isBoxDragging;
 
@@ -279,6 +288,7 @@
                         }
 
                         case Shadow2DControlMode.AddBlockerPoints:
+                        case Shadow2DControlMode.AddBlockerLine:
                         case Shadow2DControlMode.AddSunlightPoints:
                         {
                             // This is handled in the render method as this needs to check every frame for input events to not miss them
@@ -402,12 +412,12 @@
         private int _numQuadDrawPoints;
         private readonly Vector2[] _shadowSelectionPointsArray = new Vector2[4];
 
-        private void AddQuadDrawPoint(Map m, Vector2 cursorWorld)
+        private void AddQuadDrawPoint(Map m, Vector2 cursorWorld, Shadow2DBox.ShadowBoxType? boxType = null)
         {
             this._shadowSelectionPointsArray[this._numQuadDrawPoints++] = cursorWorld;
             if (this._numQuadDrawPoints == 4)
             {
-                Shadow2DBox.ShadowBoxType btype = this.ControlMode == Shadow2DControlMode.AddBlockerPoints ? Shadow2DBox.ShadowBoxType.Blocker : Shadow2DBox.ShadowBoxType.Sunlight;
+                Shadow2DBox.ShadowBoxType btype = boxType ?? (this.ControlMode == Shadow2DControlMode.AddBlockerPoints ? Shadow2DBox.ShadowBoxType.Blocker : Shadow2DBox.ShadowBoxType.Sunlight);
 
                 // Step 1 - find convex hull
                 List<Vector2> polygon = new List<Vector2>(this._shadowSelectionPointsArray);
@@ -855,6 +865,52 @@
                     this._numQuadDrawPoints = 0; // Reset if we are not drawing points
                 }
 
+                if (this.ControlMode == Shadow2DControlMode.AddBlockerLine)
+                {
+                    if (handleLmbStateNow)
+                    {
+                        if (this._lineModeFirstPoint == null)
+                        {
+                            this._lineModeFirstPoint = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView().Xy();
+                        }
+                        else
+                        {
+                            if (this._lineModeLineWidth >= 0.01f)
+                            {
+                                Vector2 here = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView().Xy();
+                                Vector2 prev = this._lineModeFirstPoint.Value;
+                                Vector2 normal = Vector2.Normalize(here - prev);
+                                Vector2 right = normal.Rotate(MathF.PI * 0.5f) * this._lineModeLineWidth * 0.5f;
+
+                                // Somewhat inefficient, can be done in a better way with atan2 as normal is known, but default to existing method for better code modularity
+                                this._numQuadDrawPoints = 0;
+                                this.AddQuadDrawPoint(m, prev - right, Shadow2DBox.ShadowBoxType.Blocker);
+                                this.AddQuadDrawPoint(m, here - right, Shadow2DBox.ShadowBoxType.Blocker);
+                                this.AddQuadDrawPoint(m, here + right, Shadow2DBox.ShadowBoxType.Blocker);
+                                this.AddQuadDrawPoint(m, prev + right, Shadow2DBox.ShadowBoxType.Blocker);
+                                this._lineModeFirstPoint = here;
+                            }
+                        }
+                    }
+
+                    bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
+                    if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
+                    {
+                        this._renderEscDown = true;
+                        this._lineModeFirstPoint = null;
+                        Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
+                    }
+
+                    if (!escState && this._renderEscDown)
+                    {
+                        this._renderEscDown = false;
+                    }
+                }
+                else
+                {
+                    this._lineModeFirstPoint = null;
+                }
+
                 ShaderProgram overlayShader = this.BoxesOverlay;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
@@ -899,8 +955,20 @@
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateTranslation(new Vector3(c, 0));
                     Vector2 halfExtent = (end - start) * 0.5f;
                     overlayShader["model"].Set(transform);
-                    overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, 0.85f));
                     this.CreateRectangle(halfExtent, clr.Argb(), Color.RoyalBlue.Argb());
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                }
+
+                if (this._lineModeFirstPoint.HasValue)
+                {
+                    Vector2 start = this._lineModeFirstPoint.Value;
+                    Vector2 end = this._cursorWorldLastUpdate;
+                    Vector2 n = Vector2.Normalize(end - start);
+                    Vector2 r = n.Rotate(MathF.PI * 0.5f) * this._lineModeLineWidth * 0.5f;
+                    Vector2 c = start + ((end - start) * 0.5f);
+                    Matrix4x4 transform = Matrix4x4.Identity;
+                    overlayShader["model"].Set(transform);
+                    this.CreateRectangleFromPoints(start - r, start + r, end + r, end - r, Color.SlateBlue.Argb(), Color.RoyalBlue.Argb());
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
@@ -946,10 +1014,30 @@
             else
             {
                 this._numQuadDrawPoints = 0; // Reset if we are not the active mode
+                this._lineModeFirstPoint = null;
             }
         }
 
         private UnsafeArray<Vector4> _reusedBuffer;
+
+        private unsafe void CreateRectangleFromPoints(Vector2 tl, Vector2 tr, Vector2 br, Vector2 bl, uint boxColor, uint borderColor)
+        {
+            boxColor &= 0x77ffffffu;
+            this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 4 * 6 * 5);
+            float minX = Math.Clamp(MathF.Abs((tr - tl).X * 0.5f) * 0.2f, 0.01f, 0.075f);
+            float minY = Math.Clamp(MathF.Abs((tl - bl).Y * 0.5f) * 0.2f, 0.01f, 0.075f);
+            float sideWH = MathF.Min(minX, minY);
+            int idx = 0;
+            this.AddQuad(tl, tr, br, bl, ref idx, boxColor);
+            Vector2 rightY = Vector2.Normalize(tl - bl).Rotate(MathF.PI * 0.5f) * sideWH; // * 0.5f already baked in by minX/Y
+            Vector2 rightX = Vector2.Normalize(tr - tl).Rotate(MathF.PI * 0.5f) * sideWH; // * 0.5f already baked in by minX/Y
+            this.AddQuad(tl, tl + rightY, bl + rightY, bl, ref idx, borderColor);
+            this.AddQuad(tr - rightY, tr, br, br - rightY, ref idx, borderColor);
+            this.AddQuad(tl + rightY, tr - rightY, tr - rightY + rightX, tl + rightY + rightX, ref idx, borderColor);
+            this.AddQuad(bl + rightY - rightX, br - rightY - rightX, br - rightY, bl + rightY, ref idx, borderColor);
+            this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 120, 0);
+        }
+
         private unsafe void CreateRectangle(Vector2 halfExtent, uint boxColor, uint borderColor)
         {
             boxColor &= 0x77ffffffu;
@@ -982,6 +1070,12 @@
             Vector2 br = end;
             Vector2 tr = new Vector2(end.X, start.Y);
             Vector2 bl = new Vector2(start.X, end.Y);
+            this.AddQuad(tl, tr, br, bl, ref index, color);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddQuad(Vector2 tl, Vector2 tr, Vector2 br, Vector2 bl, ref int index, uint color)
+        {
             this.AddTriangle(tl, tr, br, ref index, color);
             this.AddTriangle(tl, br, bl, ref index, color);
         }
@@ -995,6 +1089,7 @@
         Toggle,
         AddBlocker,
         AddBlockerPoints,
+        AddBlockerLine,
         AddSunlight,
         AddSunlightPoints,
         Delete

@@ -1304,7 +1304,7 @@
             {
                 if (!ImGui.GetIO().WantCaptureMouse)
                 {
-                    if (this._draggedRef.Type is AssetType.Model or AssetType.Texture)
+                    if (this._draggedRef.Type is AssetType.Model or AssetType.Texture or AssetType.ParticleSystem)
                     {
                         Vector3? worldVec = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                         if (!worldVec.HasValue)
@@ -1321,7 +1321,7 @@
                         MapObject mo = new MapObject()
                         {
                             ID = Guid.NewGuid(),
-                            AssetID = this._draggedRef.AssetID,
+                            AssetID = this._draggedRef.Type == AssetType.ParticleSystem ? Guid.Empty : this._draggedRef.AssetID,
                             Container = state.clientMap,
                             MapID = state.clientMap.ID,
                             MapLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer,
@@ -1329,6 +1329,22 @@
                             OwnerID = Client.Instance.ID,
                             Position = worldVec.Value
                         };
+
+                        if (this._draggedRef.Type == AssetType.ParticleSystem)
+                        {
+                            ParticleContainer pc = new ParticleContainer(mo)
+                            {
+                                IsActive = true,
+                                SystemID = this._draggedRef.AssetID
+                            };
+
+                            mo.Particles.AddContainerFake(pc);
+                            mo.Name = $"{this._draggedRef.Name.CapitalizeWords()} Particle Emitter";
+                            mo.DoNotRender = true;
+                            mo.CastsShadow = false;
+                            mo.HideFromSelection = true;
+                            mo.Position -= Client.Instance.Frontend.Renderer.MapRenderer.RayFromCursor().Direction * 0.01f;
+                        }
 
                         if (this._draggedRef.Type == AssetType.Texture)
                         {

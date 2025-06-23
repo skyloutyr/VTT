@@ -494,6 +494,18 @@
                 }
             }
 
+            /// <summary>
+            /// Use this if you want to add a particle container to a 'fake' object (eg one that is only instantiated for network purposes). <br></br>
+            /// There isn't a matching remove method because removing a non-existing emitter is trivial (it wasn't initialized so nothing to dispose of, and List.Remove will simply return false)
+            /// </summary>
+            public void AddContainerFake(ParticleContainer pc)
+            {
+                lock (this._lock)
+                {
+                    this._containers[pc.ID] = pc;
+                }
+            }
+
             public void RemoveContainer(Guid id)
             {
                 lock (this._lock)

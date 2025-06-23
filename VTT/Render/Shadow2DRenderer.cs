@@ -597,7 +597,7 @@
                         Vector3 cpos = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
                         EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                         bool ctrl = !ImGui.GetIO().WantCaptureMouse && !ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsAnyControlDown();
-                        this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? 1.0f : ctrl ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
+                        this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? ctrl ? 0.0f : 1.0f : ctrl ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
 
                         float vMax;
                         float vDim;

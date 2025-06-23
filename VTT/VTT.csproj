@@ -187,6 +187,8 @@
     <None Remove="Embed\icons8-video-camera-move-40.png" />
     <None Remove="Embed\icons8-video-camera-rotate-40.png" />
     <None Remove="Embed\icons8-visualy-impaired-40.png" />
+    <None Remove="Embed\individual_color_overlay.frag" />
+    <None Remove="Embed\individual_color_overlay.vert" />
     <None Remove="Embed\Lang\en-EN.txt" />
     <None Remove="Embed\Lang\ru-RU.txt" />
     <None Remove="Embed\logo-alpha.png" />
@@ -345,6 +347,8 @@
     <EmbeddedResource Include="Embed\icons8-shadow2d-40.png" />
     <EmbeddedResource Include="Embed\icons8-sound-40.png" />
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
+    <EmbeddedResource Include="Embed\individual_color_overlay.frag" />
+    <EmbeddedResource Include="Embed\individual_color_overlay.vert" />
     <EmbeddedResource Include="Embed\object_preview.frag" />
     <EmbeddedResource Include="Embed\object_preview.vert" />
     <EmbeddedResource Include="Embed\pattern0.png" />

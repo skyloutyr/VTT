@@ -68,6 +68,7 @@
         public uint? FBO { get; set; }
         public uint? RBO { get; set; }
         public ShaderProgram Raytracer { get; set; }
+        public ShaderProgram BoxesOverlay { get; set; }
 
         public VertexArray OverlayVAO { get; set; }
         public GPUBuffer OverlayVBO { get; set; }
@@ -108,15 +109,17 @@
             this.Raytracer["boxes"].Set(1);
             this.Raytracer["bvh"].Set(2);
 
+            this.BoxesOverlay = OpenGLUtil.LoadShader("individual_color_overlay", ShaderType.Vertex, ShaderType.Fragment);
+
             this.OverlayVAO = new VertexArray();
             this.OverlayVBO = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
             this.OverlayVAO.Bind();
-            this.OverlayVAO.SetVertexSize<float>(3);
+            this.OverlayVAO.SetVertexSize<float>(4);
             this.OverlayVBO.Bind();
-            this.OverlayVAO.PushElement(ElementType.Vec3);
-            this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 3 * 6 * 5);
+            this.OverlayVAO.PushElement(ElementType.Vec4);
+            this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 4 * 6 * 5);
 
-            this._reusedBuffer = new UnsafeArray<Vector3>(30);
+            this._reusedBuffer = new UnsafeArray<Vector4>(30);
             this._lights = new UnsafeArray<Shadow2DLightSource>(64);
         }
 
@@ -852,7 +855,7 @@
                     this._numQuadDrawPoints = 0; // Reset if we are not drawing points
                 }
 
-                ShaderProgram overlayShader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+                ShaderProgram overlayShader = this.BoxesOverlay;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
                 GL.Enable(Capability.CullFace);
@@ -878,8 +881,7 @@
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateRotationZ(-box.Rotation) * Matrix4x4.CreateTranslation(new Vector3(box.Center, 0));
                     Vector2 halfExtent = (box.End - box.Start) * 0.5f;
                     overlayShader["model"].Set(transform);
-                    overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, box == this._boxSelected ? 0.85f : box.IsMouseOver ? 0.75f : 0.5f));
-                    this.CreateRectangle(halfExtent);
+                    this.CreateRectangle(halfExtent, clr.Argb(), box == this._boxSelected ? Color.MediumBlue.Argb() : box.IsMouseOver ? Color.RoyalBlue.Argb() : clr.Argb());
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
@@ -898,14 +900,15 @@
                     Vector2 halfExtent = (end - start) * 0.5f;
                     overlayShader["model"].Set(transform);
                     overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, 0.85f));
-                    this.CreateRectangle(halfExtent);
+                    this.CreateRectangle(halfExtent, clr.Argb(), Color.RoyalBlue.Argb());
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
                 if (this._numQuadDrawPoints > 0)
                 {
-                    this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 3 * 6 * 5);
+                    this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 4 * 6 * 5);
                     int idx = 0;
+                    Color clr = this.ControlMode is Shadow2DControlMode.AddBlockerPoints ? Color.SlateBlue : Color.LightCyan;
                     for (int i = 0; i < this._numQuadDrawPoints; ++i)
                     {
                         float s1 = MathF.Sin(2 * MathF.PI / 5) * 0.05f;
@@ -915,25 +918,23 @@
 
                         Vector2 center = this._shadowSelectionPointsArray[i];
 
-                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X + s2, center.Y - c2, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X + s1, center.Y + c1, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X - s2, center.Y - c2, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X + s2, center.Y - c2, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X, center.Y + 0.05f, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X - s1, center.Y + c1, 0);
-                        this._reusedBuffer[idx++] = new Vector3(center.X - s2, center.Y - c2, 0);
+                        this._reusedBuffer[idx++] = new Vector4(center.X, center.Y + 0.05f, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X + s2, center.Y - c2, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X + s1, center.Y + c1, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X, center.Y + 0.05f, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X - s2, center.Y - c2, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X + s2, center.Y - c2, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X, center.Y + 0.05f, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X - s1, center.Y + c1, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
+                        this._reusedBuffer[idx++] = new Vector4(center.X - s2, center.Y - c2, 0, VTTMath.UInt32BitsToSingle(clr.Argb()));
                     }
 
                     unsafe
                     {
-                        this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 3 * 3 * 3 * this._numQuadDrawPoints, 0);
+                        this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 4 * 3 * 3 * this._numQuadDrawPoints, 0);
                     }
 
                     overlayShader["model"].Set(Matrix4x4.Identity);
-                    Color clr = this.ControlMode is Shadow2DControlMode.AddBlockerPoints ? Color.SlateBlue : Color.LightCyan;
-                    overlayShader["u_color"].Set(((Vector4)clr) * new Vector4(1, 1, 1, 0.85f));
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
                 }
 
@@ -948,39 +949,41 @@
             }
         }
 
-        private UnsafeArray<Vector3> _reusedBuffer;
-        private unsafe void CreateRectangle(Vector2 halfExtent)
+        private UnsafeArray<Vector4> _reusedBuffer;
+        private unsafe void CreateRectangle(Vector2 halfExtent, uint boxColor, uint borderColor)
         {
-            this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 3 * 6 * 5);
+            boxColor &= 0x77ffffffu;
+            this.OverlayVBO.SetData(IntPtr.Zero, sizeof(float) * 4 * 6 * 5);
             float minX = MathF.Min(0.075f, halfExtent.X * 0.2f);
             float minY = MathF.Min(0.075f, halfExtent.Y * 0.2f);
+            float sideWH = MathF.Min(minX, minY);
             int idx = 0;
-            this.AddQuad(-halfExtent, halfExtent, ref idx);
+            this.AddQuad(-halfExtent, halfExtent, ref idx, boxColor);
 
-            this.AddQuad(-halfExtent, new Vector2(-halfExtent.X + minX, halfExtent.Y), ref idx);
-            this.AddQuad(new Vector2(halfExtent.X - minX, -halfExtent.Y), halfExtent, ref idx);
-            this.AddQuad(new Vector2(-halfExtent.X + minX, -halfExtent.Y), new Vector2(halfExtent.X - minX, -halfExtent.Y + minY), ref idx);
-            this.AddQuad(new Vector2(-halfExtent.X + minX, halfExtent.Y - minY), new Vector2(halfExtent.X - minX, halfExtent.Y), ref idx);
-            this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 90, 0);
+            this.AddQuad(-halfExtent, new Vector2(-halfExtent.X + sideWH, halfExtent.Y), ref idx, borderColor);
+            this.AddQuad(new Vector2(halfExtent.X - sideWH, -halfExtent.Y), halfExtent, ref idx, borderColor);
+            this.AddQuad(new Vector2(-halfExtent.X + sideWH, -halfExtent.Y), new Vector2(halfExtent.X - sideWH, -halfExtent.Y + sideWH), ref idx, borderColor);
+            this.AddQuad(new Vector2(-halfExtent.X + sideWH, halfExtent.Y - sideWH), new Vector2(halfExtent.X - sideWH, halfExtent.Y), ref idx, borderColor);
+            this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 120, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, ref int index)
+        private void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, ref int index, uint color)
         {
-            this._reusedBuffer[index++] = new Vector3(p1, 0);
-            this._reusedBuffer[index++] = new Vector3(p2, 0);
-            this._reusedBuffer[index++] = new Vector3(p3, 0);
+            this._reusedBuffer[index++] = new Vector4(p1, 0, VTTMath.UInt32BitsToSingle(color));
+            this._reusedBuffer[index++] = new Vector4(p2, 0, VTTMath.UInt32BitsToSingle(color));
+            this._reusedBuffer[index++] = new Vector4(p3, 0, VTTMath.UInt32BitsToSingle(color));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddQuad(Vector2 start, Vector2 end, ref int index)
+        private void AddQuad(Vector2 start, Vector2 end, ref int index, uint color)
         {
             Vector2 tl = start;
             Vector2 br = end;
             Vector2 tr = new Vector2(end.X, start.Y);
             Vector2 bl = new Vector2(start.X, end.Y);
-            this.AddTriangle(tl, tr, br, ref index);
-            this.AddTriangle(tl, br, bl, ref index);
+            this.AddTriangle(tl, tr, br, ref index, color);
+            this.AddTriangle(tl, br, bl, ref index, color);
         }
     }
 

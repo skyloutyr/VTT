@@ -109,12 +109,17 @@
             modelMatrix.M42 = offset.Y;
             modelMatrix.M43 = offset.Z;
 
-            return Matrix4x4.Invert(modelMatrix, out Matrix4x4 inverseModelMatrix)
-                ? this._internalAABB.Intersects(new Ray(
+            if (Matrix4x4.Invert(modelMatrix, out Matrix4x4 inverseModelMatrix))
+            {
+                Vector3? result = this._internalAABB.Intersects(new Ray(
                     Vector4.Transform(new Vector4(ray.Origin, 1.0f), inverseModelMatrix).Xyz(),
                     Vector4.Normalize(Vector4.Transform(new Vector4(ray.Direction, 0.0f), inverseModelMatrix)).Xyz()
-                ))
-                : null;
+                ));
+
+                return result.HasValue ? Vector3.Transform(result.Value, modelMatrix) : null;
+            }
+
+            return null;
 
             /* Old code - had a bug in it, and was not more performant than the standard method of inverting the ray
             Matrix4x4 modelMatrix = Matrix4x4.CreateFromQuaternion(this.Rotation) * Matrix4x4.CreateTranslation(offset);

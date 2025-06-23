@@ -292,7 +292,8 @@
                             float sRMin = 0.58f;
                             if (is2d)
                             {
-                                radius = 150f * zoomortho;
+                                radius = 230f * zoomortho;
+                                radiusMin = 210f * zoomortho;
                                 vScale = 150f * zoomortho;
                                 sRMin = 0;
                                 sRMax = 1f;

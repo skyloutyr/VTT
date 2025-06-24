@@ -81,15 +81,16 @@
             shader["model"].Set(Matrix4x4.Identity);
             this._tex.Bind();
             float lineProgress = ((((uint)Client.Instance.Frontend.UpdatesExisted) + (float)dt) / 60.0f);
+            bool adminOrObserver = Client.Instance.IsAdmin || Client.Instance.IsObserver;
             while (this._portalsToProcess.Count > 0)
             {
                 MapObject p1 = this._portalsToProcess.First();
-                if (p1.IsPortal)
+                if (p1.IsPortal && (adminOrObserver || p1.CanEdit(Client.Instance.ID)))
                 {
                     Vector4 portalColor = this.DetermineColor(p1.ID, p1.PairedPortalID);
                     shader["u_color"].Set(portalColor * new Vector4(1, 1, 1, 0.8f));
                     this.AddContextHighlight(m, p1.Position, p1.PortalSize, lineProgress, 0.025f);
-                    if (!p1.PairedPortalID.IsEmpty() && m.GetObject(p1.PairedPortalID, out MapObject pportal))
+                    if (!p1.PairedPortalID.IsEmpty() && m.GetObject(p1.PairedPortalID, out MapObject pportal) && (adminOrObserver || pportal.CanEdit(Client.Instance.ID)))
                     {
                         this._portalsToProcess.Remove(pportal); // In case it was also added
                         this.AddContextHighlight(m, pportal.Position, pportal.PortalSize, lineProgress, 0.025f);

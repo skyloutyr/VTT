@@ -576,6 +576,30 @@
 
             if (m != null)
             {
+                if (Client.Instance.IsAdmin && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Shadows2D && m.Is2D)
+                {
+                    if (this.ControlMode is Shadow2DControlMode.AddBlockerPoints or Shadow2DControlMode.AddSunlightPoints)
+                    {
+                        bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
+                        if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
+                        {
+                            this._renderEscDown = true;
+                            this._numQuadDrawPoints = 0;
+                            Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
+                        }
+
+                        if (!escState && this._renderEscDown)
+                        {
+                            this._renderEscDown = false;
+                        }
+                    }
+
+                    GL.DepthMask(true);
+                    GL.Disable(Capability.Blend);
+                    GL.Enable(Capability.DepthTest);
+                    GL.Disable(Capability.CullFace);
+                }
+
                 if (m.Has2DShadows && m.Is2D)
                 {
                     if (!m.ShadowLayer2D.BVH.WasUploaded)
@@ -845,20 +869,6 @@
                     if (handleLmbStateNow)
                     {
                         this.AddQuadDrawPoint(m, Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView().Xy());
-                    }
-
-                    bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
-                    if (escState && !this._renderEscDown && !ImGui.GetIO().WantCaptureKeyboard)
-                    {
-                        this._renderEscDown = true;
-                        this._numQuadDrawPoints = 0;
-                        // TODO escape capture must be moved to an earlier render time so that the UI is able to react!
-                        Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
-                    }
-
-                    if (!escState && this._renderEscDown)
-                    {
-                        this._renderEscDown = false;
                     }
                 }
                 else

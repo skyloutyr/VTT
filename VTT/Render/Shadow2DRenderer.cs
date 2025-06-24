@@ -570,7 +570,9 @@
             static Vector2 GetObjectPosition(MapObject mo, Map m)
             {
                 return m.Shadows2DObjectVisionStrict
-                    ? Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode != EditMode.Scale ? mo.ClientDragMoveResetInitialPosition.Xy() : mo.Position.Xy()
+                    ? Client.Instance.Frontend.Renderer.SelectionManager.IsDraggingObjects && Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode != EditMode.Scale 
+                        ? mo.ClientDragMoveResetInitialPosition.Xy() 
+                        : mo.FinalMovementPosition.Xy()
                     : mo.Position.Xy();
             }
 

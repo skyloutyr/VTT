@@ -389,6 +389,11 @@
             this.ClientDragMoveServerInducedPositionChangeProgress = 1;
         }
 
+        public Vector3 FinalMovementPosition =>
+            this.ClientDragMoveServerInducedPositionChangeProgress > 0
+                ? this.ClientDragMoveServerInducedNewPosition
+                : this.Position;
+
         public void Update() // Client-only
         {
             if (this.ClientRenderedThisFrame) // Updating animation outside of render visibility is pointless as no animation data is loaded, thus no changes occur anyway

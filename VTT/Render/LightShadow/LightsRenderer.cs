@@ -200,6 +200,8 @@
 
         private readonly List<MapObject> _objsCache = new List<MapObject>();
         private readonly Matrix4x4[] _lightMatrices = new Matrix4x4[6];
+        private bool _hadLightsLastFrame;
+
         public void DrawLights(Map m, bool doDraw, double delta, Camera cam = null)
         {
             if (cam != null) // Frustrum cull, sort and push lights
@@ -222,6 +224,12 @@
                 this.PushLight(this._selectedLights[i]);
             }
 
+            if (this.NumLights == 0 && !this._hadLightsLastFrame)
+            {
+                return;
+            }
+
+            this._hadLightsLastFrame = this.NumLights > 0;
             GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
             GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
             GL.Clear(ClearBufferMask.Depth);

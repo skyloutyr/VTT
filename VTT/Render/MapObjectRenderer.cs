@@ -344,6 +344,7 @@
             if (m != null)
             {
                 this.RenderAuras(m);
+                this.Shadow2DRenderer?.RenderBoxesOverlay(m);
             }
         }
 
@@ -371,7 +372,6 @@
                 this.RenderDeferred(m, delta);
                 this.RenderHighlights(m, delta);
                 this.RenderObjectMouseOver(m);
-                this.Shadow2DRenderer.RenderBoxesOverlay(m);
                 this.RenderDebug(m);
             }
         }
@@ -1251,6 +1251,7 @@
             GL.Enable(Capability.Blend);
             GL.Enable(Capability.CullFace);
             GL.DepthMask(false);
+            GL.Enable(Capability.DepthTest);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             ShaderProgram shader = this.OverlayShader;
             shader.Bind();
@@ -1279,6 +1280,7 @@
             }
 
             GL.DepthMask(true);
+            GL.Disable(Capability.DepthTest);
             GL.Disable(Capability.Blend);
             GL.Disable(Capability.CullFace);
             GL.Enable(Capability.Multisample);

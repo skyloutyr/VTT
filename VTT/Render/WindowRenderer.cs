@@ -115,8 +115,8 @@
                 this.GuiRenderer.Render(time);
                 this.SelectionManager.RenderGui(time);
                 this.PingRenderer?.Render(time);
-                this.ObjectRenderer.RenderLate(m, time);
                 this.SkyRenderer.Render(m, time);
+                this.ObjectRenderer.RenderLate(m, time);
                 this.MapRenderer.RenderLate(m, time);
                 this.ParticleRenderer.RenderAll();
                 this.Container.GuiWrapper.Render(time);

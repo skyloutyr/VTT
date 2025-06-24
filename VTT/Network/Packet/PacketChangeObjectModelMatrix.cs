@@ -1,8 +1,9 @@
 ﻿namespace VTT.Network.Packet
 {
-    using System.Numerics;
+    using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
@@ -29,12 +30,39 @@
                         {
                             if (this.Sender.IsAdmin || mo.CanEdit(this.Sender.ID))
                             {
-                                broadcastChanges.Add((d.Item1, d.Item2, d.Item3));
+                                bool allowNormalProc = true;
                                 switch (this.Type)
                                 {
                                     case ChangeType.Position:
                                     {
+                                        // Set the position first for the portal code
                                         mo.Position = d.Item3.Xyz();
+
+                                        // Handle portals
+                                        if (HandlePortals(server, m, mo, out bool needsMapChange, out Vector3 newPosition, out Map newMap))
+                                        {
+                                            if (needsMapChange)
+                                            {
+                                                m.RemoveObject(mo);
+                                                new PacketDeleteMapObject() { DeletedObjects = new List<(Guid, Guid)>() { (m.ID, mo.ID) } }.Broadcast(); // Remove object and notify
+                                                m.NeedsSave = true;
+
+                                                mo.Position = newPosition;
+                                                newMap.AddObject(mo);
+                                                new PacketMapObject() { Obj = mo }.Broadcast(); // Add to new map and notify
+                                                newMap.NeedsSave = true;
+                                                // In this case we don't add this object to broadcastChanges or rejects, as it is gone from the map entirely.
+                                            }
+                                            else
+                                            {
+                                                mo.Position = newPosition;
+                                                broadcastChanges.Add((d.Item1, d.Item2, new Vector4(newPosition, d.Item3.W)));
+                                                m.NeedsSave = true;
+                                            }
+
+                                            allowNormalProc = false;
+                                        }
+
                                         break;
                                     }
 
@@ -51,7 +79,11 @@
                                     }
                                 }
 
-                                m.NeedsSave = true;
+                                if (allowNormalProc)
+                                {
+                                    broadcastChanges.Add((d.Item1, d.Item2, d.Item3));
+                                    m.NeedsSave = true;
+                                }
                             }
                             else
                             {
@@ -173,6 +205,55 @@
                 Vector4 i3 = c.Lookup(x.Item3);
                 return x = (i1, i2, i3);
             });
+        }
+
+        public static bool HandlePortals(Server server, Map m, MapObject mo, out bool needsMapChange, out Vector3 position, out Map newMap)
+        {
+            foreach (MapObject o2 in m.IterateObjects(null))
+            {
+                if (o2 != mo && o2.IsPortal && (mo.MapLayer > 0 || o2.MapLayer <= 0) && !o2.PairedPortalID.IsEmpty()) // If our object is on the GM layer, then it can use any portals, otherwise it can only use portals on a non-gm layer
+                {
+                    bool isInBounds = false;
+                    // The server isn't aware of the object's model bounds, that is client only, hance the portal's scale feature
+                    if (m.Is2D)
+                    {
+                        RectangleF rect = new RectangleF(o2.Position.X + (o2.PortalSize.X * o2.Scale.X * -0.5f), o2.Position.Y + (o2.PortalSize.Y * o2.Scale.Y * -0.5f), o2.PortalSize.X * o2.Scale.X, o2.PortalSize.Y * o2.Scale.Y);
+                        isInBounds = rect.Contains(mo.Position.X, mo.Position.Y);
+                    }
+                    else
+                    {
+                        AABox box = new AABox(o2.PortalSize * -0.5f, o2.PortalSize * 0.5f).Scale(o2.Scale).Offset(o2.Position);
+                        isInBounds = box.Contains(mo.Position);
+                    }
+
+                    if (isInBounds) // Again, as the server isn't aware of the actual bounds, simply test for position
+                    {
+                        // Unfortunately have to potentially load a map here which is bad (slow)
+                        // There is currently no way to set an exit portal on a different map through the UI, but it is supported by the engine regardless
+                        if (server.TryGetMap(o2.PairedPortalMapID, out Map m2) && m2.GetObject(o2.PairedPortalID, out MapObject pportal) && pportal.IsPortal)
+                        {
+                            // Figure out the scale discrepancy and the offset - try to position the object relative to the portal
+                            Vector3 portalScaleDiff = pportal.Scale * pportal.PortalSize / (o2.Scale * o2.PortalSize);
+                            Vector3 correctedDeltaToCenter = (mo.Position - o2.Position) * portalScaleDiff;
+                            if (m2.Is2D || m.Is2D)
+                            {
+                                correctedDeltaToCenter *= new Vector3(1, 1, 0);
+                                correctedDeltaToCenter.Z = mo.Position.Z - o2.Position.Z;
+                            }
+
+                            needsMapChange = m != m2;
+                            position = pportal.Position + correctedDeltaToCenter;
+                            newMap = m2;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            needsMapChange = false;
+            position = mo.Position;
+            newMap = m;
+            return false;
         }
 
         public enum ChangeType

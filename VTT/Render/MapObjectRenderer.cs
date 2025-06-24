@@ -56,6 +56,7 @@
         public SunShadowRenderer DirectionalLightRenderer { get; set; }
         public FastLightRenderer FastLightRenderer { get; set; }
         public Shadow2DRenderer Shadow2DRenderer { get; set; }
+        public PortalHighlightRenderer PortalHightlightRenderer { get; set; }
 
         private Vector3 _cachedSunDir;
         private Color _cachedSunColor;
@@ -107,6 +108,7 @@
                 1 - 1, 3 - 1, 4 - 1,
                 5 - 1, 1 - 1, 2 - 1,
             });
+
             this._noAssetVao.Reset();
             this._noAssetVao.SetVertexSize<float>(5);
             this._noAssetVao.PushElement(ElementType.Vec3);
@@ -141,6 +143,8 @@
             this.FastLightRenderer.Create();
             this.Shadow2DRenderer = new Shadow2DRenderer();
             this.Shadow2DRenderer.Create();
+            this.PortalHightlightRenderer = new PortalHighlightRenderer();
+            this.PortalHightlightRenderer.Create();
 
             this.FrameUBOManager = new FrameUBOManager();
             this.BonesUBOManager = new BonesUBO();
@@ -344,6 +348,7 @@
             if (m != null)
             {
                 this.RenderAuras(m);
+                this.PortalHightlightRenderer.Render(m, delta);
                 this.Shadow2DRenderer?.RenderBoxesOverlay(m);
             }
         }
@@ -419,6 +424,7 @@
                     shader["bounds"].Set(size);
                     this._boxVao.Bind();
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                    this.PortalHightlightRenderer.AddObject(mo);
                 }
             }
 
@@ -435,6 +441,7 @@
                     shader["bounds"].Set(size);
                     this._boxVao.Bind();
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                    this.PortalHightlightRenderer.AddObject(mo);
                 }
             }
 
@@ -843,6 +850,7 @@
                 this._boxVao.Bind();
                 GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
                 GL.Enable(Capability.CullFace);
+                this.PortalHightlightRenderer.AddObject(mo);
             }
         }
 

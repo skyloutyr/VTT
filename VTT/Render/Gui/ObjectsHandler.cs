@@ -872,6 +872,69 @@
 
                                     ImGui.TreePop();
                                 }
+
+                                if (ImGui.TreeNode(lang.Translate("ui.portal") + "###Portal"))
+                                {
+                                    bool oIsPortal = mo.IsPortal;
+                                    if (ImGui.Checkbox(lang.Translate("ui.portal.is_portal") + "###Is Portal", ref oIsPortal))
+                                    {
+                                        mo.IsPortal = oIsPortal;
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.IsPortal, Data = SelectedToPacket3(os, oIsPortal) }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.portal.is_portal.tt"));
+                                    }
+
+                                    ImGui.TextUnformatted(lang.Translate("ui.portal.size"));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.portal.size.tt"));
+                                    }
+
+                                    Vector3 oPortalScale = mo.PortalSize;
+                                    if (ImGui.DragFloat3("##Portal Size", ref oPortalScale, 0.1f))
+                                    {
+                                        mo.PortalSize = oPortalScale;
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.PortalSize, Data = SelectedToPacket3(os, oPortalScale) }.Send();
+                                    }
+
+                                    if (ImGui.Button(lang.Translate("ui.portal.picker") + "###Pick object"))
+                                    {
+                                        Client.Instance.Frontend.Renderer.SelectionManager.ObjectPickerModeObjectID = mo.ID;
+                                        Client.Instance.Frontend.Renderer.SelectionManager.IsObjectPickerModeForPortal = true;
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.portal.picker.tt"));
+                                    }
+
+                                    ImGui.SameLine();
+                                    if (ImGui.Button(lang.Translate("ui.portal.clear") + "###Clear Portal"))
+                                    {
+                                        mo.PairedPortalID = Guid.Empty;
+                                        mo.PairedPortalMapID = Guid.Empty;
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalID, Data = new List<(Guid, Guid, object)>() { (state.clientMap.ID, mo.ID, Guid.Empty) } }.Send();
+                                        new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalMapID, Data = new List<(Guid, Guid, object)>() { (state.clientMap.ID, mo.ID, Guid.Empty) } }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.portal.clear.tt"));
+                                    }
+
+                                    ImGui.TextUnformatted(lang.Translate("ui.portal.link"));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.portal.link.tt"));
+                                    }
+
+                                    ImGuiHelper.ImObjectReferenceFrame(lang, mo.PairedPortalID, new Vector2(0, 28), out _);
+
+                                    ImGui.TreePop();
+                                }
                             }
 
                         }

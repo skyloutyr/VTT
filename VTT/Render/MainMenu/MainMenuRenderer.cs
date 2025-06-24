@@ -371,6 +371,7 @@
                             ImGui.Text("    pentagram");
                             ImGui.Text("    picture");
                             ImGui.Text("    pipeline");
+                            ImGui.Text("    pipette");
                             ImGui.Text("    play");
                             ImGui.Text("    plus-math");
                             ImGui.Text("    polyline");

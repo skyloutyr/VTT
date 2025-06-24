@@ -11,6 +11,7 @@
         private int _nextElementIndex;
 
         public int Length => this._nextElementIndex;
+        public int Capacity => this._allocatedSize;
         public T this[int i]
         {
             get => this._ptr[i];

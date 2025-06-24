@@ -10,6 +10,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using VTT.Asset;
+    using VTT.Control;
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
@@ -107,6 +108,76 @@
         {
             drawList.AddText(pos + new Vector2(1, 1), 0xff000000, text);
             drawList.AddText(pos, color, text);
+        }
+
+        public static void ImObjectReferenceFrame(SimpleLanguage lang, Guid oId, Vector2 size, out bool hovered)
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            Vector2 imScreenPos = ImGui.GetCursorScreenPos();
+            Vector2 avail = ImGui.GetContentRegionAvail();
+            if (size.X == 0)
+            {
+                size.X = avail.X;
+            }
+
+            if (size.Y == 0)
+            {
+                size.Y = avail.Y;
+            }
+
+            Vector2 rectEnd = imScreenPos + size;
+            hovered = ImGui.IsMouseHoveringRect(imScreenPos, rectEnd);
+            uint bClr = hovered ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border);
+            drawList.AddRect(imScreenPos, rectEnd, bClr);
+            bool haveObject = false;
+            string objectName = lang.Translate("generic.none");
+            Map m = Client.Instance.CurrentMap;
+            if (m != null)
+            {
+                if (m.GetObject(oId, out MapObject mo))
+                {
+                    haveObject = true;
+                    objectName = $"{mo.Name} ({mo.ID})";
+                    AssetStatus a = Client.Instance.AssetManager.ClientAssetLibrary.Portraits.Get(mo.AssetID, AssetType.Model, out AssetPreview ap);
+                    if (a == AssetStatus.Return)
+                    {
+                        Texture tex = ap.GetGLTexture();
+                        if (tex.IsAsyncReady)
+                        {
+                            if (ap.IsAnimated)
+                            {
+                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)Client.Instance.Frontend.UpdatesExisted);
+                                float tW = tex.Size.Width;
+                                float tH = tex.Size.Height;
+                                float sS = frame.X / tW;
+                                float sE = sS + (frame.Width / tW);
+                                float tS = frame.Y / tH;
+                                float tE = tS + (frame.Height / tH);
+                                drawList.AddImage(tex, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20), new Vector2(sS, tS), new Vector2(sE, tE));
+                            }
+                            else
+                            {
+                                drawList.AddImage(tex, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+
+                            }
+                        }
+                        else
+                        {
+                            drawList.AddImage(GuiRenderer.Instance.TurnTrackerBackgroundNoObject, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+                        }
+                    }
+                }
+            }
+
+            if (!haveObject)
+            {
+                drawList.AddImage(GuiRenderer.Instance.TurnTrackerBackgroundNoObject, imScreenPos + new Vector2(4, 4), imScreenPos + new Vector2(20, 20));
+            }
+
+            drawList.PushClipRect(imScreenPos, rectEnd);
+            drawList.AddText(imScreenPos + new Vector2(20, 4), ImGui.GetColorU32(ImGuiCol.Text), objectName);
+            drawList.PopClipRect();
+            ImGui.Dummy(size);
         }
 
         public static bool ImAssetRecepticleCustomText(string text, ImCustomTexturedRect icon, Vector2 size, Func<AssetRef, bool> assetEvaluator, out bool hovered)

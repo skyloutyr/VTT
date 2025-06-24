@@ -12,6 +12,7 @@
     using VTT.Util;
     using Plane = Util.Plane;
     using VTT.GLFW;
+    using VTT.Render.Gui;
 
     public class SelectionManager
     {
@@ -38,12 +39,20 @@
         public Vector3 ObjectMovementInitialHitLocation => this._rayInitialHit;
         public Vector3? ObjectMovementCurrentHitLocation => this._movementIntersectionValue;
         public List<Vector3> ObjectMovementPath { get; } = new List<Vector3>();
+        public bool IsObjectPickerModeForPortal { get; set; }
+        public Guid ObjectPickerModeObjectID { get; set; }
 
         public void Update()
         {
             Map cMap = Client.Instance.CurrentMap;
             if (cMap == null)
             {
+                if (this.IsObjectPickerModeForPortal)
+                {
+                    this.IsObjectPickerModeForPortal = false;
+                    this.ObjectPickerModeObjectID = Guid.Empty;
+                }
+
                 return;
             }
 
@@ -890,10 +899,35 @@
                 MapObject mouseOver = Client.Instance.Frontend.Renderer.ObjectRenderer.ObjectMouseOver;
                 if (mouseOver == null)
                 {
+                    this.ObjectPickerModeObjectID = Guid.Empty;
+                    this.IsObjectPickerModeForPortal = false;
                     this.SelectedObjects.Clear();
                 }
                 else
                 {
+                    if (!remove && this.IsObjectPickerModeForPortal && !Guid.Equals(mouseOver.ID, this.ObjectPickerModeObjectID))
+                    {
+                        Map m = Client.Instance.CurrentMap;
+                        if (m != null && m.GetObject(this.ObjectPickerModeObjectID, out MapObject pickerContext) && mouseOver.IsPortal)
+                        {
+                            pickerContext.PairedPortalID = mouseOver.ID;
+                            pickerContext.PairedPortalMapID = m.ID;
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalID, Data = new List<(Guid, Guid, object)>() { (m.ID, pickerContext.ID, mouseOver.ID) } }.Send();
+                            new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalMapID, Data = new List<(Guid, Guid, object)>() { (m.ID, pickerContext.ID, m.ID) } }.Send();
+                            if (add)
+                            {
+                                mouseOver.PairedPortalID = pickerContext.ID;
+                                mouseOver.PairedPortalMapID = m.ID;
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalID, Data = new List<(Guid, Guid, object)>() { (m.ID, mouseOver.ID, pickerContext.ID) } }.Send();
+                                new PacketMapObjectGenericData() { ChangeType = PacketMapObjectGenericData.DataType.LinkedPortalMapID, Data = new List<(Guid, Guid, object)>() { (m.ID, mouseOver.ID, m.ID) } }.Send();
+                            }
+                        }
+
+                        this.ObjectPickerModeObjectID = Guid.Empty;
+                        this.IsObjectPickerModeForPortal = false;
+                        return;
+                    }
+
                     if (remove && this.SelectedObjects.Contains(mouseOver))
                     {
                         this.SelectedObjects.Remove(mouseOver);
@@ -978,6 +1012,7 @@
         }
 
         private bool _rmbLastFrame;
+        private bool _escDownLastFrame;
         public void Render(Map m, double delta)
         {
             if (m == null)
@@ -998,11 +1033,33 @@
                 }
 
                 this._rmbLastFrame = true;
+                if (this.IsObjectPickerModeForPortal)
+                {
+                    this.IsObjectPickerModeForPortal = false;
+                    this.ObjectPickerModeObjectID = Guid.Empty;
+                }
             }
 
             if (!rmb && this._rmbLastFrame)
             {
                 this._rmbLastFrame = false;
+            }
+
+            bool escState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Escape);
+            if (escState && !this._escDownLastFrame && !ImGui.GetIO().WantCaptureKeyboard)
+            {
+                this._escDownLastFrame = true;
+                if (this.IsObjectPickerModeForPortal)
+                {
+                    this.IsObjectPickerModeForPortal = false;
+                    this.ObjectPickerModeObjectID = Guid.Empty;
+                    Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
+                }
+            }
+
+            if (!escState && this._escDownLastFrame)
+            {
+                this._escDownLastFrame = false;
             }
         }
 
@@ -1033,6 +1090,23 @@
                 ImGui.PopStyleVar();
                 ImGui.PopStyleVar();
                 ImGui.PopStyleColor();
+            }
+
+            if (this.IsObjectPickerModeForPortal)
+            {
+                ImGuiWindowFlags window_flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground;
+                ImGui.SetNextWindowBgAlpha(0);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0, 0));
+                ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(0, 0));
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0, 0));
+                ImGui.SetNextWindowPos(new Vector2(Client.Instance.Frontend.MouseX + 12, Client.Instance.Frontend.MouseY + 12));
+                ImGui.SetNextWindowSize(new Vector2(20, 20));
+                ImGui.Begin("PipetteOverlay", window_flags);
+                GuiRenderer.Instance.Pipette.ImImage(new Vector2(20, 20));
+                ImGui.End();
+                ImGui.PopStyleVar(5);
             }
         }
 

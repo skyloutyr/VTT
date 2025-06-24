@@ -42,7 +42,32 @@
                         if (mo.CanEdit(this.Sender.ID) || this.Sender.IsAdmin)
                         {
                             mo.Position += this.Path[^1] - this.Path[0]; // If there is only 1 point the path is invalid, so the object won't move
-                            broadcastedChangesForServer.Add(oId);
+
+                            // Handle portals
+                            if (PacketChangeObjectModelMatrix.HandlePortals(server, m, mo, out bool needsMapChange, out Vector3 newPosition, out Map newMap))
+                            {
+                                if (needsMapChange) // If map was changed we ditch this packet's systems entirely
+                                {
+                                    m.RemoveObject(mo);
+                                    new PacketDeleteMapObject() { DeletedObjects = new List<(Guid, Guid)>() { (m.ID, mo.ID) } }.Broadcast(); // Remove object and notify
+                                    m.NeedsSave = true;
+
+                                    mo.Position = newPosition;
+                                    newMap.AddObject(mo);
+                                    new PacketMapObject() { Obj = mo }.Broadcast(); // Add to new map and notify
+                                    newMap.NeedsSave = true;
+                                }
+                                else // If it wasn't, we delegate to PacketChangeObjectModelMatrix for inducer, can't really path move either way
+                                {
+                                    mo.Position = newPosition;
+                                    new PacketChangeObjectModelMatrix() { Type = PacketChangeObjectModelMatrix.ChangeType.Position, MovementInducerID = this.Sender.ID, MovedObjects = new List<(Guid, Guid, Vector4)>() { (m.ID, mo.ID, new Vector4(newPosition, 1.0f)) } }.Broadcast();
+                                    m.NeedsSave = true;
+                                }
+                            }
+                            else // If portals return false just broadcast the change
+                            {
+                                broadcastedChangesForServer.Add(oId);
+                            }
                         }
                         else // Uh-oh
                         {

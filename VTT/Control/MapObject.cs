@@ -101,6 +101,11 @@
         public Vector2 Shadow2DLightSourceData { get; set; } = new Vector2(6, 12);
         public bool DisableNameplateBackground { get; set; } = false;
 
+        public bool IsPortal { get; set; } = false;
+        public Vector3 PortalSize { get; set; } = Vector3.One;
+        public Guid PairedPortalID { get; set; } = Guid.Empty;
+        public Guid PairedPortalMapID { get; set; } = Guid.Empty;
+
         #region Client Data
         public AABox ClientBoundingBox
         {
@@ -218,6 +223,10 @@
             ret.SetBool("IsShadow2DLightSource", this.IsShadow2DLightSource);
             ret.SetVec2("Shadow2DLightSourceData", this.Shadow2DLightSourceData);
             ret.SetBool("DisableNameplateBackground", this.DisableNameplateBackground);
+            ret.SetBool("IsPortal", this.IsPortal);
+            ret.SetGuid("PortalLink", this.PairedPortalID);
+            ret.SetGuid("PortalMap", this.PairedPortalMapID);
+            ret.SetVec3("PortalScale", this.PortalSize);
             return ret;
         }
 
@@ -280,6 +289,10 @@
             this.IsShadow2DLightSource = e.GetBool("IsShadow2DLightSource", false);
             this.Shadow2DLightSourceData = e.GetVec2Legacy("Shadow2DLightSourceData", new Vector2(6, 12));
             this.DisableNameplateBackground = e.GetBool("DisableNameplateBackground", false);
+            this.IsPortal = e.GetBool("IsPortal", false);
+            this.PairedPortalID = e.GetGuid("PortalLink", Guid.Empty);
+            this.PairedPortalMapID = e.GetGuid("PortalMap", Guid.Empty);
+            this.PortalSize = e.GetVec3("PortalScale", Vector3.One);
         }
 
         public MapObject Clone()
@@ -319,6 +332,10 @@
             ret.IsShadow2DLightSource = this.IsShadow2DLightSource;
             ret.Shadow2DLightSourceData = this.Shadow2DLightSourceData;
             ret.DisableNameplateBackground = this.DisableNameplateBackground;
+            ret.IsPortal = this.IsPortal;
+            ret.PairedPortalID = this.PairedPortalID;
+            ret.PairedPortalMapID = this.PairedPortalMapID;
+            ret.PortalSize = this.PortalSize;
             ret.CustomProperties = new DataElement();
             foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
             {

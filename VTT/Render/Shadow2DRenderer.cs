@@ -852,6 +852,7 @@
                     {
                         this._renderEscDown = true;
                         this._numQuadDrawPoints = 0;
+                        // TODO escape capture must be moved to an earlier render time so that the UI is able to react!
                         Client.Instance.Frontend.Renderer.GuiRenderer.NotifyOfEscapeCaptureThisFrame();
                     }
 

@@ -189,6 +189,30 @@
                             d.Item2.DisableNameplateBackground = (bool)d.Item3;
                             break;
                         }
+
+                        case DataType.IsPortal:
+                        {
+                            d.Item2.IsPortal = (bool)d.Item3;
+                            break;
+                        }
+
+                        case DataType.LinkedPortalID:
+                        {
+                            d.Item2.PairedPortalID = (Guid)d.Item3;
+                            break;
+                        }
+
+                        case DataType.LinkedPortalMapID:
+                        {
+                            d.Item2.PairedPortalMapID = (Guid)d.Item3;
+                            break;
+                        }
+
+                        case DataType.PortalSize:
+                        {
+                            d.Item2.PortalSize = (Vector3)d.Item3;
+                            break;
+                        }
                     }
 
                     d.Item1.NeedsSave = true;
@@ -278,6 +302,7 @@
                     case DataType.IsShadow2DViewport:
                     case DataType.IsShadow2DLightSource:
                     case DataType.DisableNameplateBackground:
+                    case DataType.IsPortal:
                     {
                         i3 = c.LookupBox<bool>(x.Item3, c.Lookup);
                         break;
@@ -300,6 +325,8 @@
                     case DataType.Owner:
                     case DataType.CustomNameplateID:
                     case DataType.ShaderID:
+                    case DataType.LinkedPortalID:
+                    case DataType.LinkedPortalMapID:
                     {
                         i3 = c.LookupBox<Guid>(x.Item3, c.Lookup);
                         break;
@@ -322,6 +349,12 @@
                     case DataType.Shadow2DLightSourceData:
                     {
                         i3 = c.LookupBox<Vector2>(x.Item3, c.Lookup);
+                        break;
+                    }
+
+                    case DataType.PortalSize:
+                    {
+                        i3 = c.LookupBox<Vector3>(x.Item3, c.Lookup);
                         break;
                     }
 
@@ -362,7 +395,11 @@
             Shadow2DViewportData,
             IsShadow2DLightSource,
             Shadow2DLightSourceData,
-            DisableNameplateBackground
+            DisableNameplateBackground,
+            IsPortal,
+            PortalSize,
+            LinkedPortalID,
+            LinkedPortalMapID
         }
     }
 }

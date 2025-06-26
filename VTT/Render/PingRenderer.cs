@@ -152,6 +152,9 @@
         }
 
         private bool _pingUI;
+
+        public bool IsUIVisible => this._pingUI;
+
         private bool _emojiUI;
         private Vector3 _pingUIAnchor;
         public void BeginPingUI(bool emoji)

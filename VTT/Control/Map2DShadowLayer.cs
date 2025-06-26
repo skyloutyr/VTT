@@ -430,7 +430,7 @@
             this.UpdateNodeBounds(root);
             this.Subdivide(root, ref nodesUsed);
 
-            UnsafeArray<Node> actuallyUsedNodes = new UnsafeArray<Node>(sizeof(Node) * nodesUsed);
+            UnsafeArray<Node> actuallyUsedNodes = new UnsafeArray<Node>(nodesUsed);
             Buffer.MemoryCopy(nodes.GetPointer(), actuallyUsedNodes.GetPointer(), sizeof(Node) * nodesUsed, sizeof(Node) * nodesUsed);
             this.nodes = actuallyUsedNodes;
             nodes.Free();

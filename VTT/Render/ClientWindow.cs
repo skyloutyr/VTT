@@ -42,6 +42,7 @@
 
         public float MouseX => this.GameHandle.MousePosition.Value.X;
         public float MouseY => this.GameHandle.MousePosition.Value.Y;
+        public bool GLDebugEnabled { get; private set; }
 
         private Thread _glThread;
 
@@ -378,6 +379,13 @@
         private void Instance_SetupHander()
         {
             this._glThread = Thread.CurrentThread;
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.GLDebugMode, out string val))
+            {
+                this.GLDebugEnabled = true;
+                this._debugProc = this.GL_DebugCallback;
+                GL.DebugMessageCallback(Marshal.GetFunctionPointerForDelegate(this._debugProc), IntPtr.Zero);
+            }
+
             StbDxt.Init();
             this.TextureUploader = new AsyncTextureUploader();
             this.AssetLoader = new AsyncAssetLoader();
@@ -386,12 +394,6 @@
             this.GuiWrapper = new ImGuiWrapper();
             this.Renderer.Create();
             this.GuiWrapper.RebuildFontAtlas();
-            if (ArgsManager.TryGetValue(LaunchArgumentKey.GLDebugMode, out string val))
-            {
-                this._debugProc = this.GL_DebugCallback;
-                GL.DebugMessageCallback(Marshal.GetFunctionPointerForDelegate(this._debugProc), IntPtr.Zero);
-            }
-
             string updater = Path.Combine(IOVTT.AppDir, "VTTUpdater.exe");
             if (File.Exists(updater))
             {

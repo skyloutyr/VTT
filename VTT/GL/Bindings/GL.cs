@@ -4,6 +4,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
+    using System.Text;
     using VTT.Util;
     using static VTT.GL.Bindings.MiniGLLoader;
 
@@ -449,6 +450,35 @@
 
         public delegate void DebugProcCallback(DebugMessageSource source, DebugMessageType type, uint id, DebugMessageSeverity severity, int length, IntPtr message, IntPtr userParam);
         public static void DebugMessageCallback(IntPtr proc, IntPtr userParam) => debugMessageCallbackO((void*)proc, (void*)userParam);
+        public static unsafe void PushDebugGroup(string label)
+        {
+            byte* asciiData = stackalloc byte[label.Length + 1];
+            int offset = 0;
+            foreach (char c in label)
+            {
+                int ccpt = (int)c;
+                asciiData[offset++] = ccpt < byte.MaxValue ? (byte)ccpt : (byte)0x3f;
+            }
+
+            asciiData[offset] = (byte)'\0'; // Even though the string length is passed to glPushDebugGroup it seems that some nvidia drivers ignore that, and expect the label to be null-terminated either way
+            pushDebugGroupO(0x824Au, 0, label.Length, asciiData); // GL_DEBUG_SOURCE_APPLICATION
+        }
+
+        public static void PopDebugGroup() => popDebugGroupO();
+        public static void ObjectLabel(GLObjectType objectType, uint obj, string label)
+        {
+            byte* asciiData = stackalloc byte[label.Length + 1];
+            int offset = 0;
+            foreach (char c in label)
+            {
+                int ccpt = (int)c;
+                asciiData[offset++] = ccpt < byte.MaxValue ? (byte)ccpt : (byte)0x3f;
+            }
+
+            asciiData[offset] = (byte)'\0'; // Even though the string length is passed to glPushDebugGroup it seems that some nvidia drivers ignore that, and expect the label to be null-terminated either way
+            objectLabelO((uint)objectType, obj, label.Length, asciiData);
+        }
+
         public static void TexBuffer(SizedInternalFormat internalformat, uint buffer) => texBufferO((uint)TextureTarget.Buffer, (uint)internalformat, buffer);
         public static void VertexAttribDivisor(uint index, uint divisor) => vertexAttribDivisorO(index, divisor);
         public static uint GenRenderbuffer()
@@ -472,6 +502,7 @@
         public static void RenderbufferStorage(SizedInternalFormat internalFormat, int w, int h) => renderbufferStorageO(0x8D41, (uint)internalFormat, w, h);
         public static void FramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, uint rbo) => framebufferRenderbufferO((uint)target, (uint)attachment, 0x8D41, rbo);
         public static void Finish() => finishO();
+        public static void ReadPixels(int x, int y, int width, int height, PixelDataFormat format, PixelDataType type, nint ptr) => readPixelsO(x, y, width, height, (uint)format, (uint)type, (void*)ptr);
     }
 
     public enum UniformDataType
@@ -564,5 +595,20 @@
         // GL 4.4
         Persistent = 0x0040,
         Coherent = 0x0080,
+    }
+
+    public enum GLObjectType
+    { 
+        Buffer = 0x82E0,
+        Shader = 0x82E1,
+        Program = 0x82E2,
+        VertexArray = 0x8074,
+        Query = 0x82E3,
+        ProgramPipeline = 0x82E4,
+        TransformFeedback = 0x8E22,
+        Sampler = 0x82E6,
+        Texture = 0x1702,
+        Renderbuffer = 0x8D41,
+        Framebuffer = 0x8D40
     }
 }

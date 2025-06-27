@@ -18,9 +18,7 @@
         public ShaderProgram InWorldShader { get; set; }
 
         private VertexArray _highlightVao;
-        private VertexArray _quadGridHighlightVao;
         private GPUBuffer _highlightVbo;
-        private GPUBuffer _quadGridHighlightVbo;
 
         public Stopwatch CPUTimer { get; set; }
 
@@ -116,20 +114,15 @@
                 }
             }
 
-            this._quadGridHighlightVao = new VertexArray();
-            this._quadGridHighlightVbo = new GPUBuffer(BufferTarget.Array);
-            this._quadGridHighlightVao.Bind();
-            this._quadGridHighlightVbo.Bind();
-            this._quadGridHighlightVbo.SetData(nData);
-            this._quadGridHighlightVao.Reset();
-            this._quadGridHighlightVao.SetVertexSize<float>(5);
-            this._quadGridHighlightVao.PushElement(ElementType.Vec3);
-            this._quadGridHighlightVao.PushElement(ElementType.Vec2);
-
             this._shader = OpenGLUtil.LoadShader("grid", ShaderType.Vertex, ShaderType.Fragment);
             this.InWorldShader = OpenGLUtil.LoadShader("overlay", ShaderType.Vertex, ShaderType.Fragment);
 
             this.CPUTimer = new Stopwatch();
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Grid primary vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Grid primary vbo");
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._highlightVao, "Grid highlight vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._highlightVbo, "Grid highlight vbo");
         }
 
         public void Render(double deltaTime, Camera cam, Map m, bool renderMisc = true)
@@ -140,6 +133,7 @@
             }
 
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("World grid");
             GL.Enable(Capability.CullFace);
             GL.CullFace(cam.Position.Z < 0 ? PolygonFaceMode.Front : PolygonFaceMode.Back);
             GL.Enable(Capability.Blend);
@@ -197,6 +191,7 @@
 
                 if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                 {
+                    OpenGLUtil.StartSection("Selection highlighs");
                     GL.DepthFunction(ComparisonMode.Always);
                     GL.Disable(Capability.CullFace);
                     this.InWorldShader.Bind();
@@ -227,6 +222,7 @@
 
                     GL.Enable(Capability.CullFace);
                     GL.DepthFunction(ComparisonMode.LessOrEqual);
+                    OpenGLUtil.EndSection();
                 }
             }
 
@@ -234,6 +230,7 @@
             GL.CullFace(PolygonFaceMode.Back);
             GL.Disable(Capability.CullFace);
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
     }
 }

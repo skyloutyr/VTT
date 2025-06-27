@@ -87,6 +87,13 @@
             this._polyOutlineEbo.Bind();
             this._polyOutlineVao.SetVertexSize<float>(3);
             this._polyOutlineVao.PushElement(ElementType.Vec3);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "FOW selection vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "FOW selection vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._ebo, "FOW selection ebo");
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._polyOutlineVao, "FOW polygon outline vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._polyOutlineVbo, "FOW polygon outline vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._polyOutlineEbo, "FOW polygon outline ebo");
         }
 
 
@@ -122,6 +129,7 @@
             this.FOWTexture = new Texture(TextureTarget.Texture2D);
             using Image<Rgba64> img = new Image<Rgba64>(1, 1, new Rgba64(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue, ushort.MaxValue));
             this.FOWTexture.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.FOWTexture, "FOW texture 64bpp");
             this.FOWTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.FOWTexture.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             this.FOWTexture.SetImage(img, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
@@ -147,6 +155,7 @@
                 this.FOWTexture?.Dispose();
                 this.FOWTexture = new Texture(TextureTarget.Texture2D);
                 this.FOWTexture.Bind();
+                OpenGLUtil.NameObject(GLObjectType.Texture, this.FOWTexture, "FOW texture 64bpp");
                 this.FOWTexture.SetImage(texture, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
                 this.FOWTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
                 this.FOWTexture.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
@@ -390,6 +399,7 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("FOW edit mode");
             if (!this._lmbPressed && Client.Instance.Frontend.GameHandle.IsMouseButtonDown(MouseButton.Left) && !ImGuiNET.ImGui.GetIO().WantCaptureMouse)
             {
                 this._lmbPressed = true;
@@ -632,6 +642,8 @@
             {
                 this._escapePressed = false;
             }
+
+            OpenGLUtil.EndSection();
         }
 
         private void UploadPolyOutline(List<Vector3> v3p)

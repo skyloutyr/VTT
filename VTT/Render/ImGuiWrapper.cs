@@ -108,6 +108,7 @@ void main()
                 throw new Exception("Shader could not compile! Shader error was " + err);
             }
 
+            OpenGLUtil.NameObject(GLObjectType.Program, this._shader, "UI program");
             ImGui.GetIO().BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
             this._skinChangeTo = Client.Instance.Settings.InterfaceSkin;
             UISkins.DefaultStyleData = new ImGuiStyle(ImGui.GetStyle());
@@ -303,6 +304,7 @@ void main()
                 GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Rgba8, w, h, PixelDataFormat.Rgba, PixelDataType.Byte, pixels);
                 fonts.TexID = _fontTexture;
                 fonts.ClearTexData();
+                OpenGLUtil.NameObject(GLObjectType.Texture, this._fontTexture, "UI font texture");
             }
             catch (Exception e)
             {
@@ -429,6 +431,7 @@ void main()
                 return;
 
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("UI");
             SetupRenderState(drawData, fbWidth, fbHeight);
 
             Vector2 clipOffset = drawData.DisplayPos;
@@ -482,6 +485,7 @@ void main()
 
             ClearRenderState();
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private void ClearRenderState()

@@ -164,7 +164,7 @@
                 get
                 {
                     Vector2 size = this.end - this.start;
-                    return size.X * size.Y;
+                    return MathF.Abs(size.X * size.Y);
                 }
             }
 
@@ -204,8 +204,12 @@
                 get
                 {
                     Vector2 size = this.end - this.start;
-                    return size.X * size.Y;
+                    return MathF.Abs(size.X * size.Y);
                 }
+            }
+
+            public ShadowOBB2D(ShadowAABB2D aabb) : this(aabb.start, aabb.end, 0)
+            {
             }
 
             public ShadowOBB2D(Vector2 start, Vector2 end, float rotationRadians)
@@ -238,6 +242,23 @@
                     (vec.X * sin) + (vec.Y * cos)
                 );
             }
+
+            public readonly void GetCorners(out Vector2 tl, out Vector2 tr, out Vector2 br, out Vector2 bl)
+            {
+                Vector2 center = this.start + ((this.end - this.start) * 0.5f);
+                Vector2 a = this.start - center;
+                Vector2 b = this.end - center;
+                Vector2 c = new Vector2(end.X, start.Y) - center;
+                Vector2 d = new Vector2(start.X, end.Y) - center;
+                a = RotateVector(a, rotationRadians);
+                b = RotateVector(b, rotationRadians);
+                c = RotateVector(c, rotationRadians);
+                d = RotateVector(d, rotationRadians);
+                tl = center + a;
+                br = center + b;
+                tr = center + c;
+                bl = center + d;
+            }
         }
 
         [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 32)]
@@ -265,6 +286,46 @@
         public bool HasAnyBoxes => (this.primitives?.Length ?? 0) > 0;
         private UnsafeArray<ShadowOBB2D> primitives;
         private UnsafeArray<Node> nodes;
+
+        public IEnumerable<ShadowOBB2D> EnumerateBoxesAtDepth(int depth)
+        {
+            List<int> nodes = new List<int>();
+            void GetNodesAtDepthRecursive(int parent, List<int> enumerable, int target, int current)
+            {
+                if (current == target)
+                {
+                    enumerable.Add(parent);
+                }
+                else
+                {
+                    Node n = this.nodes[parent];
+                    if (!n.IsLeaf)
+                    {
+                        GetNodesAtDepthRecursive(n.leftFirst, enumerable, target, current + 1);
+                        GetNodesAtDepthRecursive(n.leftFirst + 1, enumerable, target, current + 1);
+                    }
+                }
+            }
+
+            GetNodesAtDepthRecursive(0, nodes, depth, 0);
+            foreach (int i in nodes)
+            {
+                Node n = this.nodes[i];
+                if (n.IsLeaf)
+                {
+                    for (int j = 0; j < n.primitiveCount; ++j)
+                    {
+                        yield return this.primitives[n.leftFirst + j];
+                    }
+                }
+                else
+                {
+                    yield return new ShadowOBB2D(n.bounds);
+                }
+            }
+
+            yield break;
+        }
 
         private unsafe void UpdateNodeBounds(Node* node)
         {
@@ -297,6 +358,7 @@
                     continue;
                 }
 
+                // Optimizations for per-box center were attempted, but they yielded negligible performance impacts (< 0.01ms)
                 float scale = (boundsMax - boundsMin) / 8;
                 for (int k = 1; k < 8; ++k)
                 {
@@ -471,6 +533,11 @@
             GL.TexBuffer(SizedInternalFormat.RgbaFloat, renderer.BoxesDataBuffer);
             renderer.BVHNodesBufferTexture.Bind();
             GL.TexBuffer(SizedInternalFormat.RgbaFloat, renderer.BVHNodesDataBuffer);
+
+            OpenGLUtil.NameObject(GLObjectType.Buffer, renderer.BoxesDataBuffer, "RT shadows oob texture buffer");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, renderer.BVHNodesDataBuffer, "RT shadows BVH texture buffer");
+            OpenGLUtil.NameObject(GLObjectType.Texture, renderer.BoxesBufferTexture, "RT shadows oob buffer texture");
+            OpenGLUtil.NameObject(GLObjectType.Texture, renderer.BVHNodesBufferTexture, "RT shadows BVH buffer texture");
 
             this.WasUploaded = true;
         }

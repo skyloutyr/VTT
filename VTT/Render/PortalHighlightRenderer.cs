@@ -53,6 +53,11 @@
                 pixels[1] = 0x00000000u;
                 OGL.TexImage2D(GL.Bindings.TextureTarget.Texture2D, 0, GL.Bindings.SizedInternalFormat.Rgba8, 1, 2, GL.Bindings.PixelDataFormat.Rgba, GL.Bindings.PixelDataType.Byte, (nint)pixels);
             }
+
+            OpenGLUtil.NameObject(GL.Bindings.GLObjectType.VertexArray, this._vao, "Portal highlight vao");
+            OpenGLUtil.NameObject(GL.Bindings.GLObjectType.Buffer, this._vbo, "Portal highlight vbo");
+            OpenGLUtil.NameObject(GL.Bindings.GLObjectType.Buffer, this._ebo, "Portal highlight ebo");
+            OpenGLUtil.NameObject(GL.Bindings.GLObjectType.Texture, this._tex, "Portal highlight texture 1x2");
         }
 
         public void AddObject(MapObject portal)
@@ -68,6 +73,7 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("Portals highlight");
             ShaderProgram shader = this.HighlightShader;
             OGL.Enable(GL.Bindings.Capability.Blend);
             OGL.BlendFunc(GL.Bindings.BlendingFactor.SrcAlpha, GL.Bindings.BlendingFactor.OneMinusSrcAlpha);
@@ -107,6 +113,7 @@
             OGL.Enable(GL.Bindings.Capability.DepthTest);
             OGL.Enable(GL.Bindings.Capability.CullFace);
             OGL.Disable(GL.Bindings.Capability.Blend);
+            OpenGLUtil.EndSection();
         }
 
         private Vector4 DetermineColor(Guid id1, Guid id2)

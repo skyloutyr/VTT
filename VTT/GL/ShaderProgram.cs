@@ -115,6 +115,7 @@
             return true;
         }
 
+        public uint ProgramID => this._glID;
         public void Bind()
         {
             GL.UseProgram(this._glID);

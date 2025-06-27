@@ -433,6 +433,10 @@
             this._vao.Reset();
             this._vao.SetVertexSize<float>(3);
             this._vao.PushElement(ElementType.Vec3);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Ruler vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Ruler vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._ebo, "Ruler ebo");
         }
 
         public void Render(double time)
@@ -444,6 +448,7 @@
             }
 
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("Rulers and markers");
 
             ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -725,6 +730,7 @@
             GL.DepthMask(true);
 
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private readonly List<Vector2> _groundQuadGenTempList = new List<Vector2>();

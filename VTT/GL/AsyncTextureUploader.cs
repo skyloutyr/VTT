@@ -27,6 +27,9 @@
             this.CheckBufferSize(sizeof(Bgra32) * nPixels, 0);
             this.CheckBufferSize(sizeof(Bgra32) * nPixels, 1);
             this.CheckBufferSize(sizeof(Bgra32) * nPixels, 2);
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._pbo[0], "Async texture uploader unpack pbo 0");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._pbo[1], "Async texture uploader unpack pbo 1");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._pbo[2], "Async texture uploader unpack pbo 2");
             new Thread(this.WorkSecondary) { IsBackground = true }.Start();
         }
 

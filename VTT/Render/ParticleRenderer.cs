@@ -50,12 +50,15 @@
 
             this._fbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
+            OpenGLUtil.NameObject(GLObjectType.Framebuffer, this._fbo, "Particle preview fbo");
             this._rbo = GL.GenRenderbuffer();
             GL.BindRenderbuffer(this._rbo);
+            OpenGLUtil.NameObject(GLObjectType.Renderbuffer, this._rbo, "Particle preview rbo24d");
             GL.RenderbufferStorage(SizedInternalFormat.DepthComponent24, 2048, 2048);
 
             this._renderTex = new Texture(TextureTarget.Texture2D);
             this._renderTex.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this._renderTex, "Particle preview result texture");
             this._renderTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._renderTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
             GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Srgb8Alpha8, 2048, 2048, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
@@ -89,6 +92,7 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("Preview particle system");
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
             GL.Viewport(0, 0, 2048, 2048);
             GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
@@ -129,6 +133,7 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DepthMask(true);
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+            OpenGLUtil.EndSection();
         }
 
         private static readonly EventWaitHandle particleMutex = new EventWaitHandle(false, EventResetMode.AutoReset);
@@ -277,6 +282,7 @@
             }
 
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("Particle systems");
 
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -321,6 +327,7 @@
             GL.Disable(Capability.Blend);
 
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private float GetCameraDistanceTo(ParticleContainer pc, Camera cam, Map m)

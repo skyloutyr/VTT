@@ -284,7 +284,7 @@
                     }
                     else
                     {
-                        this._buffers.Add(new UIStreamingBuffer());
+                        this._buffers.Add(new UIStreamingBuffer(this._currentIndex));
                     }
                 }
 
@@ -402,7 +402,7 @@
             private readonly int _drawVertSize;
             private readonly int _drawIdxSize;
 
-            public UIStreamingBuffer()
+            public UIStreamingBuffer(int index)
             {
                 this._vbo = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
                 this._ebo = new GPUBuffer(BufferTarget.ElementArray, BufferUsage.StreamDraw);
@@ -417,6 +417,10 @@
 
                 this._drawVertSize = Marshal.SizeOf<ImDrawVert>();
                 this._drawIdxSize = sizeof(ushort);
+
+                OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, $"UI streaming vao {index}");
+                OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, $"UI streaming vbo {index}");
+                OpenGLUtil.NameObject(GLObjectType.Buffer, this._ebo, $"UI streaming ebo {index}");
             }
 
             public void Respecify(ImDrawListPtr cmdList)

@@ -110,6 +110,10 @@
             this.QuadVAO.SetVertexSize(4 * sizeof(float));
             this.QuadVAO.PushElement(ElementType.Vec2);
             this.QuadVAO.PushElement(ElementType.Vec2);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this.QuadVAO, "Ping quad vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this.QuadVBO, "Ping quad vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this.QuadEBO, "Ping quad ebo");
         }
 
         public bool MouseOverPolygon(Vector2 p, int index)
@@ -216,6 +220,7 @@
         public void Render(double time)
         {
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("Pings");
 
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
@@ -292,6 +297,7 @@
             }
 
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private readonly Vector2[] _poly = new Vector2[2048];

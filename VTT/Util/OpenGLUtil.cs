@@ -143,6 +143,7 @@
                 throw new Exception("Could not compile shader " + name + "! Shader error was " + err);
             }
 
+            NameObject(GLObjectType.Program, sp, name.Capitalize() + " program");
             return sp;
         }
 
@@ -208,6 +209,31 @@
             }
 
             return l;
+        }
+
+        public static void StartSection(string label)
+        {
+            if (Client.Instance.Frontend.GLDebugEnabled)
+            {
+                GL.PushDebugGroup(label);
+            }
+        }
+
+        public static void EndSection()
+        {
+            if (Client.Instance.Frontend.GLDebugEnabled)
+            {
+                GL.PopDebugGroup();
+            }
+        }
+
+        public static void NameObject(GLObjectType type, uint obj, string name)
+        {
+            if (Client.Instance.Frontend.GLDebugEnabled)
+            {
+                Client.Instance.Logger.Log(LogLevel.Debug, $"Assigned name {name} to GL {type} of ID {obj}.");
+                GL.ObjectLabel(type, obj, name);
+            }
         }
     }
 }

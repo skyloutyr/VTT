@@ -32,6 +32,7 @@
         {
             this._fakeDepthTexture = new Texture(TextureTarget.Texture2D);
             this._fakeDepthTexture.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this._fakeDepthTexture, "Directional shadows empty depth texture 24d");
             this._fakeDepthTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._fakeDepthTexture.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -47,6 +48,7 @@
 
             this._sunDepthTexture = new Texture(TextureTarget.Texture2D);
             this._sunDepthTexture.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this._sunDepthTexture, "Directional shadows depth texture 24d");
             this._sunDepthTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._sunDepthTexture.SetWrapParameters(WrapParam.ClampToBorder, WrapParam.ClampToBorder, WrapParam.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture2D, TextureProperty.BorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -56,6 +58,7 @@
 
             this._sunFbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this._sunFbo);
+            OpenGLUtil.NameObject(GLObjectType.Framebuffer, this._sunFbo, "Directional shadows fbo");
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Depth, TextureTarget.Texture2D, this._sunDepthTexture, 0);
             GL.DrawBuffer(DrawBufferMode.None);
             GL.ReadBuffer(DrawBufferMode.None);
@@ -80,6 +83,7 @@
         public void Render(Map m, double time)
         {
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("Directional shadows");
 
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows && m.SunEnabled)
             {
@@ -129,6 +133,7 @@
                 GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             }
 
+            OpenGLUtil.EndSection();
             this.CPUTimer.Stop();
         }
     }

@@ -8,7 +8,6 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
-    using System.Runtime.ConstrainedExecution;
     using System.Text;
     using VTT.Control;
     using VTT.GL;
@@ -109,6 +108,7 @@
                 GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Red8, 1, 1, PixelDataFormat.Red, PixelDataType.Byte, (nint)texel);
             }
 
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.WhiteSquare, "RT shadows white pixel texture");
             this.WhiteSquare.Size = new Size(1, 1);
             this.Raytracer = OpenGLUtil.LoadShader("shadowcast", ShaderType.Vertex, ShaderType.Fragment);
             this.Raytracer.Bind();
@@ -128,6 +128,9 @@
 
             this._reusedBuffer = new UnsafeArray<Vector4>(30);
             this._lights = new UnsafeArray<Shadow2DLightSource>(64);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this.OverlayVAO, "RT shadows boxes overlay vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this.OverlayVBO, "RT shadows boxes overlay vbo");
         }
 
         public void Resize(int w, int h)
@@ -152,11 +155,14 @@
             this.OutputTexture.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
             GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Red8, w, h, PixelDataFormat.Red, PixelDataType.Byte, 0);
             this.OutputTexture.Size = new Size(w, h);
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.OutputTexture, "RT shadows output texture");
 
             this.FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this.FBO.Value);
+            OpenGLUtil.NameObject(GLObjectType.Framebuffer, this.FBO.Value, "RT shadows FBO");
             this.RBO = GL.GenRenderbuffer();
             GL.BindRenderbuffer(this.RBO.Value);
+            OpenGLUtil.NameObject(GLObjectType.Renderbuffer, this.RBO.Value, "RT shadows RBO");
             GL.RenderbufferStorage(SizedInternalFormat.Depth24Stencil8, w, h);
             GL.FramebufferTexture(FramebufferTarget.All, FramebufferAttachment.Color0, this.OutputTexture, 0);
             GL.FramebufferRenderbuffer(FramebufferTarget.All, FramebufferAttachment.Depth, this.RBO.Value);
@@ -564,6 +570,7 @@
         public void Render(Map m)
         {
             this.CPUTimer.Restart();
+            OpenGLUtil.StartSection("Raytraced 2d shadows");
             this._cursorCandidates.Clear();
             this._nonAdminOwnedCursorCandidates.Clear();
 
@@ -844,10 +851,12 @@
             }
 
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
     
         public void RenderBoxesOverlay(Map m)
         {
+            OpenGLUtil.StartSection("2D Shadow overlay");
             EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
 
             bool emState = em == EditMode.Shadows2D;
@@ -1019,6 +1028,41 @@
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
                 }
 
+                /* BVH debug overlay
+                overlayShader["model"].Set(Matrix4x4.Identity);
+                this.RenderBVHDebug(m.ShadowLayer2D, this._bvhDebugDepth, 0xffaa00aa);
+                bool periodState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Period);
+                bool commaState = Client.Instance.Frontend.GameHandle.IsKeyDown(Keys.Comma);
+                if (!ImGui.GetIO().WantCaptureKeyboard)
+                {
+                    if (periodState && !this._bvhDebugPeriodDown)
+                    {
+                        this._bvhDebugPeriodDown = true;
+                        this._bvhDebugDepth += 1;
+                    }
+
+                    if (commaState && !this._bvhDebugCommaDown)
+                    {
+                        this._bvhDebugCommaDown = true;
+                        this._bvhDebugDepth -= 1;
+                        if (this._bvhDebugDepth < 0)
+                        {
+                            this._bvhDebugDepth = 0;
+                        }
+                    }
+                }
+
+                if (!periodState && this._bvhDebugPeriodDown)
+                {
+                    this._bvhDebugPeriodDown = false;
+                }
+
+                if (!commaState && this._bvhDebugCommaDown)
+                {
+                    this._bvhDebugCommaDown = false;
+                }
+                */
+
                 GL.DepthMask(true);
                 GL.Disable(Capability.Blend);
                 GL.Enable(Capability.DepthTest);
@@ -1028,6 +1072,21 @@
             {
                 this._numQuadDrawPoints = 0; // Reset if we are not the active mode
                 this._lineModeFirstPoint = null;
+            }
+
+            OpenGLUtil.EndSection();
+        }
+
+        private int _bvhDebugDepth = 0;
+        private bool _bvhDebugPeriodDown = false;
+        private bool _bvhDebugCommaDown = false;
+        private void RenderBVHDebug(Map2DShadowLayer m, int targetDepth, uint color)
+        {
+            foreach (Shadow2DBVH.ShadowOBB2D box in m.BVH.EnumerateBoxesAtDepth(targetDepth))
+            {
+                box.GetCorners(out Vector2 tl, out Vector2 tr, out Vector2 br, out Vector2 bl);
+                this.CreateRectangleFromPoints(tl, tr, br, bl, color, color);
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
             }
         }
 

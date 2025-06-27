@@ -42,6 +42,7 @@
 
         public FastAccessShader BeginDeferred(Map m)
         {
+            OpenGLUtil.StartSection("Setup deferred shader");
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             FastAccessShader shader = this.DeferredPrePass;
             bool useUBO = Client.Instance.Settings.UseUBO;
@@ -72,10 +73,12 @@
                 GL.Disable(Capability.Multisample);
             }
 
+            OpenGLUtil.EndSection();
             return shader;
         }
         public FastAccessShader BeginForward(Map m, double delta)
         {
+            OpenGLUtil.StartSection("Setup forward shader");
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferCompound.Value);
 
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
@@ -139,6 +142,7 @@
             plr.UniformLights(shader);
 
             Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
+            OpenGLUtil.EndSection();
 
             return this.Forward;
         }
@@ -318,14 +322,19 @@
             return fbo;
         }
 
-        public static uint UseFBO(uint? fbo)
+        public static uint UseFBO(uint? fbo, string name)
         {
             if (!fbo.HasValue)
             {
                 fbo = GL.GenFramebuffer();
+                GL.BindFramebuffer(FramebufferTarget.All, fbo.Value);
+                OpenGLUtil.NameObject(GLObjectType.Framebuffer, fbo.Value, name);
+            }
+            else
+            {
+                GL.BindFramebuffer(FramebufferTarget.All, fbo.Value);
             }
 
-            GL.BindFramebuffer(FramebufferTarget.All, fbo.Value);
             return fbo.Value;
         }
 
@@ -364,6 +373,10 @@
             this.FullScreenQuad.SetVertexSize<float>(4);
             this.FullScreenQuad.PushElement(ElementType.Vec2);
             this.FullScreenQuad.PushElement(ElementType.Vec2);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this.FullScreenQuad, "Fullscreen quad vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Fullscreen quad vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._ebo, "Fullscreen quad ebo");
         }
         public void DrawFullScreenQuad()
         {
@@ -453,6 +466,7 @@
                 throw new Exception($"Could not compile object shader {sName}! Shader error was " + err);
             }
 
+            OpenGLUtil.NameObject(GLObjectType.Program, sp, sName.Capitalize() + " program");
             return sp;
         }
 
@@ -496,7 +510,15 @@
             ResizeTex(this.DepthTex, w, h, SizedInternalFormat.DepthComponent32Float, PixelDataFormat.DepthComponent, PixelDataType.Float);
             ResizeTex(this.ColorOutputTex, w, h, Client.Instance.Settings.UseHalfPrecision ? SizedInternalFormat.RgbaHalf : SizedInternalFormat.RgbaFloat, PixelDataFormat.Rgba, PixelDataType.Float);
 
-            this.FramebufferCompound = UseFBO(this.FramebufferCompound);
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.PositionTex, "Pipeline positions texture 32f");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.AlbedoTex, "Pipeline albedo texture 8b");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.EmissionTex, "Pipeline emission texture 8b");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.NormalTex, "Pipeline normal texture 32f");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.MRAOGTex, "Pipeline metal/rough/ao/grid texture 8b");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.DepthTex, "Pipeline depth texture 32d");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.ColorOutputTex, "Pipeline color composite texture 32f");
+
+            this.FramebufferCompound = UseFBO(this.FramebufferCompound, "Pipeline composite fbo");
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Depth, TextureTarget.Texture2D, this.DepthTex, 0);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color0, TextureTarget.Texture2D, this.ColorOutputTex, 0);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color1, TextureTarget.Texture2D, this.PositionTex, 0);
@@ -505,12 +527,12 @@
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color4, TextureTarget.Texture2D, this.MRAOGTex, 0);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color5, TextureTarget.Texture2D, this.EmissionTex, 0);
             GL.DrawBuffers(new DrawBufferMode[] { DrawBufferMode.Color0, DrawBufferMode.Color1, DrawBufferMode.Color2, DrawBufferMode.Color3, DrawBufferMode.Color4, DrawBufferMode.Color5 });
-            CheckFBO("universal compound");
+            CheckFBO("Pipeline composite fbo");
 
-            this.FramebufferFinal = UseFBO(this.FramebufferFinal);
+            this.FramebufferFinal = UseFBO(this.FramebufferFinal, "Pipeline deferred final pass fbo");
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color0, TextureTarget.Texture2D, this.ColorOutputTex, 0);
             GL.DrawBuffers(new DrawBufferMode[] { DrawBufferMode.Color0 });
-            CheckFBO("deferred final");
+            CheckFBO("Pipeline deferred final pass fbo");
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);

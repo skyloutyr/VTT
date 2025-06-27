@@ -147,6 +147,9 @@
             this._vao.PushElement(ElementType.Vec3);
             this.SkyboxRenderer = new Skybox();
             this.SkyboxRenderer.Init();
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Celestial body square vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Celestial body square vbo");
         }
 
         public Vector3 GetCurrentSunDirection() => Client.Instance.CurrentMap.SunEnabled ? this.GetSunDirection(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1) : -Vector3.UnitZ;
@@ -175,7 +178,9 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("Skybox");
             this.SkyboxRenderer.Render(map, time);
+            OpenGLUtil.EndSection();
 
             if (map.Is2D)
             {
@@ -188,6 +193,7 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("Celestial bodies");
             GL.Enable(Capability.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.Enable(Capability.DepthTest);
@@ -206,6 +212,7 @@
             GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
             GL.Disable(Capability.DepthTest);
             GL.Disable(Capability.Blend);
+            OpenGLUtil.EndSection();
         }
 
         public float GetDayProgress(Map map) => map == null ? 0 : !map.SunEnabled ? 12 : (float)(map.SunPitch + MathF.PI) / MathF.PI * 12;
@@ -307,6 +314,7 @@
                 this._skyboxBlank.Bind();
                 this._skyboxBlank.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
                 this._skyboxBlank.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+                OpenGLUtil.NameObject(GLObjectType.Texture, this._skyboxBlank, "Skybox blank texture");
                 GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, 4, 3, 2, PixelDataFormat.Rgba, PixelDataType.Byte, 0);
                 using Image<Rgba32> img = new Image<Rgba32>(4, 3, new Rgba32(255, 255, 255, 255));
                 unsafe
@@ -371,6 +379,9 @@
                 this._skyboxShader = OpenGLUtil.LoadShader("skybox", ShaderType.Vertex, ShaderType.Fragment);
                 this._skyboxShader.Bind();
                 this._skyboxShader["tex_skybox"].Set(6);
+
+                OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Skybox cube vao");
+                OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Skybox cube vbo");
             }
 
             public void Clear()
@@ -525,6 +536,7 @@
                         this._skyboxArray.Bind();
                         this._skyboxArray.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
                         this._skyboxArray.SetFilterParameters(FilterParam.Linear, FilterParam.Linear);
+                        OpenGLUtil.NameObject(GLObjectType.Texture, this._skyboxArray, "Skybox texture array");
                         Size maxSz = new Size(Math.Max(imgDay.Size.Width, imgNight.Size.Width), Math.Max(imgDay.Size.Height, imgNight.Size.Height));
                         GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.Rgba8, maxSz.Width, maxSz.Height, 2, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
                         imgDay.DangerousTryGetSinglePixelMemory(out Memory<Rgba32> mem);

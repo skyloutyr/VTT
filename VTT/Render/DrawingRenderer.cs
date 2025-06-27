@@ -250,6 +250,7 @@
                 return;
             }
 
+            OpenGLUtil.StartSection("Drawings");
             int maxInstances = Client.Instance.Settings.DrawingsPerformance switch
             {
                 DrawingsResourceAllocationMode.None => 0,
@@ -316,6 +317,7 @@
             }
 
             this.CPUTimer.Stop();
+            OpenGLUtil.EndSection();
         }
 
         public bool CanErase(DrawingPointContainer dpc)

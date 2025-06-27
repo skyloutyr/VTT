@@ -114,6 +114,10 @@
             this._noAssetVao.PushElement(ElementType.Vec3);
             this._noAssetVao.PushElement(ElementType.Vec2);
 
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._noAssetVao, "Missing asset vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetVbo, "Missing asset vbo");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetEbo, "Missing asset ebo");
+
             this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment);
             this.OverlayShader.Bind();
             this.OverlayShader["do_fow"].Set(false);
@@ -283,6 +287,9 @@
             this._boxVao.SetVertexSize<float>(6);
             this._boxVao.PushElement(ElementType.Vec3);
             this._boxVao.PushElement(ElementType.Vec3);
+
+            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._boxVao, "Selection box vao");
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._boxVbo, "Selection box vbo");
         }
 
         #endregion
@@ -367,6 +374,7 @@
         {
             if (m != null)
             {
+                OpenGLUtil.StartSection("Main render pass");
                 this._cachedSunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
                 this._cachedSunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
                 this._cachedAmbientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
@@ -378,12 +386,14 @@
                 this.RenderHighlights(m, delta);
                 this.RenderObjectMouseOver(m);
                 this.RenderDebug(m);
+                OpenGLUtil.EndSection();
             }
         }
 
         private readonly PreviewAnimationContainer _previewAnimationContainer = new PreviewAnimationContainer();
         public void RenderHighlights(Map m, double delta)
         {
+            OpenGLUtil.StartSection("Object highlights");
             this.CPUTimerHighlights.Restart();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             this.OverlayShader.Bind();
@@ -475,6 +485,9 @@
                 GL.DepthMask(true);
             }
 
+            OpenGLUtil.EndSection();
+            OpenGLUtil.StartSection("Dragged object preview");
+
             GL.Enable(Capability.CullFace);
 
             AssetRef draggedRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
@@ -514,6 +527,7 @@
             }
 
             this.CPUTimerHighlights.Stop();
+            OpenGLUtil.EndSection();
         }
 
         public void RenderDebug(Map m)
@@ -538,6 +552,7 @@
                     return;
                 }
 
+                OpenGLUtil.StartSection("Gizmo");
                 Vector3 min = sm.SelectedObjects[0].Position;
                 Vector3 max = sm.SelectedObjects[0].Position;
                 for (int i = 1; i < sm.SelectedObjects.Count; i++)
@@ -821,6 +836,7 @@
                 GL.Disable(Capability.Blend);
                 GL.Enable(Capability.DepthTest);
                 GL.Disable(Capability.CullFace);
+                OpenGLUtil.EndSection();
             }
 
             this.CPUTimerGizmos.Stop();
@@ -828,6 +844,7 @@
 
         private void RenderObjectMouseOver(Map m)
         {
+            OpenGLUtil.StartSection("Mouse over highlight");
             if (this.ObjectMouseOver != null && Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Count == 0)
             {
                 GL.Disable(Capability.CullFace);
@@ -852,6 +869,8 @@
                 GL.Enable(Capability.CullFace);
                 this.PortalHightlightRenderer.AddObject(mo);
             }
+
+            OpenGLUtil.EndSection();
         }
 
         private void RenderLights(Map m, double delta)
@@ -924,8 +943,11 @@
             GL.DepthFunction(ComparisonMode.LessOrEqual);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
+            OpenGLUtil.StartSection("Point shadows");
             this.RenderLights(m, delta);
+            OpenGLUtil.EndSection();
 
+            OpenGLUtil.StartSection("Deferred pass");
             FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
             this._crossedOutObjects.Clear();
@@ -984,9 +1006,11 @@
             }
 
             Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m);
+            OpenGLUtil.EndSection();
             this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
 
+            OpenGLUtil.StartSection("Forward pass");
             FastAccessShader forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
 
             GL.Enable(Capability.Blend);
@@ -1059,10 +1083,13 @@
 
             GL.Disable(Capability.Blend);
             this.CPUTimerMain.Stop();
+            OpenGLUtil.EndSection();
             this.FastLightRenderer.Render(m);
             this.Shadow2DRenderer.Render(m);
             this.CPUTimerCompound.Restart();
+            OpenGLUtil.StartSection("Combine deferred + forward");
             Client.Instance.Frontend.Renderer.Pipeline.FinishRender(m);
+            OpenGLUtil.EndSection();
             this.CPUTimerCompound.Stop();
         }
 
@@ -1235,6 +1262,7 @@
         private void RenderAuras(Map m)
         {
             this.CPUTimerAuras.Restart();
+            OpenGLUtil.StartSection("Auras");
 
             this._auraCollection.Clear();
             foreach (MapObject mo in m.IterateObjects(null))
@@ -1294,6 +1322,7 @@
             GL.Enable(Capability.Multisample);
 
             this.CPUTimerAuras.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private float GetCameraDistanceTo(MapObject mo, Camera cam) => mo.Container.Is2D ? mo.Container.Camera2DHeight - mo.Position.Z : Vector3.Distance(mo.Position, cam.Position);

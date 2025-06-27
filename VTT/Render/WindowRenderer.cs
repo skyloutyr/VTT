@@ -61,6 +61,8 @@
             Client.Instance.AssetManager.ClientAssetLibrary.GlMaxTextureSize = lMax;
             this.White = OpenGLUtil.LoadFromOnePixel(new Rgba32(1, 1, 1, 1f));
             this.Black = OpenGLUtil.LoadFromOnePixel(new Rgba32(0, 0, 0, 1f));
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.White, "White pixel");
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.Black, "Black pixel");
         }
 
         private bool _windowNeedsDrawing;
@@ -90,6 +92,7 @@
 
         public void Render(double time)
         {
+            OpenGLUtil.StartSection("Frame Start");
             if (this._windowNeedsDrawing)
             {
                 Map m = Client.Instance.CurrentMap;
@@ -124,6 +127,7 @@
                 this.MapRenderer.FOWRenderer?.Render(time);
             }
 
+            OpenGLUtil.EndSection();
             // Have to swap buffers here to still adhere to vsync even when minimized
             // With vsync disabled (swapInterval == 0) we are burning cpu, but w/e as swap of 0 does that anyway
             Client.Instance.Frontend.GameHandle.SwapBuffers();

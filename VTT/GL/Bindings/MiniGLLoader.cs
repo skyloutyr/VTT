@@ -2,7 +2,6 @@
 {
     using System;
     using System.Runtime.InteropServices;
-    using static VTT.GL.Bindings.MiniGLLoader;
 
     public static unsafe class MiniGLLoader
     {
@@ -146,6 +145,10 @@
             mapBufferRangeO = ToDelegate<mapBufferRangeD>(addressGetter("glMapBufferRange"));
             compressedTexSubImage2DO = ToDelegate<compressedTexSubImage2DD>(addressGetter("glCompressedTexSubImage2D"));
             finishO = ToDelegate<finishD>(addressGetter("glFinish"));
+            readPixelsO = ToDelegate<readPixelsD>(addressGetter("glReadPixels"));
+            pushDebugGroupO = ToDelegate<pushDebugGroupD>(addressGetter("glPushDebugGroup"));
+            popDebugGroupO = ToDelegate<popDebugGroupD>(addressGetter("glPopDebugGroup"));
+            objectLabelO = ToDelegate<objectLabelD>(addressGetter("glObjectLabel"));
         }
 
         internal delegate void clearColorD(float r, float g, float b, float a);
@@ -402,6 +405,14 @@
         internal static compressedTexSubImage2DD compressedTexSubImage2DO;
         internal delegate void finishD();
         internal static finishD finishO;
+        internal delegate void readPixelsD(int x, int y, int width, int height, uint format, uint type, void* data);
+        internal static readPixelsD readPixelsO;
+        internal delegate void pushDebugGroupD(uint source, uint id, int length, byte* message);
+        internal static pushDebugGroupD pushDebugGroupO;
+        internal delegate void popDebugGroupD();
+        internal static popDebugGroupD popDebugGroupO;
+        internal delegate void objectLabelD(uint identifier, uint name, int length, byte* label);
+        internal static objectLabelD objectLabelO;
 
         private static T ToDelegate<T>(IntPtr ptr) where T : Delegate => IntPtr.Zero.Equals(ptr) ? null : Marshal.GetDelegateForFunctionPointer<T>(ptr);
     }

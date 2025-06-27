@@ -39,12 +39,13 @@
 
             this.TexColor = new Texture(TextureTarget.Texture2D);
             UniversalPipeline.ResizeTex(this.TexColor, w, h, SizedInternalFormat.RgbFloat, PixelDataFormat.Rgb, PixelDataType.Float);
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.TexColor, "Fast light color");
 
-            this.Ping = UniversalPipeline.UseFBO(this.Ping);
+            this.Ping = UniversalPipeline.UseFBO(this.Ping, "Fast light fbo");
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Depth, TextureTarget.Texture2D, pipeline.DepthTex, 0);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color0, TextureTarget.Texture2D, this.TexColor, 0);
             GL.DrawBuffers(new DrawBufferMode[] { DrawBufferMode.Color0 });
-            UniversalPipeline.CheckFBO("fast light");
+            UniversalPipeline.CheckFBO("Fast light");
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);

@@ -78,6 +78,7 @@
             ShadowMapResolution = r;
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.DepthMap, "Point light shadow texture array 32d");
             GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.DepthComponent32Float, ShadowMapResolution, ShadowMapResolution, 6 * MaxLightsNum, PixelDataFormat.DepthComponent, PixelDataType.Float, IntPtr.Zero);
             this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
@@ -86,6 +87,7 @@
 
             this.FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
+            OpenGLUtil.NameObject(GLObjectType.Framebuffer, this.FBO, "Point light shadow fbo");
             GL.FramebufferTexture(FramebufferTarget.All, FramebufferAttachment.Depth, this.DepthMap, 0);
             GL.DrawBuffer(DrawBufferMode.None);
             GL.ReadBuffer(DrawBufferMode.None);
@@ -105,6 +107,7 @@
             this.DepthMap?.Dispose();
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.DepthMap, "Point light shadow texture array 32d");
             GL.TexImage3D(TextureTarget.Texture2DArray, 0, SizedInternalFormat.DepthComponent32Float, resolution, resolution, 6 * MaxLightsNum, PixelDataFormat.DepthComponent, PixelDataType.Float, IntPtr.Zero);
             this.DepthMap.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this.DepthMap.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
@@ -116,6 +119,7 @@
             }
 
             GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
+            OpenGLUtil.NameObject(GLObjectType.Framebuffer, this.FBO, "Point light shadow fbo");
             GL.FramebufferTexture(FramebufferTarget.All, FramebufferAttachment.Depth, this.DepthMap, 0);
             GL.DrawBuffer(DrawBufferMode.None);
             GL.ReadBuffer(DrawBufferMode.None);

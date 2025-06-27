@@ -13,6 +13,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using GL = GL.Bindings.GL;
 
@@ -441,7 +442,7 @@
             }
         }
 
-        public void Render(FastAccessShader particleShader, Vector3 cameraPosition, Camera cam)
+        public void Render(FastAccessShader<ParticleUniforms> particleShader, Vector3 cameraPosition, Camera cam)
         {
             if (!this._glInit || this.Template.AssetID.Equals(Guid.Empty))
             {
@@ -453,15 +454,15 @@
                 return;
             }
 
-            particleShader.Particle.DoBillboard.Set(this.Template.DoBillboard);
-            particleShader.Particle.DoFOW.Set(this.Template.DoFow);
-            particleShader.Particle.IsSpriteSheet.Set(this.Template.IsSpriteSheet);
-            particleShader.Particle.SpriteSheetData.Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
+            particleShader.Uniforms.DoBillboard.Set(this.Template.DoBillboard);
+            particleShader.Uniforms.DoFOW.Set(this.Template.DoFow);
+            particleShader.Uniforms.IsSpriteSheet.Set(this.Template.IsSpriteSheet);
+            particleShader.Uniforms.SpriteSheetData.Set(new Vector2(this.Template.SpriteData.NumColumns, this.Template.SpriteData.NumRows));
             this._frameAmount = (uint)a.Model.GLMdl.Materials.Max(m => m.BaseColorAnimation.Frames.Length);
-            GL.ActiveTexture(14);
+            GLState.ActiveTexture.Set(14);
             GL.BindTexture(TextureTarget.Buffer, this._glBufferTexture);
-            a.Model.GLMdl.Render(particleShader, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, null, m => GL.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
-            GL.ActiveTexture(0);
+            a.Model.GLMdl.Render(in particleShader.Uniforms.glbEssentials, Matrix4x4.Identity, cam.Projection, cam.View, 0, null, 0, null, m => GLState.DrawElementsInstanced(PrimitiveType.Triangles, m.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero, this._numParticles));
+            GLState.ActiveTexture.Set(0);
         }
 
         private readonly WeightedList<GlbMesh> _meshRefs = new WeightedList<GlbMesh>();

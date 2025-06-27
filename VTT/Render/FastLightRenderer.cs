@@ -7,11 +7,12 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class FastLightRenderer
     {
-        public ShaderProgram Shader { get; set; }
+        public FastAccessShader<FastLightUniforms> Shader { get; set; }
         public WavefrontObject Sphere { get; set; }
 
         public uint? Ping { get; set; }
@@ -20,15 +21,14 @@
 
         public void Create()
         {
-            this.Shader = OpenGLUtil.LoadShader("fast_light", ShaderType.Vertex, ShaderType.Fragment);
+            this.Shader = new FastAccessShader<FastLightUniforms>(OpenGLUtil.LoadShader("fast_light", ShaderType.Vertex, ShaderType.Fragment));
             this.Shader.Bind();
-            this.Shader["g_positions"].Set(0);
-            this.Shader["g_normals"].Set(1);
-            this.Shader["g_albedo"].Set(2);
-            this.Shader["g_aomrg"].Set(3);
-            this.Shader["g_emission"].Set(4);
-            this.Shader["g_depth"].Set(5);
-            this.Shader["g_color_last"].Set(6);
+            this.Shader.Uniforms.PositionsSampler.Set(0);
+            this.Shader.Uniforms.NormalsSampler.Set(1);
+            this.Shader.Uniforms.AlbedoSampler.Set(2);
+            this.Shader.Uniforms.AOMRGSampler.Set(3);
+            this.Shader.Uniforms.EmissionSampler.Set(4);
+            this.Shader.Uniforms.DepthSampler.Set(5);
             this.Sphere = OpenGLUtil.LoadModel("sphere_mediumres", VertexFormat.Pos);
         }
 
@@ -58,29 +58,29 @@
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
             this.Shader.Bind();
-            this.Shader["view"].Set(cam.View);
-            this.Shader["projection"].Set(cam.Projection);
-            this.Shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height));
-            this.Shader["camera_position"].Set(cam.Position);
+            this.Shader.Uniforms.View.Set(cam.View);
+            this.Shader.Uniforms.Projection.Set(cam.Projection);
+            this.Shader.Uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.Width, Client.Instance.Frontend.Height));
+            this.Shader.Uniforms.CameraPosition.Set(cam.Position);
 
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
             pipeline.PositionTex.Bind();
-            GL.ActiveTexture(1);
+            GLState.ActiveTexture.Set(1);
             pipeline.NormalTex.Bind();
-            GL.ActiveTexture(2);
+            GLState.ActiveTexture.Set(2);
             pipeline.AlbedoTex.Bind();
-            GL.ActiveTexture(3);
+            GLState.ActiveTexture.Set(3);
             pipeline.MRAOGTex.Bind();
-            GL.ActiveTexture(4);
+            GLState.ActiveTexture.Set(4);
             pipeline.EmissionTex.Bind();
-            GL.ActiveTexture(5);
+            GLState.ActiveTexture.Set(5);
             pipeline.DepthTex.Bind();
-            GL.Disable(Capability.DepthTest);
-            GL.Disable(Capability.CullFace);
+            GLState.DepthTest.Set(false);
+            GLState.CullFace.Set(false);
             GL.BindFramebuffer(FramebufferTarget.All, this.Ping.Value);
-            GL.Clear(ClearBufferMask.Color);
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+            GLState.Clear(ClearBufferMask.Color);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.One, BlendingFactor.One));
             foreach (MapObject mo in m.IterateObjects(null))
             {
                 if (mo.MapLayer <= 0 || Client.Instance.IsAdmin)
@@ -101,9 +101,9 @@
                                 baseOffset += mo.Position;
                                 if (cam.IsSphereInFrustrum(baseOffset, fl.Color.W))
                                 {
-                                    GL.CullFace((baseOffset - cam.Position).Length() < fl.Radius ? PolygonFaceMode.Front : PolygonFaceMode.Back);
-                                    this.Shader["model"].Set(new Vector4(baseOffset, fl.Color.W));
-                                    this.Shader["light_color"].Set(fl.Color * new Vector4(fl.Intensity, fl.Intensity, fl.Intensity, 1.0f));
+                                    GLState.CullFaceMode.Set((baseOffset - cam.Position).Length() < fl.Radius ? PolygonFaceMode.Front : PolygonFaceMode.Back);
+                                    this.Shader.Uniforms.Model.Set(new Vector4(baseOffset, fl.Color.W));
+                                    this.Shader.Uniforms.Color.Set(fl.Color * new Vector4(fl.Intensity, fl.Intensity, fl.Intensity, 1.0f));
                                     this.Sphere.Render();
                                 }
                             }
@@ -112,12 +112,12 @@
                 }
             }
 
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Disable(Capability.Blend);
-            GL.Enable(Capability.DepthTest);
-            GL.CullFace(PolygonFaceMode.Back);
-            GL.Enable(Capability.CullFace);
-            GL.DepthMask(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+            GLState.Blend.Set(false);
+            GLState.DepthTest.Set(false);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+            GLState.CullFace.Set(true);
+            GLState.DepthMask.Set(true);
             this.CPUTimer.Stop();
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);

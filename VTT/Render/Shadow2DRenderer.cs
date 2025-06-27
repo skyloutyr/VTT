@@ -15,6 +15,7 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class Shadow2DRenderer
@@ -38,24 +39,7 @@
                 this.dimming = dimming;
             }
 
-            public readonly void Uniform(ShaderProgram shader, int idx)
-            {
-                sb.Clear();
-                sb.Append(uniformNameStart);
-                sb.Append(idx);
-                sb.Append(uniformNamePosition);
-                shader[sb.ToString()].Set(this.position);
-                sb.Clear();
-                sb.Append(uniformNameStart);
-                sb.Append(idx);
-                sb.Append(uniformNameThreshold);
-                shader[sb.ToString()].Set(this.threshold);
-                sb.Clear();
-                sb.Append(uniformNameStart);
-                sb.Append(idx);
-                sb.Append(uniformNameDimming);
-                shader[sb.ToString()].Set(this.dimming);
-            }
+            public readonly void Uniform(FastAccessShader<RTShadowUniforms> shader, int idx) => shader.Uniforms.Lights.Set(new Vector4(this.position, this.threshold, this.dimming), idx);
         }
 
         public GPUBuffer BoxesDataBuffer { get; set; }
@@ -67,8 +51,8 @@
         public Texture WhiteSquare { get; set; }
         public uint? FBO { get; set; }
         public uint? RBO { get; set; }
-        public ShaderProgram Raytracer { get; set; }
-        public ShaderProgram BoxesOverlay { get; set; }
+        public FastAccessShader<RTShadowUniforms> Raytracer { get; set; }
+        public FastAccessShader<IndividualColorOverlay> BoxesOverlay { get; set; }
 
         public VertexArray OverlayVAO { get; set; }
         public GPUBuffer OverlayVBO { get; set; }
@@ -110,13 +94,13 @@
 
             OpenGLUtil.NameObject(GLObjectType.Texture, this.WhiteSquare, "RT shadows white pixel texture");
             this.WhiteSquare.Size = new Size(1, 1);
-            this.Raytracer = OpenGLUtil.LoadShader("shadowcast", ShaderType.Vertex, ShaderType.Fragment);
+            this.Raytracer = new FastAccessShader<RTShadowUniforms>(OpenGLUtil.LoadShader("shadowcast", ShaderType.Vertex, ShaderType.Fragment));
             this.Raytracer.Bind();
-            this.Raytracer["positions"].Set(0);
-            this.Raytracer["boxes"].Set(1);
-            this.Raytracer["bvh"].Set(2);
+            this.Raytracer.Uniforms.FragmentPositionsSampler.Set(0);
+            this.Raytracer.Uniforms.BoxesBufferSampler.Set(1);
+            this.Raytracer.Uniforms.BVHBufferSampler.Set(2);
 
-            this.BoxesOverlay = OpenGLUtil.LoadShader("individual_color_overlay", ShaderType.Vertex, ShaderType.Fragment);
+            this.BoxesOverlay = new FastAccessShader<IndividualColorOverlay>(OpenGLUtil.LoadShader("individual_color_overlay", ShaderType.Vertex, ShaderType.Fragment));
 
             this.OverlayVAO = new VertexArray();
             this.OverlayVBO = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);
@@ -603,10 +587,10 @@
                         }
                     }
 
-                    GL.DepthMask(true);
-                    GL.Disable(Capability.Blend);
-                    GL.Enable(Capability.DepthTest);
-                    GL.Disable(Capability.CullFace);
+                    GLState.DepthMask.Set(true);
+                    GLState.Blend.Set(false);
+                    GLState.DepthTest.Set(true);
+                    GLState.CullFace.Set(false);
                 }
 
                 if (m.Has2DShadows && m.Is2D)
@@ -620,30 +604,30 @@
                     {
                         GL.BindFramebuffer(FramebufferTarget.All, this.FBO.Value);
                         GL.Viewport(0, 0, SimulationWidth, SimulationHeight);
-                        GL.Disable(Capability.DepthTest);
+                        GLState.DepthTest.Set(false);
                         if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
                         {
-                            GL.Disable(Capability.Multisample);
+                            GLState.Multisample.Set(false);
                         }
 
-                        GL.DepthMask(false);
+                        GLState.DepthMask.Set(false);
 
                         UniversalPipeline pipeline = Client.Instance.Frontend.Renderer.Pipeline;
                         this.Raytracer.Bind();
 
-                        GL.ActiveTexture(0);
+                        GLState.ActiveTexture.Set(0);
                         pipeline.PositionTex.Bind();
-                        GL.ActiveTexture(1);
+                        GLState.ActiveTexture.Set(1);
                         this.BoxesBufferTexture.Bind();
-                        GL.ActiveTexture(2);
+                        GLState.ActiveTexture.Set(2);
                         this.BVHNodesBufferTexture.Bind();
-                        GL.ActiveTexture(0);
+                        GLState.ActiveTexture.Set(0);
 
-                        this.Raytracer["bvhHasData"].Set(m.ShadowLayer2D.BVH.HasAnyBoxes);
+                        this.Raytracer.Uniforms.BVHHasData.Set(m.ShadowLayer2D.BVH.HasAnyBoxes);
                         Vector3 cpos = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
                         EditMode em = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode;
                         bool ctrl = !ImGui.GetIO().WantCaptureMouse && !ImGui.GetIO().WantCaptureKeyboard && Client.Instance.Frontend.GameHandle.IsAnyControlDown();
-                        this.Raytracer["shadow_opacity"].Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? ctrl ? 0.0f : 1.0f : ctrl ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
+                        this.Raytracer.Uniforms.ShadowOpacity.Set(Client.Instance.IsAdmin ? em == EditMode.Shadows2D ? ctrl ? 0.0f : 1.0f : ctrl ? 0.0f : 1.0f - Client.Instance.Settings.Shadows2DAdmin : 0.0f);
 
                         float vMax;
                         float vDim;
@@ -808,10 +792,10 @@
                             }
                         }
 
-                        this.Raytracer["light_threshold"].Set(vMax);
-                        this.Raytracer["light_dimming"].Set(vDim);
-                        this.Raytracer["cursor_position"].Set(lightCursor);
-                        this.Raytracer["noCursor"].Set(noCursor);
+                        this.Raytracer.Uniforms.LightThreshold.Set(vMax);
+                        this.Raytracer.Uniforms.LightDimming.Set(vDim);
+                        this.Raytracer.Uniforms.CursorPosition.Set(lightCursor);
+                        this.Raytracer.Uniforms.NoCursor.Set(noCursor);
 
                         int l_amt = 0;
                         for (int i = -2; i <= 0; ++i)
@@ -829,7 +813,7 @@
                             }
                         }
 
-                        this.Raytracer["num_lights"].Set(l_amt);
+                        this.Raytracer.Uniforms.LightsAmount.Set(l_amt);
                         for (int i = 0; i < l_amt; ++i)
                         {
                             this._lights[i].Uniform(this.Raytracer, i);
@@ -837,11 +821,11 @@
 
                         pipeline.DrawFullScreenQuad();
 
-                        GL.DepthMask(true);
-                        GL.Enable(Capability.DepthTest);
+                        GLState.DepthMask.Set(true);
+                        GLState.DepthTest.Set(true);
                         if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
                         {
-                            GL.Enable(Capability.Multisample);
+                            GLState.Multisample.Set(true);
                         }
 
                         GL.BindFramebuffer(FramebufferTarget.All, 0);
@@ -936,12 +920,12 @@
                 ShaderProgram overlayShader = this.BoxesOverlay;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
-                GL.Enable(Capability.CullFace);
-                GL.CullFace(PolygonFaceMode.Back);
-                GL.Disable(Capability.DepthTest);
-                GL.Enable(Capability.Blend);
-                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                GL.DepthMask(false);
+                GLState.CullFace.Set(true);
+                GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+                GLState.DepthTest.Set(false);
+                GLState.Blend.Set(true);
+                GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+                GLState.DepthMask.Set(false);
 
                 overlayShader.Bind();
                 overlayShader["view"].Set(cam.View);
@@ -960,7 +944,7 @@
                     Vector2 halfExtent = (box.End - box.Start) * 0.5f;
                     overlayShader["model"].Set(transform);
                     this.CreateRectangle(halfExtent, clr.Argb(), box == this._boxSelected ? Color.MediumBlue.Argb() : box.IsMouseOver ? Color.RoyalBlue.Argb() : clr.Argb());
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
                 if (this._isBoxDragging)
@@ -978,7 +962,7 @@
                     Vector2 halfExtent = (end - start) * 0.5f;
                     overlayShader["model"].Set(transform);
                     this.CreateRectangle(halfExtent, clr.Argb(), Color.RoyalBlue.Argb());
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
                 if (this._lineModeFirstPoint.HasValue)
@@ -991,7 +975,7 @@
                     Matrix4x4 transform = Matrix4x4.Identity;
                     overlayShader["model"].Set(transform);
                     this.CreateRectangleFromPoints(start - r, start + r, end + r, end - r, Color.SlateBlue.Argb(), Color.RoyalBlue.Argb());
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
 
                 if (this._numQuadDrawPoints > 0)
@@ -1025,7 +1009,7 @@
                     }
 
                     overlayShader["model"].Set(Matrix4x4.Identity);
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
                 }
 
                 /* BVH debug overlay
@@ -1063,10 +1047,10 @@
                 }
                 */
 
-                GL.DepthMask(true);
-                GL.Disable(Capability.Blend);
-                GL.Enable(Capability.DepthTest);
-                GL.Disable(Capability.CullFace);
+                GLState.DepthMask.Set(true);
+                GLState.Blend.Set(false);
+                GLState.DepthTest.Set(true);
+                GLState.CullFace.Set(false);
             }
             else
             {
@@ -1086,7 +1070,7 @@
             {
                 box.GetCorners(out Vector2 tl, out Vector2 tr, out Vector2 br, out Vector2 bl);
                 this.CreateRectangleFromPoints(tl, tr, br, bl, color, color);
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
+                GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
             }
         }
 

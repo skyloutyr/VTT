@@ -9,10 +9,6 @@
 #define GRID_TYPE_VHEX 2u
 
 in mat3 f_tbn;
-in vec3 f_position;
-in vec3 f_normal;
-in vec3 f_tangent;
-in vec3 f_bitangent;
 in vec3 f_world_position;
 in vec4 f_color;
 in vec2 f_texture;

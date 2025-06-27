@@ -96,10 +96,10 @@
             if (this._windowNeedsDrawing)
             {
                 Map m = Client.Instance.CurrentMap;
-                GL.Clear(ClearBufferMask.Depth | ClearBufferMask.Stencil);
+                GLState.Clear(ClearBufferMask.Depth | ClearBufferMask.Stencil);
                 if (Client.Instance.Settings.MSAA == ClientSettings.MSAAMode.Disabled)
                 {
-                    GL.Disable(Capability.Multisample);
+                    GLState.Multisample.Set(false);
                 }
 
                 this.Container.GuiWrapper.BeforeFrame();

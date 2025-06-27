@@ -1,6 +1,4 @@
 ﻿#version 330 core
-uniform vec3 s_direction;
-
 in vec3 f_data_pos;
 
 out vec4 color;

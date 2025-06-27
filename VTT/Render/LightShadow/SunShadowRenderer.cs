@@ -9,6 +9,7 @@
     using VTT.Network;
     using VTT.Util;
     using VTT.GL.Bindings;
+    using VTT.Render.Shaders;
 
     public class SunShadowRenderer
     {
@@ -18,7 +19,7 @@
         private Texture _sunDepthTexture;
         private Texture _fakeDepthTexture;
 
-        public FastAccessShader SunShader { get; set; }
+        public FastAccessShader<ForwardMeshOnlyUniforms> SunShader { get; set; }
 
         public Matrix4x4 SunView { get; set; } = Matrix4x4.Identity;
         public Matrix4x4 SunProjection { get; set; } = Matrix4x4.Identity;
@@ -71,7 +72,7 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
 
-            this.SunShader = new FastAccessShader(OpenGLUtil.LoadShader("object_shadow", ShaderType.Vertex, ShaderType.Fragment));
+            this.SunShader = new FastAccessShader<ForwardMeshOnlyUniforms>(OpenGLUtil.LoadShader("object_shadow", ShaderType.Vertex, ShaderType.Fragment));
             this.SunView = Matrix4x4.CreateLookAt(new Vector3(0, -0.1f, 49.5f), Vector3.Zero, new Vector3(0, 1, 0));
             this.SunProjection = Matrix4x4.CreateOrthographic(48, 48, 0.1f, 100f);
 
@@ -99,14 +100,14 @@
 
                 GL.BindFramebuffer(FramebufferTarget.All, this._sunFbo);
                 GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
-                GL.Clear(ClearBufferMask.Depth);
+                GLState.Clear(ClearBufferMask.Depth);
 
-                this.SunShader.Program.Bind();
-                this.SunShader.Essentials.View.Set(this.SunView);
-                this.SunShader.Essentials.Projection.Set(this.SunProjection);
+                this.SunShader.Bind();
+                this.SunShader.Uniforms.Transform.View.Set(this.SunView);
+                this.SunShader.Uniforms.Transform.Projection.Set(this.SunProjection);
 
                 ShadowPass = true;
-                GL.Disable(Capability.CullFace);
+                GLState.CullFace.Set(false);
 
                 for (int i = -2; i <= 0; ++i)
                 {
@@ -121,13 +122,13 @@
                         if (status == AssetStatus.Return && a.ModelGlReady)
                         {
                             Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                            a.Model.GLMdl.Render(this.SunShader, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time), mo.AnimationContainer);
+                            a.Model.GLMdl.Render(in this.SunShader.Uniforms.glbEssentials, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time), mo.AnimationContainer);
                         }
                     }
                 }
 
                 ShadowPass = false;
-                GL.Enable(Capability.CullFace);
+                GLState.CullFace.Set(true);
                 GL.BindFramebuffer(FramebufferTarget.All, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);
                 GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);

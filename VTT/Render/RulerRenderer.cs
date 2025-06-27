@@ -15,6 +15,7 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using Plane = Util.Plane;
 
@@ -450,24 +451,24 @@
             this.CPUTimer.Restart();
             OpenGLUtil.StartSection("Rulers and markers");
 
-            ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+            FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["model"].Set(Matrix4x4.Identity);
+            shader.Uniforms.Transform.View.Set(cam.View);
+            shader.Uniforms.Transform.Projection.Set(cam.Projection);
+            shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
             Matrix4x4 model;
             Vector3? tHit = Client.Instance.Frontend.Renderer.MapRenderer.GetTerrainCursorOrPointAlongsideView();
             bool inMeasureMode = Client.Instance.Frontend.Renderer.ObjectRenderer.EditMode == EditMode.Measure;
 
-            GL.DepthMask(false);
-            GL.Disable(Capability.CullFace);
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GLState.DepthMask.Set(false);
+            GLState.CullFace.Set(false);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Enable(Capability.Multisample);
-                GL.Enable(Capability.SampleAlphaToCoverage);
+                GLState.Multisample.Set(true);
+                GLState.SampleAlphaToCoverage.Set(true);
             }
 
             foreach (RulerInfo ri in this.ActiveInfos)
@@ -492,11 +493,11 @@
 
                 if (ri.Type is RulerType.Polyline or RulerType.Ruler)
                 {
-                    shader["u_color"].Set(riClr);
+                    shader.Uniforms.Color.Set(riClr);
                 }
                 else
                 {
-                    shader["u_color"].Set(riClr * new Vector4(1, 1, 1, 0.5f));
+                    shader.Uniforms.Color.Set(riClr * new Vector4(1, 1, 1, 0.5f));
                 }
 
                 ri.VAO.Bind();
@@ -506,18 +507,18 @@
                     case RulerType.Sphere:
                     case RulerType.Cube:
                     {
-                        GL.Enable(Capability.CullFace);
-                        GL.CullFace(PolygonFaceMode.Front);
-                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
-                        GL.CullFace(PolygonFaceMode.Back);
-                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
-                        GL.Disable(Capability.CullFace);
+                        GLState.CullFace.Set(true);
+                        GLState.CullFaceMode.Set(PolygonFaceMode.Front);
+                        GLState.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+                        GLState.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GLState.CullFace.Set(false);
                         break;
                     }
 
                     default:
                     {
-                        GL.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GLState.DrawElements(PrimitiveType.Triangles, ri.NumIndices, ElementsType.UnsignedInt, IntPtr.Zero);
                         break;
                     }
                 }
@@ -685,24 +686,24 @@
                 */
             }
 
-            GL.Disable(Capability.Blend);
+            GLState.Blend.Set(false);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(Capability.Multisample);
-                GL.Disable(Capability.SampleAlphaToCoverage);
+                GLState.Multisample.Set(false);
+                GLState.SampleAlphaToCoverage.Set(false);
             }
 
-            GL.Enable(Capability.CullFace);
+            GLState.CullFace.Set(true);
 
             if (this.CurrentMode == RulerType.Eraser && tHit.HasValue && inMeasureMode)
             {
                 model = Matrix4x4.CreateScale(this.CurrentExtraValue * 2) * Matrix4x4.CreateTranslation(tHit.Value);
-                shader["model"].Set(model);
-                shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
-                GL.Enable(Capability.Blend);
-                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                shader.Uniforms.Transform.Model.Set(model);
+                shader.Uniforms.Color.Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
+                GLState.Blend.Set(true);
+                GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
                 this.ModelSphere.Render();
-                GL.Disable(Capability.Blend);
+                GLState.Blend.Set(false);
             }
 
             foreach ((MapObject, Color) d in this._highlightedObjects)
@@ -727,7 +728,7 @@
                 }
             }
 
-            GL.DepthMask(true);
+            GLState.DepthMask.Set(true);
 
             this.CPUTimer.Stop();
             OpenGLUtil.EndSection();
@@ -1256,7 +1257,7 @@
             this._indexData.Clear();
         }
 
-        public void RenderBuffers() => GL.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
+        public void RenderBuffers() => GLState.DrawElements(PrimitiveType.Triangles, this._indexData.Count, ElementsType.UnsignedInt, IntPtr.Zero);
 
         public void ClearBuffers()
         {

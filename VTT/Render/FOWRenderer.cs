@@ -11,6 +11,7 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class FOWRenderer
@@ -351,24 +352,24 @@
             return result;
         }
 
-        public void Uniform(ShaderProgram shader)
+        public void Uniform(UniformBlockFogOfWar uniforms)
         {
-            GL.ActiveTexture(15);
+            GLState.ActiveTexture.Set(15);
             this.FOWTexture.Bind();
-            shader["fow_texture"].Set(15);
-            shader["fow_offset"].Set(this.FOWOffset);
-            shader["fow_scale"].Set(this._inverseFowScale);
-            shader["fow_mod"].Set(Client.Instance.IsAdmin ? Client.Instance.Settings.FOWAdmin : 1.0f);
+            uniforms.Sampler.Set(15);
+            uniforms.Offset.Set(this.FOWOffset);
+            uniforms.Scale.Set(this._inverseFowScale);
+            uniforms.Opacity.Set(Client.Instance.IsAdmin ? Client.Instance.Settings.FOWAdmin : 1.0f);
         }
 
-        public void UniformBlank(ShaderProgram shader)
+        public void UniformBlank(UniformBlockFogOfWar uniforms)
         {
-            GL.ActiveTexture(15);
+            GLState.ActiveTexture.Set(15);
             Client.Instance.Frontend.Renderer.White.Bind();
-            shader["fow_texture"].Set(15);
-            shader["fow_offset"].Set(Vector2.Zero);
-            shader["fow_scale"].Set(Vector2.One);
-            shader["fow_mod"].Set(0f);
+            uniforms.Sampler.Set(15);
+            uniforms.Offset.Set(Vector2.Zero);
+            uniforms.Scale.Set(Vector2.One);
+            uniforms.Opacity.Set(0f);
         }
 
         private bool _lmbPressed;
@@ -480,24 +481,24 @@
                     this._indicesList[5] = 3;
                     this.UploadData(this.FowSelectionPoints, this._indicesList);
 
-                    GL.Disable(Capability.DepthTest);
-                    GL.Disable(Capability.CullFace);
-                    GL.Enable(Capability.Blend);
-                    GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                    GLState.DepthTest.Set(false);
+                    GLState.CullFace.Set(false);
+                    GLState.Blend.Set(true);
+                    GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
 
-                    ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+                    FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                     Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                     shader.Bind();
-                    shader["view"].Set(cam.View);
-                    shader["projection"].Set(cam.Projection);
-                    shader["model"].Set(Matrix4x4.Identity);
-                    shader["u_color"].Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
+                    shader.Uniforms.Transform.View.Set(cam.View);
+                    shader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
+                    shader.Uniforms.Color.Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
                     this._vao.Bind();
-                    GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                    GLState.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
 
-                    GL.Disable(Capability.Blend);
-                    GL.Enable(Capability.CullFace);
-                    GL.Enable(Capability.DepthTest);
+                    GLState.Blend.Set(false);
+                    GLState.CullFace.Set(true);
+                    GLState.DepthTest.Set(true);
                 }
             }
 
@@ -512,35 +513,34 @@
                 {
                     if (this.FowSelectionPoints.Count > 0)
                     {
-                        GL.Disable(Capability.DepthTest);
-                        GL.Disable(Capability.CullFace);
-                        GL.Enable(Capability.Blend);
-                        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                        GLState.DepthTest.Set(false);
+                        GLState.CullFace.Set(false);
+                        GLState.Blend.Set(true);
+                        GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
 
-                        ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+                        FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                         Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                         shader.Bind();
-                        shader["view"].Set(cam.View);
-                        shader["projection"].Set(cam.Projection);
-                        shader["model"].Set(Matrix4x4.Identity);
-                        shader["u_color"].Set((this._couldTriangulate ? Color.RoyalBlue.Vec4() : Color.Crimson.Vec4()) * new Vector4(1, 1, 1, 0.35f));
+                        shader.Uniforms.Transform.View.Set(cam.View);
+                        shader.Uniforms.Transform.Projection.Set(cam.Projection);
+                        shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
+                        shader.Uniforms.Color.Set((this._couldTriangulate ? Color.RoyalBlue.Vec4() : Color.Crimson.Vec4()) * new Vector4(1, 1, 1, 0.35f));
 
                         // Draw triangulated polygon if it is possible
                         if (this.FowSelectionPoints.Count >= 3)
                         {
                             this._vao.Bind();
-                            GL.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                            GLState.DrawElements(PrimitiveType.Triangles, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
                         }
 
                         // Once done, draw the outline
                         this._polyOutlineVao.Bind();
-                        GL.DrawElements(PrimitiveType.Triangles, this._numOutlinePoints, ElementsType.UnsignedInt, IntPtr.Zero);
+                        GLState.DrawElements(PrimitiveType.Triangles, this._numOutlinePoints, ElementsType.UnsignedInt, IntPtr.Zero);
 
-                        GL.Disable(Capability.Blend);
-                        GL.Enable(Capability.CullFace);
-                        GL.Enable(Capability.DepthTest);
+                        GLState.Blend.Set(false);
+                        GLState.CullFace.Set(true);
+                        GLState.DepthTest.Set(true);
                     }
-                    
                 }
             }
 
@@ -551,24 +551,24 @@
                 {
                     this.UploadData(this._brushRenderData, this._brushRenderIndices);
 
-                    GL.Disable(Capability.DepthTest);
-                    GL.Disable(Capability.CullFace);
-                    GL.Enable(Capability.Blend);
-                    GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                    GLState.DepthTest.Set(false);
+                    GLState.CullFace.Set(false);
+                    GLState.Blend.Set(true);
+                    GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
 
-                    ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+                    FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                     Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                     shader.Bind();
-                    shader["view"].Set(cam.View);
-                    shader["projection"].Set(cam.Projection);
-                    shader["model"].Set(Matrix4x4.CreateScale(this.BrushSize) * Matrix4x4.CreateTranslation(v.Value));
-                    shader["u_color"].Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
+                    shader.Uniforms.Transform.View.Set(cam.View);
+                    shader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    shader.Uniforms.Transform.Model.Set(Matrix4x4.CreateScale(this.BrushSize) * Matrix4x4.CreateTranslation(v.Value));
+                    shader.Uniforms.Color.Set(Color.RoyalBlue.Vec4() * new Vector4(1, 1, 1, 0.35f));
                     this._vao.Bind();
-                    GL.DrawElements(PrimitiveType.TriangleFan, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
+                    GLState.DrawElements(PrimitiveType.TriangleFan, this._numVertices, ElementsType.UnsignedInt, IntPtr.Zero);
 
-                    GL.Disable(Capability.Blend);
-                    GL.Enable(Capability.CullFace);
-                    GL.Enable(Capability.DepthTest);
+                    GLState.Blend.Set(false);
+                    GLState.CullFace.Set(true);
+                    GLState.DepthTest.Set(true);
                 }
             }
 

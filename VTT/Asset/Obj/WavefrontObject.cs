@@ -7,6 +7,7 @@
     using System.Threading;
     using VTT.GL;
     using VTT.GL.Bindings;
+    using VTT.Render;
     using VTT.Util;
 
     public class WavefrontObject
@@ -235,11 +236,11 @@
             this._vao.Bind();
             if (this._ebo.HasValue)
             {
-                GL.DrawElements(PrimitiveType.Triangles, this._numElements, ElementsType.UnsignedInt, IntPtr.Zero);
+                GLState.DrawElements(PrimitiveType.Triangles, this._numElements, ElementsType.UnsignedInt, IntPtr.Zero);
             }
             else
             {
-                GL.DrawArrays(PrimitiveType.Triangles, 0, this._numElements);
+                GLState.DrawArrays(PrimitiveType.Triangles, 0, this._numElements);
             }
         }
 

@@ -126,5 +126,6 @@
 
         public static implicit operator bool(UniformWrapper self) => self.Valid;
         public static implicit operator UniformWrapper(int index) => new UniformWrapper(index);
+        public static explicit operator int(UniformWrapper self) => self._id;
     }
 }

@@ -12,13 +12,14 @@
     using VTT.Asset.Glb;
     using SixLabors.ImageSharp.PixelFormats;
     using System.Threading;
+    using VTT.Render.Shaders;
 
     public class SkyRenderer
     {
         private VertexArray _vao;
         private GPUBuffer _vbo;
 
-        public ShaderProgram SkyShader { get; set; }
+        public FastAccessShader<SkyboxUniforms> SkyShader { get; set; }
         public Skybox SkyboxRenderer { get; set; }
 
         public Gradient<Vector3> SkyGradient { get; set; } = new Gradient<Vector3>
@@ -130,7 +131,7 @@
 
         public void Create()
         {
-            this.SkyShader = OpenGLUtil.LoadShader("sky", ShaderType.Vertex, ShaderType.Fragment);
+            this.SkyShader = new FastAccessShader<SkyboxUniforms>(OpenGLUtil.LoadShader("sky", ShaderType.Vertex, ShaderType.Fragment));
             this._vao = new VertexArray();
             this._vbo = new GPUBuffer(BufferTarget.Array);
             this._vao.Bind();
@@ -194,24 +195,25 @@
             }
 
             OpenGLUtil.StartSection("Celestial bodies");
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Enable(Capability.DepthTest);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+            GLState.DepthTest.Set(true);
 
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             Vector3 sunDir = this.GetCurrentSunDirection();
             this.SkyShader.Bind();
-            this.SkyShader["projection"].Set(cam.Projection);
-            this.SkyShader["view"].Set(cam.View);
+            this.SkyShader.Uniforms.Transform.Projection.Set(cam.Projection);
+            this.SkyShader.Uniforms.Transform.View.Set(cam.View);
             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction)).Normalized();
             Matrix4x4 model = Matrix4x4.CreateScale(8) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(cam.Position - (sunDir * 99));
-            this.SkyShader["model"].Set(model);
+            this.SkyShader.Uniforms.Transform.Model.Set(model);
             this._vao.Bind();
 
-            GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
-            GL.Disable(Capability.DepthTest);
-            GL.Disable(Capability.Blend);
+            GLState.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
+
+            GLState.DepthTest.Set(false);
+            GLState.Blend.Set(false);
             OpenGLUtil.EndSection();
         }
 
@@ -293,7 +295,7 @@
             private TextureAnimation _skyboxDayAnimation;
             private TextureAnimation _skyboxNightAnimation;
             private Texture _skyboxBlank;
-            private ShaderProgram _skyboxShader;
+            private FastAccessShader<SkyboxUniforms> _skyboxShader;
 
             public Texture SkyboxTextureArray => this._skyboxArray ?? this._skyboxBlank;
             public TextureAnimation DayAnimation => this._skyboxDayAnimation;
@@ -376,10 +378,9 @@
                      1.0f, -1.0f,  1.0f
                 });
 
-                this._skyboxShader = OpenGLUtil.LoadShader("skybox", ShaderType.Vertex, ShaderType.Fragment);
+                this._skyboxShader = new FastAccessShader<SkyboxUniforms>(OpenGLUtil.LoadShader("skybox", ShaderType.Vertex, ShaderType.Fragment));
                 this._skyboxShader.Bind();
-                this._skyboxShader["tex_skybox"].Set(6);
-
+                this._skyboxShader.Uniforms.Skybox.Sampler.Set(6);
                 OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Skybox cube vao");
                 OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Skybox cube vbo");
             }
@@ -395,24 +396,24 @@
             {
                 this.ValidateSkyboxTextures(m);
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-                GL.Enable(Capability.DepthTest);
-                GL.DepthFunction(ComparisonMode.LessOrEqual);
-                GL.DepthMask(false);
+                GLState.DepthTest.Set(true);
+                GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
+                GLState.DepthMask.Set(false);
 
                 this._skyboxShader.Bind();
-                this.UniformShader(this._skyboxShader, m);
-                this._skyboxShader["projection"].Set(m.Is2D ? Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180.0f, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f) : cam.Projection);
-                this._skyboxShader["view"].Set(cam.View.ClearTranslation());
+                this.UniformShader(this._skyboxShader.Uniforms.Skybox, m);
+                this._skyboxShader.Uniforms.Transform.Projection.Set(m.Is2D ? Matrix4x4.CreatePerspectiveFieldOfView(Client.Instance.Settings.FOV * MathF.PI / 180.0f, (float)Client.Instance.Frontend.Width / Client.Instance.Frontend.Height, 0.01f, 100f) : cam.Projection);
+                this._skyboxShader.Uniforms.Transform.View.Set(cam.View.ClearTranslation());
 
                 this._vao.Bind();
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+                GLState.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
-                GL.DepthMask(true);
-                GL.DepthFunction(ComparisonMode.Less);
-                GL.Disable(Capability.DepthTest);
+                GLState.DepthMask.Set(true);
+                GLState.DepthFunc.Set(ComparisonMode.Less);
+                GLState.DepthTest.Set(false);
             }
 
-            public void UniformShader(ShaderProgram shader, Map m)
+            public void UniformShader(UniformBlockSkybox uniforms, Map m)
             {
                 float dayProgress = Client.Instance.Frontend.Renderer.SkyRenderer.GetDayProgress(m);
                 const float cutoutPointNightToDayStart = 4.8f;
@@ -425,26 +426,26 @@
                     : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
                     : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
 
-                shader["animation_day"].Set(this.DayAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
-                shader["animation_night"].Set(this.NightAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
-                shader["daynight_blend"].Set(dayNightFactor);
-                shader["day_color"].Set(m.DaySkyboxColors.GetColor(m, dayProgress));
-                shader["night_color"].Set(m.NightSkyboxColors.GetColor(m, dayProgress));
-                GL.ActiveTexture(6);
+                uniforms.DayAnimationFrame.Set(this.DayAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
+                uniforms.NightAnimationFrame.Set(this.NightAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1));
+                uniforms.BlendingFactor.Set(dayNightFactor);
+                uniforms.ColorDay.Set(m.DaySkyboxColors.GetColor(m, dayProgress));
+                uniforms.ColorNight.Set(m.NightSkyboxColors.GetColor(m, dayProgress));
+                GLState.ActiveTexture.Set(6);
                 this.SkyboxTextureArray.Bind();
-                GL.ActiveTexture(0);
+                GLState.ActiveTexture.Set(0);
             }
 
-            public void UniformBlank(ShaderProgram shader, Vector3 color)
+            public void UniformBlank(UniformBlockSkybox uniforms, Vector3 color)
             {
-                shader["animation_day"].Set(new Vector4(0, 0, 1, 1));
-                shader["animation_night"].Set(new Vector4(0, 0, 1, 1));
-                shader["daynight_blend"].Set(0f);
-                shader["day_color"].Set(color);
-                shader["night_color"].Set(color);
-                GL.ActiveTexture(6);
+                uniforms.DayAnimationFrame.Set(new Vector4(0, 0, 1, 1));
+                uniforms.NightAnimationFrame.Set(new Vector4(0, 0, 1, 1));
+                uniforms.BlendingFactor.Set(0f);
+                uniforms.ColorDay.Set(color);
+                uniforms.ColorNight.Set(color);
+                GLState.ActiveTexture.Set(6);
                 this._skyboxBlank.Bind();
-                GL.ActiveTexture(0);
+                GLState.ActiveTexture.Set(0);
             }
 
             private void ValidateSkyboxTextures(Map m)

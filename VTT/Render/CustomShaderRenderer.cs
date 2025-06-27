@@ -6,12 +6,13 @@
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using GL = GL.Bindings.GL;
 
     public static class CustomShaderRenderer
     {
-        public static bool Render(Guid shaderAssetID, Map m, ShaderContainerLocalPassthroughData passthroughData, double textureAnimationIndex, double delta, out FastAccessShader shader)
+        public static bool Render(Guid shaderAssetID, Map m, ShaderContainerLocalPassthroughData passthroughData, double textureAnimationIndex, double delta, out FastAccessShader<ForwardUniforms> shader)
         {
             shader = null;
             if (!Client.Instance.Settings.EnableCustomShaders)
@@ -27,7 +28,7 @@
                     {
                         if (a.Shader != null && a.Shader.NodeGraph != null && a.Shader.NodeGraph.IsLoaded)
                         {
-                            shader = a.Shader.NodeGraph.GetGLShader(false);
+                            shader = a.Shader.NodeGraph.GetGLShader<ForwardUniforms>(false);
                         }
 
                         break;
@@ -37,7 +38,7 @@
                     {
                         if (a.GlslFragment != null && !string.IsNullOrEmpty(a.GlslFragment.Data))
                         {
-                            shader = a.GlslFragment.GetGLShader(false);
+                            shader = a.GlslFragment.GetGLShader<ForwardUniforms>(false);
                         }
 
                         break;
@@ -57,20 +58,20 @@
                         Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
                     }
 
-                    shader.Essentials.TintColor.Set(passthroughData.TintColor);
-                    shader.Essentials.Alpha.Set(passthroughData.Alpha);
-                    shader.Essentials.GridAlpha.Set(passthroughData.GridAlpha);
-                    shader.Essentials.GridType.Set(passthroughData.GridType);
+                    shader.Uniforms.TintColor.Set(passthroughData.TintColor);
+                    shader.Uniforms.Alpha.Set(passthroughData.Alpha);
+                    shader.Uniforms.Grid.GridAlpha.Set(passthroughData.GridAlpha);
+                    shader.Uniforms.Grid.GridType.Set(passthroughData.GridType);
                     if (a.Type == Asset.AssetType.Shader) // Custom GLSL shaders can't define extra textures due to being raw GLSL data
                     {
-                        GL.ActiveTexture(12);
+                        GLState.ActiveTexture.Set(12);
                         if (a.Shader.NodeGraph.ExtraTextures.GetExtraTexture(out Texture t, out Vector2[] sz, out TextureAnimation[] anims) == Asset.AssetStatus.Return && t != null)
                         {
                             t.Bind();
+                            shader.Uniforms.CustomShaderExtraTexturesData.Sizes.Set(sz, 0);
                             for (int i = 0; i < sz.Length; ++i)
                             {
-                                shader[$"unifiedTextureData[{i}]"].Set(sz[i]);
-                                shader[$"unifiedTextureFrames[{i}]"].Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform);
+                                shader.Uniforms.CustomShaderExtraTexturesData.AnimationFrames.Set(anims[i].FindFrameForIndex(textureAnimationIndex).LocationUniform, i);
                             }
                         }
                         else
@@ -79,7 +80,7 @@
                         }
                     }
 
-                    GL.ActiveTexture(0);
+                    GLState.ActiveTexture.Set(0);
                     return true;
                 }
             }

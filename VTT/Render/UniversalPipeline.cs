@@ -8,6 +8,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.LightShadow;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using GL = GL.Bindings.GL;
 
@@ -24,10 +25,10 @@
         public Texture DepthTex { get; set; }
         public Texture ColorOutputTex { get; set; }
 
-        public FastAccessShader DeferredPrePass { get; set; }
-        public ShaderProgram DeferredFinal { get; set; }
-        public FastAccessShader Forward { get; set; }
-        public ShaderProgram FinalPass { get; set; }
+        public FastAccessShader<DeferredUniforms> DeferredPrePass { get; set; }
+        public FastAccessShader<DeferredFinalUniforms> DeferredFinal { get; set; }
+        public FastAccessShader<ForwardUniforms> Forward { get; set; }
+        public FastAccessShader<PipelineFinalUniforms> FinalPass { get; set; }
 
 
         public VertexArray FullScreenQuad { get; set; }
@@ -40,43 +41,42 @@
             this.RecompileShaders(Client.Instance.Settings.EnableDirectionalShadows, Client.Instance.Settings.EnableSunShadows);
         }
 
-        public FastAccessShader BeginDeferred(Map m)
+        public FastAccessShader<DeferredUniforms> BeginDeferred(Map m)
         {
             OpenGLUtil.StartSection("Setup deferred shader");
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            FastAccessShader shader = this.DeferredPrePass;
+            FastAccessShader<DeferredUniforms> shader = this.DeferredPrePass;
             bool useUBO = Client.Instance.Settings.UseUBO;
-
-            shader.Program.Bind();
+            shader.Bind();
             if (!useUBO)
             {
-                shader.Essentials.View.Set(cam.View);
-                shader.Essentials.Projection.Set(cam.Projection);
-                shader["camera_position"].Set(cam.Position);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
+                shader.Uniforms.FrameData.View.Set(cam.View);
+                shader.Uniforms.FrameData.Projection.Set(cam.Projection);
+                shader.Uniforms.FrameData.CameraPosition.Set(cam.Position);
+                shader.Uniforms.FrameData.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader.Uniforms.FrameData.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader.Uniforms.FrameData.GridScale.Set(m.GridSize);
+                shader.Uniforms.FrameData.CursorPosition.Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
             }
 
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferCompound.Value);
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
             GL.ClearColor(0, 0, 0, 0);
-            GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.LessOrEqual);
-            GL.DepthMask(true);
-            GL.Enable(Capability.CullFace);
-            GL.CullFace(PolygonFaceMode.Back);
+            GLState.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
+            GLState.DepthMask.Set(true);
+            GLState.CullFace.Set(true);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(Capability.Multisample);
+                GLState.Multisample.Set(false);
             }
 
             OpenGLUtil.EndSection();
             return shader;
         }
-        public FastAccessShader BeginForward(Map m, double delta)
+        public FastAccessShader<ForwardUniforms> BeginForward(Map m, double delta)
         {
             OpenGLUtil.StartSection("Setup forward shader");
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferCompound.Value);
@@ -89,43 +89,41 @@
             Vector3 cachedAmbientColor = Client.Instance.Frontend.Renderer.ObjectRenderer.CachedAmbientColor;
             Vector3 cachedSkyColor = Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor;
 
-            FastAccessShader shader = this.Forward;
-            shader.Program.Bind();
+            FastAccessShader<ForwardUniforms> shader = this.Forward;
+            shader.Bind();
             if (!Client.Instance.Settings.UseUBO)
             {
-                shader.Essentials.View.Set(cam.View);
-                shader.Essentials.Projection.Set(cam.Projection);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["camera_position"].Set(cam.Position);
-                shader["camera_direction"].Set(cam.Direction);
-                shader["dl_direction"].Set(cachedSunDir);
-                shader["dl_color"].Set(cachedSunColor * m.SunIntensity);
-                shader["al_color"].Set(cachedAmbientColor * m.AmbientIntensity);
-                shader["sun_view"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunView);
-                shader["sun_projection"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunProjection);
-                shader["sky_color"].Set(cachedSkyColor);
-                shader["grid_color"].Set(m.GridColor.Vec4());
-                shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-                shader["dv_data"].Set(Vector4.Zero);
-                shader["frame_delta"].Set((float)delta);
-                if (m.EnableDarkvision)
+                UniformBlockFrameData uniforms = shader.Uniforms.FrameData;
+                uniforms.View.Set(cam.View);
+                uniforms.Projection.Set(cam.Projection);
+                uniforms.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
+                uniforms.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                uniforms.CameraPosition.Set(cam.Position);
+                uniforms.CameraDirection.Set(cam.Direction);
+                uniforms.SunDirection.Set(cachedSunDir);
+                uniforms.SunColor.Set(cachedSunColor * m.SunIntensity);
+                uniforms.AmbientColor.Set(cachedAmbientColor * m.AmbientIntensity);
+                uniforms.SunView.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunView);
+                uniforms.SunProjection.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SunProjection);
+                uniforms.SkyColor.Set(cachedSkyColor);
+                uniforms.GridColor.Set(m.GridColor.Vec4());
+                uniforms.GridScale.Set(m.GridSize);
+                uniforms.CursorPosition.Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
+                uniforms.FrameDT.Set((float)delta);
+                if (m.EnableDarkvision && m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv) && m.GetObject(kv.Item1, out MapObject mo))
                 {
-                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                    {
-                        if (m.GetObject(kv.Item1, out MapObject mo))
-                        {
-                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2));
-                        }
-                    }
+                    uniforms.DarkvisionData.Set(new Vector4(mo.Position, kv.Item2));
+                }
+                else
+                {
+                    uniforms.DarkvisionData.Set(Vector4.Zero);
                 }
             }
 
-            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-            shader["gamma_correct"].Set(false);
+            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
+            shader.Uniforms.Gamma.EnableCorrection.Set(false);
 
-            GL.ActiveTexture(14);
+            GLState.ActiveTexture.Set(14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
             {
                 Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthTexture.Bind();
@@ -135,13 +133,13 @@
                 Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
             }
 
-            GL.ActiveTexture(13);
+            GLState.ActiveTexture.Set(13);
             plr.DepthMap.Bind();
 
-            GL.ActiveTexture(0);
-            plr.UniformLights(shader);
+            GLState.ActiveTexture.Set(0);
+            plr.UniformLights(shader.Uniforms.PointLights);
 
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
             OpenGLUtil.EndSection();
 
             return this.Forward;
@@ -149,7 +147,7 @@
         public void EndDeferred(Map m)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            ShaderProgram shader = this.DeferredFinal;
+            FastAccessShader<DeferredFinalUniforms> shader = this.DeferredFinal;
             Vector3 sunDir = Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection();
             Color sunColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSunColor();
             Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
@@ -161,50 +159,47 @@
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferFinal.Value);
             // Viewport already setup, just clear
             GL.ClearColor(0, 0, 0, 0);
-            GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
+            GLState.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
 
             shader.Bind();
-            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-            shader["gamma_correct"].Set(false);
-            GL.ActiveTexture(12);
+            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
+            shader.Uniforms.Gamma.EnableCorrection.Set(false);
+            GLState.ActiveTexture.Set(12);
             this.PositionTex.Bind();
-            GL.ActiveTexture(11);
+            GLState.ActiveTexture.Set(11);
             this.NormalTex.Bind();
-            GL.ActiveTexture(10);
+            GLState.ActiveTexture.Set(10);
             this.AlbedoTex.Bind();
-            GL.ActiveTexture(9);
+            GLState.ActiveTexture.Set(9);
             this.MRAOGTex.Bind();
-            GL.ActiveTexture(8);
+            GLState.ActiveTexture.Set(8);
             this.EmissionTex.Bind();
-            GL.ActiveTexture(7);
+            GLState.ActiveTexture.Set(7);
             this.DepthTex.Bind();
             if (!useUBO)
             {
-                shader["g_emission"].Set(8);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["camera_position"].Set(cam.Position);
-                shader["dl_direction"].Set(sunDir);
-                shader["dl_color"].Set(sunColor.Vec3() * m.SunIntensity);
-                shader["al_color"].Set(ambientColor * m.AmbientIntensity);
-                shader["sun_view"].Set(dlRenderer.SunView);
-                shader["sun_projection"].Set(dlRenderer.SunProjection);
-                shader["sky_color"].Set(skyColor.Vec3());
-                shader["grid_color"].Set(m.GridColor.Vec4());
-                shader["dv_data"].Set(Vector4.Zero);
-                if (m.EnableDarkvision)
+                shader.Uniforms.EmissionSampler.Set(8);
+                shader.Uniforms.FrameData.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
+                shader.Uniforms.FrameData.Frame.Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                shader.Uniforms.FrameData.CameraPosition.Set(cam.Position);
+                shader.Uniforms.FrameData.SunDirection.Set(sunDir);
+                shader.Uniforms.FrameData.SunColor.Set(sunColor.Vec3() * m.SunIntensity);
+                shader.Uniforms.FrameData.AmbientColor.Set(ambientColor * m.AmbientIntensity);
+                shader.Uniforms.FrameData.SunView.Set(dlRenderer.SunView);
+                shader.Uniforms.FrameData.SunProjection.Set(dlRenderer.SunProjection);
+                shader.Uniforms.FrameData.SkyColor.Set(skyColor.Vec3());
+                shader.Uniforms.FrameData.GridColor.Set(m.GridColor.Vec4());
+                if (m.EnableDarkvision && m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv) && m.GetObject(kv.Item1, out MapObject mo))
                 {
-                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                    {
-                        if (m.GetObject(kv.Item1, out MapObject mo))
-                        {
-                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2 / m.GridUnit));
-                        }
-                    }
+                    shader.Uniforms.FrameData.DarkvisionData.Set(new Vector4(mo.Position, kv.Item2));
+                }
+                else
+                {
+                    shader.Uniforms.FrameData.DarkvisionData.Set(Vector4.Zero);
                 }
             }
 
-            GL.ActiveTexture(14);
+            GLState.ActiveTexture.Set(14);
             if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows)
             {
                 dlRenderer.DepthTexture.Bind();
@@ -214,27 +209,27 @@
                 Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
             }
 
-            GL.ActiveTexture(13);
+            GLState.ActiveTexture.Set(13);
             plr.DepthMap.Bind();
-            plr.UniformLights(shader);
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
+            plr.UniformLights(shader.Uniforms.PointLights);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader.Uniforms.FOW);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
 
-            GL.Enable(Capability.CullFace);
-            GL.CullFace(PolygonFaceMode.Back);
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.Always);
-            GL.DepthMask(true);
+            GLState.CullFace.Set(true);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.Always);
+            GLState.DepthMask.Set(true);
 
             this.DrawFullScreenQuad();
 
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.Less);
-            GL.Disable(Capability.CullFace);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.Less);
+            GLState.CullFace.Set(false);
 
             // Bind default framebuffer and reset
             GL.BindFramebuffer(FramebufferTarget.All, 0);
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
         }
 
         public void FinishRender(Map m)
@@ -242,14 +237,14 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
 
             this.FinalPass.Bind();
-            this.FinalPass["gamma"].Set(Client.Instance.Settings.Gamma);
-            GL.ActiveTexture(0);
+            this.FinalPass.Uniforms.Gamma.Set(Client.Instance.Settings.Gamma);
+            GLState.ActiveTexture.Set(0);
             this.ColorOutputTex.Bind();
-            GL.ActiveTexture(1);
+            GLState.ActiveTexture.Set(1);
             this.DepthTex.Bind();
-            GL.ActiveTexture(2);
+            GLState.ActiveTexture.Set(2);
             Client.Instance.Frontend.Renderer.ObjectRenderer.FastLightRenderer.TexColor.Bind();
-            GL.ActiveTexture(3);
+            GLState.ActiveTexture.Set(3);
             if (m != null && m.Has2DShadows && m.Is2D)
             {
                 Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.OutputTexture.Bind();
@@ -259,17 +254,17 @@
                 Client.Instance.Frontend.Renderer.ObjectRenderer.Shadow2DRenderer.WhiteSquare.Bind();
             }
 
-            GL.Enable(Capability.CullFace);
-            GL.CullFace(PolygonFaceMode.Back);
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.Always);
-            GL.DepthMask(true);
+            GLState.CullFace.Set(true);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.Always);
+            GLState.DepthMask.Set(true);
 
             this.DrawFullScreenQuad();
 
-            GL.DepthFunction(ComparisonMode.LessOrEqual);
-            GL.Disable(Capability.CullFace);
-            GL.ActiveTexture(0);
+            GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
+            GLState.CullFace.Set(false);
+            GLState.ActiveTexture.Set(0);
         }
 
         public uint CreateDummyForwardFBO(Size s, out Texture pos, out Texture albedo, out Texture emission, out Texture normal, out Texture mraog, out Texture depth, out Texture colorOut)
@@ -381,55 +376,55 @@
         public void DrawFullScreenQuad()
         {
             this.FullScreenQuad.Bind();
-            GL.DrawElements(PrimitiveType.Triangles, 6, ElementsType.Byte, IntPtr.Zero);
+            GLState.DrawElements(PrimitiveType.Triangles, 6, ElementsType.Byte, IntPtr.Zero);
         }
         public void RecompileShaders(bool havePointShadows, bool haveSunShadows)
         {
             this.DeferredPrePass?.Program.Dispose();
-            this.DeferredFinal?.Dispose();
+            this.DeferredFinal?.Program.Dispose();
             this.Forward?.Program.Dispose();
-            this.FinalPass?.Dispose();
+            this.FinalPass?.Program.Dispose();
 
-            this.DeferredPrePass = new FastAccessShader(this.CompileShader("deferred", haveSunShadows, havePointShadows));
-            this.DeferredPrePass.Program.Bind();
+            this.DeferredPrePass = new FastAccessShader<DeferredUniforms>(this.CompileShader("deferred", haveSunShadows, havePointShadows));
+            this.DeferredPrePass.Bind();
             this.DeferredPrePass.Program.BindUniformBlock("FrameData", 1);
             this.DeferredPrePass.Program.BindUniformBlock("BoneData", 2);
-            this.DeferredPrePass["m_texture_diffuse"].Set(0);
-            this.DeferredPrePass["m_texture_normal"].Set(1);
-            this.DeferredPrePass["m_texture_emissive"].Set(2);
-            this.DeferredPrePass["m_texture_aomr"].Set(3);
+            this.DeferredPrePass.Uniforms.Material.DiffuseSampler.Set(0);
+            this.DeferredPrePass.Uniforms.Material.NormalSampler.Set(1);
+            this.DeferredPrePass.Uniforms.Material.EmissiveSampler.Set(2);
+            this.DeferredPrePass.Uniforms.Material.AOMRSampler.Set(3);
 
-            this.DeferredFinal = this.CompileShader("deferred_final", haveSunShadows, havePointShadows);
+            this.DeferredFinal = new FastAccessShader<DeferredFinalUniforms>(this.CompileShader("deferred_final", haveSunShadows, havePointShadows));
             this.DeferredFinal.Bind();
-            this.DeferredFinal.BindUniformBlock("FrameData", 1);
-            this.DeferredFinal["g_positions"].Set(12);
-            this.DeferredFinal["g_normals"].Set(11);
-            this.DeferredFinal["g_albedo"].Set(10);
-            this.DeferredFinal["g_aomrg"].Set(9);
-            this.DeferredFinal["g_emission"].Set(8);
-            this.DeferredFinal["g_depth"].Set(7);
-            this.DeferredFinal["tex_skybox"].Set(6);
-            this.DeferredFinal["dl_shadow_map"].Set(14);
-            this.DeferredFinal["pl_shadow_maps"].Set(13);
+            this.DeferredFinal.Program.BindUniformBlock("FrameData", 1);
+            this.DeferredFinal.Uniforms.PositionsSampler.Set(12);
+            this.DeferredFinal.Uniforms.NormalsSampler.Set(11);
+            this.DeferredFinal.Uniforms.AlbedoSampler.Set(10);
+            this.DeferredFinal.Uniforms.AOMRGSampler.Set(9);
+            this.DeferredFinal.Uniforms.EmissionSampler.Set(8);
+            this.DeferredFinal.Uniforms.DepthSampler.Set(7);
+            this.DeferredFinal.Uniforms.Skybox.Sampler.Set(6);
+            this.DeferredFinal.Uniforms.DirectionalLight.DepthSampler.Set(14);
+            this.DeferredFinal.Uniforms.PointLights.ShadowMapsSampler.Set(13);
 
-            this.Forward = new FastAccessShader(this.CompileShader("object", haveSunShadows, havePointShadows));
-            this.Forward.Program.Bind();
+            this.Forward = new FastAccessShader<ForwardUniforms>(this.CompileShader("object", haveSunShadows, havePointShadows));
+            this.Forward.Bind();
             this.Forward.Program.BindUniformBlock("FrameData", 1);
             this.Forward.Program.BindUniformBlock("BoneData", 2);
-            this.Forward["m_texture_diffuse"].Set(0);
-            this.Forward["m_texture_normal"].Set(1);
-            this.Forward["m_texture_emissive"].Set(2);
-            this.Forward["m_texture_aomr"].Set(3);
-            this.Forward["pl_shadow_maps"].Set(13);
-            this.Forward["dl_shadow_map"].Set(14);
-            this.Forward["tex_skybox"].Set(6);
+            this.Forward.Uniforms.Material.DiffuseSampler.Set(0);
+            this.Forward.Uniforms.Material.NormalSampler.Set(1);
+            this.Forward.Uniforms.Material.EmissiveSampler.Set(2);
+            this.Forward.Uniforms.Material.AOMRSampler.Set(3);
+            this.Forward.Uniforms.PointLights.ShadowMapsSampler.Set(13);
+            this.Forward.Uniforms.DirectionalLight.DepthSampler.Set(14);
+            this.Forward.Uniforms.Skybox.Sampler.Set(6);
 
-            this.FinalPass = this.CompileShader("universal_final", haveSunShadows, havePointShadows);
+            this.FinalPass = new FastAccessShader<PipelineFinalUniforms>(this.CompileShader("universal_final", haveSunShadows, havePointShadows));
             this.FinalPass.Bind();
-            this.FinalPass["g_color"].Set(0);
-            this.FinalPass["g_depth"].Set(1);
-            this.FinalPass["g_fast_light"].Set(2);
-            this.FinalPass["g_shadows2d"].Set(3);
+            this.FinalPass.Uniforms.ColorSampler.Set(0);
+            this.FinalPass.Uniforms.DepthSampler.Set(1);
+            this.FinalPass.Uniforms.FastLightSampler.Set(2);
+            this.FinalPass.Uniforms.Shadows2DSampler.Set(3);
         }
         public ShaderProgram CompileShader(string sName, bool dirShadows, bool pointShadows)
         {

@@ -8,7 +8,6 @@ in vec4 inst_color;
 in vec4 f_color;
 in vec2 f_texture;
 in vec3 f_world_position;
-in vec3 f_position;
 flat in int f_frame;
 flat in int inst_id;
 flat in float inst_lifespan;
@@ -19,7 +18,6 @@ uniform uint update;
 uniform vec4 m_diffuse_color;
 uniform sampler2D m_texture_diffuse;
 uniform vec4 m_diffuse_frame;
-uniform float gamma_factor;
 
 // FOW
 uniform usampler2D fow_texture;
@@ -27,7 +25,10 @@ uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
 uniform bool do_fow;
+
 uniform vec3 sky_color;
+
+uniform float gamma_factor;
 
 out vec4 g_color;
 

@@ -16,9 +16,6 @@
 #define GRID_TYPE_VHEX 2u
 
 in mat3 f_tbn;
-in vec3 f_normal;
-in vec3 f_tangent;
-in vec3 f_bitangent;
 in vec3 f_world_position;
 in vec3 f_position;
 in vec4 f_color;
@@ -72,7 +69,6 @@ uniform vec3 pl_position[16];
 uniform vec3 pl_color[16];
 uniform vec2 pl_cutout[16];
 uniform int pl_index[16];
-
 uniform int pl_num;
 uniform sampler2DArray pl_shadow_maps;
 
@@ -81,7 +77,6 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
-uniform float gamma_factor;
 
 // grid
 uniform float grid_alpha;
@@ -93,6 +88,7 @@ uniform vec2 unifiedTextureData[64];
 uniform vec4 unifiedTextureFrames[64];
 
 uniform bool gamma_correct;
+uniform float gamma_factor;
 
 // Skybox
 uniform sampler2DArray tex_skybox;

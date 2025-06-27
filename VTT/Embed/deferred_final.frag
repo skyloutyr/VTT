@@ -52,7 +52,6 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
-uniform float gamma_factor;
 
 // Skybox
 uniform sampler2DArray tex_skybox;
@@ -63,6 +62,7 @@ uniform vec3 day_color;
 uniform vec3 night_color;
 
 uniform bool gamma_correct;
+uniform float gamma_factor;
 
 out layout (location = 0) vec4 g_color;
 

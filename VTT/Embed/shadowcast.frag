@@ -11,14 +11,14 @@ uniform float shadow_opacity;
 uniform float light_threshold;
 uniform float light_dimming;
 
-struct LightSource
-{
-    vec2 position;
-    float threshold;
-    float dimming;
-};
+// struct LightSource
+// {
+//     vec2 position;
+//     float threshold;
+//     float dimming;
+// };
 
-uniform LightSource lights[64];
+uniform vec4 lights[64];
 uniform int num_lights;
 
 layout (location = 0) out float color;
@@ -194,9 +194,9 @@ bool raycast(in Ray r)
 	return false;
 }
 
-float raycastLight(vec2 f_world_position, LightSource light)
+float raycastLight(vec2 f_world_position, vec4 light)
 {
-    vec2 v = light.position - f_world_position;
+    vec2 v = light.xy - f_world_position;
     vec2 vn = normalize(v);
     float d = length(v);
     Ray r = Ray(
@@ -213,7 +213,7 @@ float raycastLight(vec2 f_world_position, LightSource light)
     }
     else
     {
-        return d > light.threshold ? 0 : d > light.dimming ? (1.0 - ((d - light.dimming) / (light.threshold - light.dimming))) : 1;
+        return d > light.z ? 0 : d > light.w ? (1.0 - ((d - light.w) / (light.z - light.w))) : 1;
     }
 }
 

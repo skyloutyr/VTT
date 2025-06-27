@@ -8,6 +8,7 @@
     using VTT.Network;
     using VTT.Render;
     using VTT.Render.LightShadow;
+    using VTT.Render.Shaders;
 
     public class GlbMaterial
     {
@@ -35,7 +36,7 @@
 
         private static GlbMaterial lastMaterial;
         private static double lastAnimationFrameIndex;
-        private static int lastProgram;
+        private static UniformBlockMaterial lastProgram;
 
         public bool GetTexturesAsyncStatus()
         {
@@ -50,12 +51,12 @@
         {
             lastMaterial = null;
             lastAnimationFrameIndex = 0;
-            lastProgram = 0;
+            lastProgram = null;
         }
 
-        public void Uniform(FastAccessShader shader, double textureAnimationFrameIndex)
+        public void Uniform(UniformBlockMaterial uniforms, double textureAnimationFrameIndex)
         {
-            if (SunShadowRenderer.ShadowPass)
+            if (SunShadowRenderer.ShadowPass || uniforms == null)
             {
                 return;
             }
@@ -73,37 +74,37 @@
              */
 
             // Objects are aligned in memory by their AssetID (ideally). This will unfortunately fail for forward rendering.
-            if (lastProgram != shader.Program || lastMaterial != this)
+            if (lastProgram != uniforms || lastMaterial != this)
             {
-                shader.Material.DiffuseColor.Set(this.BaseColorFactor);
-                shader.Material.MetallicFactor.Set(this.MetallicFactor);
-                shader.Material.RoughnessFactor.Set(this.RoughnessFactor);
-                shader.Material.AlphaCutoff.Set(this.AlphaCutoff);
-                shader.Material.DiffuseFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader.Material.NormalFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader.Material.EmissiveFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                lastProgram = shader.Program;
+                uniforms.DiffuseColor.Set(this.BaseColorFactor);
+                uniforms.MetalnessFactor.Set(this.MetallicFactor);
+                uniforms.RoughnessFactor.Set(this.RoughnessFactor);
+                uniforms.AlphaCutoff.Set(this.AlphaCutoff);
+                uniforms.DiffuseAnimationFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                uniforms.NormalAnimationFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                uniforms.EmissiveAnimationFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                uniforms.AOMRAnimationFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                lastProgram = uniforms;
                 lastMaterial = this;
                 lastAnimationFrameIndex = textureAnimationFrameIndex;
 
-                shader.Material.MaterialIndex.Set(this.Index);
-                GL.ActiveTexture(0);
+                uniforms.MaterialIndex.Set(this.Index);
+                GLState.ActiveTexture.Set(0);
                 this.BaseColorTexture.Bind();
-                GL.ActiveTexture(1);
+                GLState.ActiveTexture.Set(1);
                 this.NormalTexture.Bind();
-                GL.ActiveTexture(2);
+                GLState.ActiveTexture.Set(2);
                 this.EmissionTexture.Bind();
-                GL.ActiveTexture(3);
+                GLState.ActiveTexture.Set(3);
                 this.OcclusionMetallicRoughnessTexture.Bind();
                 if (this.CullFace)
                 {
-                    GL.Enable(Capability.CullFace);
-                    GL.CullFace(PolygonFaceMode.Back);
+                    GLState.CullFace.Set(true);
+                    GLState.CullFaceMode.Set(PolygonFaceMode.Back);
                 }
                 else
                 {
-                    GL.Disable(Capability.CullFace);
+                    GLState.CullFace.Set(false);
                 }
             }
             else
@@ -111,10 +112,10 @@
                 if (textureAnimationFrameIndex != lastAnimationFrameIndex)
                 {
                     lastAnimationFrameIndex = textureAnimationFrameIndex;
-                    shader.Material.DiffuseFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader.Material.NormalFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader.Material.EmissiveFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                    shader.Material.AOMRFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    uniforms.DiffuseAnimationFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    uniforms.NormalAnimationFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    uniforms.EmissiveAnimationFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    uniforms.AOMRAnimationFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                 }
             }
         }

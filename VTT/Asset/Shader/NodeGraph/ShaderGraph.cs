@@ -8,7 +8,7 @@
     using System.Numerics;
     using VTT.GL;
     using VTT.Network;
-    using VTT.Render;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class ShaderGraph : ISerializable
@@ -54,7 +54,8 @@ void main()
 
         public LinkedTextureContainer ExtraTextures { get; set; } = new LinkedTextureContainer();
 
-        private FastAccessShader _glData;
+        private object _glData;
+        private ShaderProgram _glProgram;
         private bool _glValid;
         private bool _glGen;
 
@@ -260,7 +261,7 @@ void main()
             return true;
         }
 
-        public static bool TryCompileCustomShader(bool isParticleShader, string vertCode, string fragCode, out string err, out FastAccessShader shader)
+        public static bool TryCompileCustomShader<T>(bool isParticleShader, string vertCode, string fragCode, out string err, out FastAccessShader<T> shader) where T : new()
         {
             if (!ShaderProgram.TryCompile(out ShaderProgram sp, vertCode, string.Empty, fragCode, out err))
             {
@@ -272,32 +273,35 @@ void main()
                 sp.Bind();
                 if (isParticleShader) // Particle shaders don't have uniform block access, and don't have shadow maps
                 {
-                    sp["m_texture_diffuse"].Set(0);
-                    sp["m_texture_normal"].Set(1);
-                    sp["m_texture_emissive"].Set(2);
-                    sp["m_texture_aomr"].Set(3);
-                    sp["tex_skybox"].Set(6);
-                    sp["unifiedTexture"].Set(12);
+                    FastAccessShader<ParticleUniforms> parts = new FastAccessShader<ParticleUniforms>(sp);
+                    parts.Uniforms.Material.DiffuseSampler.Set(0);
+                    parts.Uniforms.Material.NormalSampler.Set(1);
+                    parts.Uniforms.Material.EmissiveSampler.Set(2);
+                    parts.Uniforms.Material.AOMRSampler.Set(3);
+                    parts.Uniforms.Skybox.Sampler.Set(6);
+                    parts.Uniforms.CustomShader.Sampler.Set(12);
+                    shader = parts as FastAccessShader<T>;
                 }
                 else
                 {
                     sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
-                    sp["m_texture_diffuse"].Set(0); // Setup texture locations
-                    sp["m_texture_normal"].Set(1);
-                    sp["m_texture_emissive"].Set(2);
-                    sp["m_texture_aomr"].Set(3);
-                    sp["tex_skybox"].Set(6);
-                    sp["unifiedTexture"].Set(12);
-                    sp["pl_shadow_maps"].Set(13);
-                    sp["dl_shadow_map"].Set(14);
+                    FastAccessShader<ForwardUniforms> fwd = new FastAccessShader<ForwardUniforms>(sp);
+                    fwd.Uniforms.Material.DiffuseSampler.Set(0);
+                    fwd.Uniforms.Material.NormalSampler.Set(1);
+                    fwd.Uniforms.Material.EmissiveSampler.Set(2);
+                    fwd.Uniforms.Material.AOMRSampler.Set(3);
+                    fwd.Uniforms.Skybox.Sampler.Set(6);
+                    fwd.Uniforms.CustomShaderExtraTexturesData.Sampler.Set(12);
+                    fwd.Uniforms.PointLights.ShadowMapsSampler.Set(13);
+                    fwd.Uniforms.DirectionalLight.DepthSampler.Set(14);
+                    shader = fwd as FastAccessShader<T>;
                 }
 
-                shader = new FastAccessShader(sp);
-                return true;
+                return shader != null;
             }
         }
 
-        public FastAccessShader GetGLShader(bool isParticleShader)
+        public FastAccessShader<T> GetGLShader<T>(bool isParticleShader) where T : new()
         {
             if (!this.IsLoaded)
             {
@@ -315,28 +319,32 @@ void main()
                 l.Log(LogLevel.Info, "Compiling custom shader");
                 if (this.TryCompileShaderCode(out string code) && TryInjectCustomShaderCode(isParticleShader, false, code, out string fullVertCode, out string fullFragCode))
                 {
-                    if (!TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out this._glData))
+                    if (!TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out FastAccessShader<T> shader))
                     {
                         l.Log(LogLevel.Error, "Could not compile custom shader!");
                         l.Log(LogLevel.Error, err);
                         this._glData = null;
+                        this._glProgram = null;
                         this._glValid = false;
                     }
                     else
                     {
+                        this._glData = shader;
+                        this._glProgram = shader.Program;
                         this._glValid = true;
                     }
                 }
                 else
                 {
                     this._glData = null;
+                    this._glProgram = null;
                     this._glValid = false;
                 }
 
                 this._glGen = true;
             }
 
-            return this._glData;
+            return this._glData as FastAccessShader<T>;
         }
 
         public Image<Rgba32> GeneratePreviewImage(SimulationContext ctx, out NodeSimulationMatrix mat)
@@ -1424,7 +1432,8 @@ void main()
                 if (this._glData != null && this._glGen)
                 {
                     this._glValid = false;
-                    this._glData.Program.Dispose();
+                    this._glProgram.Dispose();
+                    this._glProgram = null;
                     this._glData = null;
                 }
             }

@@ -396,11 +396,11 @@ void main()
 
         void SetupRenderState(ImDrawDataPtr drawData, int fbWidth, int fbHeight)
         {
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Disable(Capability.CullFace);
-            GL.Disable(Capability.DepthTest);
-            GL.Enable(Capability.ScissorTest);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+            GLState.CullFace.Set(false);
+            GLState.DepthTest.Set(false);
+            GLState.Scissor.Set(true);
 
             this._shader.Bind();
 
@@ -478,7 +478,7 @@ void main()
                             lastTexId = pcmd.TextureId;
                         }
 
-                        GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, drawIdxSize == 2 ? ElementsType.UnsignedShort : ElementsType.UnsignedInt, (IntPtr)(pcmd.IdxOffset * drawIdxSize), (int)pcmd.VtxOffset);
+                        GLState.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, drawIdxSize == 2 ? ElementsType.UnsignedShort : ElementsType.UnsignedInt, (IntPtr)(pcmd.IdxOffset * drawIdxSize), (int)pcmd.VtxOffset);
                     }
                 }
             }
@@ -490,10 +490,10 @@ void main()
 
         private void ClearRenderState()
         {
-            GL.Disable(Capability.Blend);
-            GL.Enable(Capability.CullFace);
-            GL.Enable(Capability.DepthTest);
-            GL.Disable(Capability.ScissorTest);
+            GLState.Blend.Set(false);
+            GLState.CullFace.Set(true);
+            GLState.DepthTest.Set(true);
+            GLState.Scissor.Set(false);
         }
 
         public void Dispose()

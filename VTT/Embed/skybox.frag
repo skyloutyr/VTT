@@ -6,7 +6,6 @@ layout (location = 0) out vec4 o_color;
 uniform sampler2DArray tex_skybox;
 uniform vec4 animation_day;
 uniform vec4 animation_night;
-
 uniform float daynight_blend;
 uniform vec3 day_color;
 uniform vec3 night_color;

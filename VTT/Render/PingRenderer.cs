@@ -11,6 +11,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Shaders;
     using VTT.Sound;
     using VTT.Util;
 
@@ -22,7 +23,7 @@
         public Texture PingExclamation { get; set; }
         public Texture PingQuestion { get; set; }
 
-        public ShaderProgram EmojiShader { get; set; }
+        public FastAccessShader<EmojiPingUniforms> EmojiShader { get; set; }
         public Texture[] EmojiTextures { get; set; }
 
         public WavefrontObject ModelPing { get; set; }
@@ -45,7 +46,7 @@
             this.PingQuestion = OpenGLUtil.LoadUIImage("icons8-help-80");
             this.ModelPing = OpenGLUtil.LoadModel("ping_lower", VertexFormat.Pos);
             this.EmojiTextures = new Texture[12];
-            this.EmojiShader = OpenGLUtil.LoadShader("emojiping", ShaderType.Vertex, ShaderType.Fragment);
+            this.EmojiShader = new FastAccessShader<EmojiPingUniforms>(OpenGLUtil.LoadShader("emojiping", ShaderType.Vertex, ShaderType.Fragment));
             for (int i = 0; i < 12; ++i)
             {
                 this.EmojiTextures[i] = OpenGLUtil.LoadUIImage("emoji-" + (Ping.PingType.Smiling + i).ToString().ToLower());
@@ -224,21 +225,21 @@
 
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Enable(Capability.Multisample);
-                GL.Enable(Capability.SampleAlphaToCoverage);
+                GLState.Multisample.Set(true);
+                GLState.SampleAlphaToCoverage.Set(true);
             }
 
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
 
             long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
             // Normal pings
-            ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+            FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
+            shader.Uniforms.Transform.View.Set(cam.View);
+            shader.Uniforms.Transform.Projection.Set(cam.Projection);
 
             for (int i = this.ActivePings.Count - 1; i >= 0; i--)
             {
@@ -256,18 +257,17 @@
 
                 float scale = MathF.Max(0.00001f, (((p.DeathTime - now) % 2000) - 500) / 500f);
                 float a = MathF.Min(1, MathF.Abs(1.0f / scale));
-                shader["model"].Set(Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(p.Position));
-                shader["u_color"].Set(p.OwnerColor.Vec4() * new Vector4(1, 1, 1, a));
+                shader.Uniforms.Transform.Model.Set(Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(p.Position));
+                shader.Uniforms.Color.Set(p.OwnerColor.Vec4() * new Vector4(1, 1, 1, a));
                 this.ModelPing.Render();
             }
 
-            GL.Disable(Capability.DepthTest);
-            shader = this.EmojiShader;
-            shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["u_color"].Set(new Vector4(1, 1, 1, 1));
-            shader["screenSize"].Set(new Vector2(1f / Client.Instance.Frontend.Width, 1f / Client.Instance.Frontend.Height));
+            GLState.DepthTest.Set(false);
+            this.EmojiShader.Bind();
+            this.EmojiShader.Uniforms.Transform.View.Set(cam.View);
+            this.EmojiShader.Uniforms.Transform.Projection.Set(cam.Projection);
+            this.EmojiShader.Uniforms.Color.Set(new Vector4(1, 1, 1, 1));
+            this.EmojiShader.Uniforms.ScreenSize.Set(new Vector2(1f / Client.Instance.Frontend.Width, 1f / Client.Instance.Frontend.Height));
             this.QuadVAO.Bind();
             for (int i = this.ActivePings.Count - 1; i >= 0; i--)
             {
@@ -282,18 +282,18 @@
                 float zOffset = lifetimeProgression * 1.25f;
                 float sizeInfluence = MathF.Sin(lifetimeProgression * MathF.PI) * (1 - MathF.Pow(lifetimeProgression, 4));
                 float a = MathF.Min(1, 1 - (MathF.Pow(lifetimeProgression - 0.4f, 3) * 4.6f));
-                shader["position"].Set(new Vector4(p.Position + new Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + (32 * sizeInfluence)));
-                shader["u_color"].Set(new Vector4(1, 1, 1, a));
+                this.EmojiShader.Uniforms.BillboardPosition.Set(new Vector4(p.Position + new Vector3(0, is2D ? zOffset : 0, is2D ? 0 : zOffset), 32 + (32 * sizeInfluence)));
+                this.EmojiShader.Uniforms.Color.Set(new Vector4(1, 1, 1, a));
                 this.EmojiTextures[p.Type - Ping.PingType.Smiling].Bind();
-                GL.DrawElements(PrimitiveType.Triangles, 6, ElementsType.UnsignedInt, IntPtr.Zero);
+                GLState.DrawElements(PrimitiveType.Triangles, 6, ElementsType.UnsignedInt, IntPtr.Zero);
             }
 
-            GL.Enable(Capability.DepthTest);
-            GL.Disable(Capability.Blend);
+            GLState.DepthTest.Set(true);
+            GLState.Blend.Set(false);
             if (Client.Instance.Settings.MSAA != ClientSettings.MSAAMode.Disabled)
             {
-                GL.Disable(Capability.SampleAlphaToCoverage);
-                GL.Disable(Capability.Multisample);
+                GLState.SampleAlphaToCoverage.Set(false);
+                GLState.Multisample.Set(false);
             }
 
             this.CPUTimer.Stop();

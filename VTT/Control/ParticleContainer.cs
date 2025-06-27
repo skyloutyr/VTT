@@ -5,7 +5,7 @@
     using VTT.Asset;
     using VTT.Network;
     using VTT.Util;
-    using VTT.Render;
+    using VTT.Render.Shaders;
 
     public class ParticleContainer : ISerializable
     {
@@ -71,7 +71,7 @@
             }
         }
 
-        public void Render(FastAccessShader shader, Camera cam)
+        public void Render(FastAccessShader<ParticleUniforms> shader, Camera cam)
         {
             if (this.IsActive && !Guid.Empty.Equals(this.SystemID))
             {

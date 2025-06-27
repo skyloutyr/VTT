@@ -8,14 +8,15 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class GridRenderer
     {
         private VertexArray _vao;
         private GPUBuffer _vbo;
-        private ShaderProgram _shader;
-        public ShaderProgram InWorldShader { get; set; }
+        private FastAccessShader<GridUniforms> _shader;
+        public FastAccessShader<OverlayUniforms> InWorldShader { get; set; }
 
         private VertexArray _highlightVao;
         private GPUBuffer _highlightVbo;
@@ -114,8 +115,8 @@
                 }
             }
 
-            this._shader = OpenGLUtil.LoadShader("grid", ShaderType.Vertex, ShaderType.Fragment);
-            this.InWorldShader = OpenGLUtil.LoadShader("overlay", ShaderType.Vertex, ShaderType.Fragment);
+            this._shader = new FastAccessShader<GridUniforms>(OpenGLUtil.LoadShader("grid", ShaderType.Vertex, ShaderType.Fragment));
+            this.InWorldShader = new FastAccessShader<OverlayUniforms>(OpenGLUtil.LoadShader("overlay", ShaderType.Vertex, ShaderType.Fragment));
 
             this.CPUTimer = new Stopwatch();
 
@@ -134,32 +135,32 @@
 
             this.CPUTimer.Restart();
             OpenGLUtil.StartSection("World grid");
-            GL.Enable(Capability.CullFace);
-            GL.CullFace(cam.Position.Z < 0 ? PolygonFaceMode.Front : PolygonFaceMode.Back);
-            GL.Enable(Capability.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GLState.CullFace.Set(true);
+            GLState.CullFaceMode.Set(cam.Position.Z < 0 ? PolygonFaceMode.Front : PolygonFaceMode.Back);
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
 
             Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation((cam.Position * new Vector3(1, 1, 0)) - new Vector3(0, 0, 0.5f));
             this._shader.Bind();
-            this._shader["view"].Set(cam.View);
-            this._shader["projection"].Set(cam.Projection);
-            this._shader["model"].Set(modelMatrix);
-            this._shader["camera_position"].Set(cam.Position);
-            this._shader["grid_color"].Set(m == null ? Color.White.Vec4() : m.GridColor.Vec4());
-            this._shader["grid_alpha"].Set(1f);
-            this._shader["grid_size"].Set(m == null ? 1 : m.GridSize);
-            this._shader["grid_type"].Set(m == null ? 0u : (uint)m.GridType);
+            this._shader.Uniforms.Transform.View.Set(cam.View);
+            this._shader.Uniforms.Transform.Projection.Set(cam.Projection);
+            this._shader.Uniforms.Transform.Model.Set(modelMatrix);
+            this._shader.Uniforms.CameraPosition.Set(cam.Position);
+            this._shader.Uniforms.Grid.Color.Set(m == null ? Color.White.Vec4() : m.GridColor.Vec4());
+            this._shader.Uniforms.Grid.GridAlpha.Set(1f);
+            this._shader.Uniforms.Grid.Scale.Set(m == null ? 1 : m.GridSize);
+            this._shader.Uniforms.Grid.GridType.Set(m == null ? 0u : (uint)m.GridType);
             Vector3? cw = Client.Instance.Frontend.Renderer.MapRenderer.GroundHitscanResult;
-            this._shader["cursor_position"].Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
+            this._shader.Uniforms.CursorPosition.Set(cw == null || !renderMisc ? new Vector3(0, 0, 10000) : cw.Value);
             this._vao.Bind();
 
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.LessOrEqual);
-            GL.DepthMask(false);
-            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
-            GL.DepthMask(true);
-            GL.DepthFunction(ComparisonMode.Less);
-            GL.Disable(Capability.DepthTest);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
+            GLState.DepthMask.Set(false);
+            GLState.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            GLState.DepthMask.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.Less);
+            GLState.DepthTest.Set(false);
 
             if (renderMisc)
             {
@@ -172,33 +173,33 @@
 
                 if (cw.HasValue)
                 {
-                    GL.DepthFunction(ComparisonMode.Always);
-                    GL.Disable(Capability.CullFace);
+                    GLState.DepthFunc.Set(ComparisonMode.Always);
+                    GLState.CullFace.Set(false);
                     Vector3 snapped = cw.Value;
                     modelMatrix = Matrix4x4.CreateScale(MathF.Round(cwScale.X), MathF.Round(cwScale.Y), 1) * Matrix4x4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f));
                     this.InWorldShader.Bind();
-                    this.InWorldShader["view"].Set(cam.View);
-                    this.InWorldShader["projection"].Set(cam.Projection);
-                    this.InWorldShader["model"].Set(modelMatrix);
-                    this.InWorldShader["u_color"].Set(Color.RoyalBlue.Vec4());
-                    GL.ActiveTexture(0);
+                    this.InWorldShader.Uniforms.Transform.View.Set(cam.View);
+                    this.InWorldShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    this.InWorldShader.Uniforms.Transform.Model.Set(modelMatrix);
+                    this.InWorldShader.Uniforms.Color.Set(Color.RoyalBlue.Vec4());
+                    GLState.ActiveTexture.Set(0);
                     Client.Instance.Frontend.Renderer.White.Bind();
                     this._highlightVao.Bind();
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 24);
-                    GL.Enable(Capability.CullFace);
-                    GL.DepthFunction(ComparisonMode.LessOrEqual);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 24);
+                    GLState.CullFace.Set(true);
+                    GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
                 }
 
                 if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                 {
                     OpenGLUtil.StartSection("Selection highlighs");
-                    GL.DepthFunction(ComparisonMode.Always);
-                    GL.Disable(Capability.CullFace);
+                    GLState.DepthFunc.Set(ComparisonMode.Always);
+                    GLState.CullFace.Set(false);
                     this.InWorldShader.Bind();
-                    this.InWorldShader["view"].Set(cam.View);
-                    this.InWorldShader["projection"].Set(cam.Projection);
-                    this.InWorldShader["u_color"].Set(Color.Orange.Vec4());
-                    GL.ActiveTexture(0);
+                    this.InWorldShader.Uniforms.Transform.View.Set(cam.View);
+                    this.InWorldShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    this.InWorldShader.Uniforms.Color.Set(Color.Orange.Vec4());
+                    GLState.ActiveTexture.Set(0);
                     Client.Instance.Frontend.Renderer.White.Bind();
                     float gSize = m == null ? 1 : m.GridSize;
 
@@ -215,20 +216,20 @@
 
                         Vector3 snapped = mo.Position;
                         modelMatrix = Matrix4x4.CreateScale(MathF.Round(mo.Scale.X), MathF.Round(mo.Scale.Y), 1) * Matrix4x4.CreateTranslation(snapped + new Vector3(0, 0, 0.001f) - new Vector3(0, 0, 0.5f));
-                        this.InWorldShader["model"].Set(modelMatrix);
+                        this.InWorldShader.Uniforms.Transform.Model.Set(modelMatrix);
                         this._highlightVao.Bind();
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 24);
+                        GLState.DrawArrays(PrimitiveType.Triangles, 0, 24);
                     }
 
-                    GL.Enable(Capability.CullFace);
-                    GL.DepthFunction(ComparisonMode.LessOrEqual);
+                    GLState.CullFace.Set(true);
+                    GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
                     OpenGLUtil.EndSection();
                 }
             }
 
-            GL.Disable(Capability.Blend);
-            GL.CullFace(PolygonFaceMode.Back);
-            GL.Disable(Capability.CullFace);
+            GLState.Blend.Set(false);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+            GLState.CullFace.Set(false);
             this.CPUTimer.Stop();
             OpenGLUtil.EndSection();
         }

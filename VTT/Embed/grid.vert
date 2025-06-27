@@ -7,9 +7,6 @@ out vec3 f_world_position;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 model;
-uniform vec4 g_color;
-uniform float g_alpha;
-uniform float g_size;
 
 void main()
 {

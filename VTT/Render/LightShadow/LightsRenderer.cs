@@ -9,6 +9,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class PointLightsRenderer
@@ -36,7 +37,7 @@
 
         public Texture DepthMap { get; set; }
         public uint FBO { get; set; }
-        public FastAccessShader Shader { get; set; }
+        public FastAccessShader<PointLightShadowUniforms> Shader { get; set; }
 
         public void Clear()
         {
@@ -99,7 +100,7 @@
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
-            this.Shader = new FastAccessShader(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
+            this.Shader = new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
         }
 
         public void ResizeShadowMaps(int resolution)
@@ -152,17 +153,17 @@
             { -Vector3.UnitZ, -Vector3.UnitY }
         };
 
-        public void UniformLights(ShaderProgram shader)
+        public void UniformLights(UniformBlockPointLights uniforms)
         {
             for (int i = 0; i < this.NumLights; ++i)
             {
-                shader[constPositionPtrs[i]].Set(this.Lights[i].Position);
-                shader[constColorPtrs[i]].Set(this.Lights[i].Color);
-                shader[constCutoutPtrs[i]].Set(new Vector2(this.Lights[i].LightPtr.Intensity, this.Lights[i].CastsShadows ? 1.0f : 0.0f));
-                shader[constIndexPtrs[i]].Set(this.Lights[i].LightIndex);
+                uniforms.Positions.Set(this.Lights[i].Position, i);
+                uniforms.Colors.Set(this.Lights[i].Color, i);
+                uniforms.Thresholds.Set(new Vector2(this.Lights[i].LightPtr.Intensity, this.Lights[i].CastsShadows ? 1.0f : 0.0f));
+                uniforms.Indices.Set(this.Lights[i].LightIndex);
             }
 
-            shader["pl_num"].Set(this.NumLights);
+            uniforms.Amount.Set(this.NumLights);
         }
 
 
@@ -236,14 +237,14 @@
             this._hadLightsLastFrame = this.NumLights > 0;
             GL.BindFramebuffer(FramebufferTarget.All, this.FBO);
             GL.Viewport(0, 0, ShadowMapResolution, ShadowMapResolution);
-            GL.Clear(ClearBufferMask.Depth);
+            GLState.Clear(ClearBufferMask.Depth);
             GL.ColorMask(false, false, false, false);
 
             if (doDraw && m != null)
             {
                 this.Shader.Program.Bind();
                 SunShadowRenderer.ShadowPass = true;
-                GL.Disable(Capability.CullFace);
+                GLState.CullFace.Set(false);
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {
                     PointLight pl = this.Lights[i1];
@@ -254,12 +255,12 @@
                         this._lightMatrices[i] = Matrix4x4.CreateLookAt(lightPos, lightPos + LightLook[i, 0], LightLook[i, 1]) * proj;
                     }
 
-                    this.Shader["layer_offset"].Set(pl.LightIndex * 6);
-                    this.Shader["light_pos"].Set(pl.Position);
-                    this.Shader["far_plane"].Set(pl.LightPtr.Intensity);
+                    this.Shader.Uniforms.LayerOffset.Set(pl.LightIndex * 6);
+                    this.Shader.Uniforms.LightPosition.Set(pl.Position);
+                    this.Shader.Uniforms.LightFarPlane.Set(pl.LightPtr.Intensity);
                     for (int i = 0; i < 6; ++i)
                     {
-                        this.Shader[$"projView[{i}]"].Set(this._lightMatrices[i]);
+                        this.Shader.Uniforms.ProjView.Set(this._lightMatrices[i], i);
                     }
 
                     this._objsCache.Clear();
@@ -289,7 +290,7 @@
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {
                                     Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                                    a.Model.GLMdl.Render(this.Shader, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                                    a.Model.GLMdl.Render(in this.Shader.Uniforms.glbEssentials, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                                 }
                             }
                         }
@@ -297,7 +298,7 @@
                 }
 
                 SunShadowRenderer.ShadowPass = false;
-                GL.Enable(Capability.CullFace);
+                GLState.CullFace.Set(true);
             }
 
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);

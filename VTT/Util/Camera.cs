@@ -1,7 +1,10 @@
 ﻿namespace VTT.Util
 {
     using System;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Numerics;
+    using System.Runtime.InteropServices;
     using VTT.Network;
     using SysMath = System.Math;
 
@@ -31,7 +34,7 @@
         public virtual Matrix4x4 ProjView { get; set; }
         public virtual Matrix4x4 OriginViewProj { get; set; }
         public virtual Matrix4x4 OriginProjView { get; set; }
-        public Plane[] Frustrum { get; set; } = new Plane[6];
+        public Frustum frustum;
 
         public virtual void RecalculateData(bool calculateDirection = true, bool calculateUp = true, Vector3 assumedUpAxis = default)
         {
@@ -62,36 +65,7 @@
             this.ProjView = this.Projection * this.View;
             this.OriginViewProj = this.OriginView * this.Projection;
             this.OriginProjView = this.Projection * this.OriginView;
-            this.Frustrum[0] = new Plane(
-                this.ViewProj.M14 + this.ViewProj.M11,
-                this.ViewProj.M24 + this.ViewProj.M21,
-                this.ViewProj.M34 + this.ViewProj.M31,
-                this.ViewProj.M44 + this.ViewProj.M41).Normalized();
-            this.Frustrum[1] = new Plane(
-                this.ViewProj.M14 - this.ViewProj.M11,
-                this.ViewProj.M24 - this.ViewProj.M21,
-                this.ViewProj.M34 - this.ViewProj.M31,
-                this.ViewProj.M44 - this.ViewProj.M41).Normalized();
-            this.Frustrum[2] = new Plane(
-                this.ViewProj.M14 - this.ViewProj.M12,
-                this.ViewProj.M24 - this.ViewProj.M22,
-                this.ViewProj.M34 - this.ViewProj.M32,
-                this.ViewProj.M44 - this.ViewProj.M42).Normalized();
-            this.Frustrum[3] = new Plane(
-                this.ViewProj.M14 + this.ViewProj.M12,
-                this.ViewProj.M24 + this.ViewProj.M22,
-                this.ViewProj.M34 + this.ViewProj.M32,
-                this.ViewProj.M44 + this.ViewProj.M42).Normalized();
-            this.Frustrum[4] = new Plane(
-                this.ViewProj.M13,
-                this.ViewProj.M23,
-                this.ViewProj.M33,
-                this.ViewProj.M43).Normalized();
-            this.Frustrum[5] = new Plane(
-                this.ViewProj.M14 - this.ViewProj.M13,
-                this.ViewProj.M24 - this.ViewProj.M23,
-                this.ViewProj.M34 - this.ViewProj.M33,
-                this.ViewProj.M44 - this.ViewProj.M43).Normalized();
+            this.frustum = new Frustum(this.ViewProj);
         }
 
         public virtual Vector3 ToScreenspace(Vector3 worldSpace)
@@ -118,9 +92,110 @@
             return new Ray(this.Position, vec.Xyz());
         }
 
-        public virtual bool IsPointInFrustrum(Vector3 point)
+        public virtual void MoveCamera(Vector3 newLocation, bool recalculateData = true)
         {
-            foreach (Plane p in this.Frustrum)
+            this.Position = newLocation;
+            if (recalculateData)
+            {
+                this.RecalculateData(false, false, this.Up);
+            }
+        }
+
+        public virtual bool IsPointInFrustrum(Vector3 point) => this.frustum.IsPointInFrustrum(point);
+
+        public virtual bool IsSphereInFrustrum(Vector3 point, float radius) => this.frustum.IsSphereInFrustrum(point, radius);
+
+        public virtual bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere) => this.frustum.IsSphereInFrustumCached(ref sphere);
+
+        public virtual bool IsAABoxInFrustrum(AABox box, Vector3 point = default)
+        {
+            box += point;
+            return box.Contains(this.Position) || this.frustum.IsAABoxInFrustrum(box);
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 4 * 6, Pack = 0)]
+    public unsafe struct Frustum : IEnumerable<Plane>
+    {
+        [FieldOffset(0)]
+        public Plane p0;
+
+        [FieldOffset(sizeof(float) * 4 * 1)]
+        public Plane p1;
+
+        [FieldOffset(sizeof(float) * 4 * 2)]
+        public Plane p2;
+
+        [FieldOffset(sizeof(float) * 4 * 3)]
+        public Plane p3;
+
+        [FieldOffset(sizeof(float) * 4 * 4)]
+        public Plane p4;
+
+        [FieldOffset(sizeof(float) * 4 * 5)]
+        public Plane p5;
+
+        private readonly Plane this[int i]
+        {
+            get
+            {
+                fixed (Plane* p = &this.p0)
+                {
+                    return p[i];
+                }
+            }
+        }
+
+        public Frustum(Matrix4x4 viewProj)
+        {
+            this.p0 = new Plane(
+                viewProj.M14 + viewProj.M11,
+                viewProj.M24 + viewProj.M21,
+                viewProj.M34 + viewProj.M31,
+                viewProj.M44 + viewProj.M41).Normalized();
+            this.p1 = new Plane(
+                viewProj.M14 - viewProj.M11,
+                viewProj.M24 - viewProj.M21,
+                viewProj.M34 - viewProj.M31,
+                viewProj.M44 - viewProj.M41).Normalized();
+            this.p2 = new Plane(
+                viewProj.M14 - viewProj.M12,
+                viewProj.M24 - viewProj.M22,
+                viewProj.M34 - viewProj.M32,
+                viewProj.M44 - viewProj.M42).Normalized();
+            this.p3 = new Plane(
+                viewProj.M14 + viewProj.M12,
+                viewProj.M24 + viewProj.M22,
+                viewProj.M34 + viewProj.M32,
+                viewProj.M44 + viewProj.M42).Normalized();
+            this.p4 = new Plane(
+                viewProj.M13,
+                viewProj.M23,
+                viewProj.M33,
+                viewProj.M43).Normalized();
+            this.p5 = new Plane(
+                viewProj.M14 - viewProj.M13,
+                viewProj.M24 - viewProj.M23,
+                viewProj.M34 - viewProj.M33,
+                viewProj.M44 - viewProj.M43).Normalized();
+        }
+
+        public readonly IEnumerator<Plane> GetEnumerator()
+        {
+            yield return this.p0;
+            yield return this.p1;
+            yield return this.p2;
+            yield return this.p3;
+            yield return this.p4;
+            yield return this.p5;
+            yield break;
+        }
+
+        readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+        public readonly bool IsPointInFrustrum(Vector3 point)
+        {
+            foreach (Plane p in this)
             {
                 if (p.DotProduct(point) <= 0)
                 {
@@ -131,9 +206,9 @@
             return true;
         }
 
-        public virtual bool IsSphereInFrustrum(Vector3 point, float radius)
+        public readonly bool IsSphereInFrustrum(Vector3 point, float radius)
         {
-            foreach (Plane p in this.Frustrum)
+            foreach (Plane p in this)
             {
                 if (p.DotProduct(point) + radius < 0)
                 {
@@ -144,25 +219,25 @@
             return true;
         }
 
-        public virtual bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere)
+        public readonly bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere)
         {
             if (sphere.cachedPlane != -1)
             {
-                Plane p = this.Frustrum[sphere.cachedPlane];
+                Plane p = this[sphere.cachedPlane];
                 if (p.DotProduct(sphere.position) + sphere.radius < 0)
                 {
                     return false;
                 }
             }
 
-            for (int i = this.Frustrum.Length - 1; i >= 0; --i)
+            for (int i = 5; i >= 0; --i)
             {
                 if (i == sphere.cachedPlane)
                 {
                     continue;
                 }
 
-                Plane p = this.Frustrum[i];
+                Plane p = this[i];
                 if (p.DotProduct(sphere.position) + sphere.radius < 0)
                 {
                     sphere.cachedPlane = i;
@@ -173,15 +248,9 @@
             return true;
         }
 
-        public virtual bool IsAABoxInFrustrum(AABox box, Vector3 point = default)
+        public readonly bool IsAABoxInFrustrum(AABox box)
         {
-            box += point;
-            if (box.Contains(this.Position))
-            {
-                return true;
-            }
-
-            foreach (Plane p in this.Frustrum)
+            foreach (Plane p in this)
             {
                 Vector3 normal = p.Normal;
                 Vector3 start = new Vector3(normal.X < 0 ? box.Start.X : box.End.X, normal.Y < 0 ? box.Start.Y : box.End.Y, normal.Z < 0 ? box.Start.Z : box.End.Z);
@@ -193,15 +262,6 @@
             }
 
             return true;
-        }
-
-        public virtual void MoveCamera(Vector3 newLocation, bool recalculateData = true)
-        {
-            this.Position = newLocation;
-            if (recalculateData)
-            {
-                this.RecalculateData(false, false, this.Up);
-            }
         }
     }
 }

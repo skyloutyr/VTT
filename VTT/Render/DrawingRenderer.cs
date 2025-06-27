@@ -12,6 +12,7 @@
     using VTT.GLFW;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
     using OGL = GL.Bindings.GL;
@@ -22,7 +23,7 @@
 
         public List<DrawingPointContainer> Containers { get; } = new List<DrawingPointContainer>();
 
-        public ShaderProgram Shader { get; set; }
+        public FastAccessShader<DrawingUniforms> Shader { get; set; }
         public WavefrontObject EraserSphere { get; set; }
         public Stopwatch CPUTimer { get; set; } = new Stopwatch();
 
@@ -33,7 +34,7 @@
 
         public void Init()
         {
-            this.Shader = OpenGLUtil.LoadShader("drawing", ShaderType.Vertex, ShaderType.Fragment);
+            this.Shader = new FastAccessShader<DrawingUniforms>(OpenGLUtil.LoadShader("drawing", ShaderType.Vertex, ShaderType.Fragment));
             this.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
             this.EraserSphere = OpenGLUtil.LoadModel("sphere_mediumres", VertexFormat.Pos);
         }
@@ -271,19 +272,19 @@
                 _ => int.MaxValue
             };
 
-            OGL.Enable(Capability.CullFace);
-            OGL.CullFace(PolygonFaceMode.Back);
+            GLState.CullFace.Set(true);
+            GLState.CullFaceMode.Set(PolygonFaceMode.Back);
 
             this.Shader.Bind();
-            this.Shader["projection"].Set(cam.Projection);
-            this.Shader["view"].Set(cam.View);
+            this.Shader.Uniforms.Transform.Projection.Set(cam.Projection);
+            this.Shader.Uniforms.Transform.View.Set(cam.View);
             int dTotal = 0;
             int dCalls = 0;
             foreach (DrawingPointContainer item in Containers)
             {
                 if (cam.IsAABoxInFrustrum(item.TotalBounds))
                 {
-                    this.Shader["u_color"].Set(item.Color);
+                    this.Shader.Uniforms.Color.Set(item.Color);
                     dTotal += item.Draw();
                     if (dTotal > maxInstances)
                     {
@@ -309,10 +310,10 @@
                     shader["projection"].Set(cam.Projection);
                     shader["model"].Set(model);
                     shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
-                    OGL.Enable(Capability.Blend);
-                    OGL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                    GLState.Blend.Set(true);
+                    GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
                     this.EraserSphere.Render();
-                    OGL.Disable(Capability.Blend);
+                    GLState.Blend.Set(false);
                 }
             }
 

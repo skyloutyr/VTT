@@ -6,7 +6,7 @@
     using VTT.Asset.Glb;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Network;
-    using VTT.Render;
+    using VTT.Render.Shaders;
     using VTT.Sound;
     using VTT.Util;
 
@@ -75,13 +75,14 @@
     public class GlslFragmentData : IAssetData
     {
         public string Data { get; set; }
-        private FastAccessShader _cachedShader;
+        private FastAccessShader<ForwardUniforms> _cachedShaderFwd;
+        private FastAccessShader<ParticleUniforms> _cachedShaderPtc;
         private bool _glValid;
         private bool _glGen;
 
         public void Accept(byte[] binary) => this.Data = Encoding.UTF8.GetString(binary);
 
-        public FastAccessShader GetGLShader(bool isParticleShader)
+        public FastAccessShader<T> GetGLShader<T>(bool isParticleShader) where T : new()
         {
             if (string.IsNullOrEmpty(this.Data))
             {
@@ -99,11 +100,16 @@
                 l.Log(LogLevel.Info, "Compiling custom glsl shader");
                 if (ShaderGraph.TryInjectCustomShaderCode(isParticleShader, true, this.Data, out string fullVertCode, out string fullFragCode))
                 {
-                    if (!ShaderGraph.TryCompileCustomShader(isParticleShader, fullVertCode, fullFragCode, out string err, out this._cachedShader))
+                    string err = string.Empty;
+                    bool result = isParticleShader
+                        ? ShaderGraph.TryCompileCustomShader(true, fullVertCode, fullFragCode, out err, out this._cachedShaderPtc)
+                        : ShaderGraph.TryCompileCustomShader(false, fullVertCode, fullFragCode, out err, out this._cachedShaderFwd);
+                    if (!result)
                     {
                         l.Log(LogLevel.Error, "Could not compile custom glsl shader!");
                         l.Log(LogLevel.Error, err);
-                        this._cachedShader = null;
+                        this._cachedShaderPtc = null;
+                        this._cachedShaderFwd = null;
                         this._glValid = false;
                     }
                     else
@@ -113,20 +119,23 @@
                 }
                 else
                 {
-                    this._cachedShader = null;
+                    this._cachedShaderFwd = null;
+                    this._cachedShaderPtc = null;
                     this._glValid = false;
                 }
 
                 this._glGen = true;
             }
 
-            return this._cachedShader;
+            return isParticleShader ? this._cachedShaderPtc as FastAccessShader<T> : this._cachedShaderFwd as FastAccessShader<T>;
         }
 
         public void Dispose()
         {
-            this._cachedShader?.Program?.Dispose();
-            this._cachedShader = null;
+            this._cachedShaderFwd?.Program?.Dispose();
+            this._cachedShaderPtc?.Program?.Dispose();
+            this._cachedShaderFwd = null;
+            this._cachedShaderPtc = null;
             this._glGen = false;
         }
     }

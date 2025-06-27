@@ -11,6 +11,7 @@ uniform usampler2D fow_texture;
 uniform vec2 fow_offset;
 uniform vec2 fow_scale;
 uniform float fow_mod;
+
 uniform bool do_fow;
 uniform vec3 sky_color;
 

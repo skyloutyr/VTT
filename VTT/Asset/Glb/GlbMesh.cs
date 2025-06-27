@@ -7,6 +7,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public unsafe class GlbMesh
@@ -56,11 +57,11 @@
             this.IndexBuffer = null;
         }
 
-        public void Render(FastAccessShader shader, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(in GLBRendererUniformCollection uniforms, Matrix4x4 model, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float modelAnimationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             // Assume that shader already has base uniforms setup
-            shader.Essentials.Transform.Set(model);
-            shader.Essentials.MVP.Set(model * view * projection);
+            uniforms.Model.Set(model);
+            uniforms.MVP.Set(model * view * projection);
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);
@@ -73,18 +74,18 @@
                     Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
                 }
 
-                shader.Essentials.IsAnimated.Set(true);
+                uniforms.IsAnimated.Set(true);
             }
             else
             {
-                shader.Essentials.IsAnimated.Set(false);
+                uniforms.IsAnimated.Set(false);
             }
 
-            this.Material.Uniform(shader, textureAnimationIndex);
+            this.Material.Uniform(uniforms.Material, textureAnimationIndex);
             this._vao.Bind();
             if (renderer == null)
             {
-                GL.DrawElements(PrimitiveType.Triangles, this.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero);
+                GLState.DrawElements(PrimitiveType.Triangles, this.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero);
             }
             else
             {

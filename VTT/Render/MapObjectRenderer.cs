@@ -16,6 +16,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render.LightShadow;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class MapObjectRenderer
@@ -28,9 +29,9 @@
         private GPUBuffer _noAssetEbo;
 
         //public ShaderProgram RenderShader { get; set; }
-        public ShaderProgram HighlightShader { get; set; }
-        public ShaderProgram OverlayShader { get; set; }
-        public FastAccessShader PreviewShader { get; set; }
+        public FastAccessShader<HighlightUniforms> HighlightShader { get; set; }
+        public FastAccessShader<FOWDependentOverlayUniforms> OverlayShader { get; set; }
+        public FastAccessShader<ForwardMeshOnlyUniforms> PreviewShader { get; set; }
         public MapObject ObjectMouseOver { get; set; }
         public MapObject ObjectListObjectMouseOver { get; set; }
         public Vector3 MouseHitWorld { get; set; }
@@ -118,11 +119,11 @@
             OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetVbo, "Missing asset vbo");
             OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetEbo, "Missing asset ebo");
 
-            this.OverlayShader = OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment);
+            this.OverlayShader = new FastAccessShader<FOWDependentOverlayUniforms>(OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment));
             this.OverlayShader.Bind();
-            this.OverlayShader["do_fow"].Set(false);
-            this.OverlayShader["fow_texture"].Set(15);
-            this.HighlightShader = OpenGLUtil.LoadShader("highlight", ShaderType.Vertex, ShaderType.Fragment);
+            this.OverlayShader.Uniforms.DoFOW.Set(false);
+            this.OverlayShader.Uniforms.FOW.Sampler.Set(15);
+            this.HighlightShader = new FastAccessShader<HighlightUniforms>(OpenGLUtil.LoadShader("highlight", ShaderType.Vertex, ShaderType.Fragment));
             this.PrecomputeSelectionBox();
 
             this.MoveArrow = OpenGLUtil.LoadModel("arrow_arrow", VertexFormat.Pos);
@@ -163,7 +164,7 @@
             this.CPUTimerCompound = new Stopwatch();
             this.MissingModel = new GlbScene(new ModelData.Metadata(), IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
 
-            this.PreviewShader = new FastAccessShader(OpenGLUtil.LoadShader("object_preview", ShaderType.Vertex, ShaderType.Fragment));
+            this.PreviewShader = new FastAccessShader<ForwardMeshOnlyUniforms>(OpenGLUtil.LoadShader("object_preview", ShaderType.Vertex, ShaderType.Fragment));
         }
 
         #region Hightlight Box
@@ -397,31 +398,30 @@
             this.CPUTimerHighlights.Restart();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             this.OverlayShader.Bind();
-            this.OverlayShader["u_color"].Set(Color.Red.Vec4());
-            this.OverlayShader["view"].Set(cam.View);
-            this.OverlayShader["projection"].Set(cam.Projection);
-            this.OverlayShader["sky_color"].Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-            this.OverlayShader["do_fow"].Set(Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW);
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.OverlayShader);
-            GL.Disable(Capability.DepthTest);
+            this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
+            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+            this.OverlayShader.Uniforms.SkyColor.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
+            this.OverlayShader.Uniforms.DoFOW.Set(Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.OverlayShader.Uniforms.FOW);
+            GLState.DepthTest.Set(false);
             foreach (MapObject mo in this._crossedOutObjects)
             {
                 Matrix4x4 modelMatrix = mo.ClientAssignedModelBounds
                     ? Matrix4x4.CreateScale(mo.ClientModelRaycastBox.Size * mo.Scale) * Matrix4x4.CreateTranslation(mo.Position)
                     : mo.ClientCachedModelMatrix.ClearRotation();
-                this.OverlayShader["model"].Set(modelMatrix);
+                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
                 this.Cross.Render();
             }
 
-            this.OverlayShader["do_fow"].Set(false);
-            GL.Enable(Capability.DepthTest);
-
-            GL.Disable(Capability.CullFace);
-            ShaderProgram shader = this.HighlightShader;
+            this.OverlayShader.Uniforms.DoFOW.Set(false);
+            GLState.DepthTest.Set(true);
+            GLState.CullFace.Set(false);
+            FastAccessShader<HighlightUniforms> shader = this.HighlightShader;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["u_color"].Set(Color.Orange.Vec4());
+            shader.Uniforms.Transform.View.Set(cam.View);
+            shader.Uniforms.Transform.Projection.Set(cam.Projection);
+            shader.Uniforms.Color.Set(Color.Orange.Vec4());
             foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects)
             {
                 if (mo.ClientRenderedThisFrame)
@@ -430,15 +430,15 @@
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Center;
                     Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
-                    shader["model"].Set(modelMatrix);
-                    shader["bounds"].Set(size);
+                    shader.Uniforms.Transform.Model.Set(modelMatrix);
+                    shader.Uniforms.Bounds.Set(size);
                     this._boxVao.Bind();
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 864);
                     this.PortalHightlightRenderer.AddObject(mo);
                 }
             }
 
-            shader["u_color"].Set(Color.SkyBlue.Vec4());
+            shader.Uniforms.Color.Set(Color.SkyBlue.Vec4());
             foreach (MapObject mo in Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates)
             {
                 if (mo.ClientRenderedThisFrame)
@@ -447,10 +447,10 @@
                     Vector3 size = cBB.Size;
                     Vector3 cAvg = cBB.Center;
                     Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
-                    shader["model"].Set(modelMatrix);
-                    shader["bounds"].Set(size);
+                    shader.Uniforms.Transform.Model.Set(modelMatrix);
+                    shader.Uniforms.Bounds.Set(size);
                     this._boxVao.Bind();
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                    GLState.DrawArrays(PrimitiveType.Triangles, 0, 864);
                     this.PortalHightlightRenderer.AddObject(mo);
                 }
             }
@@ -460,35 +460,35 @@
             {
                 RulerRenderer rr = Client.Instance.Frontend.Renderer.RulerRenderer;
                 this.OverlayShader.Bind();
-                this.OverlayShader["view"].Set(cam.View);
-                this.OverlayShader["projection"].Set(cam.Projection);
-                this.OverlayShader["u_color"].Set(Extensions.FromArgb(Client.Instance.Settings.Color).Vec4());
-                GL.DepthMask(false);
+                this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                this.OverlayShader.Uniforms.Color.Set(Extensions.FromArgb(Client.Instance.Settings.Color).Vec4());
+                GLState.DepthMask.Set(false);
                 for (int i = 0; i < sm.ObjectMovementPath.Count; ++i)
                 {
                     Vector3 start = sm.ObjectMovementPath[i];
                     Vector3 end = i == sm.ObjectMovementPath.Count - 1 ? sm.SelectedObjects[0].Position : sm.ObjectMovementPath[i + 1];
 
-                    this.OverlayShader["model"].Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(start));
+                    this.OverlayShader.Uniforms.Transform.Model.Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(start));
                     this.MoveCenter.Render();
 
-                    this.OverlayShader["model"].Set(Matrix4x4.Identity);
+                    this.OverlayShader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
                     rr.CreateLine(start, end, true);
                     rr.UploadBuffers();
                     rr.RenderBuffers();
                     rr.ClearBuffers();
                 }
 
-                this.OverlayShader["model"].Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(sm.SelectedObjects[0].Position));
+                this.OverlayShader.Uniforms.Transform.Model.Set(Matrix4x4.CreateScale(0.2f) * Matrix4x4.CreateTranslation(sm.SelectedObjects[0].Position));
                 this.MoveCenter.Render();
 
-                GL.DepthMask(true);
+                GLState.DepthMask.Set(true);
             }
 
             OpenGLUtil.EndSection();
             OpenGLUtil.StartSection("Dragged object preview");
 
-            GL.Enable(Capability.CullFace);
+            GLState.CullFace.Set(true);
 
             AssetRef draggedRef = Client.Instance.Frontend.Renderer.GuiRenderer.DraggedAssetReference;
             if (draggedRef != null && (draggedRef.Type == AssetType.Model || draggedRef.Type == AssetType.Texture))
@@ -496,15 +496,15 @@
                 AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(draggedRef.AssetID, AssetType.Model, out Asset a);
                 if (status == AssetStatus.Return && a.ModelGlReady)
                 {
-                    GL.Enable(Capability.Blend);
-                    GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                    GL.DepthMask(false);
-                    GL.Disable(Capability.CullFace);
+                    GLState.Blend.Set(true);
+                    GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+                    GLState.DepthMask.Set(false);
+                    GLState.CullFace.Set(false);
 
                     this.PreviewShader.Program.Bind();
-                    this.PreviewShader.Essentials.View.Set(cam.View);
-                    this.PreviewShader.Essentials.Projection.Set(cam.Projection);
-                    this.PreviewShader.Program["gamma_factor"].Set(Client.Instance.Settings.Gamma);
+                    this.PreviewShader.Uniforms.Transform.View.Set(cam.View);
+                    this.PreviewShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    this.PreviewShader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
                     Vector3? worldVec = Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit;
                     if (!worldVec.HasValue)
                     {
@@ -518,11 +518,11 @@
                     }
 
                     Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(worldVec.Value);
-                    a.Model.GLMdl.Render(this.PreviewShader, modelMatrix, cam.Projection, cam.View, 0, a.Model.GLMdl.Animations.FirstOrDefault(), 0, this._previewAnimationContainer);
+                    a.Model.GLMdl.Render(in this.PreviewShader.Uniforms.glbEssentials, modelMatrix, cam.Projection, cam.View, 0, a.Model.GLMdl.Animations.FirstOrDefault(), 0, this._previewAnimationContainer);
 
-                    GL.Enable(Capability.CullFace);
-                    GL.DepthMask(true);
-                    GL.Disable(Capability.Blend);
+                    GLState.CullFace.Set(true);
+                    GLState.DepthMask.Set(true);
+                    GLState.Blend.Set(false);
                 }
             }
 
@@ -577,12 +577,12 @@
 
                 bool is2d = Client.Instance.Frontend.Renderer.MapRenderer.IsOrtho;
                 float orthozoom = Client.Instance.Frontend.Renderer.MapRenderer.ZoomOrtho;
-                GL.Enable(Capability.CullFace);
-                GL.CullFace(PolygonFaceMode.Back);
-                GL.Disable(Capability.DepthTest);
-                GL.Enable(Capability.Blend);
-                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-                GL.DepthMask(false);
+                GLState.CullFace.Set(true);
+                GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+                GLState.DepthTest.Set(false);
+                GLState.Blend.Set(true);
+                GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+                GLState.DepthMask.Set(false);
 
                 switch (this.EditMode)
                 {
@@ -616,12 +616,12 @@
                                 Quaternion q = Quaternion.CreateFromAxisAngle(majorAxis, MathF.PI * (i * 0.25f));
                                 Matrix4x4 modelMatrix = baseRotation * Matrix4x4.CreateTranslation(offsetAxis) * Matrix4x4.CreateScale(0.5f) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                                 this.OverlayShader.Bind();
-                                this.OverlayShader["view"].Set(cam.View);
-                                this.OverlayShader["projection"].Set(cam.Projection);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(renderClr);
+                                this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                                this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(renderClr);
                                 this.ArrowMove.Render();
-                                this.OverlayShader["u_color"].Set(blue);
+                                this.OverlayShader.Uniforms.Color.Set(blue);
                                 this.ArrowMoveOutline.Render();
                             }
 
@@ -633,22 +633,22 @@
                             {
                                 Matrix4x4 modelMatrix;
                                 this.OverlayShader.Bind();
-                                this.OverlayShader["view"].Set(cam.View);
-                                this.OverlayShader["projection"].Set(cam.Projection);
+                                this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                                this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
                                 this.MoveArrow.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Green.Vec4());
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4());
                                 this.MoveArrow.Render();
 
                                 modelMatrix = Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
                             }
                             else
@@ -658,40 +658,40 @@
                                 Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                                 this.OverlayShader.Bind();
-                                this.OverlayShader["view"].Set(cam.View);
-                                this.OverlayShader["projection"].Set(cam.Projection);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
+                                this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                                this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4());
                                 this.MoveArrow.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
                                 this.MoveArrow.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Green.Vec4());
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4());
                                 this.MoveArrow.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
                                 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
                                 this.MoveSide.Render();
 
                                 modelMatrix = Matrix4x4.CreateScale(0.1f * posScreen.W) * Matrix4x4.CreateTranslation(half);
-                                this.OverlayShader["model"].Set(modelMatrix);
-                                this.OverlayShader["u_color"].Set(Color.White.Vec4());
+                                this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                                this.OverlayShader.Uniforms.Color.Set(Color.White.Vec4());
                                 this.MoveCenter.Render();
                             }
 
@@ -705,22 +705,22 @@
                         {
                             Matrix4x4 modelMatrix;
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
                             this.ScaleArrow.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Green.Vec4());
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4());
                             this.ScaleArrow.Render();
 
                             modelMatrix = Matrix4x4.CreateScale(150f * orthozoom) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.MoveSide.Render();
                         }
                         else
@@ -730,45 +730,45 @@
                             Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4());
                             this.ScaleArrow.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
                             this.ScaleArrow.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0, 0, 0.5f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Green.Vec4());
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4());
                             this.ScaleArrow.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationY(-90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
                             modelMatrix = Matrix4x4.CreateTranslation(new Vector3(0.5f, 0.5f, 0f)) * Matrix4x4.CreateScale(0.2f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4() * new Vector4(1, 1, 1, 0.75f));
                             this.ScaleSide.Render();
 
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
                             Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction));
                             modelMatrix = Matrix4x4.CreateScale(0.5f * posScreen.W) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.White.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.White.Vec4());
                             this.RotateCircle.Render();
                         }
 
@@ -781,10 +781,10 @@
                         {
                             Matrix4x4 modelMatrix = Matrix4x4.CreateScale(220f * orthozoom) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4());
                             this.RotateCircle.Render();
                         }
                         else
@@ -794,26 +794,26 @@
                             Matrix4x4 modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateTranslation(half);
 
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Blue.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Blue.Vec4());
                             this.RotateCircle.Render();
 
                             modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateRotationY(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Red.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Red.Vec4());
                             this.RotateCircle.Render();
 
                             modelMatrix = Matrix4x4.CreateScale(0.4f * posScreen.W) * Matrix4x4.CreateRotationX(90 * MathF.PI / 180) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.Green.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.Green.Vec4());
                             this.RotateCircle.Render();
 
                             Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
@@ -821,10 +821,10 @@
 
                             modelMatrix = Matrix4x4.CreateScale(0.5f * posScreen.W) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(half);
                             this.OverlayShader.Bind();
-                            this.OverlayShader["view"].Set(cam.View);
-                            this.OverlayShader["projection"].Set(cam.Projection);
-                            this.OverlayShader["model"].Set(modelMatrix);
-                            this.OverlayShader["u_color"].Set(Color.White.Vec4());
+                            this.OverlayShader.Uniforms.Transform.View.Set(cam.View);
+                            this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
+                            this.OverlayShader.Uniforms.Transform.Model.Set(modelMatrix);
+                            this.OverlayShader.Uniforms.Color.Set(Color.White.Vec4());
                             this.RotateCircle.Render();
                         }
 
@@ -832,10 +832,10 @@
                     }
                 }
 
-                GL.DepthMask(true);
-                GL.Disable(Capability.Blend);
-                GL.Enable(Capability.DepthTest);
-                GL.Disable(Capability.CullFace);
+                GLState.DepthMask.Set(true);
+                GLState.Blend.Set(false);
+                GLState.DepthTest.Set(true);
+                GLState.CullFace.Set(false);
                 OpenGLUtil.EndSection();
             }
 
@@ -847,26 +847,26 @@
             OpenGLUtil.StartSection("Mouse over highlight");
             if (this.ObjectMouseOver != null && Client.Instance.Frontend.Renderer.SelectionManager.BoxSelectCandidates.Count == 0)
             {
-                GL.Disable(Capability.CullFace);
+                GLState.CullFace.Set(false);
                 MapObject mo = this.ObjectMouseOver;
                 BBBox cBB = mo.ClientRaycastOOBB;
                 Vector3 size = cBB.Size;
                 Vector3 cAvg = cBB.Center;
                 Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(this.ObjectMouseOver.Rotation) * Matrix4x4.CreateTranslation(this.ObjectMouseOver.Position);
-                ShaderProgram shader = this.HighlightShader;
+                FastAccessShader<HighlightUniforms> shader = this.HighlightShader;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
                 shader.Bind();
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
-                shader["model"].Set(modelMatrix);
-                shader["u_color"].Set(this._mouseOverInFow ? Color.DarkSlateBlue.Vec4() : Color.RoyalBlue.Vec4());
+                shader.Uniforms.Transform.View.Set(cam.View);
+                shader.Uniforms.Transform.Projection.Set(cam.Projection);
+                shader.Uniforms.Transform.Model.Set(modelMatrix);
+                shader.Uniforms.Color.Set(this._mouseOverInFow ? Color.DarkSlateBlue.Vec4() : Color.RoyalBlue.Vec4());
                 float mD = Client.Instance.Frontend.UpdatesExisted % 180 / 90.0f;
                 mD = mD / 2 % 1 * 2;
                 float sineMod = ((MathF.Min(mD, 2 - mD) * 2) - 1) * 0.025f;
-                shader["bounds"].Set(size + new Vector3(sineMod));
+                shader.Uniforms.Bounds.Set(size + new Vector3(sineMod));
                 this._boxVao.Bind();
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-                GL.Enable(Capability.CullFace);
+                GLState.DrawArrays(PrimitiveType.Triangles, 0, 864);
+                GLState.CullFace.Set(true);
                 this.PortalHightlightRenderer.AddObject(mo);
             }
 
@@ -939,8 +939,8 @@
         private void RenderDeferred(Map m, double delta)
         {
             this.CPUTimerDeferred.Restart();
-            GL.Enable(Capability.DepthTest);
-            GL.DepthFunction(ComparisonMode.LessOrEqual);
+            GLState.DepthTest.Set(true);
+            GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             OpenGLUtil.StartSection("Point shadows");
@@ -948,7 +948,7 @@
             OpenGLUtil.EndSection();
 
             OpenGLUtil.StartSection("Deferred pass");
-            FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
+            FastAccessShader<DeferredUniforms> shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
 
             this._crossedOutObjects.Clear();
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
@@ -987,11 +987,11 @@
                         // Suitable for deferred
                         Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                         float ga = m.GridColor.Vec4().W;
-                        shader.Essentials.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
-                        shader.Essentials.GridType.Set((uint)m.GridType);
-                        shader.Essentials.TintColor.Set(mo.TintColor.Vec4());
+                        shader.Uniforms.Grid.GridAlpha.Set(i == -2 && m.GridEnabled ? ga : 0.0f);
+                        shader.Uniforms.Grid.GridType.Set((uint)m.GridType);
+                        shader.Uniforms.TintColor.Set(mo.TintColor.Vec4());
                         mo.LastRenderModel = a.Model.GLMdl;
-                        a.Model.GLMdl.Render(shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                        a.Model.GLMdl.Render(in shader.Uniforms.glbEssentials, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                     }
                     else
                     {
@@ -1011,16 +1011,17 @@
             this.CPUTimerMain.Restart();
 
             OpenGLUtil.StartSection("Forward pass");
-            FastAccessShader forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
+            FastAccessShader<ForwardUniforms> forwardShader = Client.Instance.Frontend.Renderer.Pipeline.BeginForward(m, delta);
+            FastAccessShader<ForwardUniforms> currentShader = forwardShader;
 
-            GL.Enable(Capability.Blend);
+            GLState.Blend.Set(true);
             GL.EnableIndexed(IndexedCapability.Blend, 0);
             GL.DisableIndexed(IndexedCapability.Blend, 1);
             GL.DisableIndexed(IndexedCapability.Blend, 2);
             GL.EnableIndexed(IndexedCapability.Blend, 3);
             GL.DisableIndexed(IndexedCapability.Blend, 4);
             GL.DisableIndexed(IndexedCapability.Blend, 5);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
             for (int i = -2; i <= maxLayer; ++i) // Still have to iterate from -2 to max layer for better shader uniforms and correct ordering for layers
             {
                 if (this._forwardLists[i + 2].Count == 0)
@@ -1028,50 +1029,50 @@
                     continue;
                 }
 
-                shader = forwardShader;
-                shader.Program.Bind();
+                currentShader = forwardShader;
+                currentShader.Program.Bind();
                 if (i <= 0)
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader);
+                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(currentShader.Uniforms.FOW);
                 }
                 else
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
+                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(currentShader.Uniforms.FOW);
                 }
 
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                 this._passthroughData.Alpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 this._passthroughData.GridType = (uint)m.GridType;
-                shader.Essentials.Alpha.Set(this._passthroughData.Alpha);
-                shader.Essentials.GridAlpha.Set(this._passthroughData.GridAlpha);
-                shader.Essentials.GridType.Set(this._passthroughData.GridType);
+                currentShader.Uniforms.Alpha.Set(this._passthroughData.Alpha);
+                currentShader.Uniforms.Grid.GridAlpha.Set(this._passthroughData.GridAlpha);
+                currentShader.Uniforms.Grid.GridType.Set(this._passthroughData.GridType);
                 this._forwardLists[i + 2].Sort((l, r) => r.CameraDistanceToThisFrameForDeferredRejects.CompareTo(l.CameraDistanceToThisFrameForDeferredRejects));
                 foreach (MapObject mo in this._forwardLists[i + 2])
                 {
                     Asset a = mo.DeferredAssetObjectThisFrame;
                     bool assetReady = mo.DeferredAssetReadinessThisFrame;
                     Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                    shader = forwardShader;
+                    currentShader = forwardShader;
                     this._passthroughData.TintColor = mo.TintColor.Vec4();
-                    shader.Essentials.TintColor.Set(this._passthroughData.TintColor);
-                    FastAccessShader customShader = null;
+                    currentShader.Uniforms.TintColor.Set(this._passthroughData.TintColor);
+                    FastAccessShader<ForwardUniforms> customShader = null;
                     bool hadCustomRenderShader = !mo.ShaderID.IsEmpty() && CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out customShader);
                     if (hadCustomRenderShader)
                     {
                         if (i <= 0)
                         {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader);
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader.Uniforms.FOW);
                         }
                         else
                         {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader);
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader.Uniforms.FOW);
                         }
                     }
 
                     GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
                     mo.LastRenderModel = mdl;
-                    mdl.Render(hadCustomRenderShader ? customShader : shader, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                    mdl.Render(in (hadCustomRenderShader ? customShader : currentShader).Uniforms.glbEssentials, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
                     if (hadCustomRenderShader)
                     {
                         forwardShader.Program.Bind();
@@ -1081,7 +1082,7 @@
                 this._forwardLists[i + 2].Clear();
             }
 
-            GL.Disable(Capability.Blend);
+            GLState.Blend.Set(false);
             this.CPUTimerMain.Stop();
             OpenGLUtil.EndSection();
             this.FastLightRenderer.Render(m);
@@ -1095,45 +1096,43 @@
 
         public void RenderHighlightBox(MapObject mo, Color c, float extraScale = 1.0f)
         {
-            GL.Disable(Capability.CullFace);
+            GLState.CullFace.Set(false);
             BBBox cBB = mo.ClientRaycastOOBB;
             Vector3 size = cBB.Size;
             Vector3 cAvg = cBB.Center;
             Matrix4x4 modelMatrix = Matrix4x4.CreateTranslation(cAvg) * Matrix4x4.CreateFromQuaternion(mo.Rotation) * Matrix4x4.CreateTranslation(mo.Position);
-            ShaderProgram shader = this.HighlightShader;
+            FastAccessShader<HighlightUniforms> shader = this.HighlightShader;
             shader.Bind();
-            shader["model"].Set(modelMatrix);
-            shader["u_color"].Set(c.Vec4());
-            shader["bounds"].Set(size * extraScale);
+            shader.Uniforms.Transform.Model.Set(modelMatrix);
+            shader.Uniforms.Color.Set(c.Vec4());
+            shader.Uniforms.Bounds.Set(size * extraScale);
             this._boxVao.Bind();
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 864);
-            GL.Enable(Capability.CullFace);
+            GLState.DrawArrays(PrimitiveType.Triangles, 0, 864);
+            GLState.CullFace.Set(true);
         }
 
-        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor, ShaderProgram shader)
+        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor, UniformBlockFrameData uniforms)
         {
-            if (shader != null)
+            if (uniforms != null)
             {
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["camera_position"].Set(cam.Position);
-                shader["camera_direction"].Set(cam.Direction);
-                shader["dl_direction"].Set(sun.Direction.Normalized());
-                shader["dl_color"].Set(sun.Color);
-                shader["al_color"].Set(new Vector3(0.03f));
-                shader["sun_view"].Set(Matrix4x4.Identity);
-                shader["sun_projection"].Set(Matrix4x4.Identity);
-                shader["sky_color"].Set(clearColor.Xyz());
-                shader["grid_color"].Set(Vector4.Zero);
-                shader["grid_alpha"].Set(0.0f);
-                shader["grid_type"].Set(0u);
-                shader["grid_size"].Set(1.0f);
-                shader["cursor_position"].Set(Vector3.Zero);
-                shader["dv_data"].Set(Vector4.Zero);
-                shader["frame_delta"].Set(0f);
-                shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
+                uniforms.View.Set(cam.View);
+                uniforms.Projection.Set(cam.Projection);
+                uniforms.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
+                uniforms.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                uniforms.CameraPosition.Set(cam.Position);
+                uniforms.CameraDirection.Set(cam.Direction);
+                uniforms.SunDirection.Set(sun.Direction.Normalized());
+                uniforms.SunColor.Set(sun.Color);
+                uniforms.AmbientColor.Set(new Vector3(0.03f));
+                uniforms.SunView.Set(Matrix4x4.Identity);
+                uniforms.SunProjection.Set(Matrix4x4.Identity);
+                uniforms.SkyColor.Set(clearColor.Xyz());
+                uniforms.GridColor.Set(Vector4.Zero);
+                uniforms.GridScale.Set(1.0f);
+                uniforms.CursorPosition.Set(Vector3.Zero);
+                uniforms.DarkvisionData.Set(Vector4.Zero);
+                uniforms.FrameDT.Set(0f);
+                uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
             }
             else
             {
@@ -1209,47 +1208,47 @@
             this.CPUTimerUBOUpdate.Stop();
         }
 
-        public void UniformMainShaderData(Map m, ShaderProgram shader, double delta)
+        public void UniformMainShaderData(Map m, FastAccessShader<ForwardUniforms> shader, double delta)
         {
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             if (!Client.Instance.Settings.UseUBO) // If UBOs are used all uniforms are in the UBO
             {
-                shader.Bind();
-
-                shader["view"].Set(cam.View);
-                shader["projection"].Set(cam.Projection);
-                shader["frame"].Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader["update"].Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                shader["camera_position"].Set(cam.Position);
-                shader["camera_direction"].Set(cam.Direction);
-                shader["dl_direction"].Set(this._cachedSunDir);
-                shader["dl_color"].Set(this._cachedSunColor.Vec3() * m.SunIntensity);
-                shader["al_color"].Set(this._cachedAmbientColor * m.AmbientIntensity);
-                shader["sun_view"].Set(this.DirectionalLightRenderer.SunView);
-                shader["sun_projection"].Set(this.DirectionalLightRenderer.SunProjection);
-                shader["sky_color"].Set(this._cachedSkyColor.Vec3());
-                shader["grid_color"].Set(m.GridColor.Vec4());
-                shader["grid_size"].Set(m.GridSize);
-                shader["cursor_position"].Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-                shader["dv_data"].Set(Vector4.Zero);
-                shader["frame_delta"].Set((float)delta);
-                shader["viewport_size"].Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
+                UniformBlockFrameData uniforms = shader.Uniforms.FrameData;
+                uniforms.View.Set(cam.View);
+                uniforms.Projection.Set(cam.Projection);
+                uniforms.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
+                uniforms.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
+                uniforms.CameraPosition.Set(cam.Position);
+                uniforms.CameraDirection.Set(cam.Direction);
+                uniforms.SunDirection.Set(this._cachedSunDir);
+                uniforms.SunColor.Set(this._cachedSunColor.Vec3() * m.SunIntensity);
+                uniforms.AmbientColor.Set(this._cachedAmbientColor * m.AmbientIntensity);
+                uniforms.SunView.Set(this.DirectionalLightRenderer.SunView);
+                uniforms.SunProjection.Set(this.DirectionalLightRenderer.SunProjection);
+                uniforms.SkyColor.Set(this._cachedSkyColor.Vec3());
+                uniforms.GridColor.Set(m.GridColor.Vec4());
+                uniforms.GridScale.Set(m.GridSize);
+                uniforms.CursorPosition.Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
+                uniforms.DarkvisionData.Set(Vector4.Zero);
+                uniforms.FrameDT.Set((float)delta);
+                uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
                 if (m.EnableDarkvision)
                 {
                     if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
                     {
                         if (m.GetObject(kv.Item1, out MapObject mo))
                         {
-                            shader["dv_data"].Set(new Vector4(mo.Position, kv.Item2));
+                            uniforms.DarkvisionData.Set(new Vector4(mo.Position, kv.Item2));
                         }
                     }
                 }
             }
 
-            shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
-            plr.UniformLights(shader);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader, m);
+            shader.Uniforms.Gamma.EnableCorrection.Set(true);
+            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
+            plr.UniformLights(shader.Uniforms.PointLights);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
         }
 
         public Vector3 CachedSkyColor => this._cachedSkyColor.Vec3();
@@ -1283,16 +1282,16 @@
                 this._auraCollection.Sort((l, r) => (r.Position - cam.Position).LengthSquared().CompareTo((l.Position - cam.Position).LengthSquared()));
             }
 
-            GL.Disable(Capability.Multisample);
-            GL.Enable(Capability.Blend);
-            GL.Enable(Capability.CullFace);
-            GL.DepthMask(false);
-            GL.Enable(Capability.DepthTest);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            ShaderProgram shader = this.OverlayShader;
+            GLState.Multisample.Set(false);
+            GLState.Blend.Set(true);
+            GLState.CullFace.Set(true);
+            GLState.DepthMask.Set(false);
+            GLState.DepthTest.Set(true);
+            GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
+            FastAccessShader<FOWDependentOverlayUniforms> shader = this.OverlayShader;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
+            shader.Uniforms.Transform.View.Set(cam.View);
+            shader.Uniforms.Transform.Projection.Set(cam.Projection);
             foreach (MapObject mo in this._auraCollection)
             {
                 lock (mo.Lock)
@@ -1306,20 +1305,20 @@
                 foreach ((float, Color) aData in this._auraL)
                 {
                     Matrix4x4 model = Matrix4x4.CreateScale(aData.Item1 * 2.0f / m.GridUnit) * Matrix4x4.CreateTranslation(mo.Position);
-                    shader["model"].Set(model);
-                    shader["u_color"].Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f * (halfAura ? Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier : 1.0f)));
-                    GL.CullFace(PolygonFaceMode.Front);
+                    shader.Uniforms.Transform.Model.Set(model);
+                    shader.Uniforms.Color.Set(aData.Item2.Vec4() * new Vector4(1, 1, 1, 0.5f * (halfAura ? Client.Instance.Settings.ComprehensiveAuraAlphaMultiplier : 1.0f)));
+                    GLState.CullFaceMode.Set(PolygonFaceMode.Front);
                     this.AuraSphere.Render();
-                    GL.CullFace(PolygonFaceMode.Back);
+                    GLState.CullFaceMode.Set(PolygonFaceMode.Back);
                     this.AuraSphere.Render();
                 }
             }
 
-            GL.DepthMask(true);
-            GL.Disable(Capability.DepthTest);
-            GL.Disable(Capability.Blend);
-            GL.Disable(Capability.CullFace);
-            GL.Enable(Capability.Multisample);
+            GLState.DepthMask.Set(true);
+            GLState.DepthTest.Set(false);
+            GLState.Blend.Set(false);
+            GLState.CullFace.Set(false);
+            GLState.Multisample.Set(true);
 
             this.CPUTimerAuras.Stop();
             OpenGLUtil.EndSection();

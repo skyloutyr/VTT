@@ -4,7 +4,6 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
-    using System.Text;
     using VTT.Util;
     using static VTT.GL.Bindings.MiniGLLoader;
 
@@ -171,11 +170,30 @@
             hnd.Free();
         }
 
+        public static unsafe void Uniform(int location, Span<bool> values)
+        {
+            uint* vals = stackalloc uint[values.Length];
+            for (int i = values.Length - 1; i >= 0; --i)
+            {
+                vals[i] = values[i] ? 1u : 0u;
+            }
+
+            uniform1uivO(location, values.Length, vals);
+        }
+
         public static void Uniform(int location, int[] values)
         {
             GCHandle hnd = GCHandle.Alloc(values, GCHandleType.Pinned);
             uniform1ivO(location, values.Length, (int*)Marshal.UnsafeAddrOfPinnedArrayElement(values, 0));
             hnd.Free();
+        }
+
+        public static void Uniform(int location, Span<int> values)
+        {
+            fixed (int* i = values)
+            {
+                uniform1ivO(location, values.Length, i);
+            }
         }
 
         public static void Uniform(int location, uint[] values)
@@ -185,11 +203,27 @@
             hnd.Free();
         }
 
+        public static void Uniform(int location, Span<uint> values)
+        {
+            fixed (uint* ui = values)
+            {
+                uniform1uivO(location, values.Length, ui);
+            }
+        }
+
         public static void Uniform(int location, float[] values)
         {
             GCHandle hnd = GCHandle.Alloc(values, GCHandleType.Pinned);
             uniform1fvO(location, values.Length, (float*)Marshal.UnsafeAddrOfPinnedArrayElement(values, 0));
             hnd.Free();
+        }
+
+        public static void Uniform(int location, Span<float> values)
+        {
+            fixed (float* f = values)
+            {
+                uniform1fvO(location, values.Length, f);
+            }
         }
 
         public static void Uniform(int location, Vector2[] values)
@@ -199,6 +233,14 @@
             hnd.Free();
         }
 
+        public static void Uniform(int location, Span<Vector2> values)
+        {
+            fixed (Vector2* v2 = values)
+            {
+                uniform2fvO(location, values.Length, (float*)v2);
+            }
+        }
+
         public static void Uniform(int location, Vector3[] values)
         {
             GCHandle hnd = GCHandle.Alloc(values, GCHandleType.Pinned);
@@ -206,11 +248,35 @@
             hnd.Free();
         }
 
+        public static void Uniform(int location, Span<Vector3> values)
+        {
+            fixed (Vector3* v3 = values)
+            {
+                uniform3fvO(location, values.Length, (float*)v3);
+            }
+        }
+
         public static void Uniform(int location, Vector4[] values)
         {
             GCHandle hnd = GCHandle.Alloc(values, GCHandleType.Pinned);
             uniform4fvO(location, values.Length, (float*)Marshal.UnsafeAddrOfPinnedArrayElement(values, 0)); // Bad cast but works for opengl so w/e
             hnd.Free();
+        }
+
+        public static void Uniform(int location, Span<Vector4> values)
+        {
+            fixed (Vector4* v4 = values)
+            {
+                uniform4fvO(location, values.Length, (float*)v4);
+            }
+        }
+
+        public static void Uniform(int location, Span<Matrix4x4> values, bool transpose)
+        {
+            fixed (Matrix4x4* m4 = values)
+            {
+                uniformMatrix4fvO(location, values.Length, transpose, (float*)m4);
+            }
         }
 
         public static void CullFace(PolygonFaceMode faceMode) => cullFaceO((uint)faceMode);

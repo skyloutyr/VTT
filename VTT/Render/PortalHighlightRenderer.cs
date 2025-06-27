@@ -8,6 +8,7 @@
     using VTT.Control;
     using VTT.GL;
     using VTT.Network;
+    using VTT.Render.Shaders;
     using VTT.Util;
     using OGL = GL.Bindings.GL;
 
@@ -22,7 +23,7 @@
 
         private readonly HashSet<MapObject> _portalsToProcess = new HashSet<MapObject>();
 
-        public ShaderProgram HighlightShader => Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.InWorldShader;
+        public FastAccessShader<OverlayUniforms> HighlightShader => Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.InWorldShader;
 
         public void Create()
         {
@@ -74,17 +75,17 @@
             }
 
             OpenGLUtil.StartSection("Portals highlight");
-            ShaderProgram shader = this.HighlightShader;
-            OGL.Enable(GL.Bindings.Capability.Blend);
-            OGL.BlendFunc(GL.Bindings.BlendingFactor.SrcAlpha, GL.Bindings.BlendingFactor.OneMinusSrcAlpha);
-            OGL.Disable(GL.Bindings.Capability.DepthTest);
-            OGL.Disable(GL.Bindings.Capability.CullFace);
-            OGL.DepthMask(false);
+            FastAccessShader<OverlayUniforms> shader = this.HighlightShader;
+            GLState.Blend.Set(true);
+            GLState.BlendFunc.Set((GL.Bindings.BlendingFactor.SrcAlpha, GL.Bindings.BlendingFactor.OneMinusSrcAlpha));
+            GLState.DepthTest.Set(false);
+            GLState.CullFace.Set(false);
+            GLState.DepthMask.Set(false);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             shader.Bind();
-            shader["view"].Set(cam.View);
-            shader["projection"].Set(cam.Projection);
-            shader["model"].Set(Matrix4x4.Identity);
+            shader.Uniforms.Transform.View.Set(cam.View);
+            shader.Uniforms.Transform.Projection.Set(cam.Projection);
+            shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
             this._tex.Bind();
             float lineProgress = ((((uint)Client.Instance.Frontend.UpdatesExisted) + (float)dt) / 60.0f);
             bool adminOrObserver = Client.Instance.IsAdmin || Client.Instance.IsObserver;
@@ -94,7 +95,7 @@
                 if (p1.IsPortal && (adminOrObserver || p1.CanEdit(Client.Instance.ID)))
                 {
                     Vector4 portalColor = this.DetermineColor(p1.ID, p1.PairedPortalID);
-                    shader["u_color"].Set(portalColor * new Vector4(1, 1, 1, 0.8f));
+                    shader.Uniforms.Color.Set(portalColor * new Vector4(1, 1, 1, 0.8f));
                     this.AddContextHighlight(m, p1.Position, p1.PortalSize, lineProgress, 0.025f);
                     if (!p1.PairedPortalID.IsEmpty() && m.GetObject(p1.PairedPortalID, out MapObject pportal) && (adminOrObserver || pportal.CanEdit(Client.Instance.ID)))
                     {
@@ -109,10 +110,10 @@
                 this._portalsToProcess.Remove(p1);
             }
 
-            OGL.DepthMask(true);
-            OGL.Enable(GL.Bindings.Capability.DepthTest);
-            OGL.Enable(GL.Bindings.Capability.CullFace);
-            OGL.Disable(GL.Bindings.Capability.Blend);
+            GLState.DepthMask.Set(true);
+            GLState.DepthTest.Set(true);
+            GLState.CullFace.Set(true);
+            GLState.Blend.Set(false);
             OpenGLUtil.EndSection();
         }
 
@@ -255,7 +256,7 @@
             this._vbo.SetSubData((IntPtr)this._vertices.GetPointer(), sizeof(float) * this._vertices.Length, 0);
             this._ebo.SetData(IntPtr.Zero, sizeof(uint) * this._indices.Capacity);
             this._ebo.SetSubData((IntPtr)this._indices.GetPointer(), sizeof(uint) * this._indices.Length, 0);
-            OGL.DrawElements(GL.Bindings.PrimitiveType.Triangles, numIndices, GL.Bindings.ElementsType.UnsignedInt, 0);
+            GLState.DrawElements(GL.Bindings.PrimitiveType.Triangles, numIndices, GL.Bindings.ElementsType.UnsignedInt, 0);
             this._vertices.Reset();
             this._indices.Reset();
         }

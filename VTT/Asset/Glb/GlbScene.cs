@@ -17,6 +17,7 @@
     using VTT.Network;
     using VTT.Render;
     using VTT.Render.LightShadow;
+    using VTT.Render.Shaders;
     using VTT.Util;
 
     public class GlbScene
@@ -1438,11 +1439,11 @@
             return img;
         }
 
-        public void Render(FastAccessShader shader, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
+        public void Render(in GLBRendererUniformCollection uniforms, Matrix4x4 baseMatrix, Matrix4x4 projection, Matrix4x4 view, double textureAnimationIndex, GlbAnimation animation, float animationTime, IAnimationStorage animationStorage, Action<GlbMesh> renderer = null)
         {
             foreach (GlbObject o in this.RenderedMeshes)
             {
-                o.Render(shader, baseMatrix, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
+                o.Render(in uniforms, baseMatrix, projection, view, textureAnimationIndex, animation, animationTime, animationStorage, renderer);
             }
         }
 
@@ -1489,45 +1490,45 @@
             // Create framebuffer
             uint fbo = Client.Instance.Frontend.Renderer.Pipeline.CreateDummyForwardFBO(new Size(width, height), out VTT.GL.Texture d0, out VTT.GL.Texture d1, out VTT.GL.Texture d2, out VTT.GL.Texture d3, out VTT.GL.Texture d4, out VTT.GL.Texture d5, out VTT.GL.Texture tex);
             GL.BindFramebuffer(FramebufferTarget.All, fbo);
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
 
             ReadOnlySpan<int> data = GL.GetInteger(GLPropertyName.Viewport);
-            FastAccessShader shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
-            shader.Program.Bind();
-            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader.Program);
-            shader["ambient_intensity"].Set(0.03f);
-            shader["gamma_correct"].Set(true);
+            FastAccessShader<ForwardUniforms> shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
+            shader.Bind();
+            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader.Uniforms.FrameData);
+            shader.Uniforms.Gamma.EnableCorrection.Set(true);
+            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
 
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             plr.Clear();
             plr.ProcessScene(Matrix4x4.Identity, this);
             plr.DrawLights(null, false, 0, null);
-            plr.UniformLights(shader);
+            plr.UniformLights(shader.Uniforms.PointLights);
 
-            GL.ActiveTexture(14);
-            shader["dl_shadow_map"].Set(14);
+            GLState.ActiveTexture.Set(14);
+            shader.Uniforms.DirectionalLight.DepthSampler.Set(14);
             Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
-            GL.ActiveTexture(13);
-            shader["pl_shadow_maps"].Set(13);
+            GLState.ActiveTexture.Set(13);
+            shader.Uniforms.PointLights.ShadowMapsSampler.Set(13);
             plr.DepthMap.Bind();
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
 
-            shader["alpha"].Set(1.0f);
-            shader["tint_color"].Set(Vector4.One);
+            shader.Uniforms.Alpha.Set(1.0f);
+            shader.Uniforms.TintColor.Set(Vector4.One);
 
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader, clearColor.Xyz());
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader.Uniforms.FOW);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader.Uniforms.Skybox, clearColor.Xyz());
 
             GL.BindFramebuffer(FramebufferTarget.All, fbo);
             GL.Viewport(0, 0, width, height);
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
             GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
-            GL.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
+            GLState.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
 
             GlbMaterial.ResetState();
-            this.Render(shader, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0, null);
+            this.Render(in shader.Uniforms.glbEssentials, Matrix4x4.Identity, camera.Projection, camera.View, 0, null, 0, null);
 
-            GL.ActiveTexture(0);
+            GLState.ActiveTexture.Set(0);
             tex.Bind();
             Image<Rgba32> retImg = tex.GetImage<Rgba32>();
 

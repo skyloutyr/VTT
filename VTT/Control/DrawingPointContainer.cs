@@ -6,6 +6,7 @@
     using VTT.Asset.Obj;
     using VTT.GL;
     using VTT.GL.Bindings;
+    using VTT.Render;
     using VTT.Util;
     using OGL = GL.Bindings.GL;
 
@@ -144,7 +145,7 @@
             if (this._numInstances > 0)
             {
                 OGL.BindVertexArray(this._vao);
-                OGL.DrawElementsInstanced(PrimitiveType.Triangles, this._modelRawIndices.Length, ElementsType.UnsignedInt, IntPtr.Zero, this._numInstances);
+                GLState.DrawElementsInstanced(PrimitiveType.Triangles, this._modelRawIndices.Length, ElementsType.UnsignedInt, IntPtr.Zero, this._numInstances);
             }
 
             return this._numInstances;

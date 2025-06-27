@@ -1,6 +1,5 @@
 ﻿namespace VTT.Util
 {
-    using System;
     using System.Collections;
     using System.Collections.Generic;
 

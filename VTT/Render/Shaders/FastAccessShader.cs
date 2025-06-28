@@ -1,6 +1,7 @@
 ﻿namespace VTT.Render.Shaders
 {
     using System;
+    using System.Collections.Generic;
     using System.Reflection;
     using VTT.GL;
     using VTT.Network;
@@ -17,8 +18,9 @@
             this.Program.Bind();
 
             this.Uniforms = new T();
+            Dictionary<string, object> knownUniformStates = new Dictionary<string, object>();
 
-            static void VisitType(Type t, object instance, ShaderProgram shader, ref int usageMetricsNominal, ref int usageMetricsWorst, ref int slotsTaken)
+            static void VisitType(Type t, object instance, ShaderProgram shader, Dictionary<string, object> cache, ref int usageMetricsNominal, ref int usageMetricsWorst, ref int slotsTaken)
             {
                 foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
@@ -27,11 +29,17 @@
                         UniformReferenceAttribute attrib = pi.GetCustomAttribute<UniformReferenceAttribute>();
                         if (attrib != null)
                         {
-                            dynamic value = Activator.CreateInstance(pi.PropertyType, shader, attrib.Value, attrib.Array, attrib.CheckValue);
-                            usageMetricsNominal += value.MachineUnitsNominalUsage;
-                            usageMetricsWorst += value.MachineUnitsWorstCaseUsage;
-                            slotsTaken += value.UniformSlotsTaken;
-                            pi.SetValue(instance, value);
+                            string key = attrib.Value;
+                            if (!cache.TryGetValue(key, out object val))
+                            {
+                                dynamic value = Activator.CreateInstance(pi.PropertyType, shader, attrib.Value, attrib.Array, attrib.CheckValue);
+                                usageMetricsNominal += value.MachineUnitsNominalUsage;
+                                usageMetricsWorst += value.MachineUnitsWorstCaseUsage;
+                                slotsTaken += value.UniformSlotsTaken;
+                                cache[key] = val = value;
+                            }
+
+                            pi.SetValue(instance, val);
                         }
                     }
                     else
@@ -40,7 +48,7 @@
                         {
                             object o = pi.GetValue(instance);
                             o ??= Activator.CreateInstance(pi.PropertyType);
-                            VisitType(o.GetType(), o, shader, ref usageMetricsNominal, ref usageMetricsWorst, ref slotsTaken);
+                            VisitType(o.GetType(), o, shader, cache, ref usageMetricsNominal, ref usageMetricsWorst, ref slotsTaken);
                         }
                     }
                 }
@@ -50,7 +58,7 @@
             }
 
             int nominal = 0, worst = 0, slots = 0;
-            VisitType(this.Uniforms.GetType(), this.Uniforms, this, ref nominal, ref worst, ref slots);
+            VisitType(this.Uniforms.GetType(), this.Uniforms, this, knownUniformStates, ref nominal, ref worst, ref slots);
             Client.Instance.Logger.Log(Util.LogLevel.Debug, $"Program {shader.ProgramID} uniform metrics usage: {slots} uniform slots taken, {nominal} bytes used, {worst} bytes usage in worst-case (forced std140)");
             if (slots >= 1024)
             {

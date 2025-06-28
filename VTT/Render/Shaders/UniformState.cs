@@ -19,6 +19,7 @@
         private readonly PrimitiveDataUnion[] _stateArray;
         private readonly Matrix4x4[] _m4StateArray;
         private readonly Action<T> _setter;
+        private readonly Action<T, int> _setterArrayIndividual;
         private readonly SetterArray _setterArray;
         private readonly bool _checkValue;
         private readonly UniformWrapper _uniform;
@@ -37,6 +38,7 @@
             this._checkValue = false;
             this._setter = x => { };
             this._setterArray = (x, o) => { };
+            this._setterArray = (x, i) => { };
         }
 
         public UniformState(ShaderProgram prog, string name, bool isArray, bool checkValue)
@@ -108,6 +110,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetFloat));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetFloatV));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetFloatO));
                     this.MachineUnitsNominalUsage = sizeof(float) * elementAmount;
                     this.MachineUnitsWorstCaseUsage = (this._isArray ? (sizeof(float) * 4) : sizeof(float)) * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -118,6 +121,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetUint));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetUintV));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetUintO));
                     this.MachineUnitsNominalUsage = sizeof(uint) * elementAmount;
                     this.MachineUnitsWorstCaseUsage = (this._isArray ? (sizeof(float) * 4) : sizeof(uint)) * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -128,6 +132,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetInt));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetIntV));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetIntO));
                     this.MachineUnitsNominalUsage = sizeof(int) * elementAmount;
                     this.MachineUnitsWorstCaseUsage = (this._isArray ? (sizeof(float) * 4) : sizeof(int)) * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -138,6 +143,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetBool));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetBoolV));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetBoolO));
                     this.MachineUnitsNominalUsage = sizeof(int) * elementAmount;
                     this.MachineUnitsWorstCaseUsage = (this._isArray ? (sizeof(float) * 4) : sizeof(int)) * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -148,6 +154,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetVec2));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetVec2V));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetVec2O));
                     this.MachineUnitsNominalUsage = sizeof(float) * 2 * elementAmount;
                     this.MachineUnitsWorstCaseUsage = (this._isArray ? (sizeof(float) * 4) : (sizeof(float) * 2)) * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -158,6 +165,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetVec3));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetVec3V));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetVec3O));
                     this.MachineUnitsNominalUsage = sizeof(float) * 3 * elementAmount;
                     this.MachineUnitsWorstCaseUsage = sizeof(float) * 4 * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -168,6 +176,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetVec4));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetVec4V));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetVec4O));
                     this.MachineUnitsNominalUsage = sizeof(float) * 4 * elementAmount;
                     this.MachineUnitsWorstCaseUsage = sizeof(float) * 4 * elementAmount;
                     this.UniformSlotsTaken = elementAmount;
@@ -178,6 +187,7 @@
                 {
                     this._setter = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), this, nameof(SetMat4));
                     this._setterArray = (SetterArray)Delegate.CreateDelegate(typeof(SetterArray), this, nameof(SetMat4V));
+                    this._setterArrayIndividual = (Action<T, int>)Delegate.CreateDelegate(typeof(Action<T, int>), this, nameof(SetMat4O));
                     this.MachineUnitsNominalUsage = sizeof(float) * 16 * elementAmount;
                     this.MachineUnitsWorstCaseUsage = sizeof(float) * 16 * elementAmount;
                     this.UniformSlotsTaken = elementAmount * 4;
@@ -219,7 +229,7 @@
 
             if (this._isArray)
             {
-                this._setterArray(MemoryMarshal.CreateSpan(ref t, 1), offset);
+                this._setterArrayIndividual(t, offset);
             }
             else
             {
@@ -265,12 +275,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].fVal != array[i])
+                    if (this._stateArray[i + offset].fVal != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].fVal = array[i];
+                        this._stateArray[i + offset].fVal = array[i];
                     }
                 }
 
@@ -278,6 +288,22 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetFloatO(float f, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].fVal != f)
+                {
+                    this._stateArray[offset].fVal = f;
+                    this._uniformArray[offset].Set(f);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(f);
             }
         }
 
@@ -302,12 +328,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].uiVal != array[i])
+                    if (this._stateArray[i + offset].uiVal != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].uiVal = array[i];
+                        this._stateArray[i + offset].uiVal = array[i];
                     }
                 }
 
@@ -315,6 +341,22 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetUintO(uint ui, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].uiVal != ui)
+                {
+                    this._stateArray[offset].uiVal = ui;
+                    this._uniformArray[offset].Set(ui);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(ui);
             }
         }
 
@@ -339,12 +381,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].iVal != array[i])
+                    if (this._stateArray[i + offset].iVal != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].iVal = array[i];
+                        this._stateArray[i + offset].iVal = array[i];
                     }
                 }
 
@@ -355,6 +397,22 @@
             }
         }
 
+        private void SetIntO(int i, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].iVal != i)
+                {
+                    this._stateArray[offset].iVal = i;
+                    this._uniformArray[offset].Set(i);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(i);
+            }
+        }
+
         private void SetBool(bool b) => this.SetInt(b ? 1 : 0);
 
         private void SetBoolV(Span<bool> array, int offset)
@@ -362,13 +420,13 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
                     int ival = array[i] ? 1 : 0;
-                    if (this._stateArray[i].iVal != ival)
+                    if (this._stateArray[i + offset].iVal != ival)
                     {
                         anyDiff = true;
-                        this._stateArray[i].iVal = ival;
+                        this._stateArray[i + offset].iVal = ival;
                     }
                 }
 
@@ -376,6 +434,23 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetBoolO(bool b, int offset)
+        {
+            int i = b ? 1 : 0;
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].iVal != i)
+                {
+                    this._stateArray[offset].iVal = i;
+                    this._uniformArray[offset].Set(i);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(i);
             }
         }
 
@@ -400,12 +475,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].v2Val != array[i])
+                    if (this._stateArray[i + offset].v2Val != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].v2Val = array[i];
+                        this._stateArray[i + offset].v2Val = array[i];
                     }
                 }
 
@@ -413,6 +488,22 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetVec2O(Vector2 v2, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].v2Val != v2)
+                {
+                    this._stateArray[offset].v2Val = v2;
+                    this._uniformArray[offset].Set(v2);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(v2);
             }
         }
 
@@ -437,12 +528,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].v3Val != array[i])
+                    if (this._stateArray[i + offset].v3Val != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].v3Val = array[i];
+                        this._stateArray[i + offset].v3Val = array[i];
                     }
                 }
 
@@ -450,6 +541,22 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetVec3O(Vector3 v3, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].v3Val != v3)
+                {
+                    this._stateArray[offset].v3Val = v3;
+                    this._uniformArray[offset].Set(v3);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(v3);
             }
         }
 
@@ -474,12 +581,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._stateArray[i].v4Val != array[i])
+                    if (this._stateArray[i + offset].v4Val != array[i])
                     {
                         anyDiff = true;
-                        this._stateArray[i].v4Val = array[i];
+                        this._stateArray[i + offset].v4Val = array[i];
                     }
                 }
 
@@ -487,6 +594,22 @@
                 {
                     GL.Uniform((int)this._uniformArray[offset], array);
                 }
+            }
+        }
+
+        private void SetVec4O(Vector4 v4, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._stateArray[offset].v4Val != v4)
+                {
+                    this._stateArray[offset].v4Val = v4;
+                    this._uniformArray[offset].Set(v4);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(v4);
             }
         }
 
@@ -511,12 +634,12 @@
             if (this._checkValue)
             {
                 bool anyDiff = false;
-                for (int i = offset; i < Math.Min(array.Length, this._stateArray.Length); ++i)
+                for (int i = 0; i < Math.Min(array.Length, this._stateArray.Length); ++i)
                 {
-                    if (this._m4StateArray[i] != array[i])
+                    if (this._m4StateArray[i + offset] != array[i])
                     {
                         anyDiff = true;
-                        this._m4StateArray[i] = array[i];
+                        this._m4StateArray[i + offset] = array[i];
                     }
                 }
 
@@ -528,6 +651,22 @@
             else
             {
                 GL.Uniform((int)this._uniformArray[offset], array, false);
+            }
+        }
+
+        private void SetMat4O(Matrix4x4 m, int offset)
+        {
+            if (this._checkValue)
+            {
+                if (this._m4StateArray[offset] != m)
+                {
+                    this._m4StateArray[offset] = m;
+                    this._uniformArray[offset].Set(m);
+                }
+            }
+            else
+            {
+                this._uniformArray[offset].Set(m);
             }
         }
     }

@@ -159,8 +159,8 @@
             {
                 uniforms.Positions.Set(this.Lights[i].Position, i);
                 uniforms.Colors.Set(this.Lights[i].Color, i);
-                uniforms.Thresholds.Set(new Vector2(this.Lights[i].LightPtr.Intensity, this.Lights[i].CastsShadows ? 1.0f : 0.0f));
-                uniforms.Indices.Set(this.Lights[i].LightIndex);
+                uniforms.Thresholds.Set(new Vector2(this.Lights[i].LightPtr.Intensity, this.Lights[i].CastsShadows ? 1.0f : 0.0f), i);
+                uniforms.Indices.Set(this.Lights[i].LightIndex, i);
             }
 
             uniforms.Amount.Set(this.NumLights);
@@ -248,7 +248,7 @@
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {
                     PointLight pl = this.Lights[i1];
-                    Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(90 * MathF.PI / 180, 1, 0.0001f, pl.LightPtr.Intensity);
+                    Matrix4x4 proj = Matrix4x4.CreatePerspectiveFieldOfView(90 * MathF.PI / 180, 1, 0.01f, pl.LightPtr.Intensity);
                     Vector3 lightPos = pl.Position;
                     for (int i = 0; i < 6; ++i)
                     {

@@ -15,7 +15,6 @@
     using VTT.Render.Shaders;
     using VTT.Util;
     using static VTT.Network.ClientSettings;
-    using OGL = GL.Bindings.GL;
 
     public class DrawingRenderer
     {

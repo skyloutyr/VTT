@@ -28,6 +28,7 @@
         public int MachineUnitsNominalUsage { get; }
         public int MachineUnitsWorstCaseUsage { get; }
         public int UniformSlotsTaken { get; }
+        public bool IsValid => this._isValid;
 
         private delegate void SetterArray(Span<T> span, int offset);
 
@@ -64,28 +65,42 @@
                     }
                 }
 
-                this._isValid = wrapperArray.Count > 0;
-                if (this._checkValue)
+                if (!(this._isValid = wrapperArray.Count > 0))
                 {
-                    if (isMatrix)
+                    // Support for isArray being true, but the uniform not being an array on the back-end
+                    UniformWrapper uw = prog.UniformManager.GetUniform($"{name}");
+                    if (uw.Valid)
                     {
-                        this._m4StateArray = new Matrix4x4[counter];
-
-                        // So here we have a problem - mat4 uniforms differ per vendor - amd seems to set the defaults to [0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0], nvidia seems to set the defaults to [1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], intel differs per product
-                        // Set it to empty explicitly, bc an empty (zeroed out) matrix is the least likely to be used in a shader legitimately
-                        Array.Fill(this._m4StateArray, new Matrix4x4());
-                    }
-                    else
-                    {
-                        this._stateArray = new PrimitiveDataUnion[counter];
-                        Array.Fill(this._stateArray, new PrimitiveDataUnion());
+                        isArray = false;
+                        this._isArray = false;
                     }
                 }
+                else
+                {
+                    if (this._checkValue)
+                    {
+                        if (isMatrix)
+                        {
+                            this._m4StateArray = new Matrix4x4[counter];
 
-                this._uniformArray = wrapperArray.ToArray();
-                elementAmount = counter;
+                            // So here we have a problem - mat4 uniforms differ per vendor - amd seems to set the defaults to [0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0], nvidia seems to set the defaults to [1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], intel differs per product
+                            // Set it to empty explicitly, bc an empty (zeroed out) matrix is the least likely to be used in a shader legitimately
+                            Array.Fill(this._m4StateArray, new Matrix4x4());
+                        }
+                        else
+                        {
+                            this._stateArray = new PrimitiveDataUnion[counter];
+                            Array.Fill(this._stateArray, new PrimitiveDataUnion());
+                        }
+                    }
+
+
+                    this._uniformArray = wrapperArray.ToArray();
+                    elementAmount = counter;
+                }
             }
-            else
+
+            if (!isArray) // Not an else to allow isArray = true, backend isArray = false to stinn function
             {
                 elementAmount = 1;
                 this._uniform = prog.UniformManager.GetUniform(name);
@@ -293,6 +308,12 @@
 
         private void SetFloatO(float f, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetFloat(f);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].fVal != f)
@@ -346,6 +367,12 @@
 
         private void SetUintO(uint ui, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetUint(ui);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].uiVal != ui)
@@ -399,6 +426,12 @@
 
         private void SetIntO(int i, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetInt(i);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].iVal != i)
@@ -439,6 +472,12 @@
 
         private void SetBoolO(bool b, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetBool(b);
+                return;
+            }
+
             int i = b ? 1 : 0;
             if (this._checkValue)
             {
@@ -493,6 +532,12 @@
 
         private void SetVec2O(Vector2 v2, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetVec2(v2);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].v2Val != v2)
@@ -546,6 +591,12 @@
 
         private void SetVec3O(Vector3 v3, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetVec3(v3);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].v3Val != v3)
@@ -599,6 +650,12 @@
 
         private void SetVec4O(Vector4 v4, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetVec4(v4);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._stateArray[offset].v4Val != v4)
@@ -656,6 +713,12 @@
 
         private void SetMat4O(Matrix4x4 m, int offset)
         {
+            if (!this._isArray)
+            {
+                this.SetMat4(m);
+                return;
+            }
+
             if (this._checkValue)
             {
                 if (this._m4StateArray[offset] != m)

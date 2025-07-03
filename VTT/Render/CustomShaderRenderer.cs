@@ -8,7 +8,6 @@
     using VTT.Network;
     using VTT.Render.Shaders;
     using VTT.Util;
-    using GL = GL.Bindings.GL;
 
     public static class CustomShaderRenderer
     {

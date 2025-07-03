@@ -131,6 +131,8 @@
 
         public AABox CameraCullerBox { get; set; } = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
         public FrustumCullingSphere cameraCullerSphere = new FrustumCullingSphere(Vector3.Zero, 0.5f);
+        public FrustumCullingSphere[] LightShadowCullingSpheres { get; } = new FrustumCullingSphere[17].Fill(new FrustumCullingSphere(Vector3.Zero, 0.5f));
+
         public bool ClientAssignedModelBounds { get; set; }
 
         public bool ClientRenderedThisFrame { get; set; }
@@ -355,6 +357,7 @@
             this._clientRaycastOOBB = new BBBox(this._clientRaycastBox, this.Rotation).Scale(this.Scale);
             this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).Bounds;
             this.cameraCullerSphere = new FrustumCullingSphere(this.CameraCullerBox.Center + this.Position, this.CameraCullerBox.Size.Length() * 0.5f);
+            Array.Fill(this.LightShadowCullingSpheres, this.cameraCullerSphere);
         }
 
         public void ClientSetPathMovementChanges(List<Vector3> path)

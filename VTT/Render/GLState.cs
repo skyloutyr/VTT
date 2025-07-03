@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
     using VTT.GL.Bindings;
-    using VTT.Util;
 
     public static class GLState
     {

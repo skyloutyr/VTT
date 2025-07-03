@@ -4,7 +4,7 @@
 
     public class PointLightShadowUniforms
     {
-        [UniformReference("model")]
+        [UniformReference("model", CheckValue = false)]
         public UniformState<Matrix4x4> Model { get; set; }
 
         [UniformReference("bones", Array = true, CheckValue = false)]
@@ -16,7 +16,7 @@
         [UniformReference("projView", Array = true, CheckValue = false)]
         public UniformState<Matrix4x4> ProjView { get; set; }
 
-        [UniformReference("layer_offset")]
+        [UniformReference("layer_offset", Array = true, CheckValue = false)]
         public UniformState<int> LayerOffset { get; set; }
 
         [UniformReference("light_pos")]

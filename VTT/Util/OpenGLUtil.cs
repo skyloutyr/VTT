@@ -3,6 +3,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using VTT.Asset.Obj;
     using VTT.GL;
@@ -12,6 +13,29 @@
 
     public static class OpenGLUtil
     {
+        private static readonly Dictionary<string, bool> glExtensionAvailability = new Dictionary<string, bool>();
+        private static bool glExtensionsDetermined;
+        private static void GatherGLExtensions()
+        {
+            int exts = GL.GetInteger(GLPropertyName.NumExtensions)[0];
+            for (uint i = 0; i < exts; ++i)
+            {
+                glExtensionAvailability[GL.GetExtensionAt(i).ToLower()] = true;
+            }
+
+            glExtensionsDetermined = true;
+        }
+
+        public static bool IsExtensionAvailable(string ext)
+        {
+            if (!glExtensionsDetermined)
+            {
+                GatherGLExtensions();
+            }
+
+            return glExtensionAvailability.ContainsKey(ext.ToLower());
+        }
+
         public static SizedInternalFormat SrgbCompressedFormat { get; set; }
         public static SizedInternalFormat SrgbAlphaCompressedFormat { get; set; }
         public static SizedInternalFormat RgbCompressedFormat { get; set; }
@@ -44,21 +68,8 @@
                 return;
             }
 
-            int exts = GL.GetInteger(GLPropertyName.NumExtensions)[0];
-            string[] allExtensions = new string[exts];
-            for (uint i = 0; i < exts; ++i)
-            {
-                string extension = GL.GetExtensionAt(i);
-                if (!extension.StartsWith("GL_"))
-                {
-                    extension = "GL_" + extension;
-                }
-
-                allExtensions[i] = extension.ToLower();
-            }
-
-            bool bptcAvailable = allExtensions.Contains("gl_arb_texture_compression_bptc");
-            bool dxtAvailable = allExtensions.Contains("gl_ext_texture_compression_s3tc") && allExtensions.Contains("gl_ext_texture_srgb");
+            bool bptcAvailable = IsExtensionAvailable("GL_ARB_texture_compression_bptc");
+            bool dxtAvailable = IsExtensionAvailable("GL_EXT_texture_compression_s3tc") && IsExtensionAvailable("GL_EXT_texture_sRGB");
             if (tcp == TextureCompressionPreference.BPTC)
             {
                 if (bptcAvailable)

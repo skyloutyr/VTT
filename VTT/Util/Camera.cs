@@ -1,8 +1,6 @@
 ﻿namespace VTT.Util
 {
     using System;
-    using System.Collections;
-    using System.Collections.Generic;
     using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.Network;
@@ -115,25 +113,25 @@
     }
 
     [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 4 * 6, Pack = 0)]
-    public unsafe struct Frustum : IEnumerable<Plane>
+    public unsafe readonly struct Frustum
     {
         [FieldOffset(0)]
-        public Plane p0;
+        public readonly Plane p0;
 
         [FieldOffset(sizeof(float) * 4 * 1)]
-        public Plane p1;
+        public readonly Plane p1;
 
         [FieldOffset(sizeof(float) * 4 * 2)]
-        public Plane p2;
+        public readonly Plane p2;
 
         [FieldOffset(sizeof(float) * 4 * 3)]
-        public Plane p3;
+        public readonly Plane p3;
 
         [FieldOffset(sizeof(float) * 4 * 4)]
-        public Plane p4;
+        public readonly Plane p4;
 
         [FieldOffset(sizeof(float) * 4 * 5)]
-        public Plane p5;
+        public readonly Plane p5;
 
         private readonly Plane this[int i]
         {
@@ -180,82 +178,96 @@
                 viewProj.M44 - viewProj.M43).Normalized();
         }
 
-        public readonly IEnumerator<Plane> GetEnumerator()
-        {
-            yield return this.p0;
-            yield return this.p1;
-            yield return this.p2;
-            yield return this.p3;
-            yield return this.p4;
-            yield return this.p5;
-            yield break;
-        }
+        // Loop here was manually unrolled bc of a very significant performance gain
+        public readonly bool IsPointInFrustrum(Vector3 point) =>
+            this.p0.DotProduct(point) >= 0 &&
+            this.p1.DotProduct(point) >= 0 &&
+            this.p2.DotProduct(point) >= 0 &&
+            this.p3.DotProduct(point) >= 0 && 
+            this.p4.DotProduct(point) >= 0 &&
+            this.p5.DotProduct(point) >= 0;
 
-        readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-
-        public readonly bool IsPointInFrustrum(Vector3 point)
-        {
-            foreach (Plane p in this)
-            {
-                if (p.DotProduct(point) <= 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public readonly bool IsSphereInFrustrum(Vector3 point, float radius)
-        {
-            foreach (Plane p in this)
-            {
-                if (p.DotProduct(point) + radius < 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        // Loop here was manually unrolled bc of a very significant performance gain
+        public readonly bool IsSphereInFrustrum(Vector3 point, float radius) => 
+            this.p0.DotProduct(point) + radius >= 0 &&
+            this.p1.DotProduct(point) + radius >= 0 &&
+            this.p2.DotProduct(point) + radius >= 0 &&
+            this.p3.DotProduct(point) + radius >= 0 &&
+            this.p4.DotProduct(point) + radius >= 0 &&
+            this.p5.DotProduct(point) + radius >= 0;
 
         public readonly bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere)
         {
-            if (sphere.cachedPlane != -1)
+            fixed (Plane* planes = &this.p0)
             {
-                Plane p = this[sphere.cachedPlane];
-                if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                if (sphere.cachedPlane != -1)
                 {
-                    return false;
-                }
-            }
-
-            for (int i = 5; i >= 0; --i)
-            {
-                if (i == sphere.cachedPlane)
-                {
-                    continue;
+                    Plane p = planes[sphere.cachedPlane];
+                    if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                    {
+                        return false;
+                    }
                 }
 
-                Plane p = this[i];
-                if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                for (int i = 5; i >= 0; --i)
                 {
-                    sphere.cachedPlane = i;
-                    return false;
+                    if (i == sphere.cachedPlane)
+                    {
+                        continue;
+                    }
+
+                    Plane p = planes[i];
+                    if (p.DotProduct(sphere.position) + sphere.radius < 0)
+                    {
+                        sphere.cachedPlane = i;
+                        return false;
+                    }
                 }
             }
 
             return true;
+        }
+
+        // This section is a mess of cpp-like code bc it is a performance-critical hot path
+        // Struct ptr bc data locality is guaranteed either way, no need to copy value to stack
+        private static bool TestBoxAgainstPlane(Plane* p, in AABox box)
+        {
+            Vector3 normal = p->Normal;
+            Vector3 start = new Vector3(normal.X < 0 ? box.Start.X : box.End.X, normal.Y < 0 ? box.Start.Y : box.End.Y, normal.Z < 0 ? box.Start.Z : box.End.Z);
+            Vector3 end = new Vector3(normal.X >= 0 ? box.Start.X : box.End.X, normal.Y >= 0 ? box.Start.Y : box.End.Y, normal.Z >= 0 ? box.Start.Z : box.End.Z);
+            return p->DotProduct(end) > 0 || p->DotProduct(start) > 0;
         }
 
         public readonly bool IsAABoxInFrustrum(AABox box)
         {
-            foreach (Plane p in this)
+            fixed (Plane* planes = &this.p0)
             {
-                Vector3 normal = p.Normal;
-                Vector3 start = new Vector3(normal.X < 0 ? box.Start.X : box.End.X, normal.Y < 0 ? box.Start.Y : box.End.Y, normal.Z < 0 ? box.Start.Z : box.End.Z);
-                Vector3 end = new Vector3(normal.X >= 0 ? box.Start.X : box.End.X, normal.Y >= 0 ? box.Start.Y : box.End.Y, normal.Z >= 0 ? box.Start.Z : box.End.Z);
-                if (p.DotProduct(end) <= 0 && p.DotProduct(start) <= 0)
+                if (!TestBoxAgainstPlane(planes, in box))
+                {
+                    return false;
+                }
+
+                if (!TestBoxAgainstPlane(planes + 1, in box))
+                {
+                    return false;
+                }
+
+                if (!TestBoxAgainstPlane(planes + 2, in box))
+                {
+                    return false;
+                }
+
+                if (!TestBoxAgainstPlane(planes + 3, in box))
+                {
+                    return false;
+                }
+
+                if (!TestBoxAgainstPlane(planes + 4, in box))
+                {
+                    return false;
+                }
+
+                if (!TestBoxAgainstPlane(planes + 5, in box))
                 {
                     return false;
                 }

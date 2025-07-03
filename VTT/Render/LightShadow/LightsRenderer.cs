@@ -17,27 +17,13 @@
         public const int MaxLightsNum = 16;
         public static int ShadowMapResolution { get; set; } = 256;
 
-        static PointLightsRenderer()
-        {
-            constPositionPtrs = new string[MaxLightsNum];
-            constColorPtrs = new string[MaxLightsNum];
-            constCutoutPtrs = new string[MaxLightsNum];
-            constIndexPtrs = new string[MaxLightsNum];
-            for (int i = 0; i < MaxLightsNum; ++i)
-            {
-                constPositionPtrs[i] = "pl_position[" + i + "]";
-                constColorPtrs[i] = "pl_color[" + i + "]";
-                constCutoutPtrs[i] = "pl_cutout[" + i + "]";
-                constIndexPtrs[i] = "pl_index[" + i + "]";
-            }
-        }
-
         public PointLight[] Lights { get; set; } = new PointLight[MaxLightsNum];
         public int NumLights { get; set; }
 
         public Texture DepthMap { get; set; }
         public uint FBO { get; set; }
         public FastAccessShader<PointLightShadowUniforms> Shader { get; set; }
+        public bool VertexShaderLayerAvailable { get; set; }
 
         public void Clear()
         {
@@ -74,8 +60,10 @@
                     r = 1024;
                     break;
                 }
+
             }
 
+            this.VertexShaderLayerAvailable = OpenGLUtil.IsExtensionAvailable("GL_AMD_vertex_shader_layer");
             ShadowMapResolution = r;
             this.DepthMap = new Texture(TextureTarget.Texture2DArray);
             this.DepthMap.Bind();
@@ -100,7 +88,9 @@
 
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
-            this.Shader = new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
+            this.Shader = this.VertexShaderLayerAvailable
+                ? new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl_ext", ShaderType.Vertex, ShaderType.Fragment))
+                : new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
         }
 
         public void ResizeShadowMaps(int resolution)
@@ -138,11 +128,6 @@
         public void PushLight(in PointLight l) => this.Lights[this.NumLights++] = new PointLight(l, this.NumLights - 1);
         public PointLight PopLight() => this.Lights[this.NumLights--];
         public PointLight PeekLight() => this.Lights[this.NumLights - 1];
-
-        private static readonly string[] constPositionPtrs;
-        private static readonly string[] constColorPtrs;
-        private static readonly string[] constCutoutPtrs;
-        private static readonly string[] constIndexPtrs;
 
         private static readonly Vector3[,] LightLook = {
             { Vector3.UnitX, -Vector3.UnitY },
@@ -245,6 +230,7 @@
                 this.Shader.Program.Bind();
                 SunShadowRenderer.ShadowPass = true;
                 GLState.CullFace.Set(false);
+                Span<Frustum> frustums = stackalloc Frustum[6];
                 for (int i1 = 0; i1 < this.NumLights; i1++)
                 {
                     PointLight pl = this.Lights[i1];
@@ -253,15 +239,23 @@
                     for (int i = 0; i < 6; ++i)
                     {
                         this._lightMatrices[i] = Matrix4x4.CreateLookAt(lightPos, lightPos + LightLook[i, 0], LightLook[i, 1]) * proj;
+                        if (this.VertexShaderLayerAvailable)
+                        {
+                            frustums[i] = new Frustum(this._lightMatrices[i]);
+                        }
                     }
 
-                    this.Shader.Uniforms.LayerOffset.Set(pl.LightIndex * 6);
+                    if (!this.VertexShaderLayerAvailable)
+                    {
+                        this.Shader.Uniforms.LayerOffset.Set(pl.LightIndex * 6);
+                        for (int i = 0; i < 6; ++i)
+                        {
+                            this.Shader.Uniforms.ProjView.Set(this._lightMatrices[i], i);
+                        }
+                    }
+
                     this.Shader.Uniforms.LightPosition.Set(pl.Position);
                     this.Shader.Uniforms.LightFarPlane.Set(pl.LightPtr.Intensity);
-                    for (int i = 0; i < 6; ++i)
-                    {
-                        this.Shader.Uniforms.ProjView.Set(this._lightMatrices[i], i);
-                    }
 
                     this._objsCache.Clear();
                     MapObject owner = pl.ObjectPtr;
@@ -290,7 +284,28 @@
                                 if (mo.CameraCullerBox.Contains(pl.Position - mo.Position) || mo.CameraCullerBox.IntersectsSphere(pl.Position - mo.Position, pl.LightPtr.Intensity))
                                 {
                                     Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                                    a.Model.GLMdl.Render(in this.Shader.Uniforms.glbEssentials, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                                    if (this.VertexShaderLayerAvailable)
+                                    {
+                                        int nInstances = 0;
+                                        for (int l = 0; l < 6; ++l)
+                                        {
+                                            if (frustums[l].IsSphereInFrustumCached(ref mo.LightShadowCullingSpheres[i1 + 1]))
+                                            {
+                                                this.Shader.Uniforms.LayerOffset.Set((pl.LightIndex * 6) + l, nInstances);
+                                                this.Shader.Uniforms.ProjView.Set(this._lightMatrices[l], nInstances++);
+                                                //a.Model.GLMdl.Render(in this.Shader.Uniforms.glbEssentials, modelMatrix, proj, this._lightMatrices[l], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                                            }
+                                        }
+
+                                        if (nInstances > 0)
+                                        {
+                                            a.Model.GLMdl.Render(in this.Shader.Uniforms.glbEssentials, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer, x => GLState.DrawElementsInstanced(PrimitiveType.Triangles, x.AmountToRender, ElementsType.UnsignedInt, 0, nInstances));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        a.Model.GLMdl.Render(in this.Shader.Uniforms.glbEssentials, modelMatrix, proj, this._lightMatrices[0], 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
+                                    }
                                 }
                             }
                         }

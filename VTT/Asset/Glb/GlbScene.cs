@@ -164,7 +164,9 @@
             colors.Add(Vector4.One);
             uint[] indices = new uint[] { 0, 1, 2, 0, 2, 3 };
             float[] vBuffer = new float[positions.Count * vertexSize];
+            float[] svBuffer = new float[positions.Count * (3 + 4 + 2)];
             int vBufIndex = 0;
+            int svBufIndex = 0;
             for (int j = 0; j < positions.Count; ++j)
             {
                 Vector3 pos = positions[j];
@@ -173,9 +175,9 @@
                 Vector3 tan = tangents[j].Xyz();
                 Vector3 bitan = bitangents[j].Xyz();
                 Vector4 color = colors[j];
-                vBuffer[vBufIndex++] = pos.X;
-                vBuffer[vBufIndex++] = pos.Y;
-                vBuffer[vBufIndex++] = pos.Z;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.X;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Y;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Z;
                 vBuffer[vBufIndex++] = uv.X;
                 vBuffer[vBufIndex++] = uv.Y;
                 vBuffer[vBufIndex++] = norm.X;
@@ -191,12 +193,12 @@
                 vBuffer[vBufIndex++] = color.Y;
                 vBuffer[vBufIndex++] = color.Z;
                 vBuffer[vBufIndex++] = color.W;
-                vBuffer[vBufIndex++] = 0;
-                vBuffer[vBufIndex++] = 0;
-                vBuffer[vBufIndex++] = 0;
-                vBuffer[vBufIndex++] = 0;
-                vBuffer[vBufIndex++] = 0;
-                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
             }
 
             List<Vector3> simplifiedTriangles = new List<Vector3>();
@@ -228,6 +230,7 @@
             glbm.areaSums = new(areaSums);
             glbm.Bounds = new AABox(new Vector3(-0.5f, -0.5f, -0.01f), new Vector3(0.5f, 0.5f, 0.01f));
             glbm.VertexBuffer = vBuffer;
+            glbm.ShadowVertexBuffer = svBuffer;
             glbm.IndexBuffer = indices;
             glbm.AmountToRender = 6;
             glbm.Material = mat;
@@ -760,7 +763,9 @@
                         }
 
                         float[] vBuffer = new float[positions.Count * vertexSize];
+                        float[] svBuffer = new float[positions.Count * (3 + 4 + 2)];
                         int vBufIndex = 0;
+                        int svBufIndex = 0;
                         Vector3 posMin = default;
                         Vector3 posMax = default;
                         Matrix4x4 mat = this.LookupChildMatrix(o);
@@ -785,9 +790,9 @@
                             Vector4 color = colors[j];
                             Vector4 weights = weightsList.Count == 0 ? Vector4.Zero : weightsList[j];
                             Vector2 boneIndices = bones.Count == 0 ? Vector2.Zero : bones[j];
-                            vBuffer[vBufIndex++] = pos.X;
-                            vBuffer[vBufIndex++] = pos.Y;
-                            vBuffer[vBufIndex++] = pos.Z;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.X;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Y;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Z;
                             vBuffer[vBufIndex++] = uv.X;
                             vBuffer[vBufIndex++] = uv.Y;
                             vBuffer[vBufIndex++] = norm.X;
@@ -803,12 +808,12 @@
                             vBuffer[vBufIndex++] = color.Y;
                             vBuffer[vBufIndex++] = color.Z;
                             vBuffer[vBufIndex++] = color.W;
-                            vBuffer[vBufIndex++] = weights.X;
-                            vBuffer[vBufIndex++] = weights.Y;
-                            vBuffer[vBufIndex++] = weights.Z;
-                            vBuffer[vBufIndex++] = weights.W;
-                            vBuffer[vBufIndex++] = boneIndices.X;
-                            vBuffer[vBufIndex++] = boneIndices.Y;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = weights.X;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = weights.Y;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = weights.Z;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = weights.W;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = boneIndices.X;
+                            vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = boneIndices.Y;
                         }
 
                         List<Vector3> simplifiedTriangles = new List<Vector3>();
@@ -856,6 +861,7 @@
                         glbm.areaSums = new(areaSums);
                         glbm.Bounds = new AABox(posMin, posMax); // Bounds generated from transformed positions
                         glbm.VertexBuffer = vBuffer;
+                        glbm.ShadowVertexBuffer = svBuffer;
                         glbm.IndexBuffer = indices;
                         glbm.Material = mp.Material != null ? this.Materials[mp.Material.Value] : this.DefaultMaterial;
 

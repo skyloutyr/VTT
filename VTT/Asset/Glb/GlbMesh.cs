@@ -7,6 +7,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Render;
+    using VTT.Render.LightShadow;
     using VTT.Render.Shaders;
     using VTT.Util;
 
@@ -16,6 +17,9 @@
         private GPUBuffer _vbo;
         private GPUBuffer _ebo;
 
+        private VertexArray _shadowVao;
+        private GPUBuffer _shadowVbo;
+
         public UnsafeResizeableArray<Vector3> simplifiedTriangles;
         public UnsafeResizeableArray<BoneData> boneData;
         public UnsafeResizeableArray<float> areaSums;
@@ -23,6 +27,7 @@
         public BoundingVolumeHierarchy BoundingVolumeHierarchy { get; set; }
         public int AmountToRender { get; set; }
         public float[] VertexBuffer { get; set; }
+        public float[] ShadowVertexBuffer { get; set; }
         public uint[] IndexBuffer { get; set; }
         public GlbMaterial Material { get; set; }
         public bool IsAnimated { get; set; }
@@ -53,7 +58,20 @@
             this._vao.PushElement(ElementType.Vec4);
             this._vao.PushElement(ElementType.Vec2);
 
+            this._shadowVao = new VertexArray();
+            this._shadowVbo = new GPUBuffer(BufferTarget.Array);
+            this._shadowVao.Bind();
+            this._shadowVbo.Bind();
+            this._shadowVbo.SetData(this.ShadowVertexBuffer);
+            this._ebo.Bind(); // EBO already has data here and is in theory already bound, so this call should be meaningless, but if it is not present the shadow vao sometimes doesn't have an associated EBO on some old drivers
+            this._shadowVao.Reset();
+            this._shadowVao.SetVertexSize<float>(3 + 4 + 2);
+            this._shadowVao.PushElement(ElementType.Vec3);
+            this._shadowVao.PushElement(ElementType.Vec4);
+            this._shadowVao.PushElement(ElementType.Vec2);
+
             this.VertexBuffer = null;
+            this.ShadowVertexBuffer = null;
             this.IndexBuffer = null;
         }
 
@@ -61,7 +79,11 @@
         {
             // Assume that shader already has base uniforms setup
             uniforms.Model.Set(model);
-            uniforms.MVP.Set(model * view * projection);
+            if (uniforms.MVP.IsValid) // Check here to avoid matrix multiplication when we don't need to set the uniform
+            {
+                uniforms.MVP.Set(model * view * projection);
+            }
+
             if (this.IsAnimated && animation != null && this.AnimationArmature != null)
             {
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);
@@ -82,7 +104,15 @@
             }
 
             this.Material.Uniform(uniforms.Material, textureAnimationIndex);
-            this._vao.Bind();
+            if (SunShadowRenderer.ShadowPass)
+            {
+                this._shadowVao.Bind();
+            }
+            else
+            {
+                this._vao.Bind();
+            }
+
             if (renderer == null)
             {
                 GLState.DrawElements(PrimitiveType.Triangles, this.AmountToRender, ElementsType.UnsignedInt, IntPtr.Zero);
@@ -121,9 +151,11 @@
 
         public void Dispose()
         {
-            GL.DeleteVertexArray(this._vao);
-            GL.DeleteBuffer(this._vbo);
-            GL.DeleteBuffer(this._ebo);
+            this._vao.Dispose();
+            this._shadowVao.Dispose();
+            this._vbo.Dispose();
+            this._shadowVbo.Dispose();
+            this._ebo.Dispose();
             this.BoundingVolumeHierarchy?.Free();
             this.BoundingVolumeHierarchy = null;
         }

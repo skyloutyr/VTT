@@ -363,6 +363,8 @@
     <EmbeddedResource Include="Embed\pattern5.png" />
     <EmbeddedResource Include="Embed\pattern6.png" />
     <EmbeddedResource Include="Embed\pattern7.png" />
+    <EmbeddedResource Include="Embed\pl_ext.frag" />
+    <EmbeddedResource Include="Embed\pl_ext.vert" />
     <EmbeddedResource Include="Embed\previewAlbedo.png" />
     <EmbeddedResource Include="Embed\previewAOMR.png" />
     <EmbeddedResource Include="Embed\previewNormal.png" />

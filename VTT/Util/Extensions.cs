@@ -357,8 +357,15 @@
 
         public static bool HasAnyNans(this SVec2 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y);
         public static bool HasAnyNans(this SVec3 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z);
+        public static bool HasAnyNans(this SVec4 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z) || float.IsNaN(vec.W);
 
         public static bool IsEmpty(this Guid id) => Guid.Equals(id, Guid.Empty);
         public static uint ArgbToAbgr(this uint self) => (self & 0xff00ff00) | ((self & 0x000000ff) << 16) | ((self & 0x00ff0000) >> 16);
+
+        public static T[] Fill<T>(this T[] arr, T val)
+        {
+            Array.Fill(arr, val);
+            return arr;
+        }
     }
 }

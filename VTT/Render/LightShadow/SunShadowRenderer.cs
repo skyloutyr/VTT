@@ -121,8 +121,11 @@
                         AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(mo.AssetID, AssetType.Model, out Asset a);
                         if (status == AssetStatus.Return && a.ModelGlReady)
                         {
-                            Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
-                            a.Model.GLMdl.Render(in this.SunShader.Uniforms.glbEssentials, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time), mo.AnimationContainer);
+                            if (vCam.frustum.IsSphereInFrustumCached(ref mo.LightShadowCullingSpheres[0]))
+                            {
+                                Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
+                                a.Model.GLMdl.Render(in this.SunShader.Uniforms.glbEssentials, modelMatrix, this.SunProjection, this.SunView, 0, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(time), mo.AnimationContainer);
+                            }
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 ﻿#version 330 core
+#extension GL_AMD_vertex_shader_layer : enable
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec4 v_weights;
 layout (location = 2) in vec2 v_bones;
@@ -7,8 +8,12 @@ layout (std140) uniform BoneData {
 	mat4 bones[256];
 };
 
+out vec4 frag_pos;
+
+uniform mat4 projView[6];
 uniform mat4 model;
 uniform bool is_animated;
+uniform int layer_offset[6];
 
 vec3 boneTransformPos(vec4 vec, uint i1, uint i2, uint i3, uint i4)
 {
@@ -40,5 +45,7 @@ void main()
 		t_pos = boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4);
 	}
 
-	gl_Position = model * vec4(t_pos, 1.0);
+	frag_pos = model * vec4(t_pos, 1.0);
+	gl_Position = projView[gl_InstanceID] * frag_pos;
+	gl_Layer = layer_offset[gl_InstanceID];
 }

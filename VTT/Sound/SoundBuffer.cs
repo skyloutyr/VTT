@@ -83,20 +83,27 @@
                     }
                 }
 
-                if (!this._haveBack)
+                if (this._maxChunks > 1)
                 {
-                    if (this.QueueBuffer(container.ID, this._back, 1))
+                    if (!this._haveBack)
                     {
-                        this._haveBack = true;
+                        if (this.QueueBuffer(container.ID, this._back, 1))
+                        {
+                            this._haveBack = true;
+                        }
                     }
                 }
 
-                if (this._haveFront && this._haveBack)
+                if (this._haveFront && (this._haveBack || this._maxChunks == 1))
                 {
-                    this._lastChunkFetched = 1;
+                    this._lastChunkFetched = this._maxChunks == 1 ? 0 : 1;
                     this._initialized = true;
                     AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._front);
-                    AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._back);
+                    if (this._maxChunks > 1)
+                    {
+                        AL.SourceQueueBuffer((uint)container.SourceID, (uint)this._back);
+                    }
+
                     mgr.BufferedSourceReadyCallback(container.Category, container.SourceID);
                     AL.SourcePlay((uint)container.SourceID);
                 }

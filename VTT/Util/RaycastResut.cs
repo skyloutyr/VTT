@@ -47,6 +47,10 @@
                             {
                                 hitsBroad.Add((mo, a));
                             }
+                            else
+                            {
+                                hitsBroad.Add((mo, null));
+                            }
                         }
                     }
                 }
@@ -67,74 +71,71 @@
             foreach ((MapObject, Asset.Asset) e in hitsBroad)
             {
                 MapObject mo = e.Item1;
-                Asset.Asset a = e.Item2;
-                if (a.Model != null && a.Model.GLMdl != null)
+                Asset.Asset asset = e.Item2;
+                GlbScene s = asset?.Model?.GLMdl ?? Client.Instance.Frontend.Renderer.ObjectRenderer.MissingModel;
+                Matrix4x4 oMat = mo.ClientCachedModelMatrix;
+                ms.Push(oMat);
+                GlbObjectType sType = s.SimplifiedRaycastMesh != null ? GlbObjectType.RaycastMesh : GlbObjectType.Mesh;
+                foreach (GlbMesh mesh in s.RootObjects.SelectMany(o => IterateGlbModel(ms, o, sType)))
                 {
-                    GlbScene s = a.Model.GLMdl;
-                    Matrix4x4 oMat = mo.ClientCachedModelMatrix;
-                    ms.Push(oMat);
-                    GlbObjectType sType = s.SimplifiedRaycastMesh != null ? GlbObjectType.RaycastMesh : GlbObjectType.Mesh;
-                    foreach (GlbMesh mesh in s.RootObjects.SelectMany(o => IterateGlbModel(ms, o, sType)))
+                    Matrix4x4 omat = ms.Current;
+                    Matrix4x4.Invert(ms.Current, out Matrix4x4 mat);
+                    Vector3 nOri = Vector4.Transform(vOri4, mat).Xyz();
+                    Vector3 nDir = Vector4.Transform(vDir4, mat.ClearTranslation()).Xyz();
+                    nDir = Vector3.Normalize(nDir);
+                    int l = mesh.simplifiedTriangles.Length;
+                    Vector3* ptr = mesh.simplifiedTriangles.GetPointer();
+                    if (mesh.BoundingVolumeHierarchy != null)
                     {
-                        Matrix4x4 omat = ms.Current;
-                        Matrix4x4.Invert(ms.Current, out Matrix4x4 mat);
-                        Vector3 nOri = Vector4.Transform(vOri4, mat).Xyz();
-                        Vector3 nDir = Vector4.Transform(vDir4, mat.ClearTranslation()).Xyz();
-                        nDir = Vector3.Normalize(nDir);
-                        int l = mesh.simplifiedTriangles.Length;
-                        Vector3* ptr = mesh.simplifiedTriangles.GetPointer();
-                        if (mesh.BoundingVolumeHierarchy != null)
+                        mesh.BoundingVolumeHierarchy.IntersectTriangles(ptr, omat, nOri, nDir, hitPoints);
+                    }
+                    else
+                    {
+                        if (l < nMaxVertsForMultithreading)
                         {
-                            mesh.BoundingVolumeHierarchy.IntersectTriangles(ptr, omat, nOri, nDir, hitPoints);
+                            Vector3 discard = new Vector3();
+                            for (int i = 0; i < l; i += 3)
+                            {
+                                IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints, ref discard);
+                            }
                         }
                         else
                         {
-                            if (l < nMaxVertsForMultithreading)
+                            try
                             {
-                                Vector3 discard = new Vector3();
-                                for (int i = 0; i < l; i += 3)
-                                {
-                                    IterateTriangles(ptr, omat, nOri, nDir, i, hitPoints, ref discard);
-                                }
+                                iterStoredFixedPtr = ptr;
+                                iterStoredMat = omat;
+                                iterStoredRayOrigin = nOri;
+                                iterStoredRayDirection = nDir;
+                                Parallel.For(0, mesh.simplifiedTriangles.Length / 3, () => new Vector3(), ParallelIterationDelegate, v => { });
                             }
-                            else
+                            finally
                             {
-                                try
-                                {
-                                    iterStoredFixedPtr = ptr;
-                                    iterStoredMat = omat;
-                                    iterStoredRayOrigin = nOri;
-                                    iterStoredRayDirection = nDir;
-                                    Parallel.For(0, mesh.simplifiedTriangles.Length / 3, () => new Vector3(), ParallelIterationDelegate, v => { });
-                                }
-                                finally
-                                {
-                                    iterStoredFixedPtr = null; // Remove ptr ref in case
-                                }
+                                iterStoredFixedPtr = null; // Remove ptr ref in case
                             }
                         }
                     }
-
-                    ms.Pop();
-                    if (hitPoints.Count > 0)
-                    {
-                        Vector3 actualHit = default;
-                        float cD = float.MaxValue;
-                        foreach (Vector3 hit in hitPoints)
-                        {
-                            float hD = (r.Origin - hit).Length();
-                            if (hD < cD)
-                            {
-                                cD = hD;
-                                actualHit = hit;
-                            }
-                        }
-
-                        hitResults.Add((e.Item1, actualHit));
-                    }
-
-                    hitPoints.Clear();
                 }
+
+                ms.Pop();
+                if (hitPoints.Count > 0)
+                {
+                    Vector3 actualHit = default;
+                    float cD = float.MaxValue;
+                    foreach (Vector3 hit in hitPoints)
+                    {
+                        float hD = (r.Origin - hit).Length();
+                        if (hD < cD)
+                        {
+                            cD = hD;
+                            actualHit = hit;
+                        }
+                    }
+
+                    hitResults.Add((e.Item1, actualHit));
+                }
+
+                hitPoints.Clear();
             }
 
             if (!hitResults.IsEmpty)

@@ -269,6 +269,7 @@
             this.EmojiShader.Uniforms.Color.Set(new Vector4(1, 1, 1, 1));
             this.EmojiShader.Uniforms.ScreenSize.Set(new Vector2(1f / Client.Instance.Frontend.Width, 1f / Client.Instance.Frontend.Height));
             this.QuadVAO.Bind();
+            GLState.ActiveTexture.Set(0);
             for (int i = this.ActivePings.Count - 1; i >= 0; i--)
             {
                 Ping p = this.ActivePings[i];

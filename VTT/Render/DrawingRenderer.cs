@@ -33,7 +33,7 @@
 
         public void Init()
         {
-            this.Shader = new FastAccessShader<DrawingUniforms>(OpenGLUtil.LoadShader("drawing", ShaderType.Vertex, ShaderType.Fragment));
+            this.Shader = new FastAccessShader<DrawingUniforms>(OpenGLUtil.LoadShader("drawing", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             this.CurrentColor = Extensions.FromArgb(Client.Instance.Settings.Color).Vec4();
             this.EraserSphere = OpenGLUtil.LoadModel("sphere_mediumres", VertexFormat.Pos);
         }
@@ -281,7 +281,7 @@
             int dCalls = 0;
             foreach (DrawingPointContainer item in Containers)
             {
-                if (cam.IsAABoxInFrustrum(item.TotalBounds))
+                if (cam.IsAABoxInFrustum(item.TotalBounds))
                 {
                     this.Shader.Uniforms.Color.Set(item.Color);
                     dTotal += item.Draw();

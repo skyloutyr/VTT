@@ -4,8 +4,17 @@ in vec2 f_texture;
 
 layout (location = 0) out vec4 f_color;
 
+layout (std140) uniform Material
+{
+    vec4 albedo_metal_roughness_alpha_cutoff; // diffuse_color = unpackRgba(x), metalness = y, roughness = z, alpha_cutoff = w
+    vec4 m_diffuse_frame;
+    vec4 m_normal_frame;
+    vec4 m_emissive_frame;
+    vec4 m_aomr_frame;
+    vec4 m_index_padding; // index = reinterpretcast<uint>(x), yzw padded
+};
+
 uniform sampler2D m_texture_diffuse;
-uniform vec4 m_diffuse_frame;
 
 uniform float gamma_factor;
 

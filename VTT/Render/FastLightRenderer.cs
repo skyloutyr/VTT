@@ -21,7 +21,7 @@
 
         public void Create()
         {
-            this.Shader = new FastAccessShader<FastLightUniforms>(OpenGLUtil.LoadShader("fast_light", ShaderType.Vertex, ShaderType.Fragment));
+            this.Shader = new FastAccessShader<FastLightUniforms>(OpenGLUtil.LoadShader("fast_light", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             this.Shader.Bind();
             this.Shader.Uniforms.PositionsSampler.Set(0);
             this.Shader.Uniforms.NormalsSampler.Set(1);
@@ -99,7 +99,7 @@
                                 baseOffset = bo4.Xyz() / bo4.W;
                                 baseOffset *= mo.Scale;
                                 baseOffset += mo.Position;
-                                if (cam.IsSphereInFrustrum(baseOffset, fl.Color.W))
+                                if (cam.IsSphereInFrustum(baseOffset, fl.Color.W))
                                 {
                                     GLState.CullFaceMode.Set((baseOffset - cam.Position).Length() < fl.Radius ? PolygonFaceMode.Front : PolygonFaceMode.Back);
                                     this.Shader.Uniforms.Model.Set(new Vector4(baseOffset, fl.Color.W));

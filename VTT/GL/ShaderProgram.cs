@@ -85,9 +85,9 @@
             int pls = GL.GetProgramProperty((uint)pId, ProgramProperty.LinkStatus)[0];
             if (pls != 1)
             {
-                GL.DeleteProgram((uint)pId);
                 sp = default;
                 error = GL.GetProgramInfoLog((uint)pId);
+                GL.DeleteProgram((uint)pId);
                 return false;
             }
 

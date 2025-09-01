@@ -261,7 +261,7 @@
             return this.ClientCamera.RayFromCursor();
         }
 
-        public bool IsAABoxInFrustrum(AABox box, Vector3 offset) => this.ClientCamera.IsAABoxInFrustrum(box, offset);
+        public bool IsAABoxInFrustum(AABox box, Vector3 offset) => this.ClientCamera.IsAABoxInFrustum(box, offset);
         public bool IsMapObjectInFrustum(MapObject mo) => this.ClientCamera.IsSphereInFrustumCached(ref mo.cameraCullerSphere);
 
         public void HandleKeys(KeyEventData args)

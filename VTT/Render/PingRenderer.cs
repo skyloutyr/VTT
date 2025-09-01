@@ -46,7 +46,7 @@
             this.PingQuestion = OpenGLUtil.LoadUIImage("icons8-help-80");
             this.ModelPing = OpenGLUtil.LoadModel("ping_lower", VertexFormat.Pos);
             this.EmojiTextures = new Texture[12];
-            this.EmojiShader = new FastAccessShader<EmojiPingUniforms>(OpenGLUtil.LoadShader("emojiping", ShaderType.Vertex, ShaderType.Fragment));
+            this.EmojiShader = new FastAccessShader<EmojiPingUniforms>(OpenGLUtil.LoadShader("emojiping", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             for (int i = 0; i < 12; ++i)
             {
                 this.EmojiTextures[i] = OpenGLUtil.LoadUIImage("emoji-" + (Ping.PingType.Smiling + i).ToString().ToLower());

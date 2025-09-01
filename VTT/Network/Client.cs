@@ -577,6 +577,7 @@
         public float Gamma { get; set; } = 2.2f;
 
         [DefaultValue(true)]
+        [Obsolete(message: "App is not designed to work without UBO support, and a GPU without UBO support would not be able to run VTT's other features either way.")]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UseUBO { get; set; } = true;
 
@@ -830,6 +831,11 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public float CameraInterpolationSpeed { get; set; } = 2f;
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue(GraphicsSetting.High)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public GraphicsSetting DirectionalShadowsQuality { get; set; } = GraphicsSetting.High;
+
 
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
         {
@@ -919,7 +925,6 @@
                 ParticlesEnabled = true,
                 ShadowsPCF = 2,
                 Gamma = 2.2f,
-                UseUBO = true,
                 EnableCustomShaders = true,
                 FOV = 60.0f,
                 TurnTrackerParticlesEnabled = false,
@@ -971,7 +976,8 @@
                 DiceRollMemory = new List<ChatDiceRollMemory>(),
                 DrawSidebarLayerControls = true,
                 UIDrawBuffersCapacity = 16,
-                CameraInterpolationSpeed = 2
+                CameraInterpolationSpeed = 2,
+                DirectionalShadowsQuality = GraphicsSetting.High
             };
 
             ret.Save();

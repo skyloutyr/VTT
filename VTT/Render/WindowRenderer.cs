@@ -121,7 +121,7 @@
                 this.SkyRenderer.Render(m, time);
                 this.ObjectRenderer.RenderLate(m, time);
                 this.MapRenderer.RenderLate(m, time);
-                this.ParticleRenderer.RenderAll();
+                this.ParticleRenderer.RenderAll(time);
                 this.Container.GuiWrapper.Render(time);
                 this.ObjectRenderer.RenderLatest(m, time);
                 this.MapRenderer.FOWRenderer?.Render(time);

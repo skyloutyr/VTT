@@ -4,17 +4,8 @@
 
     public class UniformBlockMaterial
     {
-        [UniformReference("m_diffuse_color")]
-        public UniformState<Vector4> DiffuseColor { get; set; }
-
-        [UniformReference("m_metal_factor")]
-        public UniformState<float> MetalnessFactor { get; set; }
-
-        [UniformReference("m_roughness_factor")]
-        public UniformState<float> RoughnessFactor { get; set; }
-
-        [UniformReference("m_alpha_cutoff")]
-        public UniformState<float> AlphaCutoff { get; set; }
+        [UniformReference("albedo_metal_roughness_alpha_cutoff")]
+        public UniformState<Vector4> MaterialFactors { get; set; }
 
         [UniformReference("m_texture_diffuse")]
         public UniformState<int> DiffuseSampler { get; set; }
@@ -41,6 +32,6 @@
         public UniformState<Vector4> AOMRAnimationFrame { get; set; }
 
         [UniformReference("material_index")]
-        public UniformState<uint> MaterialIndex { get; set; }
+        public UniformState<Vector4> MaterialIndexPackedPadded { get; set; }
     }
 }

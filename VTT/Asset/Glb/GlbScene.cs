@@ -18,6 +18,7 @@
     using VTT.Render;
     using VTT.Render.LightShadow;
     using VTT.Render.Shaders;
+    using VTT.Render.Shaders.UBO;
     using VTT.Util;
 
     public class GlbScene
@@ -137,7 +138,11 @@
             List<Vector4> bitangents = new List<Vector4>();
             List<Vector4> colors = new List<Vector4>();
 
-            int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
+#if USE_VTX_COMPRESSION
+            const int vertexSize = 4 + 4 + 4;
+#else
+            const int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
+#endif
             positions.Add(new Vector3(-0.5f, -0.5f, 0f));
             positions.Add(new Vector3(0.5f, -0.5f, 0f));
             positions.Add(new Vector3(0.5f, 0.5f, 0f));
@@ -175,6 +180,42 @@
                 Vector3 tan = tangents[j].Xyz();
                 Vector3 bitan = bitangents[j].Xyz();
                 Vector4 color = colors[j];
+#if USE_VTX_COMPRESSION
+                // Position
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.X;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Y;
+                vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Z;
+                vBuffer[vBufIndex++] = 0; // Padding to a hw vec4
+
+                // Texture
+                vBuffer[vBufIndex++] = uv.X;
+                vBuffer[vBufIndex++] = uv.Y;
+
+                // Normal
+                vBuffer[vBufIndex++] = VTTMath.EncodeAsUint14142(norm, 0);
+
+                // For tangent we must also include the bitan handiness
+                float handiness = bitan.Signs() == Vector3.Cross(norm, tan).Signs() ? 1 : -1;
+                vBuffer[vBufIndex++] = VTTMath.EncodeAsUint14142(tan, handiness);
+
+                // Bones (xy)
+                vBuffer[vBufIndex++] = 0;
+                vBuffer[vBufIndex++] = 0;
+
+                // Weights
+                vBuffer[vBufIndex++] = 0;
+
+                // Color
+                vBuffer[vBufIndex++] = VTTMath.UInt32BitsToSingle(color.Rgba());
+
+                // Just write 0s to the shadow buffer
+                svBuffer[svBufIndex++] = 0;
+                svBuffer[svBufIndex++] = 0;
+                svBuffer[svBufIndex++] = 0;
+                svBuffer[svBufIndex++] = 0;
+                svBuffer[svBufIndex++] = 0;
+                svBuffer[svBufIndex++] = 0;
+#else
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.X;
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Y;
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Z;
@@ -199,6 +240,7 @@
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
                 vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = 0;
+#endif
             }
 
             List<Vector3> simplifiedTriangles = new List<Vector3>();
@@ -337,8 +379,11 @@
                         List<Vector4> colors = new List<Vector4>();
                         List<Vector4> weightsList = new List<Vector4>();
                         List<Vector2> bones = new List<Vector2>();
-
-                        int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
+#if USE_VTX_COMPRESSION
+                        const int vertexSize = 4 + 4 + 4;
+#else
+                        const int vertexSize = 3 + 2 + 3 + 3 + 3 + 4 + 4 + 2;
+#endif
 
                         foreach (KeyValuePair<string, int> kv in mp.Attributes)
                         {
@@ -790,6 +835,46 @@
                             Vector4 color = colors[j];
                             Vector4 weights = weightsList.Count == 0 ? Vector4.Zero : weightsList[j];
                             Vector2 boneIndices = bones.Count == 0 ? Vector2.Zero : bones[j];
+#if USE_VTX_COMPRESSION
+                            // Position
+                            vBuffer[vBufIndex++] = pos.X;
+                            vBuffer[vBufIndex++] = pos.Y;
+                            vBuffer[vBufIndex++] = pos.Z;
+                            vBuffer[vBufIndex++] = 0; // Padding to a hw vec4
+
+                            // Texture
+                            vBuffer[vBufIndex++] = uv.X;
+                            vBuffer[vBufIndex++] = uv.Y;
+
+                            // Normal
+                            vBuffer[vBufIndex++] = VTTMath.EncodeAsUint14142(norm, 0);
+
+                            // For tangent we must also include the bitan handiness
+                            float handiness = bitan.Signs() == Vector3.Cross(norm, tan).Signs() ? 1 : -1;
+                            vBuffer[vBufIndex++] = VTTMath.EncodeAsUint14142(tan, handiness);
+
+                            // Bones (xy)
+                            vBuffer[vBufIndex++] = boneIndices.X;
+                            vBuffer[vBufIndex++] = boneIndices.Y;
+
+                            // Weights
+                            vBuffer[vBufIndex++] = VTTMath.EncodeAsUint1010102(weights);
+
+                            // Color
+                            vBuffer[vBufIndex++] = VTTMath.UInt32BitsToSingle(color.Rgba());
+
+                            // For now do the shadow buffer in a standard way
+                            svBuffer[svBufIndex++] = pos.X;
+                            svBuffer[svBufIndex++] = pos.Y;
+                            svBuffer[svBufIndex++] = pos.Z;
+                            svBuffer[svBufIndex++] = weights.X;
+                            svBuffer[svBufIndex++] = weights.Y;
+                            svBuffer[svBufIndex++] = weights.Z;
+                            svBuffer[svBufIndex++] = weights.W;
+                            svBuffer[svBufIndex++] = boneIndices.X;
+                            svBuffer[svBufIndex++] = boneIndices.Y;
+
+#else
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.X;
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Y;
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = pos.Z;
@@ -814,6 +899,7 @@
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = weights.W;
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = boneIndices.X;
                             vBuffer[vBufIndex++] = svBuffer[svBufIndex++] = boneIndices.Y;
+#endif
                         }
 
                         List<Vector3> simplifiedTriangles = new List<Vector3>();
@@ -1498,10 +1584,11 @@
             GL.BindFramebuffer(FramebufferTarget.All, fbo);
             GLState.ActiveTexture.Set(0);
 
-            ReadOnlySpan<int> data = GL.GetInteger(GLPropertyName.Viewport);
             FastAccessShader<ForwardUniforms> shader = Client.Instance.Frontend.Renderer.Pipeline.Forward;
             shader.Bind();
-            Client.Instance.Frontend.Renderer.ObjectRenderer.SetDummyUBO(camera, sun, clearColor, Client.Instance.Settings.UseUBO ? null : shader.Uniforms.FrameData);
+            UniformBufferFrameData fakeUBO = new UniformBufferFrameData();
+            fakeUBO.SetBlank(camera, sun, clearColor);
+            fakeUBO.BindAsUniformBuffer();
             shader.Uniforms.Gamma.EnableCorrection.Set(true);
             shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
 
@@ -1509,21 +1596,21 @@
             plr.Clear();
             plr.ProcessScene(Matrix4x4.Identity, this);
             plr.DrawLights(null, false, 0, null);
-            plr.UniformLights(shader.Uniforms.PointLights);
 
             GLState.ActiveTexture.Set(14);
             shader.Uniforms.DirectionalLight.DepthSampler.Set(14);
-            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.DepthFakeTexture.Bind();
+            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(true, false);
             GLState.ActiveTexture.Set(13);
             shader.Uniforms.PointLights.ShadowMapsSampler.Set(13);
             plr.DepthMap.Bind();
             GLState.ActiveTexture.Set(0);
 
-            shader.Uniforms.Alpha.Set(1.0f);
             shader.Uniforms.TintColor.Set(Vector4.One);
 
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader.Uniforms.FOW);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader.Uniforms.Skybox, clearColor.Xyz());
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(true);
+            GLState.ActiveTexture.Set(6);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.BlankTextureArray.Bind();
+            GLState.ActiveTexture.Set(0);
 
             GL.BindFramebuffer(FramebufferTarget.All, fbo);
             GL.Viewport(0, 0, width, height);
@@ -1548,7 +1635,8 @@
             d4.Dispose();
             d5.Dispose();
             tex.Dispose();
-            GL.Viewport(data[0], data[1], data[2], data[3]);
+            GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.FrameUBO.BindAsUniformBuffer();
 
             retImg.Mutate(x => x.Flip(FlipMode.Vertical));
             return retImg;

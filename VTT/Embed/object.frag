@@ -17,86 +17,72 @@
 
 in mat3 f_tbn;
 in vec3 f_world_position;
-in vec3 f_position;
 in vec4 f_color;
 in vec2 f_texture;
-in vec4 f_sun_coord;
 
 layout (std140) uniform FrameData {
-	mat4 view;
-	mat4 projection;
-	mat4 sun_view;
-	mat4 sun_projection;
-	vec3 camera_position;
-	vec3 camera_direction;
-	vec3 dl_direction;
-	vec3 dl_color;
-	vec3 al_color;
-	vec3 sky_color;
-	vec3 cursor_position;
-	vec4 grid_color;
-	vec4 dv_data;
-	uint frame;
-	uint update;
-	float grid_size;
-    float frame_delta;
-    vec2 viewport_size;
+    mat4 view; // due to the particle shader demanding view separately, the view and projection matrices can't be united together here
+    mat4 projection;
+    mat4 sun_matrix;
+    vec4 camera_position_sundir; // camera_position = xyz, sundir = unpackNorm101010(w)
+    vec4 camera_direction_sunclr; // camera_direction = xyz, sunclr = unpackRgba(w)
+    vec4 al_sky_colors_viewportsz; // al_color = unpackRgba(x), sky_color = unpackRgba(y), viewportsz = zw
+    vec4 cursor_position_gridclr; // cursor_position = xyz, grid_color = unpackRgba(w)
+    vec4 frame_update_updatedt_gridsz; // frame = reinterpretcast<uint>(x), update = reinterpretcast<uint>(y), updatedt = z, gridsz = w
+    vec4 skybox_colors_blend_pl_num; // color_day = unpackRgba(x), color_night = unpackRgba(y), blend = z, pl_num = reinterpretcast<uint>(w)
+    vec4 skybox_animation_day; // full frame data
+    vec4 skybox_animation_night; // full frame data
+    mat4 sunCascadeMatrices[5];
+    vec4 cascadePlaneDistances;
+    vec4 pl_positions_color[16]; // pl_position = [i].xyz, pl_color = unpackRgba([i].w)
+    vec4 pl_cutouts[4]; // pl_cutout = abs([i >> 2][i & 3]), pl_casts_shadows = sign(pl_cutout) > epsilon
+    vec4 fow_scale_mod; // fow_scale = vec2(x), fow_offset = vec2(0.5) + floor(fow_scale * 0.5), fow_mod = y, zw unused
 };
 
-uniform float alpha;
+layout (std140) uniform Material
+{
+    vec4 albedo_metal_roughness_alpha_cutoff; // diffuse_color = unpackRgba(x), metalness = y, roughness = z, alpha_cutoff = w
+    vec4 m_diffuse_frame;
+    vec4 m_normal_frame;
+    vec4 m_emissive_frame;
+    vec4 m_aomr_frame;
+    vec4 m_index_padding; // index = reinterpretcast<uint>(x), yzw padded
+};
 
-uniform vec4 m_diffuse_color;
-uniform float m_metal_factor;
-uniform float m_roughness_factor;
-uniform float m_alpha_cutoff;
-uniform sampler2D m_texture_diffuse;
-uniform sampler2D m_texture_normal;
-uniform sampler2D m_texture_emissive;
-uniform sampler2D m_texture_aomr;
-uniform vec4 m_diffuse_frame;
-uniform vec4 m_normal_frame;
-uniform vec4 m_emissive_frame;
-uniform vec4 m_aomr_frame;
-uniform uint material_index;
+// Samplers
+// Material:
+// Unfortunately can't pack samplers into uniforms (could with ARB_bindless_texture, but support is iffy)
+uniform sampler2D m_texture_diffuse; // binding 0
+uniform sampler2D m_texture_normal; // binding 1
+uniform sampler2D m_texture_emissive; // binding 2
+uniform sampler2D m_texture_aomr; // binding 3
+// binding 4 is empty
+// binding 5 is empty
+// Skybox
+uniform sampler2DArray tex_skybox; // binding 6
+// bindings [7..11] are empty
+// Custom shader
+uniform sampler2DArray unifiedTexture; // binding 12
+// Point lights
+uniform sampler2DArray pl_shadow_maps; // binding 13
+// Directional light
+uniform sampler2DArrayShadow dl_shadow_map; // binding 14
+// Fog of war
+uniform usampler2D fow_texture; // binding 15
 
 uniform vec4 tint_color;
 
-// Directional light
-uniform sampler2D dl_shadow_map;
-
-// Point lights
-uniform vec3 pl_position[16];
-uniform vec3 pl_color[16];
-uniform vec2 pl_cutout[16];
-uniform int pl_index[16];
-uniform int pl_num;
-uniform sampler2DArray pl_shadow_maps;
-
-// fow
-uniform usampler2D fow_texture;
-uniform vec2 fow_offset;
-uniform vec2 fow_scale;
-uniform float fow_mod;
-
 // grid
-uniform float grid_alpha;
-uniform uint grid_type;
+uniform float grid_alpha; // Is a per-object alpha (or at least per-layer), don't want to bake into UBO
+uniform uint grid_type; // Needed - could join a UBO, unclear if there is a benefit to it though
 
-// extra textures for custom shaders
-uniform sampler2DArray unifiedTexture;
+// extra textures for custom shaders - This is where all the register usage is. Consider making this a UBO.
 uniform vec2 unifiedTextureData[64];
 uniform vec4 unifiedTextureFrames[64];
 
+// Gamma correction - unfortunately can be per-object by spec, can't justify moving to UBO yet
 uniform bool gamma_correct;
 uniform float gamma_factor;
-
-// Skybox
-uniform sampler2DArray tex_skybox;
-uniform vec4 animation_day;
-uniform vec4 animation_night;
-uniform float daynight_blend;
-uniform vec3 day_color;
-uniform vec3 night_color;
 
 layout (location = 0) out vec4 g_color; // for a forward rendering program writing here is essential!
 layout (location = 1) out vec4 g_position;
@@ -114,6 +100,30 @@ const int f_frame = 0;
 const vec4 inst_color = vec4(1.0, 1.0, 1.0, 1.0);
 const int inst_id = 0;
 const float inst_lifespan = 0.0;
+
+const float oneOver255 = 1.0 / 255.0;
+vec4 unpackRgba(float packedRgbaVal)
+{
+    uint packed_ui = floatBitsToUint(packedRgbaVal);
+    return vec4(
+        float((packed_ui >> 24) & 0xffu),
+        float((packed_ui >> 16) & 0xffu),
+        float((packed_ui >> 8) & 0xffu),
+        float(packed_ui & 0xffu)
+    ) * oneOver255;
+}
+
+const float unorm101010unpackfact = 1.0 / 511.5;
+const vec3 unormtonormconversionadder = vec3(-1.0, -1.0, -1.0);
+vec3 unpackNorm101010(float packedNorm101010)
+{
+    uint packed_ui = floatBitsToUint(packedNorm101010);
+    return normalize(vec3(
+        float((packed_ui >> 20) & 0x3ffu),
+        float((packed_ui >> 10) & 0x3ffu),
+        float(packed_ui & 0x3ffu)
+    ) * unorm101010unpackfact + unormtonormconversionadder);
+}
 
 vec4 sampleMapCustom(sampler2D sampler, vec2 uvs, vec4 frameData)
 {
@@ -166,55 +176,26 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float distributionGGX(vec3 N, vec3 H, float roughness)
-{
-    float a = roughness*roughness;
-    float a2 = a*a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-    return num / denom;
-}
-
 float ndfGGX(float cosLh, float roughness)
 {
-	float alpha = roughness * roughness;
-	float alphaSq = alpha * alpha;
-	float denom = (cosLh * cosLh) * (alphaSq - 1.0) + 1.0;
-	return alphaSq / (PI * denom * denom);
-}
-
-float geometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r*r) * 0.125;
-    float num = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-    return num / denom;
-}
-float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = geometrySchlickGGX(NdotV, roughness);
-    float ggx1 = geometrySchlickGGX(NdotL, roughness);
-    return ggx1 * ggx2;
+    float alpha = roughness * roughness;
+    float alphaSq = alpha * alpha;
+    float denom = (cosLh * cosLh) * (alphaSq - 1.0) + 1.0;
+    return alphaSq / (PI * denom * denom);
 }
 
 // Single term for separable Schlick-GGX below.
 float gaSchlickG1(float cosTheta, float k)
 {
-	return cosTheta / (cosTheta * (1.0 - k) + k);
+    return cosTheta / (cosTheta * (1.0 - k) + k);
 }
 
 // Schlick-GGX approximation of geometric attenuation function using Smith's method.
 float gaSchlickGGX(float cosLi, float cosLo, float roughness)
 {
-	float r = roughness + 1.0;
-	float k = (r * r) / 8.0; // Epic suggests using this roughness remapping for analytic lights.
-	return gaSchlickG1(cosLi, k) * gaSchlickG1(cosLo, k);
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0; // Epic suggests using this roughness remapping for analytic lights.
+    return gaSchlickG1(cosLi, k) * gaSchlickG1(cosLo, k);
 }
 
 float getShadowDepth2DArray(sampler2DArray sampler, vec3 coords, float depth)
@@ -235,22 +216,34 @@ float getShadowDepth2DArray(sampler2DArray sampler, vec3 coords, float depth)
     return shadow / pcf_itr_con;
 }
 
-float getShadowDepth2D(sampler2D sampler, vec2 coords, float depth)
+float getSunShadowDepth(vec3 normal, vec3 lightDir)
 {
     float pcf_itr_con = 0;
-    float shadow = 0.0;
-    vec2 mOffset = vec2(1.0, 1.0) / textureSize(sampler, 0).xy;
-    for (int y = -PCF_ITERATIONS; y <= PCF_ITERATIONS; ++y)
-    {
-        for (int x = -PCF_ITERATIONS; x <= PCF_ITERATIONS; ++x)
-        {
-            vec2 offset = vec2(x, y) * mOffset;
-            shadow += texture(sampler, coords + offset).r < depth ? 0.0 : 1.0;
+    vec4 fragPosViewSpace = view * vec4(f_world_position, 1.0);
+	float depthValue = abs(fragPosViewSpace.z);
+	vec4 res = step(vec4(cascadePlaneDistances[0], cascadePlaneDistances[1], cascadePlaneDistances[2], cascadePlaneDistances[3]), vec4(depthValue));
+	int layer = depthValue < cascadePlaneDistances[3] ? int(res.x + res.y + res.z + res.w) : 4;
+	vec4 fragPosLightSpace = sunCascadeMatrices[layer] * vec4(f_world_position, 1.0);
+	vec3 proj_coords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	proj_coords = proj_coords * 0.5 + 0.5;
+    const float biasesMax[5] = float[](0.0003, 0.00035, 0.00025, 0.000175, 0.000175);
+    const float biasesMin[5] = float[](0.000005, 0.0000025, 0.0001, 0.0001, 0.0001);
+	float bias = max(biasesMax[layer] * (1.0 - dot(normal, lightDir)), biasesMin[layer]);
+	float currentDepth = proj_coords.z - bias;
+	float ret = 0.0;
+	vec2 texelSize = 1.0 / textureSize(dl_shadow_map, 0).xy;
+	for (float y = -PCF_ITERATIONS; y <= PCF_ITERATIONS; ++y)
+	{
+		for (float x = -PCF_ITERATIONS; x <= PCF_ITERATIONS; ++x)
+		{
+			float pcfDepth = texture(dl_shadow_map, vec4(proj_coords.xy + vec2(x, y) * texelSize, layer, currentDepth));
+			ret += pcfDepth;
             ++pcf_itr_con;
-        }
-    }
+		}
+	}
 
-    return shadow / pcf_itr_con;
+	ret /= pcf_itr_con;
+	return currentDepth > 1.0 ? 1.0 : ret;
 }
 
 vec3 cubemap(vec3 r) 
@@ -328,7 +321,7 @@ vec4 sampleSkybox(vec3 v, vec4 frameData, int index)
     }
 
     vec2 position_base = clamp(t_base, vec2(0.001, 0.001), vec2(0.999, 0.999)) * cubemap_factor + cubemap_offsets[i];
-	position_base = position_base * frameData.zw + frameData.xy;
+    position_base = position_base * frameData.zw + frameData.xy;
     return texture(tex_skybox, vec3(position_base, float(index)));
     //return vec4(t_base, 0.0, 1.0);
 }
@@ -336,17 +329,17 @@ vec4 sampleSkybox(vec3 v, vec4 frameData, int index)
 vec3 computeSkyboxColor(vec3 v)
 {
     v = cubemap(v);
-	vec4 day = sampleSkybox(v, animation_day, 0) * vec4(day_color, 1.0);
-    vec4 night = sampleSkybox(v, animation_night, 1) * vec4(night_color, 1.0);
-    return mix(day, night, daynight_blend).rgb;
+    vec4 day = sampleSkybox(v, skybox_animation_day, 0) * vec4(unpackRgba(skybox_colors_blend_pl_num.x).rgb, 1.0);
+    vec4 night = sampleSkybox(v, skybox_animation_night, 1) * vec4(unpackRgba(skybox_colors_blend_pl_num.y).rgb, 1.0);
+    return mix(day, night, skybox_colors_blend_pl_num.z).rgb;
 }
 
-float computeShadow(int light, vec3 light2frag, vec3 norm)
+float computeShadow(int light, float cutout, vec3 light2frag, vec3 norm)
 {
-	vec3 norm_l2f = normalize(light2frag);
-    float current_depth = length(light2frag) / pl_cutout[light].x;
+    vec3 norm_l2f = normalize(light2frag);
+    float current_depth = length(light2frag) / cutout;
     float bias = 0;
-    return texCubemap(norm_l2f, pl_index[light] * 6, current_depth - bias);
+    return texCubemap(norm_l2f, light * 6, current_depth - bias);
 }
 
 vec3 calcLight(vec3 world_to_light, vec3 radiance, vec3 world_to_camera, vec3 albedo, vec3 normal, float metallic, float roughness)
@@ -354,46 +347,39 @@ vec3 calcLight(vec3 world_to_light, vec3 radiance, vec3 world_to_camera, vec3 al
     vec3 F0 = mix(surface_reflection_for_dielectrics, albedo, metallic);
     vec3 Lh = normalize(world_to_camera + world_to_light);
     float cosLi = max(0.0, dot(normal, world_to_light));
-	float cosLh = max(0.0, dot(normal, Lh));
+    float cosLh = max(0.0, dot(normal, Lh));
     float cosLo = max(0.0, dot(normal, world_to_camera));
     vec3 F = fresnelSchlick(max(0.0, dot(Lh, world_to_camera)), F0);
-	float D = ndfGGX(cosLh, roughness);
-	float G = gaSchlickGGX(cosLi, cosLo, roughness);
+    float D = ndfGGX(cosLh, roughness);
+    float G = gaSchlickGGX(cosLi, cosLo, roughness);
     vec3 kd = mix(vec3(1.0) - F, computeSkyboxColor(reflect(-world_to_camera, normal)), metallic);
     vec3 diffuseBRDF = kd * albedo;
     vec3 specularBRDF = (F * D * G) / max(eff_epsilon, 4.0 * cosLi * cosLo);
     return (diffuseBRDF + specularBRDF) * radiance * cosLi;
-
 }
-
 
 vec3 calcPointLight(int light_index, vec3 world_to_camera, vec3 albedo, vec3 normal, float metallic, float roughness)
 {
-    vec3 world_to_light = normalize(pl_position[light_index] - f_world_position);
-	float light_distance = length(pl_position[light_index] - f_world_position);
-
-    float attenuation = pl_cutout[light_index].x / (light_distance * light_distance * PI * PI * 4);
-    vec3 radiance = pl_color[light_index] * attenuation;
+    vec4 light_data = pl_positions_color[light_index];
+    vec3 pl_position = light_data.xyz;
+    vec4 pl_color = unpackRgba(light_data.w);
+    vec3 world_to_light = normalize(pl_position - f_world_position);
+    float light_distance = length(pl_position - f_world_position);
+    float pl_cutout = pl_cutouts[light_index >> 2][light_index & 3];
+    float attenuation = abs(pl_cutout) / (light_distance * light_distance * PI * PI * 4);
+    vec3 radiance = pl_color.xyz * attenuation;
 #ifdef HAS_POINT_SHADOWS
-    float shadow = pl_cutout[light_index].y < eff_epsilon ? 1.0 : computeShadow(light_index, f_world_position - pl_position[light_index], normal);
+    float shadow = sign(pl_cutout) < eff_epsilon ? 1.0 : computeShadow(light_index, abs(pl_cutout), f_world_position - pl_position, normal);
 #else
     float shadow = 1.0;
 #endif
     return calcLight(world_to_light, radiance, world_to_camera, albedo, normal, metallic, roughness) * shadow;
 }
 
-float calcDirectionalShadows(vec3 surface_normal)
+float calcDirectionalShadows(vec3 normal, vec3 lightDir)
 {
 #ifdef HAS_DIRECTIONAL_SHADOWS
-    float zMod = max(0, floor(f_sun_coord.z - 1.0));
-    vec3 proj_coords = f_sun_coord.xyz / f_sun_coord.w;
-    proj_coords = proj_coords * 0.5 + 0.5; 
-    float currentDepth = proj_coords.z;    
-    float cosTheta = dot(surface_normal, -dl_direction);
-    float bias = clamp(0.003 * tan(acos(cosTheta)), 0.0, 0.01);
-    //float result = texture(dl_shadow_map, vec3(proj_coords.xy, currentDepth - bias));
-    float result = getShadowDepth2D(dl_shadow_map, proj_coords.xy, currentDepth - bias);
-    return result;
+    return getSunShadowDepth(normal, lightDir);
 #else
     return 1.0;
 #endif
@@ -401,7 +387,8 @@ float calcDirectionalShadows(vec3 surface_normal)
 
 vec3 calcDirectionalLight(vec3 world_to_camera, vec3 albedo, vec3 normal, float metallic, float roughness, float ao)
 {
-    return calcLight(-dl_direction, dl_color, world_to_camera, albedo, normal, metallic, roughness) * calcDirectionalShadows(normal);
+    vec3 dl_direction = unpackNorm101010(camera_position_sundir.w);
+    return calcLight(-dl_direction, unpackRgba(camera_direction_sunclr.w).rgb, world_to_camera, albedo, normal, metallic, roughness) * calcDirectionalShadows(normal, -dl_direction);
 }
 
 vec3 getNormalFromMap()
@@ -425,79 +412,76 @@ const float grid_side_length = 0.19;
 
 float getSquareGrid()
 {
-    float cameraDistanceFactor = length(camera_position - f_world_position);
-	float m = cameraDistanceFactor - grid_camera_cutoff_threshold;
-	float cutoffFactor = (cameraDistanceFactor * grid_side_lerp_threshold) + 1.0 + max(0, pow(m * grid_side_lerp_threshold, 2) * sign(m));
-	float m_cutoff = grid_cutoff + grid_side_length / cutoffFactor;
-	vec3 grid_modulo = abs(mod(f_world_position - (0.5 * grid_size), vec3(grid_size)));
-	vec3 g_d = ceil(max(vec3(0.0), abs(grid_size - grid_modulo) - m_cutoff * grid_size));
-	float gmx = max(g_d.x, g_d.y);
-	return gmx;
+    float grid_size = frame_update_updatedt_gridsz.w;
+    vec2 grid_v = fract((f_world_position.xy + vec2(0.5)) / grid_size); // Offset by 0.5 to match the old square grid impl, scale down by the size factor and clamp to a [0-1] factor
+    grid_v = abs((grid_v * 2.0) + vec2(-1.0, -1.0)); // fma to move from [0-1] to a [-1-1] range, and then turn it to a [1-1] range (distance to edge)
+    return max(grid_v.x, grid_v.y) > 0.96 ? 1.0 : 0.0; // return 1 if we are 0.04 units away from the edge, 0 otherwise
 }
 
 // https://www.shadertoy.com/view/wtdSzX
 float getHexGrid(bool horizontal)
 {
-	// Note that the hex grid doesn't do the m_cutoff factor for camera position relative to grid.
-
-	vec2 s = horizontal ? vec2(1.7320508, 1) : vec2(1, 1.7320508); // Hexagon factor
-	vec2 p = (f_world_position.xy - vec2(0.02, 0.02)) / grid_size; // 0.02 is offset for cutoff on eDist to 'center' the hexagons
-	vec4 hC = floor(vec4(p, p - (horizontal ? vec2(1, 0.5) : vec2(0.5, 1))) / s.xyxy) + 0.5; // Create 2 square grids
-	vec4 h = vec4(p - hC.xy * s, p - (hC.zw + 0.5) * s); // Transform them to 'hexagon space', as in make them have the correct fractions and overlap
-	vec4 hex = abs(dot(h.xy, h.xy) < dot(h.zw, h.zw) ? vec4(h.xy, hC.xy) : vec4(h.zw, hC.zw + 0.5)); // Simply pick the closest center square - naturally returns in a hexagon - more info here https://inspirnathan.com/posts/174-interactive-hexagon-grid-tutorial-part-5
-	float eDist = max(dot(hex.xy, s * 0.5), horizontal ? hex.y : hex.x); // Get distance to edge and pick the correct term for horizontal/vertical
-	return smoothstep(0.0, 0.03, eDist - 0.5 + 0.04); // Smoothstep to hexagonal edges, 0.5 is the offset, 0.04 is the side length
+    float grid_size = frame_update_updatedt_gridsz.w;
+    vec2 s = horizontal ? vec2(1.7320508, 1) : vec2(1, 1.7320508); // Hexagon factor
+    vec2 p = (f_world_position.xy - vec2(0.02, 0.02)) / grid_size; // 0.02 is offset for cutoff on eDist to 'center' the hexagons
+    vec4 hC = floor(vec4(p, p - (horizontal ? vec2(1, 0.5) : vec2(0.5, 1))) / s.xyxy) + 0.5; // Create 2 square grids
+    vec4 h = vec4(p - hC.xy * s, p - (hC.zw + 0.5) * s); // Transform them to 'hexagon space', as in make them have the correct fractions and overlap
+    vec4 hex = abs(dot(h.xy, h.xy) < dot(h.zw, h.zw) ? vec4(h.xy, hC.xy) : vec4(h.zw, hC.zw + 0.5)); // Simply pick the closest center square - naturally returns in a hexagon - more info here https://inspirnathan.com/posts/174-interactive-hexagon-grid-tutorial-part-5
+    float eDist = max(dot(hex.xy, s * 0.5), horizontal ? hex.y : hex.x); // Get distance to edge and pick the correct term for horizontal/vertical
+    return smoothstep(0.0, 0.03, eDist - 0.5 + 0.04); // Smoothstep to hexagonal edges, 0.5 is the offset, 0.04 is the side length
 }
 
-vec4 getGrid()
+vec4 getGrid(vec4 gclr)
 {
 #ifndef VTT_PKIND_GRID
-	vec3 normal = f_tbn[2];
+    vec3 normal = f_tbn[2];
     float d = dot(normal, unitZ);
     d = float(abs(d) >= 0.45);
 #else
-	float d = 1.0;
+    float d = 1.0;
 #endif
-	float gmx = 0;
-	switch (grid_type)
-	{
-		case GRID_TYPE_SQUARE:
-		{
-			gmx = getSquareGrid();
-			break;
-		}
+    float gmx = 0;
+    switch (grid_type)
+    {
+        case GRID_TYPE_SQUARE:
+        {
+            gmx = getSquareGrid();
+            break;
+        }
 
-		case GRID_TYPE_HHEX:
-		{
-			gmx = getHexGrid(true);
-			break;
-		}
+        case GRID_TYPE_HHEX:
+        {
+            gmx = getHexGrid(true);
+            break;
+        }
 
-		case GRID_TYPE_VHEX:
-		{
-			gmx = getHexGrid(false);
-			break;
-		}
+        case GRID_TYPE_VHEX:
+        {
+            gmx = getHexGrid(false);
+            break;
+        }
 
-		default:
-		{
-			gmx = getSquareGrid();
-			break;
-		}
-	}
+        default:
+        {
+            gmx = getSquareGrid();
+            break;
+        }
+    }
 
-	float world_to_cursor_x = 0.5 * (min(1.5, abs(f_world_position.x - cursor_position.x)) * 0.666666);
-	float world_to_cursor_y = 0.5 * (min(1.5, abs(f_world_position.y - cursor_position.y)) * 0.666666);
-	float world_to_cursor_sphere_factor = 0.5 * (min(1.5, length(f_world_position - cursor_position)) * 0.666666);
+    float world_to_cursor_x = 0.5 * (min(1.5, abs(f_world_position.x - cursor_position_gridclr.x)) * 0.666666);
+    float world_to_cursor_y = 0.5 * (min(1.5, abs(f_world_position.y - cursor_position_gridclr.y)) * 0.666666);
+    float world_to_cursor_sphere_factor = 0.5 * (min(1.5, length(f_world_position - cursor_position_gridclr.xyz)) * 0.666666);
 
-	float world_distance_to_cursor_effect = max(0, max(world_to_cursor_x + world_to_cursor_y - 2 * world_to_cursor_x * world_to_cursor_y, world_to_cursor_sphere_factor));
+    float world_distance_to_cursor_effect = max(0, max(world_to_cursor_x + world_to_cursor_y - 2 * world_to_cursor_x * world_to_cursor_y, world_to_cursor_sphere_factor));
 
-	return vec4(grid_color.xyz, max(0, (grid_color.a * gmx * grid_alpha * d) - world_distance_to_cursor_effect));
+    return vec4(gclr.xyz, max(0, (gclr.a * gmx * grid_alpha * d) - world_distance_to_cursor_effect));
 }
 
 float getFowMultiplier()
 {   
-    vec2 uv_fow_world = (f_world_position.xy + fow_offset) * fow_scale;
+    vec2 fow_scale = vec2(fow_scale_mod.x);
+    vec2 fow_offset = vec2(0.5) + floor(fow_scale * 0.5);
+    vec2 uv_fow_world = (f_world_position.xy + fow_offset) / fow_scale;
     vec2 fow_world = (f_world_position.xy + fow_offset);
 
     uvec4 data = texture(fow_texture, uv_fow_world);
@@ -529,14 +513,15 @@ void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float 
 {
 #ifndef NODEGRAPH
     vec4 albedo_tex = sampleMap(m_texture_diffuse, m_diffuse_frame);
-    albedo = albedo_tex.rgb * m_diffuse_color.rgb * tint_color.rgb;
+    vec4 d_clr = unpackRgba(albedo_metal_roughness_alpha_cutoff.x);
+    albedo = albedo_tex.rgb * d_clr.rgb * tint_color.rgb;
     normal = getNormalFromMap();
     vec3 aomr = sampleMap(m_texture_aomr, m_aomr_frame).rgb;
     emissive = sampleMap(m_texture_emissive, m_emissive_frame).rgb;
     ao = aomr.r;
     m = aomr.g;
     r = aomr.b;
-    a = alpha * tint_color.a * albedo_tex.a;
+    a = tint_color.a * albedo_tex.a * d_clr.a;
 #else
 #pragma ENTRY_NODEGRAPH
 #endif
@@ -544,7 +529,7 @@ void shaderGraph(out vec3 albedo, out vec3 normal, out vec3 emissive, out float 
 
 void main()
 {
-    vec3 world_to_camera = normalize(camera_position - f_world_position);
+    vec3 world_to_camera = normalize(camera_position_sundir.xyz - f_world_position);
     vec3 albedo = vec3(0.0, 0.0, 0.0);
     vec3 normal = vec3(0.0, 0.0, 0.0);
     vec3 emissive = vec3(0.0, 0.0, 0.0);
@@ -554,9 +539,10 @@ void main()
     float l_a = 0.0;
     shaderGraph(albedo, normal, emissive, ao, m, r, l_a);
     vec4 grid = vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 grid_color = unpackRgba(cursor_position_gridclr.w);
     if (grid_alpha > eff_epsilon)
     {
-        grid = getGrid();
+        grid = getGrid(grid_color);
     }
 
     g_position = vec4(f_world_position, 1.0);
@@ -565,13 +551,14 @@ void main()
     g_emission = vec4(emissive, 1.0);
 
     vec3 light_colors = vec3(0.0, 0.0, 0.0);
+    int pl_num = floatBitsToInt(skybox_colors_blend_pl_num.w);
     for (int i = 0; i < pl_num; ++i)
     {
         light_colors += calcPointLight(i, world_to_camera, albedo, normal, m, r);
     }
 
-    vec3 ambient = al_color * albedo * ao;
-	vec3 color = ambient + light_colors + calcDirectionalLight(world_to_camera, albedo, normal, m, r, ao) + emissive;
+    vec3 ambient = unpackRgba(al_sky_colors_viewportsz.x).rgb * albedo * ao;
+    vec3 color = ambient + light_colors + calcDirectionalLight(world_to_camera, albedo, normal, m, r, ao) + emissive;
     color = mix(color, grid.rgb, grid.a);
 
     if (gamma_correct)
@@ -586,10 +573,11 @@ void main()
         discard;
     }
 
+    float fow_mod = fow_scale_mod.y;
     if (fow_mod > eff_epsilon)
     {
         float fowVal = getFowMultiplier() * fow_mod + (1.0 * (1.0 - fow_mod));
-        g_color = vec4(mix(sky_color, color, fowVal), a);
+        g_color = vec4(mix(unpackRgba(al_sky_colors_viewportsz.y).rgb, color, fowVal), a);
     }
     else
     {

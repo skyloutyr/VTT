@@ -33,9 +33,6 @@
         public UniformBlockFogOfWar FOW { get; set; } = new UniformBlockFogOfWar();
 
         [UniformContainer]
-        public UniformBlockSkybox Skybox { get; set; } = new UniformBlockSkybox();
-
-        [UniformContainer]
         public UniformBlockGamma Gamma { get; set; } = new UniformBlockGamma();
     }
 }

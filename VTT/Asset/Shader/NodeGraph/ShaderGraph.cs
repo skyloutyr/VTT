@@ -69,6 +69,12 @@ void main()
             }
         }
 
+        private static void AddDefine(ref string lines, string define)
+        {
+            DefineRule def = new DefineRule(DefineRule.Mode.Define, define);
+            lines = def.ApplyRule(lines);
+        }
+
         public Image<Rgba32> GetNodeImage(SimulationContext ctx, ShaderNode node, int outputIndex, out NodeSimulationMatrix mat)
         {
             List<ShaderNode> recursionList = new List<ShaderNode>();
@@ -232,6 +238,9 @@ void main()
                 }
             }
 
+#if USE_VTX_COMPRESSION
+            AddDefine(ref vertCode, "USE_VTX_COMPRESSION");
+#endif
             if (!isParticleShader) // Particles aren't affected by shadows, no need to mess w/ defines
             {
                 bool dirShadows = Client.Instance.Settings.EnableSunShadows;
@@ -271,29 +280,32 @@ void main()
             else
             {
                 sp.Bind();
-                if (isParticleShader) // Particle shaders don't have uniform block access, and don't have shadow maps
+                sp.BindUniformBlock("FrameData", 1);
+                sp.BindUniformBlock("Material", 3);
+                if (isParticleShader) // Particle shaders don't have shadow maps
                 {
                     FastAccessShader<ParticleUniforms> parts = new FastAccessShader<ParticleUniforms>(sp);
                     parts.Uniforms.Material.DiffuseSampler.Set(0);
                     parts.Uniforms.Material.NormalSampler.Set(1);
                     parts.Uniforms.Material.EmissiveSampler.Set(2);
                     parts.Uniforms.Material.AOMRSampler.Set(3);
-                    parts.Uniforms.Skybox.Sampler.Set(6);
+                    parts.Uniforms.FrameData.Skybox.Sampler.Set(6);
                     parts.Uniforms.CustomShader.Sampler.Set(12);
+                    parts.Uniforms.FOW.Sampler.Set(15);
                     shader = parts as FastAccessShader<T>;
                 }
                 else
                 {
-                    sp.BindUniformBlock("FrameData", 1); // Bind uniform block to slot 1
                     FastAccessShader<ForwardUniforms> fwd = new FastAccessShader<ForwardUniforms>(sp);
                     fwd.Uniforms.Material.DiffuseSampler.Set(0);
                     fwd.Uniforms.Material.NormalSampler.Set(1);
                     fwd.Uniforms.Material.EmissiveSampler.Set(2);
                     fwd.Uniforms.Material.AOMRSampler.Set(3);
-                    fwd.Uniforms.Skybox.Sampler.Set(6);
+                    fwd.Uniforms.FrameData.Skybox.Sampler.Set(6);
                     fwd.Uniforms.CustomShaderExtraTexturesData.Sampler.Set(12);
                     fwd.Uniforms.PointLights.ShadowMapsSampler.Set(13);
                     fwd.Uniforms.DirectionalLight.DepthSampler.Set(14);
+                    fwd.Uniforms.FOW.Sampler.Set(15);
                     shader = fwd as FastAccessShader<T>;
                 }
 
@@ -331,6 +343,8 @@ void main()
                     {
                         this._glData = shader;
                         this._glProgram = shader.Program;
+                        shader.Program.BindUniformBlock("FrameData", 1);
+                        shader.Program.BindUniformBlock("Material", 3);
                         this._glValid = true;
                     }
                 }
@@ -1364,18 +1378,14 @@ void main()
         public void FillDefaultObjectLayout()
         {
             ShaderNode materialData = ShaderNodeTemplate.MaterialData.CreateNode();
-            ShaderNode uniformAlpha = ShaderNodeTemplate.MaterialAlpha.CreateNode();
             ShaderNode uniformTint = ShaderNodeTemplate.MaterialTintColor.CreateNode();
             ShaderNode mulAlbedo0 = ShaderNodeTemplate.Vec3Multiply.CreateNode();
             ShaderNode mulAlbedo1 = ShaderNodeTemplate.Vec3Multiply.CreateNode();
-            ShaderNode mulA0 = ShaderNodeTemplate.FloatMultiply.CreateNode();
             ShaderNode mulA1 = ShaderNodeTemplate.FloatMultiply.CreateNode();
             ShaderNode matOut = ShaderNodeTemplate.MaterialPBR.CreateNode();
 
-            mulA0.ConnectInput(0, uniformAlpha, 0);
-            mulA0.ConnectInput(1, uniformTint, 1);
-            mulA1.ConnectInput(1, mulA0, 0);
             mulA1.ConnectInput(0, materialData, 1);
+            mulA1.ConnectInput(1, uniformTint, 1);
             mulAlbedo0.ConnectInput(0, materialData, 0);
             mulAlbedo0.ConnectInput(1, materialData, 7);
             mulAlbedo1.ConnectInput(0, mulAlbedo0, 0);
@@ -1392,22 +1402,18 @@ void main()
             int wLayer1 = 240;
             int wLayer2 = 480;
 
-            uniformAlpha.Location = new Vector2(0, 300);
             uniformTint.Location = new Vector2(0, 400);
 
             mulAlbedo0.Location = new Vector2(wLayer1, 0);
             mulAlbedo1.Location = new Vector2(wLayer2, 0);
-            mulA0.Location = new Vector2(wLayer1, 400);
             mulA1.Location = new Vector2(wLayer2, 400);
 
             matOut.Location = new Vector2(wLayer2 + mulA1.Size.X + 40, 0);
 
             this.Nodes.Add(materialData);
-            this.Nodes.Add(uniformAlpha);
             this.Nodes.Add(uniformTint);
             this.Nodes.Add(mulAlbedo0);
             this.Nodes.Add(mulAlbedo1);
-            this.Nodes.Add(mulA0);
             this.Nodes.Add(mulA1);
             this.Nodes.Add(matOut);
         }

@@ -1,7 +1,9 @@
 ﻿namespace VTT.Util
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
 
     public unsafe class UnsafeArray<T> : IEnumerable<T> where T : unmanaged
     {
@@ -67,8 +69,11 @@
             return ret;
         }
 
+        public unsafe ref T GetAsRef(int index) => ref Unsafe.AsRef<T>(this._ptr + index);
         public unsafe T* GetPointer(int element = 0) => this._ptr + element;
         public void Free() => MemoryHelper.Free(this._ptr);
+        public Span<T> AsSpan() => new Span<T>(this._ptr, this._amt);
+
         public IEnumerator<T> GetEnumerator()
         {
             for (int i = 0; i < this.Length; ++i)

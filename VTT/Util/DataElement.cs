@@ -797,7 +797,7 @@
         Quaternion,
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PrimitiveDataUnion
     {
 

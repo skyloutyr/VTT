@@ -15,6 +15,7 @@
     using System.Collections.Concurrent;
     using System.Linq;
     using VTT.Render.Shaders;
+    using VTT.Render.Shaders.UBO;
 
     public class ParticleRenderer
     {
@@ -26,6 +27,7 @@
         private uint _fbo;
         private uint _rbo;
         private VectorCamera _cam;
+        private UniformBufferFrameData _blankFrameData;
 
         public Texture RenderTexture => this._renderTex;
 
@@ -41,14 +43,21 @@
 
         public void Create()
         {
-            this.ParticleShader = new FastAccessShader<ParticleUniforms>(OpenGLUtil.LoadShader("particle", ShaderType.Vertex, ShaderType.Fragment));
+#if USE_VTX_COMPRESSION
+            this.ParticleShader = new FastAccessShader<ParticleUniforms>(OpenGLUtil.LoadShader("particle", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }, new DefineRule[] { new DefineRule(DefineRule.Mode.Define, "USE_VTX_COMPRESSION") }));
+#else
+            this.ParticleShader = new FastAccessShader<ParticleUniforms>(OpenGLUtil.LoadShader("particle", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
+#endif
             this.ParticleShader.Bind();
+            this.ParticleShader.Program.BindUniformBlock("FrameData", 1);
+            this.ParticleShader.Program.BindUniformBlock("Material", 3);
             this.ParticleShader.Uniforms.Material.DiffuseSampler.Set(0);
             this.ParticleShader.Uniforms.Material.NormalSampler.Set(1);
             this.ParticleShader.Uniforms.Material.EmissiveSampler.Set(2);
             this.ParticleShader.Uniforms.Material.AOMRSampler.Set(3);
             this.ParticleShader.Uniforms.Sampler2DShadows.Set(4);
             this.ParticleShader.Uniforms.DataBufferSampler.Set(14);
+            this.ParticleShader.Uniforms.FOW.Sampler.Set(15);
 
             this._fbo = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
@@ -63,7 +72,7 @@
             OpenGLUtil.NameObject(GLObjectType.Texture, this._renderTex, "Particle preview result texture");
             this._renderTex.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
             this._renderTex.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Srgb8Alpha8, 2048, 2048, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, SizedInternalFormat.Rgba8, 2048, 2048, PixelDataFormat.Rgba, PixelDataType.Byte, IntPtr.Zero);
             GL.FramebufferTexture2D(FramebufferTarget.All, FramebufferAttachment.Color0, TextureTarget.Texture2D, this._renderTex, 0);
             GL.FramebufferRenderbuffer(FramebufferTarget.All, FramebufferAttachment.Depth, this._rbo);
             FramebufferStatus fec = GL.CheckFramebufferStatus(FramebufferTarget.All);
@@ -84,6 +93,9 @@
                 this.SecondaryWorker.Start();
             }
 
+            this._blankFrameData = new UniformBufferFrameData();
+            OpenGLUtil.NameObject(GLObjectType.Buffer, this._blankFrameData.GLID, "Particle dummy frame UBO");
+
             this.CPUTimer = new Stopwatch();
         }
 
@@ -97,34 +109,30 @@
             OpenGLUtil.StartSection("Preview particle system");
             GL.BindFramebuffer(FramebufferTarget.All, this._fbo);
             GL.Viewport(0, 0, 2048, 2048);
-            GL.ClearColor(0.39f, 0.39f, 0.39f, 1.0f);
+            GL.ClearColor(0.125f, 0.125f, 0.125f, 1.0f);
             GLState.Clear(ClearBufferMask.Color | ClearBufferMask.Depth);
             Client.Instance.Frontend.Renderer.MapRenderer.GridRenderer.Render(0, this._cam, null, false);
             GLState.DepthMask.Set(false);
             GLState.Blend.Set(true);
             GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
-            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, null, this._cam, false, true, out _))
+            this._blankFrameData.SetBlank(this._cam, default, new Vector4(0.125f, 0.125f, 0.125f, 0f));
+            this._blankFrameData.BindAsUniformBuffer();
+            if (!this.HandleCustomShader(this.CurrentlyEditedSystemInstance.Template.CustomShaderID, null, 0, this._cam, false, true, out _))
             {
                 FastAccessShader<ParticleUniforms> shader = this.ParticleShader;
                 shader.Program.Bind();
-                shader.Uniforms.Transform.View.Set(this._cam.View);
-                shader.Uniforms.Transform.Projection.Set(this._cam.Projection);
-                shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
-                shader.Uniforms.Time.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
-                shader.Uniforms.Time.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
                 shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
                 shader.Uniforms.DoFOW.Set(false);
-                shader.Uniforms.SkyColor.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-                shader.Uniforms.CursorPosition.Set(Vector3.Zero);
-                shader.Uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
-                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader.Uniforms.FOW);
-                Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformBlank(shader.Uniforms.Skybox, new Vector3(0.39f));
+                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(true);
                 GLState.ActiveTexture.Set(4);
                 Client.Instance.Frontend.Renderer.White.Bind();
                 GLState.ActiveTexture.Set(3);
                 Client.Instance.Frontend.Renderer.Black.Bind();
                 GLState.ActiveTexture.Set(2);
                 Client.Instance.Frontend.Renderer.Black.Bind();
+                GLState.ActiveTexture.Set(6);
+                Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.BlankTextureArray.Bind();
+                GLState.ActiveTexture.Set(0);
             }
 
             GLState.ActiveTexture.Set(0);
@@ -134,6 +142,7 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GLState.DepthMask.Set(true);
             GL.Viewport(0, 0, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.FrameUBO.BindAsUniformBuffer();
             OpenGLUtil.EndSection();
         }
 
@@ -269,7 +278,7 @@
         // Only call this method when changing maps, descyncs internal state for client objects!
         public void ClearParticles(Map m) => this._containerActionQueue.Enqueue(new ParticleAction(ParticleAction.Kind.FullClear, null));
 
-        public void RenderAll()
+        public void RenderAll(double dt)
         {
             Map m = Client.Instance.CurrentMap;
             if (m == null)
@@ -294,16 +303,9 @@
             FastAccessShader<ParticleUniforms> shader = this.ParticleShader;
             shader.Program.Bind();
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            shader.Uniforms.Transform.View.Set(cam.View);
-            shader.Uniforms.Transform.Projection.Set(cam.Projection);
-            shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
-            shader.Uniforms.Time.SetFromCurrent();
-            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
-            shader.Uniforms.SkyColor.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-            shader.Uniforms.CursorPosition.Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-            shader.Uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader.Uniforms.FOW);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.UniformCommonShaderData(m, dt, shader.Uniforms.FrameData, shader.Uniforms.Gamma.EnableCorrection, shader.Uniforms.Gamma.Factor);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(false);
+            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShaderWithRespectToUBO(shader.Uniforms.FrameData.Skybox, m); // Particles also use UBOs now
             BindShadows2DTexture(m);
             GLState.ActiveTexture.Set(3);
             Client.Instance.Frontend.Renderer.Black.Bind();
@@ -316,7 +318,7 @@
                 bool shouldRender = pc.IsActive && (pc.Container == null || pc.Container.MapLayer <= 0 || Client.Instance.IsAdmin);
                 if (shouldRender)
                 {
-                    this.HandleCustomShader(pc.CustomShaderID, m, cam, true, false, out shader);
+                    this.HandleCustomShader(pc.CustomShaderID, m, dt, cam, true, false, out shader);
                     pc.Render(shader, cam);
                 }
             }
@@ -336,7 +338,7 @@
         }
 
         private readonly List<FastAccessShader<ParticleUniforms>> _programsPopulated = new List<FastAccessShader<ParticleUniforms>>();
-        private bool HandleCustomShader(Guid shaderID, Map m, Camera cam, bool enableMemory, bool blank, out FastAccessShader<ParticleUniforms> shader)
+        private bool HandleCustomShader(Guid shaderID, Map m, double dt, Camera cam, bool enableMemory, bool blank, out FastAccessShader<ParticleUniforms> shader)
         {
             if (Guid.Empty.Equals(shaderID) || !Client.Instance.Settings.EnableCustomShaders)
             {
@@ -391,24 +393,9 @@
 
                         if (!enableMemory || !this._programsPopulated.Contains(shader)) // Only need to populate shader uniforms once
                         {
-                            shader.Uniforms.Transform.View.Set(cam.View);
-                            shader.Uniforms.Transform.Projection.Set(cam.Projection);
-                            shader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
-                            shader.Uniforms.Time.SetFromCurrent();
-                            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
-                            shader.Uniforms.SkyColor.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
-                            shader.Uniforms.CursorPosition.Set(blank ? Vector3.Zero : Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-                            shader.Uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
+                            Client.Instance.Frontend.Renderer.ObjectRenderer.UniformCommonShaderData(m, dt, shader.Uniforms.FrameData, shader.Uniforms.Gamma.EnableCorrection, shader.Uniforms.Gamma.Factor);
                             shader.Uniforms.DataBufferSampler.Set(14);
-                            if (blank)
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(shader.Uniforms.FOW);
-                            }
-                            else
-                            {
-                                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(shader.Uniforms.FOW);
-                            }
-
+                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(blank);
                             BindShadows2DTexture(m);
                             GLState.ActiveTexture.Set(3);
                             Client.Instance.Frontend.Renderer.Black.Bind();
@@ -435,7 +422,7 @@
                                 }
                             }
 
-                            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
+                            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShaderWithRespectToUBO(shader.Uniforms.FrameData.Skybox, m);
 
                             GLState.ActiveTexture.Set(0);
                             if (enableMemory)

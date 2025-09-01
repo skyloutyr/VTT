@@ -45,6 +45,7 @@
         public void SetData<T>(T[] dat) where T : unmanaged => GL.BufferData(this._target, dat.AsSpan(), this._usageHint);
         public void SetData<T>(IntPtr dat, int size) where T : unmanaged => GL.BufferData(this._target, Marshal.SizeOf(typeof(T)) * size, dat, this._usageHint);
         public void SetData(IntPtr dat, int size) => GL.BufferData(this._target, size, dat, this._usageHint);
+        public void SetData<T>(Span<T> span) where T : unmanaged => GL.BufferData(this._target, span, this._usageHint);
 
         public void SetSubData<T>(T[] dat, int offset) where T : unmanaged
         {

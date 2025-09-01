@@ -58,7 +58,6 @@
                     }
 
                     shader.Uniforms.TintColor.Set(passthroughData.TintColor);
-                    shader.Uniforms.Alpha.Set(passthroughData.Alpha);
                     shader.Uniforms.Grid.GridAlpha.Set(passthroughData.GridAlpha);
                     shader.Uniforms.Grid.GridType.Set(passthroughData.GridType);
                     if (a.Type == Asset.AssetType.Shader) // Custom GLSL shaders can't define extra textures due to being raw GLSL data
@@ -90,7 +89,6 @@
 
     public class ShaderContainerLocalPassthroughData
     {
-        public float Alpha { get; set; }
         public float GridAlpha { get; set; }
         public uint GridType { get; set; }
         public Vector4 TintColor { get; set; }

@@ -9,14 +9,58 @@
     using VTT.Render;
     using VTT.Render.LightShadow;
     using VTT.Render.Shaders;
+    using VTT.Render.Shaders.UBO;
+    using VTT.Util;
 
     public class GlbMaterial
     {
         public string Name { get; set; }
-        public uint Index { get; set; }
-        public Vector4 BaseColorFactor { get; set; }
-        public float MetallicFactor { get; set; }
-        public float RoughnessFactor { get; set; }
+
+        private uint _selfIndex;
+        private Vector4 _baseColor;
+        private float _metalness;
+        private float _roughness;
+        private bool _coreParamsChanged;
+
+        public uint Index
+        {
+            get => this._selfIndex;
+            set
+            {
+                this._selfIndex = value;
+                this._coreParamsChanged = true;
+            }
+        }
+
+        public Vector4 BaseColorFactor
+        {
+            get => this._baseColor;
+            set
+            {
+                this._baseColor = value;
+                this._coreParamsChanged = true;
+            }
+        }
+
+        public float MetallicFactor
+        {
+            get => this._metalness;
+            set
+            {
+                this._metalness = value;
+                this._coreParamsChanged = true;
+            }
+        }
+
+        public float RoughnessFactor
+        {
+            get => this._roughness;
+            set
+            {
+                this._roughness = value;
+                this._coreParamsChanged = true;
+            }
+        }
 
         public TextureAnimation BaseColorAnimation { get; set; }
         public VTT.GL.Texture BaseColorTexture { get; set; }
@@ -33,6 +77,9 @@
         public Material.AlphaModeEnum AlphaMode { get; set; }
         public float AlphaCutoff { get; set; }
         public bool CullFace { get; set; }
+
+        private bool _uboConstructed;
+        public UniformBufferMaterial UBO { get; set; }
 
         private static GlbMaterial lastMaterial;
         private static double lastAnimationFrameIndex;
@@ -60,35 +107,22 @@
             {
                 return;
             }
-            /* Material data:
-             * 
-                uniform vec4 m_diffuse_color;
-                uniform float m_metal_factor;
-                uniform float m_roughness_factor;
-                uniform float m_alpha_cutoff;
-                uniform sampler2D m_texture_diffuse;
-                uniform sampler2D m_texture_normal;
-                uniform sampler2D m_texture_emissive;
-                uniform sampler2D m_texture_aomr;
-             * 
-             */
 
-            // Objects are aligned in memory by their AssetID (ideally). This will unfortunately fail for forward rendering.
-            if (lastProgram != uniforms || lastMaterial != this)
+            if (!this._uboConstructed)
             {
-                uniforms.DiffuseColor.Set(this.BaseColorFactor);
-                uniforms.MetalnessFactor.Set(this.MetallicFactor);
-                uniforms.RoughnessFactor.Set(this.RoughnessFactor);
-                uniforms.AlphaCutoff.Set(this.AlphaCutoff);
-                uniforms.DiffuseAnimationFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                uniforms.NormalAnimationFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                uniforms.EmissiveAnimationFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                uniforms.AOMRAnimationFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
-                lastProgram = uniforms;
-                lastMaterial = this;
-                lastAnimationFrameIndex = textureAnimationFrameIndex;
+                this.CreateUBO();
+                if (!this._uboConstructed)
+                {
+                    return; // UBO requires async textures to be loaded first. If they are not loaded, then we can't continue rendering here.
+                }
+            }
 
-                uniforms.MaterialIndex.Set(this.Index);
+            if (lastMaterial != this)
+            {
+                lastMaterial = this;
+                this.UpdateUBO(textureAnimationFrameIndex);
+                GL.BindBuffer(BufferTarget.Uniform, 0);
+                this.UBO.BindAsUniformBuffer();
                 GLState.ActiveTexture.Set(0);
                 this.BaseColorTexture.Bind();
                 GLState.ActiveTexture.Set(1);
@@ -107,17 +141,101 @@
                     GLState.CullFace.Set(false);
                 }
             }
-            else
+
+            /* Old non-ubo code, now obsolete
             {
-                if (textureAnimationFrameIndex != lastAnimationFrameIndex)
+                // Objects are aligned in memory by their AssetID (ideally). This will unfortunately fail for forward rendering.
+                if (lastProgram != uniforms || lastMaterial != this)
                 {
-                    lastAnimationFrameIndex = textureAnimationFrameIndex;
+                    uniforms.MaterialFactors.Set(new Vector4(
+                        VTTMath.UInt32BitsToSingle(this.BaseColorFactor.Rgba()),
+                        this.MetallicFactor, this.RoughnessFactor, this.AlphaCutoff
+                    ));
+
                     uniforms.DiffuseAnimationFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                     uniforms.NormalAnimationFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                     uniforms.EmissiveAnimationFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
                     uniforms.AOMRAnimationFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    lastProgram = uniforms;
+                    lastMaterial = this;
+                    lastAnimationFrameIndex = textureAnimationFrameIndex;
+
+                    uniforms.MaterialIndexPackedPadded.Set(new Vector4(VTTMath.UInt32BitsToSingle(this.Index)));
+                    GLState.ActiveTexture.Set(0);
+                    this.BaseColorTexture.Bind();
+                    GLState.ActiveTexture.Set(1);
+                    this.NormalTexture.Bind();
+                    GLState.ActiveTexture.Set(2);
+                    this.EmissionTexture.Bind();
+                    GLState.ActiveTexture.Set(3);
+                    this.OcclusionMetallicRoughnessTexture.Bind();
+                    if (this.CullFace)
+                    {
+                        GLState.CullFace.Set(true);
+                        GLState.CullFaceMode.Set(PolygonFaceMode.Back);
+                    }
+                    else
+                    {
+                        GLState.CullFace.Set(false);
+                    }
+                }
+                else
+                {
+                    if (textureAnimationFrameIndex != lastAnimationFrameIndex)
+                    {
+                        lastAnimationFrameIndex = textureAnimationFrameIndex;
+                        uniforms.DiffuseAnimationFrame.Set(this.BaseColorAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                        uniforms.NormalAnimationFrame.Set(this.NormalAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                        uniforms.EmissiveAnimationFrame.Set(this.EmissionAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                        uniforms.AOMRAnimationFrame.Set(this.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(textureAnimationFrameIndex).LocationUniform);
+                    }
                 }
             }
+            */
+
+            this._coreParamsChanged = false;
+        }
+
+        private ulong _lastUBOUpdateFrame;
+        private double _lastAnimationIndex;
+
+        private unsafe void UpdateUBO(double animationIndex)
+        {
+            ulong now = Client.Instance.Frontend.FramesExisted;
+            if (now != this._lastUBOUpdateFrame) // It is possible that this material was already updated this frame, just bad memory align.
+            {
+                this._lastUBOUpdateFrame = now;
+                if (this._coreParamsChanged)
+                {
+                    // Need to re-upload the entire UBO
+                    this.UBO.UpdateFull(this, animationIndex);
+                }
+                else
+                {
+                    // Can potentially get away with just the animations
+                    if (this.BaseColorAnimation.IsAnimated || this.EmissionAnimation.IsAnimated || this.NormalAnimation.IsAnimated || this.OcclusionMetallicRoughnessAnimation.IsAnimated)
+                    {
+                        if (this._lastAnimationIndex != animationIndex)
+                        {
+                            // Technically could do on a per-animation basis, resulting in less data transfer, but it could result in multiple subData calls if data is badly aligned
+                            this._lastAnimationIndex = animationIndex;
+                            this.UBO.UpdateAnimationsOnly(this, animationIndex);
+                        }
+                    }
+                }
+            }
+        }
+
+        private unsafe void CreateUBO()
+        {
+            if (this.BaseColorAnimation == null || this.EmissionAnimation == null || this.NormalAnimation == null || this.OcclusionMetallicRoughnessAnimation == null)
+            {
+                return;
+            }
+
+            bool anyAnimated = this.BaseColorAnimation.IsAnimated || this.EmissionAnimation.IsAnimated || this.NormalAnimation.IsAnimated || this.OcclusionMetallicRoughnessAnimation.IsAnimated;
+            this.UBO = new UniformBufferMaterial(this, anyAnimated);
+            this._uboConstructed = true;
         }
 
         public void Dispose()
@@ -126,6 +244,10 @@
             this.OcclusionMetallicRoughnessTexture.Dispose();
             this.NormalTexture.Dispose();
             this.EmissionTexture.Dispose();
+            if (this._uboConstructed)
+            {
+                this.UBO.Dispose();
+            }
         }
     }
 
@@ -133,6 +255,7 @@
     {
         private uint _totalDuration;
         public Frame[] Frames { get; set; }
+        public bool IsAnimated => this.Frames.Length > 1;
 
         public TextureAnimation(Frame[] frames)
         {

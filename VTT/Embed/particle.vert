@@ -1,15 +1,39 @@
 ﻿#version 330 core
-layout (location = 0) in vec3 v_position;
-layout (location = 1) in vec2 v_texture;
-layout (location = 2) in vec3 v_normal;
-layout (location = 3) in vec3 v_tangent;
-layout (location = 4) in vec3 v_bitangent;
-layout (location = 5) in vec4 v_color;
-layout (location = 6) in vec4 v_weights;
-layout (location = 7) in vec2 v_bones;
 
-uniform mat4 view;
-uniform mat4 projection;
+#ifdef USE_VTX_COMPRESSION
+layout (location = 0) in vec4 v_position_padding;
+layout (location = 1) in vec4 v_texture_normal_tangent;
+layout (location = 2) in vec4 v_bones_weights_color;
+#else
+layout (location = 0) in vec3 v_position; // Has to be a vec3f, can't do compression
+layout (location = 1) in vec2 v_texture; // Could be compressed to 2x16bit component vector, but if we want to support texture ranges outside of 0-1, then must be a vec2f
+layout (location = 2) in vec3 v_normal; // Could be compressed to a int_14_14_4, if a normalize() is an acceptable instruction
+layout (location = 3) in vec3 v_tangent; // Could be compressed to a int_14_14_4, if a normalize() is an acceptable instruction
+layout (location = 4) in vec3 v_bitangent; // Can be entirely omitted if normalize(cross(normal, tangent)) is acceptable
+layout (location = 5) in vec4 v_color; // Can be compressed to a int8_8_8_8
+layout (location = 6) in vec4 v_weights; // Depending on the precision desired can be compressed to a int10_10_10_2?
+layout (location = 7) in vec2 v_bones; // Already compressed
+#endif
+
+layout (std140) uniform FrameData {
+    mat4 view; // due to the particle shader demanding view separately, the view and projection matrices can't be united together here
+    mat4 projection;
+    mat4 sun_matrix;
+    vec4 camera_position_sundir; // camera_position = xyz, sundir = unpackNorm101010(w)
+    vec4 camera_direction_sunclr; // camera_direction = xyz, sunclr = unpackRgba(w)
+    vec4 al_sky_colors_viewportsz; // al_color = unpackRgba(x), sky_color = unpackRgba(y), viewportsz = zw
+    vec4 cursor_position_gridclr; // cursor_position = xyz, grid_color = unpackRgba(w)
+    vec4 frame_update_updatedt_gridsz; // frame = reinterpretcast<uint>(x), update = reinterpretcast<uint>(y), updatedt = z, gridsz = w
+    vec4 skybox_colors_blend_pl_num; // color_day = unpackRgba(x), color_night = unpackRgba(y), blend = z, pl_num = reinterpretcast<uint>(w)
+    vec4 skybox_animation_day; // full frame data
+    vec4 skybox_animation_night; // full frame data
+    mat4 sunCascadeMatrices[5];
+    vec4 cascadePlaneDistances;
+    vec4 pl_positions_color[16]; // pl_position = [i].xyz, pl_color = unpackRgba([i].w)
+    vec4 pl_cutouts[4]; // pl_cutout = abs([i >> 2][i & 3]), pl_casts_shadows = sign(pl_cutout) > epsilon
+    vec4 fow_scale_mod; // fow_scale = vec2(x), fow_offset = vec2(0.5) + floor(fow_scale * 0.5), fow_mod = y, zw unused
+};
+
 uniform mat4 model;
 
 uniform uint frame;
@@ -19,9 +43,6 @@ uniform samplerBuffer dataBuffer;
 
 // FOW
 uniform usampler2D fow_texture;
-uniform vec2 fow_offset;
-uniform vec2 fow_scale;
-uniform float fow_mod;
 uniform bool billboard;
 uniform bool do_fow;
 
@@ -48,7 +69,9 @@ vec4 decodeMColor(float cData)
 
 float getFowMultiplier(vec3 f_world_position)
 {   
-    vec2 uv_fow_world = (f_world_position.xy + fow_offset) * fow_scale;
+    vec2 fow_scale = vec2(fow_scale_mod.x);
+    vec2 fow_offset = vec2(0.5) + floor(fow_scale * 0.5);
+    vec2 uv_fow_world = (f_world_position.xy + fow_offset) / fow_scale;
     vec2 fow_world = (f_world_position.xy + fow_offset);
 
     uvec4 data = texture(fow_texture, uv_fow_world);
@@ -79,16 +102,28 @@ vec2 decodeSpriteSheetCoordinates(float f)
 	int iY = ssIndex / int(sprite_sheet_data.x);
 	float stepX = 1.0 / sprite_sheet_data.x;
 	float stepY = 1.0 / sprite_sheet_data.y;
+#ifdef USE_VTX_COMPRESSION
+	vec2 v = vec2(
+		stepX * float(iX) + stepX * v_texture_normal_tangent.x, 
+		stepY * float(iY) + stepY * v_texture_normal_tangent.y
+	);
+#else
 	vec2 v = vec2(
 		stepX * float(iX) + stepX * v_texture.x, 
 		stepY * float(iY) + stepY * v_texture.y
 	);
+#endif
 
 	return v;
 }
 
 void main()
 {
+#ifdef USE_VTX_COMPRESSION
+	vec3 v_position = v_position_padding.xyz;
+	vec4 v_color = decodeMColor(v_bones_weights_color.w);
+	vec2 v_texture = v_texture_normal_tangent.xy;
+#endif
 	inst_id = gl_InstanceID;
 	int idx = gl_InstanceID * 2;
 	vec4 v0 = texelFetch(dataBuffer, idx + 0);
@@ -107,6 +142,7 @@ void main()
 	f_color = v_color;
 	f_texture = is_sprite_sheet ? decodeSpriteSheetCoordinates(v1.z) : v_texture;
 	f_frame = int(floatBitsToUint(inst_frame));
+    float fow_mod = fow_scale_mod.y;
 	float fow_mul = do_fow ? 1.0 : mix(getFowMultiplier(vec3(inst_x, inst_y, inst_z)), 1.0, 1.0 - fow_mod);
 	gl_Position = (inst_w < 0.001 || fow_mul <= 0.001) ? vec4(0.0, 0.0, 0.0, -1.0) : projection * (viewPos + vec4((billboard ? v_position * inst_w : vec3(0.0, 0.0, 0.0)), 0.0));
 }

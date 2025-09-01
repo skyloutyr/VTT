@@ -48,6 +48,12 @@
             this._ebo.SetData(this.IndexBuffer);
 
             this._vao.Reset();
+#if USE_VTX_COMPRESSION
+            this._vao.SetVertexSize<float>(4 + 4 + 4);
+            this._vao.PushElement(ElementType.Vec4);
+            this._vao.PushElement(ElementType.Vec4);
+            this._vao.PushElement(ElementType.Vec4);
+#else
             this._vao.SetVertexSize<float>(3 + 2 + 3 + 3 + 3 + 4 + 4 + 2);
             this._vao.PushElement(ElementType.Vec3);
             this._vao.PushElement(ElementType.Vec2);
@@ -57,6 +63,7 @@
             this._vao.PushElement(ElementType.Vec4);
             this._vao.PushElement(ElementType.Vec4);
             this._vao.PushElement(ElementType.Vec2);
+#endif
 
             this._shadowVao = new VertexArray();
             this._shadowVbo = new GPUBuffer(BufferTarget.Array);
@@ -89,11 +96,11 @@
                 this.AnimationArmature.CalculateAllTransforms(animation, modelAnimationTime, animationStorage);
                 if (animationStorage != null)
                 {
-                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(animationStorage);
+                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBO.LoadAll(animationStorage);
                 }
                 else
                 {
-                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBOManager.LoadAll(this.AnimationArmature);
+                    Client.Instance.Frontend.Renderer.ObjectRenderer.BonesUBO.LoadAll(this.AnimationArmature);
                 }
 
                 uniforms.IsAnimated.Set(true);

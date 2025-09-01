@@ -8,6 +8,7 @@
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Network;
+    using VTT.Render.LightShadow;
     using VTT.Util;
 
     public class MapObject : ISerializable
@@ -132,6 +133,7 @@
         public AABox CameraCullerBox { get; set; } = new AABox(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
         public FrustumCullingSphere cameraCullerSphere = new FrustumCullingSphere(Vector3.Zero, 0.5f);
         public FrustumCullingSphere[] LightShadowCullingSpheres { get; } = new FrustumCullingSphere[17].Fill(new FrustumCullingSphere(Vector3.Zero, 0.5f));
+        public FrustumCullingSphere[] SunShadowCullingSpheres { get; } = new FrustumCullingSphere[SunShadowRenderer.NumShadowCascades + 1].Fill(new FrustumCullingSphere(Vector3.Zero, 0.5f));
 
         public bool ClientAssignedModelBounds { get; set; }
 
@@ -358,6 +360,7 @@
             this.CameraCullerBox = new BBBox(this.ClientBoundingBox, this.Rotation).Scale(this.Scale).Bounds;
             this.cameraCullerSphere = new FrustumCullingSphere(this.CameraCullerBox.Center + this.Position, this.CameraCullerBox.Size.Length() * 0.5f);
             Array.Fill(this.LightShadowCullingSpheres, this.cameraCullerSphere);
+            Array.Fill(this.SunShadowCullingSpheres, this.cameraCullerSphere);
         }
 
         public void ClientSetPathMovementChanges(List<Vector3> path)

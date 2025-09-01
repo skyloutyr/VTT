@@ -7,7 +7,6 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Numerics;
-    using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Asset.Obj;
@@ -17,6 +16,7 @@
     using VTT.Network;
     using VTT.Render.LightShadow;
     using VTT.Render.Shaders;
+    using VTT.Render.Shaders.UBO;
     using VTT.Util;
 
     public class MapObjectRenderer
@@ -119,11 +119,11 @@
             OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetVbo, "Missing asset vbo");
             OpenGLUtil.NameObject(GLObjectType.Buffer, this._noAssetEbo, "Missing asset ebo");
 
-            this.OverlayShader = new FastAccessShader<FOWDependentOverlayUniforms>(OpenGLUtil.LoadShader("moverlay", ShaderType.Vertex, ShaderType.Fragment));
+            this.OverlayShader = new FastAccessShader<FOWDependentOverlayUniforms>(OpenGLUtil.LoadShader("moverlay", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             this.OverlayShader.Bind();
             this.OverlayShader.Uniforms.DoFOW.Set(false);
             this.OverlayShader.Uniforms.FOW.Sampler.Set(15);
-            this.HighlightShader = new FastAccessShader<HighlightUniforms>(OpenGLUtil.LoadShader("highlight", ShaderType.Vertex, ShaderType.Fragment));
+            this.HighlightShader = new FastAccessShader<HighlightUniforms>(OpenGLUtil.LoadShader("highlight", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             this.PrecomputeSelectionBox();
 
             this.MoveArrow = OpenGLUtil.LoadModel("arrow_arrow", VertexFormat.Pos);
@@ -151,8 +151,8 @@
             this.PortalHightlightRenderer = new PortalHighlightRenderer();
             this.PortalHightlightRenderer.Create();
 
-            this.FrameUBOManager = new FrameUBOManager();
-            this.BonesUBOManager = new BonesUBO();
+            this.FrameUBO = new UniformBufferFrameData();
+            this.BonesUBO = new UniformBufferBones();
 
             this.CPUTimerAuras = new Stopwatch();
             this.CPUTimerGizmos = new Stopwatch();
@@ -163,8 +163,14 @@
             this.CPUTimerHighlights = new Stopwatch();
             this.CPUTimerCompound = new Stopwatch();
             this.MissingModel = new GlbScene(new ModelData.Metadata(), IOVTT.ResourceToStream("VTT.Embed.missing.glb"));
-
-            this.PreviewShader = new FastAccessShader<ForwardMeshOnlyUniforms>(OpenGLUtil.LoadShader("object_preview", ShaderType.Vertex, ShaderType.Fragment));
+#if USE_VTX_COMPRESSION
+            this.PreviewShader = new FastAccessShader<ForwardMeshOnlyUniforms>(OpenGLUtil.LoadShader("object_preview", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }, new DefineRule[] { new DefineRule(DefineRule.Mode.Define, "USE_VTX_COMPRESSION") }));
+#else
+            this.PreviewShader = new FastAccessShader<ForwardMeshOnlyUniforms>(OpenGLUtil.LoadShader("object_preview", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
+#endif
+            this.PreviewShader.Bind();
+            this.PreviewShader.Program.BindUniformBlock("BoneData", 2);
+            this.PreviewShader.Program.BindUniformBlock("Material", 3);
         }
 
         #region Hightlight Box
@@ -253,8 +259,8 @@
             new Vector3(1f, 1f, 1f),
         };
 
-        public FrameUBOManager FrameUBOManager { get; private set; }
-        public BonesUBO BonesUBOManager { get; private set; }
+        public UniformBufferFrameData FrameUBO { get; private set; }
+        public UniformBufferBones BonesUBO { get; private set; }
 
         public void PrecomputeSelectionBox()
         {
@@ -382,13 +388,21 @@
                 this._cachedSkyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
                 GlbMaterial.ResetState();
                 this.DirectionalLightRenderer.Render(m, delta);
+                this.RenderPointLights(m, delta);
                 this.UpdateUBO(m, delta);
                 this.RenderDeferred(m, delta);
                 this.RenderHighlights(m, delta);
                 this.RenderObjectMouseOver(m);
-                this.RenderDebug(m);
                 OpenGLUtil.EndSection();
             }
+        }
+
+        private void UpdateUBO(Map m, double delta)
+        {
+            this.CPUTimerUBOUpdate.Restart();
+            this.FrameUBO.SetData(m, delta);
+            this.FrameUBO.BindAsUniformBuffer();
+            this.CPUTimerUBOUpdate.Stop();
         }
 
         private readonly PreviewAnimationContainer _previewAnimationContainer = new PreviewAnimationContainer();
@@ -403,7 +417,7 @@
             this.OverlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
             this.OverlayShader.Uniforms.SkyColor.Set(Client.Instance.Frontend.Renderer.ObjectRenderer.CachedSkyColor);
             this.OverlayShader.Uniforms.DoFOW.Set(Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.HasFOW);
-            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.OverlayShader.Uniforms.FOW);
+            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(this.OverlayShader.Uniforms.FOW, false);
             GLState.DepthTest.Set(false);
             foreach (MapObject mo in this._crossedOutObjects)
             {
@@ -528,10 +542,6 @@
 
             this.CPUTimerHighlights.Stop();
             OpenGLUtil.EndSection();
-        }
-
-        public void RenderDebug(Map m)
-        {
         }
 
         private void RenderEditMode(Map m)
@@ -873,8 +883,9 @@
             OpenGLUtil.EndSection();
         }
 
-        private void RenderLights(Map m, double delta)
+        private void RenderPointLights(Map m, double delta)
         {
+            OpenGLUtil.StartSection("Point shadows");
             this.CPUTimerLights.Restart();
 
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
@@ -917,6 +928,7 @@
 
             plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
             this.CPUTimerLights.Stop();
+            OpenGLUtil.EndSection();
         }
 
         private readonly List<MapObject> _crossedOutObjects = new List<MapObject>();
@@ -942,13 +954,9 @@
             GLState.DepthTest.Set(true);
             GLState.DepthFunc.Set(ComparisonMode.LessOrEqual);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-            PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
-            OpenGLUtil.StartSection("Point shadows");
-            this.RenderLights(m, delta);
-            OpenGLUtil.EndSection();
-
             OpenGLUtil.StartSection("Deferred pass");
-            FastAccessShader<DeferredUniforms> shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m);
+            OpenGLUtil.StartSection("Deferred initial pass");
+            FastAccessShader<DeferredUniforms> shader = Client.Instance.Frontend.Renderer.Pipeline.BeginDeferred(m, delta);
 
             this._crossedOutObjects.Clear();
             int maxLayer = Client.Instance.IsAdmin ? 2 : 0;
@@ -1005,7 +1013,8 @@
                 }
             }
 
-            Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m);
+            OpenGLUtil.EndSection();
+            Client.Instance.Frontend.Renderer.Pipeline.EndDeferred(m, delta);
             OpenGLUtil.EndSection();
             this.CPUTimerDeferred.Stop();
             this.CPUTimerMain.Restart();
@@ -1033,18 +1042,17 @@
                 currentShader.Program.Bind();
                 if (i <= 0)
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(currentShader.Uniforms.FOW);
+                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(false);
                 }
                 else
                 {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(currentShader.Uniforms.FOW);
+                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(true);
                 }
 
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
-                this._passthroughData.Alpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
+                float objectLayerAlpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;
                 this._passthroughData.GridType = (uint)m.GridType;
-                currentShader.Uniforms.Alpha.Set(this._passthroughData.Alpha);
                 currentShader.Uniforms.Grid.GridAlpha.Set(this._passthroughData.GridAlpha);
                 currentShader.Uniforms.Grid.GridType.Set(this._passthroughData.GridType);
                 this._forwardLists[i + 2].Sort((l, r) => r.CameraDistanceToThisFrameForDeferredRejects.CompareTo(l.CameraDistanceToThisFrameForDeferredRejects));
@@ -1054,22 +1062,10 @@
                     bool assetReady = mo.DeferredAssetReadinessThisFrame;
                     Matrix4x4 modelMatrix = mo.ClientCachedModelMatrix;
                     currentShader = forwardShader;
-                    this._passthroughData.TintColor = mo.TintColor.Vec4();
+                    this._passthroughData.TintColor = mo.TintColor.Vec4() * new Vector4(1, 1, 1, objectLayerAlpha);
                     currentShader.Uniforms.TintColor.Set(this._passthroughData.TintColor);
                     FastAccessShader<ForwardUniforms> customShader = null;
                     bool hadCustomRenderShader = !mo.ShaderID.IsEmpty() && CustomShaderRenderer.Render(mo.ShaderID, m, this._passthroughData, double.NaN, delta, out customShader);
-                    if (hadCustomRenderShader)
-                    {
-                        if (i <= 0)
-                        {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.Uniform(customShader.Uniforms.FOW);
-                        }
-                        else
-                        {
-                            Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.UniformBlank(customShader.Uniforms.FOW);
-                        }
-                    }
-
                     GlbScene mdl = (assetReady ? a.Model.GLMdl : this.MissingModel);
                     mo.LastRenderModel = mdl;
                     mdl.Render(in (hadCustomRenderShader ? customShader : currentShader).Uniforms.glbEssentials, modelMatrix, cam.Projection, cam.View, double.NaN, mo.AnimationContainer.CurrentAnimation, mo.AnimationContainer.GetTime(delta), mo.AnimationContainer);
@@ -1111,145 +1107,55 @@
             GLState.CullFace.Set(true);
         }
 
-        public void SetDummyUBO(Camera cam, DirectionalLight sun, Vector4 clearColor, UniformBlockFrameData uniforms)
+        public void UniformCommonShaderData(Map m, double delta, UniformBlockFrameData frameDataUniforms, UniformState<bool> gammaEnabled, UniformState<float> gammaFactor)
         {
-            if (uniforms != null)
-            {
-                uniforms.View.Set(cam.View);
-                uniforms.Projection.Set(cam.Projection);
-                uniforms.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
-                uniforms.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                uniforms.CameraPosition.Set(cam.Position);
-                uniforms.CameraDirection.Set(cam.Direction);
-                uniforms.SunDirection.Set(sun.Direction.Normalized());
-                uniforms.SunColor.Set(sun.Color);
-                uniforms.AmbientColor.Set(new Vector3(0.03f));
-                uniforms.SunView.Set(Matrix4x4.Identity);
-                uniforms.SunProjection.Set(Matrix4x4.Identity);
-                uniforms.SkyColor.Set(clearColor.Xyz());
-                uniforms.GridColor.Set(Vector4.Zero);
-                uniforms.GridScale.Set(1.0f);
-                uniforms.CursorPosition.Set(Vector3.Zero);
-                uniforms.DarkvisionData.Set(Vector4.Zero);
-                uniforms.FrameDT.Set(0f);
-                uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
-            }
-            else
-            {
-                unsafe
-                {
-                    this.FrameUBOManager.memory->view = cam.View;
-                    this.FrameUBOManager.memory->projection = cam.Projection;
-                    this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
-                    this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                    this.FrameUBOManager.memory->camera_position = new Vector4(cam.Position, 0.0f);
-                    this.FrameUBOManager.memory->camera_direction = new Vector4(cam.Direction, 0.0f);
-                    this.FrameUBOManager.memory->dl_direction = new Vector4(sun.Direction.Normalized(), 0.0f);
-                    this.FrameUBOManager.memory->dl_color = new Vector4(sun.Color, 0.0f);
-                    this.FrameUBOManager.memory->al_color = new Vector4(0.03f, 0.03f, 0.03f, 0.0f);
-                    this.FrameUBOManager.memory->sun_view = Matrix4x4.Identity;
-                    this.FrameUBOManager.memory->sun_projection = Matrix4x4.Identity;
-                    this.FrameUBOManager.memory->sky_color = clearColor;
-                    this.FrameUBOManager.memory->grid_color = Vector4.Zero;
-                    this.FrameUBOManager.memory->grid_size = 1.0f;
-                    this.FrameUBOManager.memory->cursor_position = Vector4.Zero;
-                    this.FrameUBOManager.memory->dv_data = Vector4.Zero;
-                    this.FrameUBOManager.memory->viewport_size = new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
-                    this.FrameUBOManager.memory->frame_delta = 0f;
-                }
-
-                this.FrameUBOManager.Upload();
-            }
-        }
-
-        private void UpdateUBO(Map m, double delta)
-        {
-            this.CPUTimerUBOUpdate.Restart();
-            if (Client.Instance.Settings.UseUBO)
-            {
-                Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
-
-                unsafe
-                {
-                    this.FrameUBOManager.memory->view = cam.View;
-                    this.FrameUBOManager.memory->projection = cam.Projection;
-                    this.FrameUBOManager.memory->frame = (uint)Client.Instance.Frontend.FramesExisted;
-                    this.FrameUBOManager.memory->update = (uint)Client.Instance.Frontend.UpdatesExisted;
-                    this.FrameUBOManager.memory->camera_position = new Vector4(cam.Position, 0);
-                    this.FrameUBOManager.memory->camera_direction = new Vector4(cam.Direction, 0);
-                    this.FrameUBOManager.memory->dl_direction = new Vector4(this._cachedSunDir, 1.0f);
-                    this.FrameUBOManager.memory->dl_color = this._cachedSunColor.Vec4() * m.SunIntensity;
-                    this.FrameUBOManager.memory->al_color = new Vector4(this._cachedAmbientColor, 1.0f) * m.AmbientIntensity;
-                    this.FrameUBOManager.memory->sun_view = this.DirectionalLightRenderer.SunView;
-                    this.FrameUBOManager.memory->sun_projection = this.DirectionalLightRenderer.SunProjection;
-                    this.FrameUBOManager.memory->sky_color = this._cachedSkyColor.Vec4();
-                    this.FrameUBOManager.memory->grid_color = m.GridColor.Vec4();
-                    this.FrameUBOManager.memory->grid_size = m.GridSize;
-                    this.FrameUBOManager.memory->cursor_position = new Vector4(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero, 1.0f);
-                    this.FrameUBOManager.memory->dv_data = Vector4.Zero;
-                    this.FrameUBOManager.memory->frame_delta = (float)delta;
-                    this.FrameUBOManager.memory->viewport_size = new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height);
-
-                    if (m.EnableDarkvision)
-                    {
-                        if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                        {
-                            if (m.GetObject(kv.Item1, out MapObject mo))
-                            {
-                                this.FrameUBOManager.memory->dv_data = new Vector4(mo.Position, kv.Item2 / m.GridUnit);
-                            }
-                        }
-                    }
-                }
-
-                this.FrameUBOManager.Upload();
-            }
-
-            this.CPUTimerUBOUpdate.Stop();
-        }
-
-        public void UniformMainShaderData(Map m, FastAccessShader<ForwardUniforms> shader, double delta)
-        {
-            Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
+            /* Old non-ubo handling code
             if (!Client.Instance.Settings.UseUBO) // If UBOs are used all uniforms are in the UBO
             {
-                UniformBlockFrameData uniforms = shader.Uniforms.FrameData;
-                uniforms.View.Set(cam.View);
-                uniforms.Projection.Set(cam.Projection);
-                uniforms.Frame.Set((uint)Client.Instance.Frontend.FramesExisted);
-                uniforms.Update.Set((uint)Client.Instance.Frontend.UpdatesExisted);
-                uniforms.CameraPosition.Set(cam.Position);
-                uniforms.CameraDirection.Set(cam.Direction);
-                uniforms.SunDirection.Set(this._cachedSunDir);
-                uniforms.SunColor.Set(this._cachedSunColor.Vec3() * m.SunIntensity);
-                uniforms.AmbientColor.Set(this._cachedAmbientColor * m.AmbientIntensity);
-                uniforms.SunView.Set(this.DirectionalLightRenderer.SunView);
-                uniforms.SunProjection.Set(this.DirectionalLightRenderer.SunProjection);
-                uniforms.SkyColor.Set(this._cachedSkyColor.Vec3());
-                uniforms.GridColor.Set(m.GridColor.Vec4());
-                uniforms.GridScale.Set(m.GridSize);
-                uniforms.CursorPosition.Set(Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero);
-                uniforms.DarkvisionData.Set(Vector4.Zero);
-                uniforms.FrameDT.Set((float)delta);
-                uniforms.ViewportSize.Set(new Vector2(Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height));
-                if (m.EnableDarkvision)
-                {
-                    if (m.DarkvisionData.TryGetValue(Client.Instance.ID, out (Guid, float) kv))
-                    {
-                        if (m.GetObject(kv.Item1, out MapObject mo))
-                        {
-                            uniforms.DarkvisionData.Set(new Vector4(mo.Position, kv.Item2));
-                        }
-                    }
-                }
-            }
+                frameDataUniforms.View.Set(cam.View);
+                frameDataUniforms.Projection.Set(cam.Projection);
 
-            shader.Uniforms.Gamma.EnableCorrection.Set(true);
-            shader.Uniforms.Gamma.Factor.Set(Client.Instance.Settings.Gamma);
-            plr.UniformLights(shader.Uniforms.PointLights);
-            Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShader(shader.Uniforms.Skybox, m);
+                frameDataUniforms.CameraPositionSunDirection.Set(new Vector4(
+                    cam.Position, 
+                    this._cachedSunDir.PackNorm101010()
+                ));
+
+                frameDataUniforms.CameraDirectionSunColor.Set(new Vector4(
+                    cam.Direction, 
+                    m == null ? VTTMath.UInt32BitsToSingle(0xffffffff) : VTTMath.UInt32BitsToSingle((this._cachedSunColor.Vec3() * m.SunIntensity).Rgba())
+                ));
+
+                frameDataUniforms.AmbientSkyColorsViewportSize.Set(new Vector4(
+                    m == null ? VTTMath.UInt32BitsToSingle(0x080808ff) : VTTMath.UInt32BitsToSingle((this._cachedAmbientColor * m.AmbientIntensity).Rgba()),
+                    m == null ? VTTMath.UInt32BitsToSingle(0x080808ff) : VTTMath.UInt32BitsToSingle(this.CachedSkyColor.Rgba()), 
+                    Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Width, 
+                    Client.Instance.Frontend.GameHandle.FramebufferSize.Value.Height
+                ));
+
+                frameDataUniforms.CursorPositionGridColor.Set(new Vector4(
+                    m == null ? Vector3.Zero : Client.Instance.Frontend.Renderer.MapRenderer.TerrainHit ?? Vector3.Zero, 
+                    m == null ? VTTMath.UInt32BitsToSingle(0x00000000) : VTTMath.UInt32BitsToSingle(m.GridColor.Rgba())
+                ));
+
+                frameDataUniforms.FrameUpdateDTGridSZ.Set(new Vector4(
+                    Client.Instance.Frontend.FramesExisted % uint.MaxValue, 
+                    VTTMath.UInt32BitsToSingle((uint)Client.Instance.Frontend.UpdatesExisted), 
+                    0f, 
+                    1.0f
+                ));
+            }
+            */
+
+            gammaEnabled?.Set(false);
+            gammaFactor?.Set(Client.Instance.Settings.Gamma);
+            if (m != null)
+            {
+                Client.Instance.Frontend.Renderer.SkyRenderer.SkyboxRenderer.UniformShaderWithRespectToUBO(frameDataUniforms.Skybox, m);
+            }
         }
+
+        public void UniformMainShaderData(Map m, FastAccessShader<ForwardUniforms> shader, double delta) => this.UniformCommonShaderData(m, delta, shader.Uniforms.FrameData, shader.Uniforms.Gamma.EnableCorrection, shader.Uniforms.Gamma.Factor);
 
         public Vector3 CachedSkyColor => this._cachedSkyColor.Vec3();
         public Vector3 CachedSunDirection => this._cachedSunDir;
@@ -1345,107 +1251,5 @@
         Gizmo,
         Path,
         Arrows
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 432, Pack = 1)]
-    public unsafe struct FrameUBO
-    {
-        [FieldOffset(0)] public Matrix4x4 view;
-        [FieldOffset(64)] public Matrix4x4 projection;
-        [FieldOffset(128)] public Matrix4x4 sun_view;
-        [FieldOffset(192)] public Matrix4x4 sun_projection;
-        [FieldOffset(256)] public Vector4 camera_position;
-        [FieldOffset(272)] public Vector4 camera_direction;
-        [FieldOffset(288)] public Vector4 dl_direction;
-        [FieldOffset(304)] public Vector4 dl_color;
-        [FieldOffset(320)] public Vector4 al_color;
-        [FieldOffset(336)] public Vector4 sky_color;
-        [FieldOffset(352)] public Vector4 cursor_position;
-        [FieldOffset(368)] public Vector4 grid_color;
-        [FieldOffset(384)] public Vector4 dv_data;
-        [FieldOffset(400)] public uint frame;
-        [FieldOffset(404)] public uint update;
-        [FieldOffset(408)] public float grid_size;
-        [FieldOffset(412)] public float frame_delta;
-        [FieldOffset(416)] public Vector2 viewport_size;
-        [FieldOffset(424)] public int _paddingA;
-        [FieldOffset(428)] public int _paddingB;
-    }
-
-    public unsafe class FrameUBOManager
-    {
-        public FrameUBO* memory;
-
-        private readonly GPUBuffer _ubo;
-
-        public FrameUBOManager()
-        {
-            this.memory = MemoryHelper.Allocate<FrameUBO>(1);
-            this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
-            this._ubo.Bind();
-            this._ubo.SetData(IntPtr.Zero, 432);
-            GL.BindBuffer(BufferTarget.Uniform, 0);
-            GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 1, this._ubo);
-        }
-
-        public void Dispose()
-        {
-            MemoryHelper.Free(this.memory);
-            this._ubo.Dispose();
-        }
-
-        public unsafe void Upload()
-        {
-            this._ubo.Bind();
-            this._ubo.SetSubData((IntPtr)this.memory, 432, 0);
-            GL.BindBuffer(BufferTarget.Uniform, 0);
-        }
-    }
-
-    public class BonesUBO
-    {
-        private readonly GPUBuffer _ubo;
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "Readonly on a pointer carries ambiguous meaning - the field itself is never modified, but the values at the pointer are.")]
-        private unsafe Matrix4x4* _matrixArray;
-
-        public BonesUBO()
-        {
-            this._ubo = new GPUBuffer(BufferTarget.Uniform, BufferUsage.StreamDraw);
-            this._ubo.Bind();
-            this._ubo.SetData(IntPtr.Zero, sizeof(float) * 4 * 4 * 256);
-            GL.BindBuffer(BufferTarget.Uniform, 0);
-            GL.BindBufferBase(BaseBufferTarget.UniformBuffer, 2, this._ubo);
-            unsafe
-            {
-                this._matrixArray = MemoryHelper.Allocate<Matrix4x4>(256);
-            }
-        }
-
-        public unsafe void LoadAll(IAnimationStorage armature)
-        {
-            this._ubo.Bind();
-            IEnumerable<IAnimationStorage.BoneData> bones = armature.ProvideBones();
-            int i = 0;
-            foreach (IAnimationStorage.BoneData bone in bones)
-            {
-                this._matrixArray[i++] = bone.Transform;
-            }
-
-            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4x4) * i, 0);
-        }
-
-        public unsafe void LoadAll(GlbArmature armature)
-        {
-            this._ubo.Bind();
-            
-            for (int i = 0; i < armature.UnsortedBones.Count; ++i)
-            {
-                GlbBone bone = armature.UnsortedBones[i];
-                this._matrixArray[i] = bone.Transform;
-            }
-
-            this._ubo.SetSubData((IntPtr)this._matrixArray, sizeof(Matrix4x4) * armature.UnsortedBones.Count, 0);
-        }
     }
 }

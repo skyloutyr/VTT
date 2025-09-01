@@ -12,33 +12,53 @@ flat in int f_frame;
 flat in int inst_id;
 flat in float inst_lifespan;
 
-uniform uint frame;
-uniform uint update;
+layout (std140) uniform FrameData {
+    mat4 view; // due to the particle shader demanding view separately, the view and projection matrices can't be united together here
+    mat4 projection;
+    mat4 sun_matrix;
+    vec4 camera_position_sundir; // camera_position = xyz, sundir = unpackNorm101010(w)
+    vec4 camera_direction_sunclr; // camera_direction = xyz, sunclr = unpackRgba(w)
+    vec4 al_sky_colors_viewportsz; // al_color = unpackRgba(x), sky_color = unpackRgba(y), viewportsz = zw
+    vec4 cursor_position_gridclr; // cursor_position = xyz, grid_color = unpackRgba(w)
+    vec4 frame_update_updatedt_gridsz; // frame = reinterpretcast<uint>(x), update = reinterpretcast<uint>(y), updatedt = z, gridsz = w
+    vec4 skybox_colors_blend_pl_num; // color_day = unpackRgba(x), color_night = unpackRgba(y), blend = z, pl_num = reinterpretcast<uint>(w)
+    vec4 skybox_animation_day; // full frame data
+    vec4 skybox_animation_night; // full frame data
+    mat4 sunCascadeMatrices[5];
+    vec4 cascadePlaneDistances;
+    vec4 pl_positions_color[16]; // pl_position = [i].xyz, pl_color = unpackRgba([i].w)
+    vec4 pl_cutouts[4]; // pl_cutout = abs([i >> 2][i & 3]), pl_casts_shadows = sign(pl_cutout) > epsilon
+    vec4 fow_scale_mod; // fow_scale = vec2(x), fow_offset = vec2(0.5) + floor(fow_scale * 0.5), fow_mod = y, zw unused
+};
 
-uniform vec4 m_diffuse_color;
+// The unfortunate sideeffect with converting material data to a UBO is that the particle shader becomes heavier
+layout (std140) uniform Material
+{
+    vec4 albedo_metal_roughness_alpha_cutoff; // diffuse_color = unpackRgba(x), metalness = y, roughness = z, alpha_cutoff = w
+    vec4 m_diffuse_frame;
+    vec4 m_normal_frame;
+    vec4 m_emissive_frame;
+    vec4 m_aomr_frame;
+    vec4 m_index_padding; // index = reinterpretcast<uint>(x), yzw padded
+};
+
+// Unfortunately can't pack samplers into uniforms (could with ARB_bindless_texture, but support is iffy)
 uniform sampler2D m_texture_diffuse;
-uniform vec4 m_diffuse_frame;
+uniform sampler2D m_texture_normal;
+uniform sampler2D m_texture_emissive;
+uniform sampler2D m_texture_aomr;
+
+uniform sampler2DArray tex_skybox;
 
 // FOW
 uniform usampler2D fow_texture;
-uniform vec2 fow_offset;
-uniform vec2 fow_scale;
-uniform float fow_mod;
 uniform bool do_fow;
-
-uniform vec3 sky_color;
 
 uniform float gamma_factor;
 
 out vec4 g_color;
 
 // Custom shader boilerplate
-uniform sampler2D m_texture_aomr;
-uniform sampler2D m_texture_emissive;
-uniform vec3 cursor_position;
-uniform mat4 view;
-uniform mat4 projection;
-uniform vec2 viewport_size;
 
 // extra textures for custom shaders
 uniform sampler2DArray unifiedTexture;
@@ -48,21 +68,10 @@ uniform vec4 unifiedTextureFrames[64];
 // 2D lighting and shadows
 uniform sampler2D texture_shadows2d;
 
-// Skybox
-uniform sampler2DArray tex_skybox;
-uniform vec4 animation_day;
-uniform vec4 animation_night;
-uniform float daynight_blend;
-uniform vec3 day_color;
-uniform vec3 night_color;
-
 // Constants not applicable to particle rendering pipeline
-const vec4 m_aomr_frame = vec4(0.0, 0.0, 1.0, 1.0);
-const vec4 m_emissive_frame = vec4(0.0, 0.0, 1.0, 1.0);
 const float m_metal_factor = 0.0;
 const float m_roughness_factor = 1.0;
 const uint material_index = uint(0);
-const float alpha = 1.0;
 const vec4 tint_color = vec4(1.0, 1.0, 1.0, 1.0);
 const vec3 f_tangent = vec3(1.0, 0.0, 0.0);
 const vec3 f_bitangent = vec3(0.0, 1.0, 0.0);
@@ -72,6 +81,30 @@ const mat3 f_tbn = mat3(
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0
 );
+
+const float oneOver255 = 1.0 / 255.0;
+vec4 unpackRgba(float packedRgbaVal)
+{
+    uint packed_ui = floatBitsToUint(packedRgbaVal);
+    return vec4(
+        float((packed_ui >> 24) & 0xffu),
+        float((packed_ui >> 16) & 0xffu),
+        float((packed_ui >> 8) & 0xffu),
+        float(packed_ui & 0xffu)
+    ) * oneOver255;
+}
+
+const float unorm101010unpackfact = 1.0 / 511.5;
+const vec3 unormtonormconversionadder = vec3(-1.0, -1.0, -1.0);
+vec3 unpackNorm101010(float packedNorm101010)
+{
+    uint packed_ui = floatBitsToUint(packedNorm101010);
+    return normalize(vec3(
+        float((packed_ui >> 20) & 0x3ffu),
+        float((packed_ui >> 10) & 0x3ffu),
+        float(packed_ui & 0x3ffu)
+    ) * unorm101010unpackfact + unormtonormconversionadder);
+}
 
 vec3 getNormalFromMap()
 {
@@ -191,9 +224,9 @@ vec4 sampleSkybox(vec3 v, vec4 frameData, int index)
 vec3 computeSkyboxColor(vec3 v)
 {
     v = cubemap(v);
-	vec4 day = sampleSkybox(v, animation_day, 0) * vec4(day_color, 1.0);
-    vec4 night = sampleSkybox(v, animation_night, 1) * vec4(night_color, 1.0);
-    return mix(day, night, daynight_blend).rgb;
+	vec4 day = sampleSkybox(v, skybox_animation_day, 0) * vec4(unpackRgba(skybox_colors_blend_pl_num.x).rgb, 1.0);
+    vec4 night = sampleSkybox(v, skybox_animation_night, 1) * vec4(unpackRgba(skybox_colors_blend_pl_num.y).rgb, 1.0);
+    return mix(day, night, skybox_colors_blend_pl_num.z).rgb;
 }
 
 vec3 rgb2hsv(vec3 c)
@@ -215,7 +248,9 @@ vec3 hsv2rgb(vec3 c)
 
 float getFowMultiplier(vec3 f_world_position)
 {   
-    vec2 uv_fow_world = (f_world_position.xy + fow_offset) * fow_scale;
+    vec2 fow_scale = vec2(fow_scale_mod.x);
+    vec2 fow_offset = vec2(0.5) + floor(fow_scale * 0.5);
+    vec2 uv_fow_world = (f_world_position.xy + fow_offset) / fow_scale;
     vec2 fow_world = (f_world_position.xy + fow_offset);
 
     uvec4 data = texture(fow_texture, uv_fow_world);
@@ -273,9 +308,10 @@ void main()
     g_color = vec4(albedo, l_a);
     if (do_fow)
     {
+        float fow_mod = fow_scale_mod.y;
         float fowVal = getFowMultiplier(f_world_position) * fow_mod + (1.0 - fow_mod);
-        g_color = mix(vec4(sky_color, g_color.a), g_color, fowVal);
+        g_color = mix(vec4(unpackRgba(al_sky_colors_viewportsz.y).rgb, g_color.a), g_color, fowVal);
     }
 	
-    g_color.rgb *= texture(texture_shadows2d, gl_FragCoord.xy / viewport_size).r;
+    g_color.rgb *= texture(texture_shadows2d, gl_FragCoord.xy / al_sky_colors_viewportsz.zw).r;
 }

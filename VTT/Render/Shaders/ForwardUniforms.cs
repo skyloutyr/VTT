@@ -10,9 +10,6 @@
         [UniformContainer]
         public UniformBlockObjectData PerObjectData { get; set; } = new UniformBlockObjectData();
 
-        [UniformReference("alpha")]
-        public UniformState<float> Alpha { get; set; }
-
         [UniformContainer]
         public UniformBlockMaterial Material { get; set; } = new UniformBlockMaterial();
 
@@ -36,9 +33,6 @@
 
         [UniformContainer]
         public UniformBlockGamma Gamma { get; set; } = new UniformBlockGamma();
-
-        [UniformContainer]
-        public UniformBlockSkybox Skybox { get; set; } = new UniformBlockSkybox();
 
         public GLBRendererUniformCollection glbEssentials;
 

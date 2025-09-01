@@ -141,6 +141,18 @@
             }
         }
 
+        public static uint Rgba(this SVec3 clrVec, float a = 1.0f)
+        {
+            unchecked
+            {
+                uint br = (byte)(clrVec.X * 255);
+                uint bg = (byte)(clrVec.Y * 255);
+                uint bb = (byte)(clrVec.Z * 255);
+                uint ba = (byte)(a * 255);
+                return (br << 24) | (bg << 16) | (bb << 8) | ba;
+            }
+        }
+
         public static SVec4 Vec4FromAbgr(uint abgr) => Vec4FromArgb((byte)((abgr & 0xFF000000) >> 24), (byte)(abgr & 0xFF), (byte)((abgr & 0xFF00) >> 8), (byte)((abgr & 0xFF0000) >> 16));
         public static SVec4 Vec4FromArgb(uint argb) => Vec4FromArgb((byte)((argb & 0xFF000000) >> 24), (byte)((argb & 0xFF0000) >> 16), (byte)((argb & 0xFF00) >> 8), (byte)(argb & 0xFF));
         public static SVec4 Vec4FromArgb(byte a, byte r, byte g, byte b) => new SVec4(r / 255F, g / 255F, b / 255F, a / 255F);
@@ -366,6 +378,44 @@
         {
             Array.Fill(arr, val);
             return arr;
+        }
+
+        public static float PackNorm101010(this SVec3 vec)
+        {
+            return VTTMath.UInt32BitsToSingle(
+                (((uint)Math.Clamp((vec.X * 511.5f) + 511.5f, 0, 1023f) & 0x3ffu) << 20) |
+                (((uint)Math.Clamp((vec.Y * 511.5f) + 511.5f, 0, 1023f) & 0x3ffu) << 10) |
+                ((uint)Math.Clamp((vec.Z * 511.5f) + 511.5f, 0, 1023f) & 0x3ffu)
+            );
+        }
+
+        public static SVec3 UnpackNorm101010(this float f)
+        {
+            const float unorm101010unpackfact = 1.0f / 511.5f;
+            SVec3 unormtonormconversionadder = new SVec3(-1, -1, -1);
+            uint packed_ui = VTTMath.SingleBitsToUInt32(f);
+            return SVec3.Normalize((new SVec3(
+                (packed_ui >> 20) & 0x3ffu,
+                (packed_ui >> 10) & 0x3ffu,
+                packed_ui & 0x3ffu
+            ) * unorm101010unpackfact) + unormtonormconversionadder);
+        }
+
+        public static byte Signs(this SVec3 vec) => (byte)((vec.X > 0 ? 4 : 0) | (vec.Y > 0 ? 2 : 0) | (vec.Z > 0 ? 1 : 0));
+
+        public static string AsHumanReadableByteLength(this nint l)
+        {
+            const double log1000 = 1.0 / 6.907755278982137;
+            if (l == 0)
+            {
+                return "0.00B";
+            }
+            else
+            {
+                int exp = (int)Math.Floor(Math.Log(l) * log1000);
+                double dec = l / Math.Pow(1000, exp);
+                return exp > 0 ? $"{dec:0.00} {"kMGTPEZY"[exp - 1]}B" : $"{dec:0}B";
+            }
         }
     }
 }

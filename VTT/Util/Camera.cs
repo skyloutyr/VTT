@@ -99,20 +99,20 @@
             }
         }
 
-        public virtual bool IsPointInFrustrum(Vector3 point) => this.frustum.IsPointInFrustrum(point);
+        public virtual bool IsPointInFrustum(Vector3 point) => this.frustum.IsPointInFrustum(point);
 
-        public virtual bool IsSphereInFrustrum(Vector3 point, float radius) => this.frustum.IsSphereInFrustrum(point, radius);
+        public virtual bool IsSphereInFrustum(Vector3 point, float radius) => this.frustum.IsSphereInFrustum(point, radius);
 
         public virtual bool IsSphereInFrustumCached(ref FrustumCullingSphere sphere) => this.frustum.IsSphereInFrustumCached(ref sphere);
 
-        public virtual bool IsAABoxInFrustrum(AABox box, Vector3 point = default)
+        public virtual bool IsAABoxInFrustum(AABox box, Vector3 point = default)
         {
             box += point;
-            return box.Contains(this.Position) || this.frustum.IsAABoxInFrustrum(box);
+            return box.Contains(this.Position) || this.frustum.IsAABoxInFrustum(box);
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 4 * 6, Pack = 0)]
+    [StructLayout(LayoutKind.Explicit, Size = sizeof(float) * 4 * 6, Pack = 1)]
     public unsafe readonly struct Frustum
     {
         [FieldOffset(0)]
@@ -179,7 +179,7 @@
         }
 
         // Loop here was manually unrolled bc of a very significant performance gain
-        public readonly bool IsPointInFrustrum(Vector3 point) =>
+        public readonly bool IsPointInFrustum(Vector3 point) =>
             this.p0.DotProduct(point) >= 0 &&
             this.p1.DotProduct(point) >= 0 &&
             this.p2.DotProduct(point) >= 0 &&
@@ -188,7 +188,7 @@
             this.p5.DotProduct(point) >= 0;
 
         // Loop here was manually unrolled bc of a very significant performance gain
-        public readonly bool IsSphereInFrustrum(Vector3 point, float radius) => 
+        public readonly bool IsSphereInFrustum(Vector3 point, float radius) => 
             this.p0.DotProduct(point) + radius >= 0 &&
             this.p1.DotProduct(point) + radius >= 0 &&
             this.p2.DotProduct(point) + radius >= 0 &&
@@ -238,7 +238,7 @@
             return p->DotProduct(end) > 0 || p->DotProduct(start) > 0;
         }
 
-        public readonly bool IsAABoxInFrustrum(AABox box)
+        public readonly bool IsAABoxInFrustum(AABox box)
         {
             fixed (Plane* planes = &this.p0)
             {

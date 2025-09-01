@@ -1,4 +1,7 @@
 ﻿#version 330 core
+#extension GL_AMD_vertex_shader_layer : enable
+
+#define NUM_CASCADES 5
 
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec4 v_weights;
@@ -12,8 +15,8 @@ uniform mat4 model;
 
 // Scene data
 uniform bool is_animated;
-
-flat out int self_instance_id;
+uniform int layer_indices[NUM_CASCADES];
+uniform mat4 light_matrices[NUM_CASCADES];
 
 vec3 boneTransformPos(vec4 vec, uint i1, uint i2, uint i3, uint i4)
 {
@@ -45,6 +48,7 @@ void main()
 		t_pos = boneTransformPos(vec4(t_pos, 1.0), index1, index2, index3, index4);
 	}
 
-	self_instance_id = gl_InstanceID;
-	gl_Position = model * vec4(t_pos, 1.0);
+	int l = layer_indices[gl_InstanceID];
+	gl_Position = light_matrices[l] * model * vec4(t_pos, 1.0);
+	gl_Layer = l;
 }

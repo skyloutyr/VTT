@@ -115,8 +115,8 @@
                 }
             }
 
-            this._shader = new FastAccessShader<GridUniforms>(OpenGLUtil.LoadShader("grid", ShaderType.Vertex, ShaderType.Fragment));
-            this.InWorldShader = new FastAccessShader<OverlayUniforms>(OpenGLUtil.LoadShader("overlay", ShaderType.Vertex, ShaderType.Fragment));
+            this._shader = new FastAccessShader<GridUniforms>(OpenGLUtil.LoadShader("grid", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
+            this.InWorldShader = new FastAccessShader<OverlayUniforms>(OpenGLUtil.LoadShader("overlay", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
 
             this.CPUTimer = new Stopwatch();
 

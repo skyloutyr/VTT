@@ -4,11 +4,21 @@ in vec3 f_tex;
 layout (location = 0) out vec4 o_color;
 
 uniform sampler2DArray tex_skybox;
-uniform vec4 animation_day;
-uniform vec4 animation_night;
-uniform float daynight_blend;
-uniform vec3 day_color;
-uniform vec3 night_color;
+uniform vec4 skybox_animation_day;
+uniform vec4 skybox_animation_night;
+uniform vec4 skybox_colors_blend;
+
+const float oneOver255 = 1.0 / 255.0;
+vec4 unpackRgba(float packedRgbaVal)
+{
+    uint packed_ui = floatBitsToUint(packedRgbaVal);
+    return vec4(
+        float((packed_ui >> 24) & 0xffu),
+        float((packed_ui >> 16) & 0xffu),
+        float((packed_ui >> 8) & 0xffu),
+        float(packed_ui & 0xffu)
+    ) * oneOver255;
+}
 
 vec3 cubemap(vec3 r) 
 {
@@ -85,7 +95,7 @@ vec4 sampleSkybox(vec3 v, vec4 frameData, int index)
 void main()
 {
     vec3 v = cubemap(f_tex);
-	vec4 day = sampleSkybox(v, animation_day, 0) * vec4(day_color, 1.0);
-    vec4 night = sampleSkybox(v, animation_night, 1) * vec4(night_color, 1.0);
-    o_color = mix(day, night, daynight_blend);
+	vec4 day = sampleSkybox(v, skybox_animation_day, 0) * vec4(unpackRgba(skybox_colors_blend.x).rgb, 1.0);
+    vec4 night = sampleSkybox(v, skybox_animation_night, 1) * vec4(unpackRgba(skybox_colors_blend.y).rgb, 1.0);
+    o_color = mix(day, night, skybox_colors_blend.z);
 }

@@ -122,30 +122,73 @@
             return new WavefrontObject(lines, desiredFormat);
         }
 
-        public static ShaderProgram LoadShader(string name, params ShaderType[] types) => LoadShaderCode(name, types);
+        public static ShaderProgram LoadShader(string name, Span<ShaderType> types, Span<DefineRule> defines = default) => LoadShaderCode(name, types, defines);
 
-        private static ShaderProgram LoadShaderCode(string name, params ShaderType[] types)
+        private static ShaderProgram LoadShaderCode(string name, Span<ShaderType> types, Span<DefineRule> defines = default)
         {
             string vSh = null;
             string gSh = null;
             string fSh = null;
 
-            if (types.Contains(ShaderType.Vertex))
+            bool reqV = false;
+            bool reqG = false;
+            bool reqF = false;
+
+            foreach (ShaderType st in types)
             {
-                vSh = IOVTT.ResourceToString("VTT.Embed." + name + ".vert");
+                switch (st)
+                {
+                    case ShaderType.Vertex:
+                    {
+                        reqV = true;
+                        break;
+                    }
+
+                    case ShaderType.Geometry:
+                    {
+                        reqG = true;
+                        break;
+                    }
+
+                    case ShaderType.Fragment:
+                    {
+                        reqF = true;
+                        break;
+                    }
+                }
             }
 
-            if (types.Contains(ShaderType.Geometry))
+            static string ProcessRules(string input, Span<DefineRule> rules)
             {
-                gSh = IOVTT.ResourceToString("VTT.Embed." + name + ".geom");
+                if (rules.Length == 0)
+                {
+                    return input;
+                }
+
+                foreach (DefineRule dr in rules)
+                {
+                    input = dr.ApplyRule(input);
+                }
+
+                return input;
             }
 
-            if (types.Contains(ShaderType.Fragment))
+            if (reqV)
             {
-                fSh = IOVTT.ResourceToString("VTT.Embed." + name + ".frag");
+                vSh = ProcessRules(IOVTT.ResourceToString("VTT.Embed." + name + ".vert"), defines);
             }
 
-            Client.Instance.Logger.Log(LogLevel.Debug, "Loading shader VTT.Embed." + name + ".vert");
+            if (reqG)
+            {
+                gSh = ProcessRules(IOVTT.ResourceToString("VTT.Embed." + name + ".geom"), defines);
+            }
+
+            if (reqF)
+            {
+                fSh = ProcessRules(IOVTT.ResourceToString("VTT.Embed." + name + ".frag"), defines);
+            }
+
+            Client.Instance.Logger.Log(LogLevel.Debug, "Loading shader VTT.Embed." + name);
             if (!ShaderProgram.TryCompile(out ShaderProgram sp, vSh, gSh, fSh, out string err))
             {
                 Logger l = Client.Instance.Logger;
@@ -204,23 +247,7 @@
             return new Size(nW, nH);
         }
 
-        public static int GetMaxMipmapAmount(Size imgSize, int minSize = 1)
-        {
-            int l = 0;
-            int minSz = Math.Min(imgSize.Width, imgSize.Height);
-            while (true)
-            {
-                float d = 1 << l++;
-                int s = (int)Math.Floor(minSz / d);
-                if (s < minSize)
-                {
-                    l--;
-                    break;
-                }
-            }
-
-            return l;
-        }
+        public static int GetMaxMipmapAmount(Size imgSize, int minSize = 1) => (int)Math.Max(minSize, 1 + Math.Floor(Math.Log2(Math.Max(imgSize.Width, imgSize.Height))));
 
         public static void StartSection(string label)
         {
@@ -245,6 +272,132 @@
                 Client.Instance.Logger.Log(LogLevel.Debug, $"Assigned name {name} to GL {type} of ID {obj}.");
                 GL.ObjectLabel(type, obj, name);
             }
+        }
+    }
+
+    public readonly struct DefineRule
+    { 
+        public enum Mode
+        {
+            Define,
+            Undef,
+            Replace,
+            ReplaceOrDefine
+        }
+
+        public readonly Mode mode;
+        public readonly string key;
+        public readonly string value;
+
+        public DefineRule(Mode mode, string key, string value)
+        {
+            this.mode = mode;
+            this.key = $"#define {key}";
+            this.value = $"#define {value}";
+        }
+
+        public DefineRule(Mode mode, string value)
+        {
+            this.mode = mode;
+            this.key = string.Empty;
+            this.value = $"#define {value}";
+        }
+
+        public readonly string ApplyRule(string strIn)
+        {
+            switch (this.mode)
+            {
+                case Mode.Define:
+                {
+                    strIn = this.AddDefine(strIn);
+                    break;
+                }
+
+                case Mode.Undef:
+                {
+                    strIn = this.RemoveDefine(strIn);
+                    break;
+                }
+
+                case Mode.Replace:
+                {
+                    this.ReplaceDefine(ref strIn);
+                    break;
+                }
+
+                case Mode.ReplaceOrDefine:
+                {
+                    if (!this.ReplaceDefine(ref strIn))
+                    {
+                        strIn = this.AddDefine(strIn);
+                    }
+
+                    break;
+                }
+            }
+
+            return strIn;
+        }
+
+        public readonly string AddDefine(string str)
+        {
+            int idxTopLineEnd = str.IndexOf('\n');
+            if (idxTopLineEnd != -1 && idxTopLineEnd != str.Length - 1)
+            {
+                // Account for lf
+                bool useLf = false;
+                if (str[idxTopLineEnd + 1] == '\r')
+                {
+                    idxTopLineEnd += 1;
+                    useLf = true;
+                }
+
+                str = str.Insert(idxTopLineEnd + 1, $"{this.value}\n{(useLf ? "\n" : "")}");
+            }
+
+            return str;
+        }
+
+        public readonly string RemoveDefine(string str)
+        {
+            string key = string.IsNullOrEmpty(this.value) ? this.key : this.value;
+            int idx = str.IndexOf(key);
+            if (idx != -1)
+            {
+                int len = key.Length;
+                if (idx + len < str.Length - 1)
+                {
+                    // check for cr
+                    if (str[idx + len] == '\n')
+                    {
+                        len += 1;
+                    }
+                }
+
+                if (idx + len < str.Length - 1)
+                {
+                    // check for lf
+                    if (str[idx + len] == '\r')
+                    {
+                        len += 1;
+                    }
+                }
+
+                str = str.Remove(idx, len);
+            }
+
+            return str;
+        }
+
+        public readonly bool ReplaceDefine(ref string str)
+        {
+            if (!string.IsNullOrEmpty(this.key) && !string.IsNullOrEmpty(this.value))
+            {
+                str = str.Replace(this.key, this.value);
+                return true;
+            }
+
+            return false;
         }
     }
 }

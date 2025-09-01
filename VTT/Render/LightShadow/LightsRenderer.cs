@@ -89,8 +89,8 @@
             GL.BindFramebuffer(FramebufferTarget.All, 0);
             GL.DrawBuffer(DrawBufferMode.Back);
             this.Shader = this.VertexShaderLayerAvailable
-                ? new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl_ext", ShaderType.Vertex, ShaderType.Fragment))
-                : new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl", ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry));
+                ? new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl_ext", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }))
+                : new FastAccessShader<PointLightShadowUniforms>(OpenGLUtil.LoadShader("pl", stackalloc ShaderType[3] { ShaderType.Vertex, ShaderType.Fragment, ShaderType.Geometry }));
         }
 
         public void ResizeShadowMaps(int resolution)
@@ -138,6 +138,7 @@
             { -Vector3.UnitZ, -Vector3.UnitY }
         };
 
+        /*
         public void UniformLights(UniformBlockPointLights uniforms)
         {
             for (int i = 0; i < this.NumLights; ++i)
@@ -150,7 +151,27 @@
 
             uniforms.Amount.Set(this.NumLights);
         }
+        */
 
+        private readonly UnsafeArray<Vector4> _plPosClrDataCache = new UnsafeArray<Vector4>(16);
+        private readonly UnsafeArray<float> _plCutoutDataCache = new UnsafeArray<float>(16);
+        public void PackLightData(out int plNum, out Span<Vector4> posColorData, out Span<float> cutoutData)
+        {
+            for (int i = 0; i < this.NumLights; ++i)
+            {
+                PointLight pl = this.Lights[i];
+                this._plPosClrDataCache[i] = new Vector4(
+                    pl.Position,
+                    VTTMath.UInt32BitsToSingle(pl.Color.Rgba())
+                );
+
+                this._plCutoutDataCache[i] = pl.LightPtr.Intensity * (pl.CastsShadows ? 1.0f : -1.0f);
+            }
+
+            posColorData = this._plPosClrDataCache.AsSpan()[..this.NumLights];
+            cutoutData = this._plCutoutDataCache.AsSpan()[..this.NumLights];
+            plNum = this.NumLights;
+        }
 
         private readonly MatrixStack _ms = new MatrixStack() { Reversed = true };
         private readonly List<PointLight> _selectedLights = new List<PointLight>();
@@ -194,12 +215,12 @@
 
         public void DrawLights(Map m, bool doDraw, double delta, Camera cam = null)
         {
-            if (cam != null) // Frustrum cull, sort and push lights
+            if (cam != null) // Frustum cull, sort and push lights
             {
                 for (int i = this._selectedLights.Count - 1; i >= 0; i--)
                 {
                     PointLight pl = this._selectedLights[i];
-                    if (!cam.IsSphereInFrustrum(pl.Position, pl.LightPtr.Intensity))
+                    if (!cam.IsSphereInFrustum(pl.Position, pl.LightPtr.Intensity))
                     {
                         this._selectedLights.RemoveAt(i);
                         continue;

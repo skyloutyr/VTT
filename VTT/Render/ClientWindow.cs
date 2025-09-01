@@ -35,8 +35,8 @@
         public ULongCounter UpdatesExisted { get; set; } = new ULongCounter();
         public ULongCounter FramesExisted { get; set; } = new ULongCounter();
 
-        public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.Size.Value.Width;
-        public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.Size.Value.Height;
+        public int Width => this._lastFramebufferWidth > 0 ? this._lastFramebufferWidth : this.GameHandle.FramebufferSize.Value.Width;
+        public int Height => this._lastFramebufferHeight > 0 ? this._lastFramebufferHeight : this.GameHandle.FramebufferSize.Value.Height;
         public int GlfwWidth => this._lastWindowWidth > 0 ? this._lastWindowWidth : this.GameHandle.Size.Value.Width;
         public int GlfwHeight => this._lastWindowHeight > 0 ? this._lastWindowHeight : this.GameHandle.Size.Value.Height;
 

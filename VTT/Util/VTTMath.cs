@@ -1,5 +1,6 @@
 ﻿namespace VTT.Util
 {
+    using System;
     using System.Numerics;
 
     public static class VTTMath
@@ -25,5 +26,29 @@
 
             return !(has_neg && has_pos);
         }
+
+        public static Vector3 InterpolateBezier(Vector3 start, Vector3 end, Vector3 control, float a) => Vector3.Lerp(Vector3.Lerp(start, control, a), Vector3.Lerp(control, end, a), a);
+
+        public static float EncodeAsUint14142(Vector3 normal, float extra = 0)
+        {
+            uint x = (uint)MathF.Floor(MathF.Abs(normal.X) * 16383);
+            uint y = (uint)MathF.Floor(MathF.Abs(normal.Y) * 16383);
+            uint sx = normal.X < 0 ? 8u : 0u;
+            uint sy = normal.Y < 0 ? 4u : 0u;
+            uint sz = normal.Z < 0 ? 2u : 0u;
+            uint sw = extra < 0 ? 1u : 0u;
+            return UInt32BitsToSingle(((x & 0x7fff) << 18) | ((y & 0x7fff) << 4) | sx | sy | sz | sw);
+        }
+
+        public static float EncodeAsUint1010102(Vector4 v4, uint padding = 0u)
+        {
+            return UInt32BitsToSingle(
+                ((uint)MathF.Floor(v4.X * 1023) << 22) |
+                ((uint)MathF.Floor(v4.Y * 1023) << 12) |
+                ((uint)MathF.Floor(v4.Z * 1023) << 2) | padding
+            );
+        }
+
+        public static bool CompareFloat(float f, float to, float epsilon = 1e-5f) => MathF.Abs(f - to) <= epsilon;
     }
 }

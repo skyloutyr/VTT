@@ -24,21 +24,14 @@ const float grid_side_length = 0.19;
 
 float getSquareGrid()
 {
-    float cameraDistanceFactor = length(camera_position - f_world_position);
-	float m = cameraDistanceFactor - grid_camera_cutoff_threshold;
-	float cutoffFactor = (cameraDistanceFactor * grid_side_lerp_threshold) + 1.0 + max(0, pow(m * grid_side_lerp_threshold, 2) * sign(m));
-	float m_cutoff = grid_cutoff + grid_side_length / cutoffFactor;
-	vec3 grid_modulo = abs(mod(f_world_position - (0.5 * grid_size), vec3(grid_size)));
-	vec3 g_d = ceil(max(vec3(0.0), abs(grid_size - grid_modulo) - m_cutoff * grid_size));
-	float gmx = max(g_d.x, g_d.y);
-	return gmx;
+    vec2 grid_v = fract((f_world_position.xy + vec2(0.5)) / grid_size); // Offset by 0.5 to match the old square grid impl, scale down by the size factor and clamp to a [0-1] factor
+    grid_v = abs((grid_v * 2.0) + vec2(-1.0, -1.0)); // fma to move from [0-1] to a [-1-1] range, and then turn it to a [1-1] range (distance to edge)
+    return max(grid_v.x, grid_v.y) > 0.96 ? 1.0 : 0.0; // return 1 if we are 0.04 units away from the edge, 0 otherwise
 }
 
 // https://www.shadertoy.com/view/wtdSzX
 float getHexGrid(bool horizontal)
 {
-	// Note that the hex grid doesn't do the m_cutoff factor for camera position relative to grid.
-
 	vec2 s = horizontal ? vec2(1.7320508, 1) : vec2(1, 1.7320508); // Hexagon factor
 	vec2 p = (f_world_position.xy - vec2(0.02, 0.02)) / grid_size; // 0.02 is offset for cutoff on eDist to 'center' the hexagons
 	vec4 hC = floor(vec4(p, p - (horizontal ? vec2(1, 0.5) : vec2(0.5, 1))) / s.xyxy) + 0.5; // Create 2 square grids

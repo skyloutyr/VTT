@@ -896,3 +896,5 @@ ui.portal.clear=Clear Destination
 ui.portal.clear.tt=Removes this portal's destination link.\nA portal is allowed to be one way.\nA portal is allowed to have any number of other portals specifying it as the destination.
 ui.portal.link=Linked Portal
 ui.portal.link.tt=If specified, any entering object will be teleported to the position of the link.\nThe resulting exiting position will be matched to the entering one in offset, and corrected to scale.\nPortals will not create an infinite teleportation loop - only manual object drag will trigger the teleportation.
+menu.settings.directional_shadow_quality=Directional Shadow Quality
+menu.settings.directional_shadow_quality.tt=Controls the precision of the shadow map for the directional light.\n Low: 576x576, blocky light shadows, best performance.\n Medium: 1152x1152, average shadows, good performance.\n High: 2304x2304, smooth shadows, acceptable performance. This is the recommended setting.\n Ultra: 4608x4608, crisp precise shadows, low performance.

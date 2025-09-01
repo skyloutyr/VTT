@@ -2620,6 +2620,7 @@ r = $INPUT@6$;
 @"vec4 $TEMP@0$ = sampleMap(m_texture_diffuse, m_diffuse_frame);
 vec4 $TEMP@1$ = sampleMap(m_texture_aomr, m_aomr_frame);
 vec4 $TEMP@2$ = sampleMap(m_texture_emissive, m_emissive_frame);
+vec4 $TEMP@3$ = unpackRgba(albedo_metal_roughness_alpha_cutoff.x);
 $OUTPUT@0$ = $TEMP@0$.rgb;
 $OUTPUT@1$ = $TEMP@0$.a;
 $OUTPUT@2$ = getNormalFromMap();
@@ -2627,11 +2628,11 @@ $OUTPUT@3$ = $TEMP@2$.rgb;
 $OUTPUT@4$ = $TEMP@1$.r;
 $OUTPUT@5$ = $TEMP@1$.g;
 $OUTPUT@6$ = $TEMP@1$.b;
-$OUTPUT@7$ = m_diffuse_color.rgb;
-$OUTPUT@8$ = m_diffuse_color.a;
-$OUTPUT@9$ = m_metal_factor;
-$OUTPUT@10$ = m_roughness_factor;
-$OUTPUT@11$ = material_index;",
+$OUTPUT@7$ = $TEMP@3$.rgb;
+$OUTPUT@8$ = $TEMP@3$.a;
+$OUTPUT@9$ = albedo_metal_roughness_alpha_cutoff.y;
+$OUTPUT@10$ = albedo_metal_roughness_alpha_cutoff.z;
+$OUTPUT@11$ = floatBitsToUint(m_index_padding.x);",
 (ctx, matrix, outIndex) => outIndex switch {
     0 => ctx.CreateAlbedo().Cast<Vector4, Vector3>(x => x.Xyz()),
     1 => ctx.CreateMatrix(1.0f),
@@ -2649,7 +2650,7 @@ $OUTPUT@11$ = material_index;",
 });
 
         public static ShaderNodeTemplate MaterialAlpha { get; } = new ShaderNodeTemplate(Guid.Parse("ce7189b5-c66d-4836-9cd4-e5c8937c32d0"), ShaderTemplateCategory.Inputs, "User Alpha", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Alpha", SelfType = NodeValueType.Float } },
-@"$OUTPUT@0$ = alpha;",
+@"$OUTPUT@0$ = tint_color.a;",
 (ctx, matrix, outIndex) => ctx.CreateMatrix(1.0f)
 );
 
@@ -2663,8 +2664,8 @@ $OUTPUT@1$ = tint_color.a;",
 );
 
         public static ShaderNodeTemplate TimeData { get; } = new ShaderNodeTemplate(Guid.Parse("12266c37-51b8-4eb3-bcde-73580ea23b0d"), ShaderTemplateCategory.Inputs, "Time Data", true, Array.Empty<NodeInput>(), new NodeOutput[] { new NodeOutput() { Name = "Frame", SelfType = NodeValueType.UInt }, new NodeOutput() { Name = "Update", SelfType = NodeValueType.UInt } },
-@"$OUTPUT@0$ = frame;
-$OUTPUT@1$ = update;",
+@"$OUTPUT@0$ = floatBitsToUint(frame_update_updatedt_gridsz.x);
+$OUTPUT@1$ = floatBitsToUint(frame_update_updatedt_gridsz.y);",
 (ctx, matrix, outIndex) => outIndex switch {
     0 => ctx.CreateMatrix((uint)Client.Instance.Frontend.FramesExisted),
     _ => ctx.CreateMatrix((uint)Client.Instance.Frontend.UpdatesExisted)
@@ -2693,7 +2694,7 @@ $OUTPUT@5$ = f_bitangent;
 $OUTPUT@6$ = f_normal;
 $OUTPUT@7$ = f_position;
 $OUTPUT@8$ = gl_FragCoord.xyz;
-$OUTPUT@9$ = viewport_size;",
+$OUTPUT@9$ = al_sky_colors_viewportsz.zw;",
 (ctx, matrix, outIndex) => outIndex switch {
     0 => ctx.CreateMatrix(Vector3.UnitX),
     1 => ctx.CreateMatrix(Vector3.UnitY),
@@ -2717,8 +2718,8 @@ $OUTPUT@9$ = viewport_size;",
             new NodeOutput() { Name = "Worldspace", SelfType = NodeValueType.Vec3 },
             new NodeOutput() { Name = "Screenspace", SelfType = NodeValueType.Vec2 }
         },
-@"$OUTPUT@0$ = cursor_position;
-$OUTPUT@1$ = (projection * view * vec4(cursor_position, 1.0)).xy;",
+@"$OUTPUT@0$ = cursor_position_gridclr.xyz;
+$OUTPUT@1$ = (projection * view * vec4(cursor_position_gridclr.xyz, 1.0)).xy;",
 (ctx, matrix, outIndex) => outIndex switch { 
     0 => ctx.CreateMatrix(Vector3.Zero),
     _ => ctx.CreateMatrix(Vector2.Zero),

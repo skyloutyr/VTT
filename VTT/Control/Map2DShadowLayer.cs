@@ -149,7 +149,7 @@
 
     public class Shadow2DBVH
     {
-        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
         public readonly struct ShadowAABB2D
         {
             [FieldOffset(0)]
@@ -175,7 +175,7 @@
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         public readonly struct ShadowOBB2D
         {
             [FieldOffset(0)]
@@ -261,7 +261,7 @@
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         public struct Node // 32 bytes per struct
         {
             [FieldOffset(0)]

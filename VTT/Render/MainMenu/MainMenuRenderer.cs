@@ -727,6 +727,31 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.point_shadow_quality.tt"));
                     }
 
+                    sQualIndex = (int)Client.Instance.Settings.DirectionalShadowsQuality;
+
+                    ImGui.Text(lang.Translate("menu.settings.directional_shadow_quality"));
+                    if (ImGui.Combo("##Directional Shadows Quality", ref sQualIndex, shadowQuality, 4))
+                    {
+                        GraphicsSetting nVal = (GraphicsSetting)sQualIndex;
+                        Client.Instance.Settings.DirectionalShadowsQuality = nVal;
+                        Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.SetCascadeResolution(
+                            nVal switch
+                            {
+                                GraphicsSetting.Low => 576,
+                                GraphicsSetting.Medium => 1152,
+                                GraphicsSetting.High => 2304,
+                                GraphicsSetting.Ultra => 4608,
+                                _ => 1152
+                            });
+
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.directional_shadow_quality.tt"));
+                    }
+
                     bool sParticles = Client.Instance.Settings.ParticlesEnabled;
                     if (ImGui.Checkbox(lang.Translate("menu.settings.enable_particles") + "###Enable Particles", ref sParticles))
                     {
@@ -1356,7 +1381,6 @@
                     bool sNoBranches = Client.Instance.Settings.DisableShaderBranching;
                     bool sShadowsSun = Client.Instance.Settings.EnableSunShadows;
                     bool sShadowsDir = Client.Instance.Settings.EnableDirectionalShadows;
-                    bool sUseUBO = Client.Instance.Settings.UseUBO;
                     /*
                     if (ImGui.Checkbox(lang.Translate("menu.settings.disable_branching") + "###Disable Shader Branching", ref sNoBranches))
                     {
@@ -1370,17 +1394,6 @@
                         ImGui.SetTooltip(lang.Translate("menu.settings.disable_branching.tt"));
                     }
                     */
-
-                    if (ImGui.Checkbox(lang.Translate("menu.settings.use_ubo") + "###Use UBO", ref sUseUBO))
-                    {
-                        Client.Instance.Settings.UseUBO = sUseUBO;
-                        Client.Instance.Settings.Save();
-                    }
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("menu.settings.use_ubo.tt"));
-                    }
 
                     bool multithreadDxtC = Client.Instance.Settings.MultithreadedTextureCompression;
                     if (ImGui.Checkbox(lang.Translate("menu.settings.multithread_texture_compression") + "###MultithreadTextureCompression", ref multithreadDxtC))

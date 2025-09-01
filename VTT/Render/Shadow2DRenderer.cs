@@ -94,13 +94,13 @@
 
             OpenGLUtil.NameObject(GLObjectType.Texture, this.WhiteSquare, "RT shadows white pixel texture");
             this.WhiteSquare.Size = new Size(1, 1);
-            this.Raytracer = new FastAccessShader<RTShadowUniforms>(OpenGLUtil.LoadShader("shadowcast", ShaderType.Vertex, ShaderType.Fragment));
+            this.Raytracer = new FastAccessShader<RTShadowUniforms>(OpenGLUtil.LoadShader("shadowcast", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
             this.Raytracer.Bind();
             this.Raytracer.Uniforms.FragmentPositionsSampler.Set(0);
             this.Raytracer.Uniforms.BoxesBufferSampler.Set(1);
             this.Raytracer.Uniforms.BVHBufferSampler.Set(2);
 
-            this.BoxesOverlay = new FastAccessShader<IndividualColorOverlay>(OpenGLUtil.LoadShader("individual_color_overlay", ShaderType.Vertex, ShaderType.Fragment));
+            this.BoxesOverlay = new FastAccessShader<IndividualColorOverlay>(OpenGLUtil.LoadShader("individual_color_overlay", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
 
             this.OverlayVAO = new VertexArray();
             this.OverlayVBO = new GPUBuffer(BufferTarget.Array, BufferUsage.StreamDraw);

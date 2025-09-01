@@ -352,24 +352,34 @@
             return result;
         }
 
-        public void Uniform(UniformBlockFogOfWar uniforms)
+        public void BindTexture(bool isFake)
         {
             GLState.ActiveTexture.Set(15);
-            this.FOWTexture.Bind();
-            uniforms.Sampler.Set(15);
-            uniforms.Offset.Set(this.FOWOffset);
-            uniforms.Scale.Set(this._inverseFowScale);
-            uniforms.Opacity.Set(Client.Instance.IsAdmin ? Client.Instance.Settings.FOWAdmin : 1.0f);
+            if (isFake)
+            {
+                Client.Instance.Frontend.Renderer.White.Bind();
+            }
+            else
+            {
+                this.FOWTexture.Bind();
+            }
         }
 
-        public void UniformBlank(UniformBlockFogOfWar uniforms)
+        public void Uniform(UniformBlockFogOfWar uniforms, bool isFake)
         {
-            GLState.ActiveTexture.Set(15);
-            Client.Instance.Frontend.Renderer.White.Bind();
-            uniforms.Sampler.Set(15);
-            uniforms.Offset.Set(Vector2.Zero);
-            uniforms.Scale.Set(Vector2.One);
-            uniforms.Opacity.Set(0f);
+            this.BindTexture(isFake);
+            if (isFake)
+            {
+                uniforms.Offset.Set(Vector2.Zero);
+                uniforms.Scale.Set(Vector2.One);
+                uniforms.Opacity.Set(0f);
+            }
+            else
+            {
+                uniforms.Offset.Set(this.FOWOffset);
+                uniforms.Scale.Set(this._inverseFowScale);
+                uniforms.Opacity.Set(Client.Instance.IsAdmin ? Client.Instance.Settings.FOWAdmin : 1.0f);
+            }
         }
 
         private bool _lmbPressed;

@@ -3,11 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using VTT.GL.Bindings;
 
     public static class GLState
     {
         private static List<IStateParameter> commitalState = new List<IStateParameter>();
+
         private static StateEntry<T> RegisterState<T>(StateEntry<T> state)
         {
             if (!state._instant)

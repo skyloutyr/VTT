@@ -173,9 +173,7 @@ float getSunShadowDepth(vec3 f_position, vec3 normal, vec3 lightDir)
 	vec4 fragPosLightSpace = sunCascadeMatrices[layer] * vec4(f_position, 1.0);
 	vec3 proj_coords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	proj_coords = proj_coords * 0.5 + 0.5;
-    const float biasesMax[5] = float[](0.0003, 0.00035, 0.00025, 0.000175, 0.000175);
-    const float biasesMin[5] = float[](0.000005, 0.0000025, 0.0001, 0.0001, 0.0001);
-	float bias = max(biasesMax[layer] * (1.0 - dot(normal, lightDir)), biasesMin[layer]);
+	float bias = max(0.0004 * (1.0 - dot(normal, lightDir)), 0.0001);
 	float currentDepth = proj_coords.z - bias;
 	float ret = 0.0;
 	vec2 texelSize = 1.0 / textureSize(dl_shadow_map, 0).xy;
@@ -420,4 +418,7 @@ void main()
     {
         g_color = vec4(color, world_position.a);
     }
+    
+    // vec3 dl_direction = unpackNorm101010(camera_position_sundir.w);
+    // g_color.rgb = color = vec3(dot(normal, -dl_direction));
 }

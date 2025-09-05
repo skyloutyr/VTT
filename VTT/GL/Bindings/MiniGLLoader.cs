@@ -149,6 +149,7 @@
             pushDebugGroupO = ToDelegate<pushDebugGroupD>(addressGetter("glPushDebugGroup"));
             popDebugGroupO = ToDelegate<popDebugGroupD>(addressGetter("glPopDebugGroup"));
             objectLabelO = ToDelegate<objectLabelD>(addressGetter("glObjectLabel"));
+            polygonOffsetO = ToDelegate<polygonOffsetD>(addressGetter("glPolygonOffset"));
         }
 
         internal delegate void clearColorD(float r, float g, float b, float a);
@@ -413,6 +414,8 @@
         internal static popDebugGroupD popDebugGroupO;
         internal delegate void objectLabelD(uint identifier, uint name, int length, byte* label);
         internal static objectLabelD objectLabelO;
+        internal delegate void polygonOffsetD(float factor, float units);
+        internal static polygonOffsetD polygonOffsetO;
 
         private static T ToDelegate<T>(IntPtr ptr) where T : Delegate => IntPtr.Zero.Equals(ptr) ? null : Marshal.GetDelegateForFunctionPointer<T>(ptr);
     }

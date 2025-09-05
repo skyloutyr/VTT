@@ -173,6 +173,8 @@
                 GLState.CullFace.Set(true);
                 GLState.CullFaceMode.Set(PolygonFaceMode.Back); // Going against conventions here, front face shadows eliminate most issues with spectral leakage at the cost of peter panning (which is acceptable with good bias tuning)
                 GL.ColorMask(false, false, false, false);
+                GL.Enable(Capability.PolygonOffsetFill);
+                GL.PolygonOffset(1.1f, 4.0f);
 
                 this.SunShader.Bind();
                 this.SunShader.Uniforms.LightMatrices.Set(this.Cascades.CascadeArray.AsSpan(), 0);
@@ -213,6 +215,7 @@
                 }
 
                 ShadowPass = false;
+                GL.Disable(Capability.PolygonOffsetFill);
                 GL.ColorMask(true, true, true, true);
                 GL.BindFramebuffer(FramebufferTarget.All, 0);
                 GL.DrawBuffer(DrawBufferMode.Back);

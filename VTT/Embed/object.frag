@@ -226,9 +226,10 @@ float getSunShadowDepth(vec3 normal, vec3 lightDir)
 	vec4 fragPosLightSpace = sunCascadeMatrices[layer] * vec4(f_world_position, 1.0);
 	vec3 proj_coords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	proj_coords = proj_coords * 0.5 + 0.5;
-	float bias = max(0.0004 * (1.0 - dot(normal, lightDir)), 0.0001);
+	float bias = 0.0;
 	float currentDepth = proj_coords.z - bias;
-	float ret = 0.0;
+	float ret = texture(dl_shadow_map, vec4(proj_coords.xy, layer, currentDepth));
+    /* Disabling PCF for CSM'd DL for now, while it awaits VSM/EVSM filtering implementation
 	vec2 texelSize = 1.0 / textureSize(dl_shadow_map, 0).xy;
 	for (float y = -PCF_ITERATIONS; y <= PCF_ITERATIONS; ++y)
 	{
@@ -241,6 +242,7 @@ float getSunShadowDepth(vec3 normal, vec3 lightDir)
 	}
 
 	ret /= pcf_itr_con;
+    */
 	return currentDepth > 1.0 ? 1.0 : ret;
 }
 

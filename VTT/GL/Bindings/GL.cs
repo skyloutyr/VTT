@@ -569,6 +569,7 @@
         public static void FramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, uint rbo) => framebufferRenderbufferO((uint)target, (uint)attachment, 0x8D41, rbo);
         public static void Finish() => finishO();
         public static void ReadPixels(int x, int y, int width, int height, PixelDataFormat format, PixelDataType type, nint ptr) => readPixelsO(x, y, width, height, (uint)format, (uint)type, (void*)ptr);
+        public static void PolygonOffset(float factor, float units) => polygonOffsetO(factor, units);
     }
 
     public enum UniformDataType

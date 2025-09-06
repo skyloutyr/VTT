@@ -293,7 +293,7 @@ These are the features currently missing that are planned to be implemented:
 - [ ] Automated reconnect attempts with a finer timeout control for clients
 - [x] A non-debug interface for connected client information + ability to ban clients.
 - [x] Allow for multiple administrators and observers
-- [ ] Improvements on shadow maps, maybe cascade shadow maps implementation
+- [x] Improvements on shadow maps, maybe cascade shadow maps implementation
 - [ ] Path curves and path following for particles
 - [x] Animations for 3D models
 - [ ] Automatic decimation for shadow meshes

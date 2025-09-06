@@ -284,6 +284,17 @@
                     args[LaunchArgumentKey.ClientStorage] = value;
                     break;
                 }
+
+                case "-noglext":
+                {
+                    if (!bool.TryParse(value, out bool b))
+                    {
+                        b = true;
+                    }
+
+                    args[LaunchArgumentKey.DisableOpenGLEXT] = b;
+                    break;
+                }
             }
         }
     }
@@ -302,6 +313,7 @@
         NetworkTimeoutSpan,
         ServerStorage,
         ClientStorage,
-        ExplicitServerDataPersistance
+        ExplicitServerDataPersistance,
+        DisableOpenGLEXT
     }
 }

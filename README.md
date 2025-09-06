@@ -360,4 +360,6 @@ The following command line arguments are available (do not include the square br
 -clientstorage [path]: specifies the file system location for the client. This is where the client logs/settings/etc are stored.
 
 -debuggerlogging [true/false]: Explicitly enables (true) or disables (false) logging to an attached debugger.
+
+-noglext [true/false]: Disables all functionality that relies on OpenGL extensions. Can be used if a GPU driver implements an extension incorrectly, causing a crash.
 ```

@@ -17,6 +17,12 @@
         private static bool glExtensionsDetermined;
         private static void GatherGLExtensions()
         {
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.DisableOpenGLEXT, out bool noExt))
+            {
+                glExtensionsDetermined = true;
+                return;
+            }
+
             int exts = GL.GetInteger(GLPropertyName.NumExtensions)[0];
             for (uint i = 0; i < exts; ++i)
             {

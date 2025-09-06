@@ -27,6 +27,30 @@
 
         public GlbScene ToGlbModel() => new GlbScene(this);
 
+        // Internal
+        public static TextureData CreateFromExistingGLTexture(Texture tex, Metadata meta = null)
+        {
+            meta ??= new Metadata()
+            {
+                WrapS = WrapParam.ClampToEdge,
+                WrapT = WrapParam.ClampToEdge,
+                AlbedoIsEmissive = false,
+                Compress = false,
+                EnableBlending = true,
+                FilterMag = FilterParam.Linear,
+                FilterMin = FilterParam.LinearMipmapLinear,
+                GammaCorrect = true
+            };
+
+            return new TextureData()
+            {
+                Frames = Array.Empty<Frame>(), // Unsavable
+                Meta = meta,
+                _glTex = tex,
+                glReady = true
+            };
+        }
+
         public static TextureData CreateDefaultFromImage(Image<Rgba32> clientImage, out byte[] selfBinary, out Metadata meta)
         {
             MemoryStream ms = new MemoryStream();

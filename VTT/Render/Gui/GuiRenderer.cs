@@ -208,7 +208,7 @@
         private readonly List<(string, float, float)> _allStatuses = new List<(string, float, float)>();
 
         private float _editedMapSkyboxColorGradientKey;
-        private Vector3 _editedMapSkyboxColorGradientValue;
+        private Vector4 _editedMapSkyboxColorGradientValue;
         private bool _editedMapSkyboxColorIsDay;
 
         #endregion

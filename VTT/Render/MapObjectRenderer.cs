@@ -926,7 +926,7 @@
                 }
             }
 
-            plr.DrawLights(m, m.EnableDirectionalShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
+            plr.DrawLights(m, m.EnablePointShadows && Client.Instance.Settings.EnableDirectionalShadows, delta, cam);
             this.CPUTimerLights.Stop();
             OpenGLUtil.EndSection();
         }

@@ -129,7 +129,7 @@
 
         public static bool ShadowPass { get; set; }
 
-        public void BindDepthTexture(bool isFake = false, bool fullyShaded = false)
+        public void BindDepthTexture(CelestialBody.ShadowCastingPolicy shadowPolicy)
         {
             if (!Client.Instance.Settings.EnableDirectionalShadows)
             {
@@ -137,9 +137,9 @@
             }
             else
             {
-                if (isFake)
+                if (shadowPolicy != CelestialBody.ShadowCastingPolicy.Normal)
                 {
-                    if (fullyShaded)
+                    if (shadowPolicy == CelestialBody.ShadowCastingPolicy.Always)
                     {
                         this._fakeDepthFullyShadedTexture.Bind();
                     }
@@ -160,7 +160,7 @@
             this.CPUTimer.Restart();
             OpenGLUtil.StartSection("Directional shadows");
 
-            if (m.EnableShadows && Client.Instance.Settings.EnableSunShadows && m.SunEnabled)
+            if (m.CelestialBodies.Sun.Enabled && Client.Instance.Settings.EnableSunShadows && m.CelestialBodies.Sun.ShadowPolicy == CelestialBody.ShadowCastingPolicy.Normal)
             {
                 this.Cascades.RecalculateCascades(Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera, Client.Instance.Frontend.Renderer.SkyRenderer.GetCurrentSunDirection(), this.ShadowMapResolution);
 

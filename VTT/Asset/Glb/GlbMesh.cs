@@ -110,7 +110,7 @@
                 uniforms.IsAnimated.Set(false);
             }
 
-            this.Material.Uniform(uniforms.Material, textureAnimationIndex);
+            this.Material.Uniform(textureAnimationIndex);
             if (SunShadowRenderer.ShadowPass)
             {
                 this._shadowVao.Bind();

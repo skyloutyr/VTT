@@ -5,6 +5,7 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
@@ -14,6 +15,7 @@
     using VTT.GL;
     using VTT.GL.Bindings;
     using VTT.Network;
+    using VTT.Network.Packet;
     using VTT.Render.Gui;
     using VTT.Util;
 
@@ -265,6 +267,400 @@
             ImGui.Dummy(size);
             hovered = mouseOver;
             return result;
+        }
+
+        public static void ImGradient(string id, Vector2 size, Gradient<Vector4> grad, Vector4 solidColor, bool readOnly, Action<PacketChangeMapColorsGradient.ActionType, GradientPoint<Vector4>> callback, ref float selectedKey, ref Vector4 selectedKeyColor)
+        {
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            Vector2 contentAvail = ImGui.GetContentRegionAvail();
+            if (size.X == 0)
+            {
+                size.X = contentAvail.X;
+            }
+
+            Vector2 cHere = ImGui.GetCursorScreenPos() + new Vector2(0, 8);
+            ImGui.Dummy(size + new Vector2(0, 16));
+            GradientPoint<Vector4>? pointToDelete = null;
+            bool clickedBoxOrTriangle = false;
+            if (grad != null)
+            {
+                for (int i = 0; i < grad.InternalList.Count; i++)
+                {
+                    GradientPoint<Vector4> curr = grad.InternalList[i];
+                    GradientPoint<Vector4> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
+                    float fS = curr.Key / 24.0f * size.X;
+                    float fN = (next.Key < curr.Key ? 1 : next.Key / 24.0f) * size.X;
+                    uint clrL = curr.Color.Abgr();
+                    uint clrR = next.Color.Abgr();
+                    drawList.AddRectFilledMultiColor(
+                        new Vector2(cHere.X + fS, cHere.Y),
+                        new Vector2(cHere.X + fN, cHere.Y + size.Y),
+                        clrL, clrR, clrR, clrL
+                    );
+
+                    bool hoverTri = !readOnly && VTTMath.PointInTriangle(
+                        ImGui.GetMousePos(),
+                        new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                        new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                        new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8)
+                    );
+
+                    if (hoverTri)
+                    {
+                        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                        {
+                            selectedKey = curr.Key;
+                            selectedKeyColor = curr.Color;
+                            clickedBoxOrTriangle = true;
+                        }
+                    }
+
+                    if (hoverTri && i != 0 && i != grad.InternalList.Count - 1 && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                    {
+                        pointToDelete = curr;
+                        clickedBoxOrTriangle = true;
+                    }
+
+                    drawList.AddTriangleFilled(
+                        new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                        new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                        new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
+                        hoverTri ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button)
+                    );
+
+                    drawList.AddTriangle(
+                        new Vector2(cHere.X + fS, cHere.Y + size.Y),
+                        new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
+                        new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
+                        ImGui.GetColorU32(curr.Key == selectedKey ? ImGuiCol.ButtonActive : ImGuiCol.Border)
+                    );
+
+                    drawList.AddRectFilled(
+                        new Vector2(cHere.X + fS - 4, cHere.Y - 8),
+                        new Vector2(cHere.X + fS + 4, cHere.Y - 0),
+                        clrL
+                    );
+
+                    bool hoverQuad = !readOnly && ImGui.IsMouseHoveringRect(new Vector2(cHere.X + fS - 4, cHere.Y - 8), new Vector2(cHere.X + fS + 4, cHere.Y - 0));
+                    drawList.AddRect(
+                        new Vector2(cHere.X + fS - 4, cHere.Y - 8),
+                        new Vector2(cHere.X + fS + 4, cHere.Y - 0),
+                        hoverQuad ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border)
+                    );
+
+                    if (hoverQuad && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                    {
+                        callback(PacketChangeMapColorsGradient.ActionType.SetSolidColor, curr);
+                        clickedBoxOrTriangle = true;
+                    }
+                }
+            }
+            else
+            {
+                drawList.AddRectFilled(cHere, cHere + size, solidColor.Abgr());
+            }
+
+            drawList.AddRect(
+                cHere,
+                cHere + size,
+                ImGui.GetColorU32(ImGuiCol.Border)
+            );
+
+            if (!readOnly)
+            {
+                if (!clickedBoxOrTriangle && ImGui.IsMouseHoveringRect(cHere, cHere + size) && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                {
+                    float a = Math.Clamp(((ImGui.GetMousePos() - cHere) / size).X * 24, 0, 24);
+                    Vector4 closest = grad.Interpolate(a, GradientInterpolators.LerpVec4);
+                    if (!grad.ContainsKey(a))
+                    {
+                        grad.Add(a, closest);
+                        selectedKey = a;
+                        selectedKeyColor = closest;
+                        callback(PacketChangeMapColorsGradient.ActionType.AddGradientPoint, new GradientPoint<Vector4>(a, closest));
+                    }
+                }
+
+                if (pointToDelete.HasValue)
+                {
+                    grad.Remove(pointToDelete.Value.Key);
+                    callback(PacketChangeMapColorsGradient.ActionType.RemoveGradientPoint, pointToDelete.Value);
+                }
+
+                if (!grad.ContainsKey(selectedKey))
+                {
+                    var kv = grad.First();
+                    selectedKey = kv.Key;
+                    selectedKeyColor = kv.Value;
+                }
+
+                grad.TryGetValue(selectedKey, out Vector4 clr);
+                if (clr != selectedKeyColor)
+                {
+                    selectedKeyColor = clr;
+                }
+
+                float key = selectedKey;
+                ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
+                if (ImGui.SliderFloat($"{id}_keySelector", ref key, 0, 24))
+                {
+                    if (selectedKey is > 0 and < 24)
+                    {
+                        key = Math.Clamp(key, 0.001f, 23.999f);
+                        grad.Remove(selectedKey);
+                        grad.Add(key, clr);
+                        float prev = selectedKey;
+                        selectedKey = key;
+                        selectedKeyColor = clr;
+                        callback(PacketChangeMapColorsGradient.ActionType.MoveGradientPoint, new GradientPoint<Vector4>(prev, clr));
+                    }
+                }
+
+                ImGui.PopItemWidth();
+                if (ImGui.ColorPicker4($"{id}_valueSelector", ref selectedKeyColor, ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.PickerHueBar | ImGuiColorEditFlags.AlphaBar))
+                {
+                    grad.Remove(selectedKey);
+                    grad.Add(selectedKey, selectedKeyColor);
+                    callback(PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor, new GradientPoint<Vector4>(selectedKey, selectedKeyColor));
+                }
+            }
+        }
+
+        public static void ImGradientReadonly(Vector2 size, Gradient<Vector4> grad, Vector4 solidColor)
+        {
+            float f = -1;
+            Vector4 v = Vector4.Zero;
+            ImGradient(string.Empty, size, grad, solidColor, true, static (x, y) => { }, ref f, ref v);
+        }
+
+        public readonly struct ImColorGradientsResult
+        {
+            public readonly bool editPerformed;
+            public readonly ChangeKind change;
+            public readonly Vector4 gradientValue;
+            public readonly float gradientKey;
+            public readonly float oldGradientKey;
+
+            public readonly MapSkyboxColors.ColorsPointerType newPointerType;
+
+            public ImColorGradientsResult(MapSkyboxColors.ColorsPointerType newPtrType)
+            {
+                this.editPerformed = true;
+                this.change = ChangeKind.ColorsPointerType;
+                this.newPointerType = newPtrType;
+                this.gradientValue = default;
+                this.gradientKey = float.NaN;
+                this.oldGradientKey = float.NaN;
+            }
+
+            public ImColorGradientsResult(Vector4 solidColor)
+            {
+                this.editPerformed = true;
+                this.change = ChangeKind.WantOpenSolidColorChangePopup;
+                this.newPointerType = default;
+                this.gradientValue = solidColor;
+                this.gradientKey = float.NaN;
+                this.oldGradientKey = float.NaN;
+            }
+
+            public ImColorGradientsResult(float key, Vector4 value)
+            {
+                this.editPerformed = true;
+                this.change = ChangeKind.WantOpenGradientColorChangePopup;
+                this.newPointerType = default;
+                this.gradientKey = key;
+                this.gradientValue = value;
+                this.oldGradientKey = key;
+            }
+
+            public ImColorGradientsResult(ChangeKind change, float key, Vector4 value)
+            {
+                this.editPerformed = true;
+                this.change = change;
+                this.gradientKey = key;
+                this.oldGradientKey = key;
+                this.gradientValue = value;
+                this.newPointerType = default;
+            }
+
+            public ImColorGradientsResult(float from, float to, Vector4 value)
+            {
+                this.editPerformed = true;
+                this.change = ChangeKind.MoveGradientPoint;
+                this.oldGradientKey = from;
+                this.gradientKey = to;
+                this.gradientValue = value;
+                this.newPointerType = default;
+            }
+
+            public enum ChangeKind
+            {
+                ColorsPointerType,
+                WantOpenSolidColorChangePopup,
+                WantOpenGradientColorChangePopup,
+                AddGradientPoint,
+                RemoveGradientPoint,
+                MoveGradientPoint,
+                ChangeGradientPointColor,
+                ClearCustomImage
+            }
+        }
+
+        private static readonly Dictionary<string, (float, Vector4)> gradientMemory = new Dictionary<string, (float, Vector4)>();
+        public static ImColorGradientsResult ImColorGradients(SimpleLanguage lang, MapSkyboxColors colors, string identifier, string customLabel, ImCustomTexturedRect assetRecepticleIcon, out bool assetRecepticleHovered)
+        {
+            ImColorGradientsResult res = default;
+            string[] sbColorPointerTypes = new string[] {
+                lang.Translate("ui.maps.sky_settings.skybox.colors.default"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.black"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.white"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.solid"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.custom_gradient"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.asset"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.default_sunlight"),
+                lang.Translate("ui.maps.sky_settings.skybox.colors.default_sun")
+            };
+
+            assetRecepticleHovered = false;
+            int sbColorPointerIndex = (int)colors.OwnType;
+            if (string.IsNullOrEmpty(customLabel))
+            {
+                ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.skybox.colors_label"));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.skybox.colors.tt"));
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.color_gradient.tt"));
+                    ImGui.EndTooltip();
+                }
+            }
+            else
+            {
+                ImGui.TextUnformatted(lang.Translate(customLabel));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted(lang.Translate($"{customLabel}.tt"));
+                    ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.color_gradient.tt"));
+                    ImGui.EndTooltip();
+                }
+            }
+
+            if (ImGui.Combo($"##{identifier}ColorsKind", ref sbColorPointerIndex, sbColorPointerTypes, sbColorPointerTypes.Length))
+            {
+                colors.SwitchType((MapSkyboxColors.ColorsPointerType)sbColorPointerIndex);
+                res = new ImColorGradientsResult(colors.OwnType);
+            }
+
+            switch (colors.OwnType)
+            {
+                case MapSkyboxColors.ColorsPointerType.DefaultSky:
+                {
+                    ImGradientReadonly(new Vector2(0, 32), Client.Instance.Frontend.Renderer.SkyRenderer.SkyGradient, default);
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.FullBlack:
+                {
+                    ImGradientReadonly(new Vector2(0, 32), null, Vector4.Zero);
+                    break;
+                }
+                case MapSkyboxColors.ColorsPointerType.FullWhite:
+                {
+                    ImGradientReadonly(new Vector2(0, 32), null, Vector4.One);
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.SolidColor:
+                {
+                    if (ImGui.ColorButton($"##ColorsGradient{identifier}SolidColor", colors.SolidColor, ImGuiColorEditFlags.NoAlpha, new Vector2(ImGui.GetContentRegionAvail().X, 32)))
+                    {
+                        res = new ImColorGradientsResult(colors.SolidColor);
+                    }
+
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.CustomGradient:
+                {
+                    if (!gradientMemory.TryGetValue(identifier, out (float, Vector4) localMemory))
+                    {
+                        localMemory = gradientMemory[identifier] = (0, Vector4.One);
+                    }
+
+                    float memKey = localMemory.Item1;
+                    Vector4 memVal = localMemory.Item2;
+                    float memKCpy = memKey;
+                    Vector4 memVCpy = memVal;
+                    ImGradient($"##GradientColor{identifier}", new Vector2(0, 32), colors.ColorGradient, default, false, (action, x) =>
+                    {
+                        switch (action)
+                        {
+                            case PacketChangeMapColorsGradient.ActionType.SetSolidColor:
+                            {
+                                res = new ImColorGradientsResult(x.Key, x.Color);
+                                break;
+                            }
+
+                            case PacketChangeMapColorsGradient.ActionType.AddGradientPoint:
+                            {
+                                res = new ImColorGradientsResult(ImColorGradientsResult.ChangeKind.AddGradientPoint, x.Key, x.Color);
+                                break;
+                            }
+
+                            case PacketChangeMapColorsGradient.ActionType.RemoveGradientPoint:
+                            {
+                                res = new ImColorGradientsResult(ImColorGradientsResult.ChangeKind.RemoveGradientPoint, x.Key, x.Color);
+                                break;
+                            }
+
+                            case PacketChangeMapColorsGradient.ActionType.MoveGradientPoint:
+                            {
+                                res = new ImColorGradientsResult(x.Key, x.Key, x.Color); // TODO memory!
+                                break;
+                            }
+
+                            case PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor:
+                            {
+                                res = new ImColorGradientsResult(ImColorGradientsResult.ChangeKind.ChangeGradientPointColor, x.Key, x.Color);
+                                break;
+                            }
+                        }
+                    }, ref memKey, ref memVal);
+
+                    if (memKey != memKCpy || memVal != memVCpy)
+                    {
+                        gradientMemory[identifier] = (memKey, memVal);
+                    }
+
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.CustomImage:
+                {
+                    assetRecepticleHovered = ImAssetRecepticle(lang, colors.GradientAssetID, assetRecepticleIcon, new Vector2(0, 24), static x => x != null && x.Type == AssetType.Texture, out _);
+                    if (ImGui.Button(lang.Translate($"ui.maps.sky_settings.skybox_any.asset.clear") + $"###Clear{identifier}GradientColorsAsset"))
+                    {
+                        res = new ImColorGradientsResult(ImColorGradientsResult.ChangeKind.ClearCustomImage, float.NaN, default);
+                    }
+
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.DefaultSunlight:
+                {
+                    ImGradientReadonly(new Vector2(0, 32), Client.Instance.Frontend.Renderer.SkyRenderer.LightGrad, default);
+                    break;
+                }
+
+                case MapSkyboxColors.ColorsPointerType.DefaultSun:
+                {
+                    ImGradientReadonly(new Vector2(0, 32), Client.Instance.Frontend.Renderer.SkyRenderer.SunGrad, default);
+                    break;
+                }
+            }
+
+            return res;
         }
 
         public class UIStreamingBufferCollection

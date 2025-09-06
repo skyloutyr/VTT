@@ -99,45 +99,15 @@
                         break;
                     }
 
-                    case DataType.SkyColor:
-                    {
-                        this.ContextLogger.Log(LogLevel.Warn, $"Legacy map data packet - should be impossible!");
-                        break;
-                    }
-
                     case DataType.SunColor:
                     {
                         m.SunColor = (Color)this.Data;
                         break;
                     }
 
-                    case DataType.SunEnabled:
+                    case DataType.EnablePointShadows:
                     {
-                        m.SunEnabled = (bool)this.Data;
-                        break;
-                    }
-
-                    case DataType.EnableShadows:
-                    {
-                        m.EnableShadows = (bool)this.Data;
-                        break;
-                    }
-
-                    case DataType.EnableDirectionalShadows:
-                    {
-                        m.EnableDirectionalShadows = (bool)this.Data;
-                        break;
-                    }
-
-                    case DataType.SunPitch:
-                    {
-                        m.SunPitch = (float)this.Data;
-                        break;
-                    }
-
-                    case DataType.SunYaw:
-                    {
-                        m.SunYaw = (float)this.Data;
+                        m.EnablePointShadows = (bool)this.Data;
                         break;
                     }
 
@@ -268,9 +238,7 @@
 
                 case DataType.GridEnabled:
                 case DataType.GridDrawn:
-                case DataType.EnableShadows:
-                case DataType.EnableDirectionalShadows:
-                case DataType.SunEnabled:
+                case DataType.EnablePointShadows:
                 case DataType.DarkvisionEnabled:
                 case DataType.Is2D:
                 case DataType.EnableDrawing:
@@ -283,8 +251,6 @@
 
                 case DataType.GridSize:
                 case DataType.GridUnits:
-                case DataType.SunYaw:
-                case DataType.SunPitch:
                 case DataType.SunIntensity:
                 case DataType.AmbietIntensity:
                 case DataType.Camera2DHeight:
@@ -295,7 +261,6 @@
                 }
 
                 case DataType.GridColor:
-                case DataType.SkyColor:
                 case DataType.AmbientColor:
                 case DataType.SunColor:
                 {
@@ -333,15 +298,10 @@
             GridSize,
             GridUnits,
             GridColor,
-            SkyColor,
             AmbientColor,
-            SunEnabled,
-            SunYaw,
-            SunPitch,
             SunIntensity,
             AmbietIntensity,
-            EnableShadows,
-            EnableDirectionalShadows,
+            EnablePointShadows,
             CameraPosition,
             CameraDirection,
             DarkvisionEnabled,

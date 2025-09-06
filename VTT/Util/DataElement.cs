@@ -62,6 +62,7 @@
             return ret;
         }
 
+        public bool HasKeyOfAnyType(string name) => this._dataMap.ContainsKey(name);
         public bool Has(string name, DataType type) => this._dataMap.ContainsKey(name) && this._dataMap[name].Type == type;
         public bool GetIfPresent(string name, DataType type, out DataElement de) => this._dataMap.TryGetValue(name, out de) && de.Type == type;
         public bool GetRaw(string name, out DataElement de) => this._dataMap.TryGetValue(name, out de);

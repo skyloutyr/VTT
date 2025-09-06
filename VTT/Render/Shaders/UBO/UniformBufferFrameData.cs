@@ -4,6 +4,7 @@
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Runtime.Intrinsics;
     using VTT.Control;
     using VTT.GL.Bindings;
     using VTT.Network;
@@ -81,8 +82,8 @@
                 this._cpuMemory->Update = (uint)Client.Instance.Frontend.UpdatesExisted;
                 this._cpuMemory->update_dt = (float)delta;
                 this._cpuMemory->grid_size = m.GridSize;
-                this._cpuMemory->SkyboxDayColorV3 = skybox.CachedDayColors;
-                this._cpuMemory->SkyboxNightColorV3 = skybox.CachedNightColors;
+                this._cpuMemory->SkyboxDayColorV3 = skybox.CachedDayColors.AsVector128().AsVector3();
+                this._cpuMemory->SkyboxNightColorV3 = skybox.CachedNightColors.AsVector128().AsVector3();
                 this._cpuMemory->skybox_blend_factor = skybox.CachedBlendDelta;
                 this._cpuMemory->skybox_animation_day = skybox.DayAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1);
                 this._cpuMemory->skybox_animation_night = skybox.NightAnimation?.FindFrameForIndex(double.NaN).LocationUniform ?? new Vector4(0, 0, 1, 1);

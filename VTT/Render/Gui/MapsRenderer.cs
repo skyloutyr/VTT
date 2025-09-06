@@ -8,6 +8,7 @@
     using System.Numerics;
     using VTT.Asset;
     using VTT.Control;
+    using VTT.GL;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -15,10 +16,14 @@
     public partial class GuiRenderer
     {
         private float _dayGradientKeyMem = 0;
-        private Vector3 _dayGradientValueMem = Vector3.Zero;
+        private Vector4 _dayGradientValueMem = Vector4.Zero;
         private float _nightGradientKeyMem = 0;
-        private Vector3 _nightGradientValueMem = Vector3.Zero;
-
+        private Vector4 _nightGradientValueMem = Vector4.Zero;
+        private float _celestialBodyPreviewTime = 12f;
+        private bool _celestialBodyGradientEditedIsLightGradient = false;
+        private float _celestialBodyEditedGradientKey = 0f;
+        private Vector4 _celestialBodyEditedGradientValue = Vector4.Zero;
+        private CelestialBody _editedGradientCelestialBodyRef;
 
         private unsafe void RenderMaps(SimpleLanguage lang, GuiState state)
         {
@@ -202,13 +207,13 @@
                         if (state.clientMap.DaySkyboxAssetID.IsEmpty())
                         {
                             state.clientMap.DaySkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullBlack);
-                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, IsNightGradientColors = false }.Send();
+                            new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, Location = PacketChangeMapColorsGradient.GradientLocation.MapDayGradient }.Send();
                         }
 
                         if (state.clientMap.NightSkyboxAssetID.IsEmpty())
                         {
                             state.clientMap.NightSkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullBlack);
-                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, IsNightGradientColors = true }.Send();
+                            new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullBlack, Location = PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
                         }
 
                     }
@@ -361,170 +366,6 @@
                         state.changeMapColorPopup = true;
                     }
 
-                    static void ImGradient(string id, Vector2 size, Gradient<Vector3> grad, Vector3 solidColor, bool readOnly, Action<PacketChangeMapSkyboxColors.ActionType, GradientPoint<Vector3>> callback, ref float selectedKey, ref Vector3 selectedKeyColor)
-                    {
-                        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
-                        Vector2 contentAvail = ImGui.GetContentRegionAvail();
-                        if (size.X == 0)
-                        {
-                            size.X = contentAvail.X;
-                        }
-
-                        Vector2 cHere = ImGui.GetCursorScreenPos() + new Vector2(0, 8);
-                        ImGui.Dummy(size + new Vector2(0, 16));
-                        GradientPoint<Vector3>? pointToDelete = null;
-                        bool clickedBoxOrTriangle = false;
-                        if (grad != null)
-                        {
-                            for (int i = 0; i < grad.InternalList.Count; i++)
-                            {
-                                GradientPoint<Vector3> curr = grad.InternalList[i];
-                                GradientPoint<Vector3> next = grad.InternalList[(i + 1) % grad.InternalList.Count];
-                                float fS = curr.Key / 24.0f * size.X;
-                                float fN = (next.Key < curr.Key ? 1 : next.Key / 24.0f) * size.X;
-                                uint clrL = curr.Color.Abgr();
-                                uint clrR = next.Color.Abgr();
-                                drawList.AddRectFilledMultiColor(
-                                    new Vector2(cHere.X + fS, cHere.Y),
-                                    new Vector2(cHere.X + fN, cHere.Y + size.Y),
-                                    clrL, clrR, clrR, clrL
-                                );
-
-                                bool hoverTri = !readOnly && VTTMath.PointInTriangle(
-                                    ImGui.GetMousePos(),
-                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
-                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
-                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8)
-                                );
-
-                                if (hoverTri)
-                                {
-                                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                                    {
-                                        selectedKey = curr.Key;
-                                        selectedKeyColor = curr.Color;
-                                        clickedBoxOrTriangle = true;
-                                    }
-                                }
-
-                                if (hoverTri && i != 0 && i != grad.InternalList.Count - 1 && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
-                                {
-                                    pointToDelete = curr;
-                                    clickedBoxOrTriangle = true;
-                                }
-
-                                drawList.AddTriangleFilled(
-                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
-                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
-                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
-                                    hoverTri ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button)
-                                );
-
-                                drawList.AddTriangle(
-                                    new Vector2(cHere.X + fS, cHere.Y + size.Y),
-                                    new Vector2(cHere.X + fS - 4, cHere.Y + size.Y + 8),
-                                    new Vector2(cHere.X + fS + 4, cHere.Y + size.Y + 8),
-                                    ImGui.GetColorU32(curr.Key == selectedKey ? ImGuiCol.ButtonActive : ImGuiCol.Border)
-                                );
-
-                                drawList.AddRectFilled(
-                                    new Vector2(cHere.X + fS - 4, cHere.Y - 8),
-                                    new Vector2(cHere.X + fS + 4, cHere.Y - 0),
-                                    clrL
-                                );
-
-                                bool hoverQuad = !readOnly && ImGui.IsMouseHoveringRect(new Vector2(cHere.X + fS - 4, cHere.Y - 8), new Vector2(cHere.X + fS + 4, cHere.Y - 0));
-                                drawList.AddRect(
-                                    new Vector2(cHere.X + fS - 4, cHere.Y - 8),
-                                    new Vector2(cHere.X + fS + 4, cHere.Y - 0),
-                                    hoverQuad ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Border)
-                                );
-
-                                if (hoverQuad && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                                {
-                                    callback(PacketChangeMapSkyboxColors.ActionType.SetSolidColor, curr);
-                                    clickedBoxOrTriangle = true;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            drawList.AddRectFilled(cHere, cHere + size, solidColor.Abgr());
-                        }
-
-                        drawList.AddRect(
-                            cHere,
-                            cHere + size,
-                            ImGui.GetColorU32(ImGuiCol.Border)
-                        );
-
-                        if (!readOnly)
-                        {
-                            if (!clickedBoxOrTriangle && ImGui.IsMouseHoveringRect(cHere, cHere + size) && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                            {
-                                float a = Math.Clamp(((ImGui.GetMousePos() - cHere) / size).X * 24, 0, 24);
-                                Vector3 closest = grad.Interpolate(a, GradientInterpolators.LerpVec3);
-                                if (!grad.ContainsKey(a))
-                                {
-                                    grad.Add(a, closest);
-                                    selectedKey = a;
-                                    selectedKeyColor = closest;
-                                    callback(PacketChangeMapSkyboxColors.ActionType.AddGradientPoint, new GradientPoint<Vector3>(a, closest));
-                                }
-                            }
-
-                            if (pointToDelete.HasValue)
-                            {
-                                grad.Remove(pointToDelete.Value.Key);
-                                callback(PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint, pointToDelete.Value);
-                            }
-
-                            if (!grad.ContainsKey(selectedKey))
-                            {
-                                var kv = grad.First();
-                                selectedKey = kv.Key;
-                                selectedKeyColor = kv.Value;
-                            }
-
-                            grad.TryGetValue(selectedKey, out Vector3 clr);
-                            if (clr != selectedKeyColor)
-                            {
-                                selectedKeyColor = clr;
-                            }
-
-                            float key = selectedKey;
-                            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
-                            if (ImGui.SliderFloat($"{id}_keySelector", ref key, 0, 24))
-                            {
-                                if (selectedKey is > 0 and < 24)
-                                {
-                                    key = Math.Clamp(key, 0.001f, 23.999f);
-                                    grad.Remove(selectedKey);
-                                    grad.Add(key, clr);
-                                    float prev = selectedKey;
-                                    selectedKey = key;
-                                    selectedKeyColor = clr;
-                                    callback(PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint, new GradientPoint<Vector3>(prev, clr));
-                                }
-                            }
-
-                            ImGui.PopItemWidth();
-                            if (ImGui.ColorPicker3($"{id}_valueSelector", ref selectedKeyColor, ImGuiColorEditFlags.NoSidePreview | ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.PickerHueBar))
-                            {
-                                grad.Remove(selectedKey);
-                                grad.Add(selectedKey, selectedKeyColor);
-                                callback(PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, new GradientPoint<Vector3>(selectedKey, selectedKeyColor));
-                            }
-                        }
-                    }
-
-                    static void ImGradientReadonly(Vector2 size, Gradient<Vector3> grad, Vector3 solidColor)
-                    {
-                        float f = -1;
-                        Vector3 v = Vector3.Zero;
-                        ImGradient(string.Empty, size, grad, solidColor, true, static (x, y) => { }, ref f, ref v);
-                    }
-
                     void SkyboxSettings(bool isDay)
                     {
                         string dayNight = isDay ? "Day" : "Night";
@@ -573,121 +414,80 @@
                         {
                             new PacketSetMapSkyboxAsset() { AssetID = Guid.Empty, MapID = state.clientMap.ID, IsNightSkybox = !isDay }.Send();
                             colors.SwitchType(MapSkyboxColors.ColorsPointerType.DefaultSky);
-                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.DefaultSky, IsNightGradientColors = !isDay }.Send();
+                            new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.DefaultSky, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
                         }
 
                         ImGui.NewLine();
-                        string[] sbColorPointerTypes = new string[] { lang.Translate("ui.maps.sky_settings.skybox.colors.default"), lang.Translate("ui.maps.sky_settings.skybox.colors.black"), lang.Translate("ui.maps.sky_settings.skybox.colors.white"), lang.Translate("ui.maps.sky_settings.skybox.colors.solid"), lang.Translate("ui.maps.sky_settings.skybox.colors.custom_gradient"), lang.Translate("ui.maps.sky_settings.skybox.colors.asset") };
-                        int sbColorPointerIndex = (int)colors.OwnType;
-                        ImGui.TextUnformatted(lang.Translate("ui.maps.sky_settings.skybox.colors_label"));
-                        if (ImGui.IsItemHovered())
+                        ImGuiHelper.ImColorGradientsResult result = ImGuiHelper.ImColorGradients(lang, colors, $"sky_colors_{isDay}", string.Empty, this.AssetImageIcon, out bool sbclrsAssetRecepticleHovered);
+                        if (result.editPerformed)
                         {
-                            ImGui.SetTooltip(lang.Translate("ui.maps.sky_settings.skybox.colors.tt"));
-                        }
-
-                        if (ImGui.Combo($"##{dayNight}SkyboxColorsKind", ref sbColorPointerIndex, sbColorPointerTypes, sbColorPointerTypes.Length))
-                        {
-                            colors.SwitchType((MapSkyboxColors.ColorsPointerType)sbColorPointerIndex);
-                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = (MapSkyboxColors.ColorsPointerType)sbColorPointerIndex, IsNightGradientColors = !isDay }.Send();
-                        }
-
-                        switch (colors.OwnType)
-                        {
-                            case MapSkyboxColors.ColorsPointerType.DefaultSky:
+                            switch (result.change)
                             {
-                                ImGradientReadonly(new Vector2(0, 32), Client.Instance.Frontend.Renderer.SkyRenderer.SkyGradient, default);
-                                break;
-                            }
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ColorsPointerType:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = result.newPointerType, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
 
-                            case MapSkyboxColors.ColorsPointerType.FullBlack:
-                            {
-                                ImGradientReadonly(new Vector2(0, 32), null, Vector3.Zero);
-                                break;
-                            }
-                            case MapSkyboxColors.ColorsPointerType.FullWhite:
-                            {
-                                ImGradientReadonly(new Vector2(0, 32), null, Vector3.One);
-                                break;
-                            }
-
-                            case MapSkyboxColors.ColorsPointerType.SolidColor:
-                            {
-                                if (ImGui.ColorButton("##DaySkyboxColorSolidColor", new Vector4(colors.SolidColor, 1.0f), ImGuiColorEditFlags.NoAlpha, new Vector2(ImGui.GetContentRegionAvail().X, 32)))
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.WantOpenSolidColorChangePopup:
                                 {
                                     this._editedMapSkyboxColorIsDay = isDay;
                                     this._editedMapSkyboxColorGradientKey = float.NaN;
-                                    this._editedMapSkyboxColorGradientValue = colors.SolidColor;
+                                    this._editedMapSkyboxColorGradientValue = result.gradientValue;
                                     state.changeMapSkyboxColorPopup = true;
+                                    break;
                                 }
 
-                                break;
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.WantOpenGradientColorChangePopup:
+                                {
+                                    this._editedMapSkyboxColorIsDay = isDay;
+                                    this._editedMapSkyboxColorGradientKey = result.gradientKey;
+                                    this._editedMapSkyboxColorGradientValue = result.gradientValue;
+                                    state.changeMapSkyboxColorPopup = true;
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.AddGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.AddGradientPoint, GradientPointKey = result.gradientKey, GradientPointColor = result.gradientValue, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.RemoveGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.RemoveGradientPoint, GradientPointKey = result.gradientKey, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.MoveGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.MoveGradientPoint, GradientPointKey = result.oldGradientKey, GradientPointDesination = result.gradientKey, GradientPointColor = result.gradientValue, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ChangeGradientPointColor:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor, GradientPointKey = result.gradientKey, GradientPointColor = result.gradientValue, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ClearCustomImage:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = Guid.Empty, Location = isDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                                    break;
+                                }
                             }
+                        }
 
-                            case MapSkyboxColors.ColorsPointerType.CustomGradient:
+                        if (sbclrsAssetRecepticleHovered)
+                        {
+                            if (isDay)
                             {
-                                ImGradient($"##GradientSkyColor{dayNight}", new Vector2(0, 32), colors.ColorGradient, default, false, (action, x) => 
-                                {
-                                    switch (action)
-                                    {
-                                        case PacketChangeMapSkyboxColors.ActionType.SetSolidColor:
-                                        {
-                                            this._editedMapSkyboxColorIsDay = isDay;
-                                            this._editedMapSkyboxColorGradientKey = x.Key;
-                                            this._editedMapSkyboxColorGradientValue = x.Color;
-                                            state.changeMapSkyboxColorPopup = true;
-                                            break;
-                                        }
-
-                                        case PacketChangeMapSkyboxColors.ActionType.AddGradientPoint:
-                                        {
-                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.AddGradientPoint, GradientPointKey = x.Key, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
-                                            break;
-                                        }
-
-                                        case PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint:
-                                        {
-                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.RemoveGradientPoint, GradientPointKey = x.Key, IsNightGradientColors = !isDay }.Send();
-                                            break;
-                                        }
-
-                                        case PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint:
-                                        {
-                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.MoveGradientPoint, GradientPointKey = x.Key, GradientPointDesination = isDay ? this._dayGradientKeyMem : this._nightGradientKeyMem, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
-                                            break;
-                                        }
-
-                                        case PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor:
-                                        {
-                                            new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, GradientPointKey = x.Key, GradientPointColor = x.Color, IsNightGradientColors = !isDay }.Send();
-                                            break;
-                                        }
-                                    }
-                                }, ref (isDay ? ref this._dayGradientKeyMem : ref this._nightGradientKeyMem), ref (isDay ? ref this._dayGradientValueMem : ref this._nightGradientValueMem));
-
-                                break;
+                                state.mapDaySkyboxColorsAssetHovered = state.clientMap;
                             }
-
-                            case MapSkyboxColors.ColorsPointerType.CustomImage:
+                            else
                             {
-                                bool mOverCustomImageAssetRecepticle = ImGuiHelper.ImAssetRecepticle(lang, colors.GradientAssetID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out _);
-                                if (mOverCustomImageAssetRecepticle && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
-                                {
-                                    if (isDay)
-                                    {
-                                        state.mapDaySkyboxColorsAssetHovered = state.clientMap;
-                                    }
-                                    else
-                                    {
-                                        state.mapNightSkyboxColorsAssetHovered = state.clientMap;
-                                    }
-                                }
-
-                                if (ImGui.Button(lang.Translate($"ui.maps.sky_settings.skybox_any.asset.clear") + $"###Clear{dayNight}SkyboxGradientColorsAsset"))
-                                {
-                                    new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = Guid.Empty, IsNightGradientColors = !isDay }.Send();
-                                }
-
-                                break;
+                                state.mapNightSkyboxColorsAssetHovered = state.clientMap;
                             }
                         }
 
@@ -699,6 +499,338 @@
                         SkyboxSettings(true);
                         ImGui.NewLine();
                         SkyboxSettings(false);
+                        ImGui.TreePop();
+                    }
+
+                    void CelestialBodyColorGradient(CelestialBody cb, bool isLightGrad)
+                    {
+                        MapSkyboxColors colors = isLightGrad ? cb.LightColor : cb.OwnColor;
+                        PacketChangeMapColorsGradient.GradientLocation location = isLightGrad ? PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientLight : PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientOwn;
+                        ImGuiHelper.ImColorGradientsResult result = ImGuiHelper.ImColorGradients(lang, colors, $"celestial_body_colors.{cb.OwnID}.{isLightGrad}", $"ui.maps.celestial_body.color.{(isLightGrad ? "light" : "own")}", this.AssetImageIcon, out bool sbclrsAssetRecepticleHovered);
+                        if (result.editPerformed)
+                        {
+                            switch (result.change)
+                            {
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ColorsPointerType:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = result.newPointerType, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.WantOpenSolidColorChangePopup:
+                                {
+                                    this._celestialBodyGradientEditedIsLightGradient = isLightGrad;
+                                    this._celestialBodyEditedGradientKey = float.NaN;
+                                    this._celestialBodyEditedGradientValue = result.gradientValue;
+                                    this._editedGradientCelestialBodyRef = cb;
+                                    state.celestialBodyChangeColorPopup = true;
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.WantOpenGradientColorChangePopup:
+                                {
+                                    this._celestialBodyGradientEditedIsLightGradient = isLightGrad;
+                                    this._celestialBodyEditedGradientKey = result.gradientKey;
+                                    this._celestialBodyEditedGradientValue = result.gradientValue;
+                                    this._editedGradientCelestialBodyRef = cb;
+                                    state.celestialBodyChangeColorPopup = true;
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.AddGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.AddGradientPoint, GradientPointKey = result.gradientKey, GradientPointColor = result.gradientValue, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.RemoveGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.RemoveGradientPoint, GradientPointKey = result.gradientKey, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.MoveGradientPoint:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.MoveGradientPoint, GradientPointKey = result.oldGradientKey, GradientPointDesination = result.gradientKey, GradientPointColor = result.gradientValue, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ChangeGradientPointColor:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor, GradientPointKey = result.gradientKey, GradientPointColor = result.gradientValue, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+
+                                case ImGuiHelper.ImColorGradientsResult.ChangeKind.ClearCustomImage:
+                                {
+                                    new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = Guid.Empty, Location = location, CelestialBodyID = cb.OwnID }.Send();
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (sbclrsAssetRecepticleHovered)
+                        {
+                            state.celestialBodyGradientAssetHovered = cb;
+                            this._celestialBodyGradientEditedIsLightGradient = isLightGrad;
+                        }
+                    }
+
+                    void CelestialBodySettings(CelestialBody cb, int idx)
+                    {
+                        if (ImGui.BeginChild($"###CelestialBodySettings_{cb.OwnID}", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders))
+                        {
+                            bool sun = cb.IsSun;
+                            ImGui.TextUnformatted(sun ? lang.Translate("ui.maps.celestial_body.sun") : lang.Translate("ui.maps.celestial_body.title", idx));
+                            IntPtr previewTex = this.NoImageIcon.Texture;
+                            Vector4 anim = new Vector4(0, 0, 1, 1);
+                            switch (cb.RenderKind)
+                            {
+                                case CelestialBody.RenderPolicy.BuiltInSun:
+                                case CelestialBody.RenderPolicy.BuiltInMoon:
+                                case CelestialBody.RenderPolicy.BuiltInPlanetA:
+                                case CelestialBody.RenderPolicy.BuiltInPlanetB:
+                                case CelestialBody.RenderPolicy.BuiltInPlanetC:
+                                case CelestialBody.RenderPolicy.BuiltInPlanetD:
+                                case CelestialBody.RenderPolicy.BuiltInPlanetE:
+                                {
+                                    previewTex = Client.Instance.Frontend.Renderer.SkyRenderer.GetBuiltInTexture(cb.RenderKind);
+                                    anim = new Vector4(0, 0, 1, 1);
+                                    break;
+                                }
+
+                                case CelestialBody.RenderPolicy.Custom:
+                                {
+                                    if (!cb.AssetRef.IsEmpty())
+                                    {
+                                        AssetStatus status = Client.Instance.AssetManager.ClientAssetLibrary.Previews.Get(cb.AssetRef, AssetType.Texture, out AssetPreview preview);
+                                        if (status == AssetStatus.Return && preview != null && preview.GetGLTexture().AsyncState == AsyncLoadState.Ready)
+                                        {
+                                            Texture tex = preview.GetGLTexture();
+                                            AssetPreview.FrameData animFrame = preview.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
+                                            previewTex = tex;
+                                            anim = new Vector4(animFrame.X / (float)tex.Size.Width, animFrame.Y / (float)tex.Size.Height, (animFrame.X + animFrame.Width) / (float)tex.Size.Width, (animFrame.Y + animFrame.Height) / (float)tex.Size.Height);
+                                        }
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            Vector2 cHere = ImGui.GetCursorPos();
+                            Vector4 color = cb.OwnColor.GetColor(null, this._celestialBodyPreviewTime);
+                            ImGui.Image(previewTex, new Vector2(48, 48), anim.Xy(), anim.Zw(), color);
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.preview.tt"));
+                            }
+
+                            Vector2 cAfter = ImGui.GetCursorPos();
+                            ImGui.SetCursorPos(cHere + new Vector2(52, 0));
+                            bool bEnable = cb.Enabled;
+                            if (ImGui.Checkbox(lang.Translate("ui.maps.celestial_body.enabled") + "##Enabled", ref bEnable))
+                            {
+                                cb.Enabled = bEnable;
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Enabled, Data = bEnable }.Send();
+                            }
+
+                            ImGui.SetCursorPos(cHere + new Vector2(52, ImGui.GetTextLineHeightWithSpacing() + 4));
+                            bool bBillboard = cb.Billboard;
+                            if (ImGui.Checkbox(lang.Translate("ui.maps.celestial_body.billboard") + "##Billboard", ref bBillboard))
+                            {
+                                cb.Billboard = bBillboard;
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Billboard, Data = bBillboard }.Send();
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.billboard.tt"));
+                            }
+
+                            ImGui.SetCursorPos(cHere + new Vector2(52, (ImGui.GetTextLineHeightWithSpacing() * 2) + 8));
+                            bool bOwnTime = cb.UseOwnTime;
+                            if (ImGui.Checkbox(lang.Translate("ui.maps.celestial_body.own_time") + "##UseOwnTime", ref bOwnTime))
+                            {
+                                cb.UseOwnTime = bOwnTime;
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.UseOwnTime, Data = bOwnTime }.Send();
+                            }
+
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.own_time.tt"));
+                            }
+
+                            ImGui.SetCursorPos(cAfter);
+                            ImGui.PushItemWidth(48);
+                            ImGui.SliderFloat("###OwnSimulatedTime", ref this._celestialBodyPreviewTime, 0f, 24f, string.Empty, ImGuiSliderFlags.NoRoundToFormat);
+                            ImGui.PopItemWidth();
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.time_simulation.tt"));
+                            }
+
+                            if (!sun)
+                            {
+                                ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.position_policy"));
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.position_policy.tt"));
+                                }
+
+                                string[] positionPolicies = new string[] { lang.Translate("ui.maps.celestial_body.position_policy.angular"), lang.Translate("ui.maps.celestial_body.position_policy.follows_sun"), lang.Translate("ui.maps.celestial_body.position_policy.opposes_sun"), lang.Translate("ui.maps.celestial_body.position_policy.static") };
+                                int ppIndex = (int)cb.PositionKind;
+                                if (ImGui.Combo("###CBPositionPolicy", ref ppIndex, positionPolicies, positionPolicies.Length))
+                                {
+                                    cb.PositionKind = (CelestialBody.PositionPolicy)ppIndex;
+                                    new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.PositionPolicy, Data = cb.PositionKind }.Send();
+                                }
+                            }
+
+                            ImGui.TextUnformatted(lang.Translate(
+                                cb.PositionKind switch
+                                { 
+                                    CelestialBody.PositionPolicy.Angular => "ui.maps.celestial_body.yawpitchroll",
+                                    CelestialBody.PositionPolicy.OpposesSun => "ui.maps.celestial_body.offset",
+                                    CelestialBody.PositionPolicy.FollowsSun => "ui.maps.celestial_body.offset",
+                                    CelestialBody.PositionPolicy.Static => "ui.maps.celestial_body.position",
+                                    _ => "ui.maps.celestial_body.position"
+                                }
+                            ));
+
+                            if (cb.PositionKind is CelestialBody.PositionPolicy.Angular or CelestialBody.PositionPolicy.FollowsSun or CelestialBody.PositionPolicy.OpposesSun)
+                            {
+                                float yaw = cb.Position.X;
+                                float pitch = cb.Position.Y;
+                                ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.position.yaw"));
+                                if (ImGui.SliderAngle("###Yaw", ref yaw, -180.0f, 180.0f))
+                                {
+                                    cb.SunYaw = yaw;
+                                    new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Position, Data = cb.Position }.Send();
+                                }
+
+                                ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.position.pitch"));
+                                if (ImGui.SliderAngle("###Pitch", ref pitch, -180.0f, 180.0f))
+                                {
+                                    cb.SunPitch = pitch;
+                                    new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Position, Data = cb.Position }.Send();
+                                }
+                            }
+                            else
+                            {
+                                Vector3 p = cb.Position;
+                                if (ImGui.SliderFloat3("###Position", ref p, -180.0f, 180.0f))
+                                {
+                                    cb.Position = p;
+                                    new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Position, Data = cb.Position }.Send();
+                                }
+                            }
+
+                            ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.rotation"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.rotation.tt"));
+                            }
+
+                            Vector3 hra = new Vector3(
+                                cb.Rotation.X * 180.0f / MathF.PI,
+                                cb.Rotation.Y * 180.0f / MathF.PI,
+                                cb.Rotation.Z * 180.0f / MathF.PI
+                            );
+
+                            if (ImGui.SliderFloat3("###Rotation", ref hra, -180.0f, 180.0f))
+                            {
+                                cb.Rotation = new Vector3(
+                                    hra.X * MathF.PI / 180.0f,
+                                    hra.Y * MathF.PI / 180.0f,
+                                    hra.Z * MathF.PI / 180.0f
+                                );
+
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Rotation, Data = cb.Rotation }.Send();
+                            }
+
+                            ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.scale"));
+                            Vector3 s = cb.Scale;
+                            if (ImGui.DragFloat3("###Scale", ref s))
+                            {
+                                cb.Scale = s;
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.Scale, Data = cb.Scale }.Send();
+                            }
+
+                            ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.render_type"));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.render_type.tt"));
+                            }
+                            string[] renderKinds = { lang.Translate("ui.maps.celestial_body.render.sun"), lang.Translate("ui.maps.celestial_body.render.moon"), lang.Translate("ui.maps.celestial_body.render.planetA"), lang.Translate("ui.maps.celestial_body.render.planetB"), lang.Translate("ui.maps.celestial_body.render.planetC"), lang.Translate("ui.maps.celestial_body.render.planetD"), lang.Translate("ui.maps.celestial_body.render.planetE"), lang.Translate("ui.maps.celestial_body.render.custom") };
+                            int renderKind = (int)cb.RenderKind;
+                            if (ImGui.Combo("###RenderKind", ref renderKind, renderKinds, renderKinds.Length))
+                            {
+                                cb.RenderKind = (CelestialBody.RenderPolicy)renderKind;
+                                new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.RenderPolicy, Data = cb.RenderKind }.Send();
+                            }
+
+                            if (cb.RenderKind == CelestialBody.RenderPolicy.Custom)
+                            {
+                                if (ImGuiHelper.ImAssetRecepticle(lang, cb.AssetRef, this.AssetModelIcon, new Vector2(0, 24), x => x.Type is AssetType.Model or AssetType.Texture, out bool assetEvalHovered))
+                                {
+                                    state.celestialBodyAssetHovered = cb;
+                                }
+
+                                if (assetEvalHovered)
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.maps.celestial_body.custom_asset.tt"));
+                                }
+                            }
+
+                            CelestialBodyColorGradient(cb, false);
+                            if (cb.IsSun)
+                            {
+                                ImGui.NewLine();
+                                CelestialBodyColorGradient(cb, true);
+                                ImGui.TextUnformatted(lang.Translate("ui.maps.celestial_body.sun_shadow_policy"));
+                                string[] shadowPolicies = { lang.Translate("ui.maps.celestial_body.sun_shadow_policy.normal"), lang.Translate("ui.maps.celestial_body.sun_shadow_policy.always"), lang.Translate("ui.maps.celestial_body.sun_shadow_policy.never") };
+                                int sp = (int)cb.ShadowPolicy;
+                                if (ImGui.Combo("###ShadowPolicy", ref sp, shadowPolicies, shadowPolicies.Length))
+                                {
+                                    cb.ShadowPolicy = (CelestialBody.ShadowCastingPolicy)sp;
+                                    new PacketCelestialBodyInfo() { BodyID = cb.OwnID, MapID = state.clientMap.ID, ChangeKind = PacketCelestialBodyInfo.DataType.SunShadowPolicy, Data = cb.ShadowPolicy }.Send();
+                                }
+                            }
+
+                            if (!cb.IsSun)
+                            {
+                                ImGui.NewLine();
+                                if (ImGui.Button(lang.Translate("ui.maps.celestial_body.delete") + $"##DeleteBody{cb.OwnID}"))
+                                {
+                                    new PacketCreateOrDeleteCelestialBody() { MapID = state.clientMap.ID, BodyIDForDeletion = cb.OwnID, IsDeletion = true }.Send();
+                                }
+                            }
+                        }
+
+                        ImGui.EndChild();
+                    }
+
+                    if (ImGui.TreeNode(lang.Translate("ui.maps.celestial_bodies") + "##CelestialBodies"))
+                    {
+                        int cbidx = 0;
+                        foreach (CelestialBody cb in state.clientMap.CelestialBodies)
+                        {
+                            CelestialBodySettings(cb, cbidx++);
+                        }
+
+                        if (ImGui.Button(lang.Translate("ui.maps.celestial_bodies.new") + "##NewCelestialBody"))
+                        {
+                            CelestialBody cb = new CelestialBody()
+                            {
+                                OwnID = Guid.NewGuid(),
+                                OwnColor = new MapSkyboxColors() { OwnType = MapSkyboxColors.ColorsPointerType.FullWhite },
+                                RenderKind = (CelestialBody.RenderPolicy)this.Random.Next(7),
+                                Scale = new Vector3(8, 8, 8)
+                            };
+
+                            new PacketCreateOrDeleteCelestialBody() { MapID = state.clientMap.ID, IsDeletion = false, BodyForAddition = cb }.Send();
+                        }
+
                         ImGui.TreePop();
                     }
 
@@ -730,86 +862,11 @@
                         state.changeMapColorPopup = true;
                     }
 
-                    bool mEnableSun = state.clientMap.SunEnabled;
-                    if (ImGui.Checkbox(lang.Translate("ui.maps.enable_sun") + "###Enable Sun", ref mEnableSun))
-                    {
-                        state.clientMap.SunEnabled = mEnableSun;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mEnableSun, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.SunEnabled };
-                        pcmd.Send();
-                        if (!mEnableSun)
-                        {
-                            state.clientMap.EnableShadows = false;
-                            pcmd = new PacketChangeMapData() { Data = false, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnableShadows };
-                            pcmd.Send();
-                        }
-                    }
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("ui.maps.enable_sun.tt"));
-                    }
-
-                    if (!mEnableSun)
-                    {
-                        ImGui.BeginDisabled();
-                    }
-
-                    float yaw = state.clientMap.SunYaw;
-                    float pitch = state.clientMap.SunPitch;
-                    float intensity = state.clientMap.SunIntensity;
-                    float aintensity = state.clientMap.AmbientIntensity;
-                    if (ImGui.SliderAngle(lang.Translate("ui.maps.sun_yaw") + "###Sun Yaw", ref yaw, -180, 180))
-                    {
-                        state.clientMap.SunYaw = yaw;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = yaw, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.SunYaw };
-                        pcmd.Send();
-                    }
-
-                    if (ImGui.SliderAngle(lang.Translate("ui.maps.sun_pitch") + "###Sun Pitch", ref pitch, -180, 180))
-                    {
-                        state.clientMap.SunPitch = pitch;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = pitch, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.SunPitch };
-                        pcmd.Send();
-                    }
-
-                    if (ImGui.SliderFloat(lang.Translate("ui.maps.sun_intensity") + "###Sun Intensity", ref intensity, 0, 100))
-                    {
-                        state.clientMap.SunIntensity = intensity;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = intensity, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.SunIntensity };
-                        pcmd.Send();
-                    }
-
-                    if (ImGui.SliderFloat(lang.Translate("ui.maps.ambient_intensity") + "###Ambient Intensity", ref aintensity, 0, 100))
-                    {
-                        state.clientMap.AmbientIntensity = aintensity;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = aintensity, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.AmbietIntensity };
-                        pcmd.Send();
-                    }
-
-                    if (!mEnableSun)
-                    {
-                        ImGui.EndDisabled();
-                    }
-
-                    bool mSunShadows = state.clientMap.EnableShadows;
-                    if (ImGui.Checkbox(lang.Translate("ui.maps.sun_shadows") + "###Enable Sun Shadows", ref mSunShadows))
-                    {
-                        state.clientMap.EnableShadows = mSunShadows;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mSunShadows, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnableShadows };
-                        pcmd.Send();
-                    }
-
-                    if (ImGui.IsItemHovered())
-                    {
-                        ImGui.SetTooltip(lang.Translate("ui.maps.sun_shadows.tt"));
-                    }
-
-                    ImGui.SameLine();
-                    bool mLightsShadows = state.clientMap.EnableDirectionalShadows;
+                    bool mLightsShadows = state.clientMap.EnablePointShadows;
                     if (ImGui.Checkbox(lang.Translate("ui.maps.point_shadows") + "###Enable Light Shadows", ref mLightsShadows))
                     {
-                        state.clientMap.EnableDirectionalShadows = mLightsShadows;
-                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mLightsShadows, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnableDirectionalShadows };
+                        state.clientMap.EnablePointShadows = mLightsShadows;
+                        PacketChangeMapData pcmd = new PacketChangeMapData() { Data = mLightsShadows, IsServer = false, MapID = state.clientMap.ID, Session = Client.Instance.SessionID, Type = PacketChangeMapData.DataType.EnablePointShadows };
                         pcmd.Send();
                     }
 

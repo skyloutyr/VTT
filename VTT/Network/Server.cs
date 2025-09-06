@@ -850,7 +850,6 @@
                     ID = this.Settings.DefaultMapID,
                     GridColor = Color.White,
                     GridEnabled = true,
-                    SunEnabled = true,
                     GridUnit = 5,
                     GridSize = 1,
                     Name = "New Map"

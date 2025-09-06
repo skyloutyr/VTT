@@ -101,9 +101,9 @@
             lastProgram = null;
         }
 
-        public void Uniform(UniformBlockMaterial uniforms, double textureAnimationFrameIndex)
+        public void Uniform(double textureAnimationFrameIndex)
         {
-            if (SunShadowRenderer.ShadowPass || uniforms == null)
+            if (SunShadowRenderer.ShadowPass)
             {
                 return;
             }

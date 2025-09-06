@@ -13,48 +13,48 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System.Threading;
     using VTT.Render.Shaders;
+    using System.Collections.Generic;
+    using System.Runtime.Intrinsics;
 
     public class SkyRenderer
     {
-        private VertexArray _vao;
-        private GPUBuffer _vbo;
+        public FastAccessShader<CelestialBodyUniforms> CelestialBodyShader { get; set; }
 
-        public FastAccessShader<SkyboxUniforms> SkyShader { get; set; }
         public Skybox SkyboxRenderer { get; set; }
 
-        public Gradient<Vector3> SkyGradient { get; set; } = new Gradient<Vector3>
+        public Gradient<Vector4> SkyGradient { get; set; } = new Gradient<Vector4>
         {
-            [0] = Color.ParseHex("003469").Vec3() / 5.0f,
-            [1] = Color.ParseHex("003469").Vec3() / 5.0f,
-            [2] = Color.ParseHex("003469").Vec3() / 5.0f,
-            [3] = Color.ParseHex("003e6b").Vec3() / 5.0f,
-            [4] = Color.ParseHex("003e6b").Vec3() / 3.0f,
-            [5] = Color.ParseHex("045f88").Vec3() / 1.0f,
-            [5.25f] = Color.ParseHex("67cac7").Vec3(),
-            [5.5f] = Color.ParseHex("ece16a").Vec3(),
-            [5.75f] = Color.ParseHex("e0ebbe").Vec3(),
-            [6] = Color.ParseHex("ece16a").Vec3(),
-            [6.5f] = Color.ParseHex("e0ebbe").Vec3(),
-            [7] = Color.ParseHex("67cac7").Vec3(),
-            [8] = Color.ParseHex("119bba").Vec3(),
+            [0] = new Vector4(Color.ParseHex("003469").Vec3() / 5.0f, 1.0f),
+            [1] = new Vector4(Color.ParseHex("003469").Vec3() / 5.0f, 1.0f),
+            [2] = new Vector4(Color.ParseHex("003469").Vec3() / 5.0f, 1.0f),
+            [3] = new Vector4(Color.ParseHex("003e6b").Vec3() / 5.0f, 1.0f),
+            [4] = new Vector4(Color.ParseHex("003e6b").Vec3() / 3.0f, 1.0f),
+            [5] = new Vector4(Color.ParseHex("045f88").Vec3() / 1.0f, 1.0f),
+            [5.25f] = new Vector4(Color.ParseHex("67cac7").Vec3(), 1.0f),
+            [5.5f] = new Vector4(Color.ParseHex("ece16a").Vec3(), 1.0f),
+            [5.75f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [6] = new Vector4(Color.ParseHex("ece16a").Vec3(), 1.0f),
+            [6.5f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [7] = new Vector4(Color.ParseHex("67cac7").Vec3(), 1.0f),
+            [8] = new Vector4(Color.ParseHex("119bba").Vec3(), 1.0f),
 
-            [15] = Color.ParseHex("119bba").Vec3(),
-            [16.5f] = Color.ParseHex("1097b6").Vec3(),
-            [17.4f] = Color.ParseHex("e0ebbe").Vec3(),
-            [17.5f] = Color.ParseHex("ffb26e").Vec3(),
-            [17.75f] = Color.ParseHex("ffb26e").Vec3(),
-            [17.8f] = Color.ParseHex("feae5b").Vec3(),
-            [17.9f] = Color.ParseHex("fea85a").Vec3(),
-            [18] = Color.ParseHex("f38e4b").Vec3(),
-            [18.25f] = Color.ParseHex("f1717a").Vec3(),
-            [18.5f] = Color.ParseHex("d0608c").Vec3(),
-            [18.75f] = Color.ParseHex("673184").Vec3(),
-            [19f] = Color.ParseHex("3e1d7a").Vec3(),
+            [15] = new Vector4(Color.ParseHex("119bba").Vec3(), 1.0f),
+            [16.5f] = new Vector4(Color.ParseHex("1097b6").Vec3(), 1.0f),
+            [17.4f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [17.5f] = new Vector4(Color.ParseHex("ffb26e").Vec3(), 1.0f),
+            [17.75f] = new Vector4(Color.ParseHex("ffb26e").Vec3(), 1.0f),
+            [17.8f] = new Vector4(Color.ParseHex("feae5b").Vec3(), 1.0f),
+            [17.9f] = new Vector4(Color.ParseHex("fea85a").Vec3(), 1.0f),
+            [18] = new Vector4(Color.ParseHex("f38e4b").Vec3(), 1.0f),
+            [18.25f] = new Vector4(Color.ParseHex("f1717a").Vec3(), 1.0f),
+            [18.5f] = new Vector4(Color.ParseHex("d0608c").Vec3(), 1.0f),
+            [18.75f] = new Vector4(Color.ParseHex("673184").Vec3(), 1.0f),
+            [19f] = new Vector4(Color.ParseHex("3e1d7a").Vec3(), 1.0f),
 
-            [20f] = Color.ParseHex("2a166c").Vec3(),
-            [22f] = Color.ParseHex("040e40").Vec3() / 3.0f,
-            [23f] = Color.ParseHex("040c3d").Vec3() / 5.0f,
-            [24f] = Color.ParseHex("012356").Vec3() / 5.0f
+            [20f] = new Vector4(Color.ParseHex("2a166c").Vec3(), 1.0f),
+            [22f] = new Vector4(Color.ParseHex("040e40").Vec3() / 3.0f, 1.0f),
+            [23f] = new Vector4(Color.ParseHex("040c3d").Vec3() / 5.0f, 1.0f),
+            [24f] = new Vector4(Color.ParseHex("012356").Vec3() / 5.0f, 1.0f)
         };
 
         public Gradient<Vector3> AmbientGradient { get; set; } = new Gradient<Vector3>
@@ -92,69 +92,113 @@
             [24f] = Color.ParseHex("012356").Vec3() / 30.0f
         };
 
-        public Gradient<Vector3> LightGrad { get; set; } = new Gradient<Vector3>
+        public Gradient<Vector4> LightGrad { get; set; } = new Gradient<Vector4>
         {
             //[0] = Color.ParseHex("040c3d").Vec3(),
             //[5] = Color.ParseHex("040c3d").Vec3(),
-            [0] = Color.ParseHex("000000").Vec3(),
-            [5] = Color.ParseHex("000000").Vec3(),
-            [5.25f] = Color.ParseHex("67cac7").Vec3(),
-            [5.5f] = Color.ParseHex("ece16a").Vec3(),
-            [5.75f] = Color.ParseHex("e0ebbe").Vec3(),
-            [6] = Color.ParseHex("ece16a").Vec3(),
-            [6.5f] = Color.ParseHex("e0ebbe").Vec3(),
-            [7] = Color.ParseHex("ffffff").Vec3(),
-            [8] = Color.ParseHex("ffffff").Vec3(),
+            [0] = new Vector4(Color.ParseHex("000000").Vec3(), 1.0f),
+            [5] = new Vector4(Color.ParseHex("000000").Vec3(), 1.0f),
+            [5.25f] = new Vector4(Color.ParseHex("67cac7").Vec3(), 1.0f),
+            [5.5f] = new Vector4(Color.ParseHex("ece16a").Vec3(), 1.0f),
+            [5.75f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [6] = new Vector4(Color.ParseHex("ece16a").Vec3(), 1.0f),
+            [6.5f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [7] = new Vector4(Color.ParseHex("ffffff").Vec3(), 1.0f),
+            [8] = new Vector4(Color.ParseHex("ffffff").Vec3(), 1.0f),
 
-            [15] = Color.ParseHex("ffffff").Vec3(),
-            [16] = Color.ParseHex("ffffff").Vec3(),
-            [17] = Color.ParseHex("ffffff").Vec3(),
-            [17.4f] = Color.ParseHex("e0ebbe").Vec3(),
-            [17.5f] = Color.ParseHex("ffb26e").Vec3(),
-            [17.75f] = Color.ParseHex("ffb26e").Vec3(),
-            [17.8f] = Color.ParseHex("feae5b").Vec3(),
-            [17.9f] = Color.ParseHex("fea85a").Vec3(),
-            [18] = Color.ParseHex("f38e4b").Vec3(),
-            [18.25f] = Color.ParseHex("f1717a").Vec3(),
-            [18.5f] = Color.ParseHex("d0608c").Vec3(),
-            [18.75f] = Color.ParseHex("673184").Vec3(),
-            [19f] = Color.ParseHex("3e1d7a").Vec3(),
+            [15] = new Vector4(Color.ParseHex("ffffff").Vec3(), 1.0f),
+            [16] = new Vector4(Color.ParseHex("ffffff").Vec3(), 1.0f),
+            [17] = new Vector4(Color.ParseHex("ffffff").Vec3(), 1.0f),
+            [17.4f] = new Vector4(Color.ParseHex("e0ebbe").Vec3(), 1.0f),
+            [17.5f] = new Vector4(Color.ParseHex("ffb26e").Vec3(), 1.0f),
+            [17.75f] = new Vector4(Color.ParseHex("ffb26e").Vec3(), 1.0f),
+            [17.8f] = new Vector4(Color.ParseHex("feae5b").Vec3(), 1.0f),
+            [17.9f] = new Vector4(Color.ParseHex("fea85a").Vec3(), 1.0f),
+            [18] = new Vector4(Color.ParseHex("f38e4b").Vec3(), 1.0f),
+            [18.25f] = new Vector4(Color.ParseHex("f1717a").Vec3(), 1.0f),
+            [18.5f] = new Vector4(Color.ParseHex("d0608c").Vec3(), 1.0f),
+            [18.75f] = new Vector4(Color.ParseHex("673184").Vec3(), 1.0f),
+            [19f] = new Vector4(Color.ParseHex("3e1d7a").Vec3(), 1.0f),
 
             //[20f] = Color.ParseHex("2a166c").Vec3(),
             //[22f] = Color.ParseHex("040e40").Vec3(),
             //[23f] = Color.ParseHex("040c3d").Vec3(),
             //[24f] = Color.ParseHex("012356").Vec3()
 
-            [20f] = Color.ParseHex("000000").Vec3(), // No sun at night
-            [24f] = Color.ParseHex("000000").Vec3()
+            [20f] = new Vector4(Color.ParseHex("000000").Vec3(), 1.0f), // No sun at night
+            [24f] = new Vector4(Color.ParseHex("000000").Vec3(), 1.0f)
         };
+
+        public Gradient<Vector4> SunGrad { get; set; } = new Gradient<Vector4>()
+        {
+            [0f] = new Vector4(0, 0, 0, 0),
+            [5.25f] = new Vector4(0.7f, 0f, 0f, 0f),
+            [6f] = new Vector4(1, 0.8f, 0.6f, 1f),
+            [7f] = new Vector4(1, 1, 1, 1),
+            [12f] = new Vector4(1, 1, 1, 1),
+            [17.25f] = new Vector4(1, 1, 1, 1),
+            [18f] = new Vector4(1, 0.3f, 0f, 1f),
+            [19f] = new Vector4(1, 0, 0, 0),
+            [24f] = new Vector4(0, 0, 0, 0),
+        };
+
+        private GlbScene _modelSun;
+        private GlbScene _modelMoon;
+        private GlbScene _modelPlanetA;
+        private GlbScene _modelPlanetB;
+        private GlbScene _modelPlanetC;
+        private GlbScene _modelPlanetD;
+        private GlbScene _modelPlanetE;
+
+        public Texture GetBuiltInTexture(CelestialBody.RenderPolicy policy)
+        {
+            GlbScene s = policy switch
+            {
+                CelestialBody.RenderPolicy.BuiltInSun => this._modelSun,
+                CelestialBody.RenderPolicy.BuiltInMoon => this._modelMoon,
+                CelestialBody.RenderPolicy.BuiltInPlanetA => this._modelPlanetA,
+                CelestialBody.RenderPolicy.BuiltInPlanetB => this._modelPlanetB,
+                CelestialBody.RenderPolicy.BuiltInPlanetC => this._modelPlanetC,
+                CelestialBody.RenderPolicy.BuiltInPlanetD => this._modelPlanetD,
+                CelestialBody.RenderPolicy.BuiltInPlanetE => this._modelPlanetE,
+                _ => null
+            };
+
+            return s?.Materials[0].BaseColorTexture;
+        }
 
         public void Create()
         {
-            this.SkyShader = new FastAccessShader<SkyboxUniforms>(OpenGLUtil.LoadShader("sky", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }));
-            this._vao = new VertexArray();
-            this._vbo = new GPUBuffer(BufferTarget.Array);
-            this._vao.Bind();
-            this._vbo.Bind();
-            this._vbo.SetData(new float[] {
-                -1f, -1f, 0f,
-                1f, -1f, 0f,
-                -1f, 1f, 0f,
-                1f, 1f, 0f,
-            });
-
-            this._vao.Reset();
-            this._vao.SetVertexSize<float>(3);
-            this._vao.PushElement(ElementType.Vec3);
+#if USE_VTX_COMPRESSION
+            this.CelestialBodyShader = new FastAccessShader<CelestialBodyUniforms>(OpenGLUtil.LoadShader("celestial_body", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }, new DefineRule[] { new DefineRule(DefineRule.Mode.Define, "USE_VTX_COMPRESSION") }));
+#else
+            this.CelestialBodyShader = new FastAccessShader<CelestialBodyUniforms>(OpenGLUtil.LoadShader("celestial_body", stackalloc ShaderType[2] { ShaderType.Vertex, ShaderType.Fragment }, new DefineRule[] { }));
+#endif
+            this.CelestialBodyShader.Bind();
+            this.CelestialBodyShader.Program.BindUniformBlock("Material", 3);
+            this.CelestialBodyShader.Uniforms.DiffuseSampler.Set(0);
+            this._modelSun = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("sun")));
+            this._modelMoon = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("moon")));
+            this._modelPlanetA = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("planetA")));
+            this._modelPlanetB = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("planetB")));
+            this._modelPlanetC = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("planetC")));
+            this._modelPlanetD = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("planetD")));
+            this._modelPlanetE = new GlbScene(TextureData.CreateFromExistingGLTexture(OpenGLUtil.LoadUIImage("planetE")));
             this.SkyboxRenderer = new Skybox();
             this.SkyboxRenderer.Init();
-
-            OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "Celestial body square vao");
-            OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "Celestial body square vbo");
         }
 
-        public Vector3 GetCurrentSunDirection() => Client.Instance.CurrentMap.SunEnabled ? this.GetSunDirection(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1) : -Vector3.UnitZ;
-        public Vector3 GetCurrentSunUp() => this.GetSunUp(Client.Instance.CurrentMap?.SunYaw ?? 1, Client.Instance.CurrentMap?.SunPitch ?? 1);
+        public Vector3 GetCurrentSunDirection()
+        {
+            Map m = Client.Instance.CurrentMap;
+            if (m == null)
+            {
+                return -Vector3.UnitZ;
+            }
+
+            CelestialBody sun = m.CelestialBodies.Sun;
+            return !sun.Enabled ? -Vector3.UnitZ : GetDirectionFromEulerAngles(sun.SunYaw, sun.SunPitch, sun.SunRoll);
+        }
 
         public Vector3 GetSunDirection(float yaw, float pitch)
         {
@@ -162,6 +206,15 @@
             Quaternion q = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, yaw);
             Quaternion q1 = Quaternion.CreateFromAxisAngle(Vector3.UnitY, pitch);
             return Vector4.Transform(Vector4.Transform(vec, q1), q).Xyz().Normalized();
+        }
+
+        public Vector3 GetDirectionFromEulerAngles(float yaw, float pitch, float roll)
+        {
+            Vector4 vec = -Vector4.UnitZ;
+            Quaternion qy = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, yaw);
+            Quaternion qp = Quaternion.CreateFromAxisAngle(Vector3.UnitY, pitch);
+            Quaternion qr = Quaternion.CreateFromAxisAngle(Vector3.UnitX, roll);
+            return Vector4.Transform(Vector4.Transform(Vector4.Transform(vec, qr), qp), qy).Xyz().Normalized();
         }
 
         public Vector3 GetSunUp(float yaw, float pitch)
@@ -188,36 +241,151 @@
                 return;
             }
 
-            float pitch = map.SunPitch;
-            if (!map.SunEnabled || pitch < -1.6493362 || pitch > 1.6580629)
-            {
-                return;
-            }
-
+            CelestialBody sun = map.CelestialBodies.Sun;
             OpenGLUtil.StartSection("Celestial bodies");
             GLState.Blend.Set(true);
             GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
             GLState.DepthTest.Set(true);
-
+            GL.Disable(Capability.DepthClamp);
             Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
             Vector3 sunDir = this.GetCurrentSunDirection();
-            this.SkyShader.Bind();
-            this.SkyShader.Uniforms.Transform.Projection.Set(cam.Projection);
-            this.SkyShader.Uniforms.Transform.View.Set(cam.View);
-            Vector3 a = Vector3.Cross(Vector3.UnitZ, -cam.Direction);
-            Quaternion q = new Quaternion(a, 1 + Vector3.Dot(Vector3.UnitZ, -cam.Direction)).Normalized();
-            Matrix4x4 model = Matrix4x4.CreateScale(8) * Matrix4x4.CreateFromQuaternion(q) * Matrix4x4.CreateTranslation(cam.Position - (sunDir * 99));
-            this.SkyShader.Uniforms.Transform.Model.Set(model);
-            this._vao.Bind();
+            float sunTime = this.GetDayProgress(map);
+            this.CelestialBodyShader.Bind();
+            foreach (CelestialBody b in map.CelestialBodies)
+            {
+                if (!b.Enabled)
+                {
+                    continue;
+                }
 
-            GLState.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
+                // Determine body position
+                Vector3 position = Vector3.Zero;
+                switch (b.PositionKind)
+                {
+                    case CelestialBody.PositionPolicy.Angular:
+                    {
+                        position = -GetDirectionFromEulerAngles(b.Position.X, b.Position.Y, b.Position.Z) * 99;
+                        break;
+                    }
 
+                    case CelestialBody.PositionPolicy.FollowsSun:
+                    case CelestialBody.PositionPolicy.OpposesSun:
+                    {
+                        Vector3 bposAsAngles = b.Position * MathF.PI / 180.0f;
+                        Vector3 angulars = new Vector3(sun.SunYaw + bposAsAngles.X, sun.SunPitch + bposAsAngles.Y, sun.SunRoll + bposAsAngles.Z);
+                        position = GetDirectionFromEulerAngles(angulars.X, angulars.Y, angulars.Z) * 99;
+                        if (b.PositionKind == CelestialBody.PositionPolicy.OpposesSun)
+                        {
+                            position = -position;
+                        }
+
+                        break;
+                    }
+
+                    case CelestialBody.PositionPolicy.Static:
+                    {
+                        position = b.Position;
+                        break;
+                    }
+                }
+
+                // There were issues with using the previous approach of a billbiard quaternion, so here we construct the billboard matrix manually
+                Vector3 look = Vector3.Normalize(-position); // Invert look due to a -Z forward (instead of expected +Y)
+                Vector3 right = Vector3.Cross(cam.Up, look);
+                Vector3 up = Vector3.Cross(look, right);
+                Matrix4x4 billboardRotation = new Matrix4x4(
+                    right.X, right.Y, right.Z, 0,
+                    up.X, up.Y, up.Z, 0,
+                    look.X, look.Y, look.Z, 0,
+                    0, 0, 0, 1
+                );
+
+                // Determine body rotation
+                Matrix4x4 rot = Matrix4x4.CreateFromYawPitchRoll(b.Rotation.X, b.Rotation.Y, b.Rotation.Z);
+                if (b.Billboard)
+                {
+                    rot = rot * billboardRotation;
+                }
+
+                Matrix4x4 model = Matrix4x4.CreateScale(b.Scale) * rot * Matrix4x4.CreateTranslation(cam.Position + position);
+                GlbScene scene = null;
+                switch (b.RenderKind)
+                {
+                    case CelestialBody.RenderPolicy.BuiltInSun:
+                    {
+                        scene = this._modelSun;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInMoon:
+                    {
+                        scene = this._modelMoon;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInPlanetA:
+                    {
+                        scene = this._modelPlanetA;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInPlanetB:
+                    {
+                        scene = this._modelPlanetB;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInPlanetC:
+                    {
+                        scene = this._modelPlanetC;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInPlanetD:
+                    {
+                        scene = this._modelPlanetD;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.BuiltInPlanetE:
+                    {
+                        scene = this._modelPlanetE;
+                        break;
+                    }
+
+                    case CelestialBody.RenderPolicy.Custom:
+                    {
+                        AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(b.AssetRef, AssetType.Model, out Asset a);
+                        if (aStat == AssetStatus.Return && a.Type == AssetType.Model && a.ModelGlReady)
+                        {
+                            scene = a.Model.GLMdl;
+                        }
+
+                        break;
+                    }
+                }
+
+                float ownTime = (float)(b.SunPitch + MathF.PI) / MathF.PI * 12;
+                this.CelestialBodyShader.Uniforms.Color.Set(b.OwnColor.GetColor(map, b.UseOwnTime ? ownTime : sunTime));
+                scene?.Render(in this.CelestialBodyShader.Uniforms.glbEssentials, model, cam.Projection, cam.View, double.NaN, null, 0, null);
+            }
+
+            GL.Enable(Capability.DepthClamp);
             GLState.DepthTest.Set(false);
             GLState.Blend.Set(false);
             OpenGLUtil.EndSection();
         }
 
-        public float GetDayProgress(Map map) => map == null ? 0 : !map.SunEnabled ? 12 : (float)(map.SunPitch + MathF.PI) / MathF.PI * 12;
+        public float GetDayProgress(Map map)
+        {
+            if (map == null)
+            {
+                return 0;
+            }
+
+            CelestialBody sun = map.CelestialBodies.Sun;
+            return !sun.Enabled ? 12 : (float)(sun.SunPitch + MathF.PI) / MathF.PI * 12;
+        }
 
         public Color GetSkyColor()
         {
@@ -227,9 +395,9 @@
                 return Color.Black;
             }
 
-            if (!map.SunEnabled)
+            if (!map.CelestialBodies.Sun.Enabled)
             {
-                return Extensions.FromVec3(map.DaySkyboxColors.GetColor(map, 12));
+                return Extensions.FromVec4(map.DaySkyboxColors.GetColor(map, 12));
             }
 
             float dayProgress = this.GetDayProgress(map);
@@ -242,7 +410,7 @@
                 : dayProgress < cutoutPointNightToDayEnd ? 1.0f - ((dayProgress - cutoutPointNightToDayStart) / (cutoutPointNightToDayEnd - cutoutPointNightToDayStart))
                 : dayProgress > cutoutPointDayToNightStart ? (dayProgress - cutoutPointDayToNightStart) / (cutoutPointDayToNightEnd - cutoutPointDayToNightStart)
                 : dayProgress > cutoutPointDayToNightEnd ? 1.0f : 0.0f;
-            return Extensions.FromVec3(Vector3.Lerp(map.DaySkyboxColors.GetColor(map, dayProgress), map.NightSkyboxColors.GetColor(map, dayProgress), dayNightFactor));
+            return Extensions.FromVec4(Vector4.Lerp(map.DaySkyboxColors.GetColor(map, dayProgress), map.NightSkyboxColors.GetColor(map, dayProgress), dayNightFactor));
 
             // Legacy
             // float pitch = map.SunPitch + MathF.PI;
@@ -258,14 +426,15 @@
                 return Color.White;
             }
 
-            if (!map.SunEnabled)
+            CelestialBody sun = map.CelestialBodies.Sun;
+            if (!sun.Enabled)
             {
                 return map.SunColor;
             }
 
-            float pitch = map.SunPitch + MathF.PI;
+            float pitch = sun.SunPitch + MathF.PI;
             float idx = pitch / MathF.PI * 12;
-            return Extensions.FromVec3(this.LightGrad.Interpolate(idx, GradientInterpolators.LerpVec3) / 4.0f);
+            return (Color)(sun.LightColor.GetColor(map, idx) * new Vector4(0.25f, 0.25f, 0.25f, 1.0f));
         }
 
         public Color GetAmbientColor()
@@ -276,12 +445,13 @@
                 return Color.White;
             }
 
-            if (!map.SunEnabled)
+            CelestialBody sun = map.CelestialBodies.Sun;
+            if (!sun.Enabled)
             {
                 return map.AmbientColor;
             }
 
-            float pitch = map.SunPitch + MathF.PI;
+            float pitch = sun.SunPitch + MathF.PI;
             float idx = pitch / MathF.PI * 12;
             return Extensions.FromVec3(this.AmbientGradient.Interpolate(idx, GradientInterpolators.CubVec3));
         }
@@ -394,8 +564,8 @@
             }
 
             public float CachedBlendDelta { get; set; }
-            public Vector3 CachedDayColors { get; set; }
-            public Vector3 CachedNightColors { get; set; }
+            public Vector4 CachedDayColors { get; set; }
+            public Vector4 CachedNightColors { get; set; }
 
             public void Render(Map m, double dt)
             {

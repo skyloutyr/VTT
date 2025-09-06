@@ -1223,7 +1223,7 @@
 
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_map_skybox_color") + "###ChangeMapSkyboxColor"))
             {
-                ImGui.ColorPicker3(lang.Translate("ui.generic.color") + "###Color", ref this._editedMapSkyboxColorGradientValue);
+                ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._editedMapSkyboxColorGradientValue);
                 bool bc = ImGui.Button(cancel);
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
                 bool bo = ImGui.Button(ok);
@@ -1238,13 +1238,43 @@
                     if (float.IsNaN(this._editedMapSkyboxColorGradientKey)) // Editing solid color
                     {
                         colors.SolidColor = this._editedMapSkyboxColorGradientValue;
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, IsNightGradientColors = !this._editedMapSkyboxColorIsDay, Action = PacketChangeMapSkyboxColors.ActionType.SetSolidColor, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Location = this._editedMapSkyboxColorIsDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient, Action = PacketChangeMapColorsGradient.ActionType.SetSolidColor, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
                     }
                     else // Edited value of the gradient point
                     {
                         colors.ColorGradient.Remove(this._editedMapSkyboxColorGradientKey);
                         colors.ColorGradient.Add(this._editedMapSkyboxColorGradientKey, this._editedMapSkyboxColorGradientValue);
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, IsNightGradientColors = !this._editedMapSkyboxColorIsDay, Action = PacketChangeMapSkyboxColors.ActionType.ChangeGradientPointColor, GradientPointKey = this._editedMapSkyboxColorGradientKey, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Location = this._editedMapSkyboxColorIsDay ? PacketChangeMapColorsGradient.GradientLocation.MapDayGradient : PacketChangeMapColorsGradient.GradientLocation.MapNightGradient, Action = PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor, GradientPointKey = this._editedMapSkyboxColorGradientKey, GradientPointColor = this._editedMapSkyboxColorGradientValue }.Send();
+                    }
+                }
+
+                ImGui.EndPopup();
+            }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_celestial_body_color") + "###ChangeCelestialBodyColor"))
+            {
+                ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Color", ref this._celestialBodyEditedGradientValue);
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
+                bool bo = ImGui.Button(ok);
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (bo)
+                {
+                    MapSkyboxColors colors = this._celestialBodyGradientEditedIsLightGradient ? this._editedGradientCelestialBodyRef.LightColor : this._editedGradientCelestialBodyRef.OwnColor;
+                    if (float.IsNaN(this._celestialBodyEditedGradientKey)) // Editing solid color
+                    {
+                        colors.SolidColor = this._celestialBodyEditedGradientValue;
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Location = this._celestialBodyGradientEditedIsLightGradient ? PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientLight : PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientOwn, CelestialBodyID = this._editedGradientCelestialBodyRef.OwnID, Action = PacketChangeMapColorsGradient.ActionType.SetSolidColor, GradientPointColor = this._celestialBodyEditedGradientValue }.Send();
+                    }
+                    else // Edited value of the gradient point
+                    {
+                        colors.ColorGradient.Remove(this._celestialBodyEditedGradientKey);
+                        colors.ColorGradient.Add(this._celestialBodyEditedGradientKey, this._celestialBodyEditedGradientValue);
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Location = this._celestialBodyGradientEditedIsLightGradient ? PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientLight : PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientOwn, CelestialBodyID = this._editedGradientCelestialBodyRef.OwnID, Action = PacketChangeMapColorsGradient.ActionType.ChangeGradientPointColor, GradientPointKey = this._celestialBodyEditedGradientKey, GradientPointColor = this._celestialBodyEditedGradientValue }.Send();
                     }
                 }
 
@@ -1422,6 +1452,11 @@
             if (state.changeMapSkyboxColorPopup)
             {
                 ImGui.OpenPopup("###ChangeMapSkyboxColor");
+            }
+
+            if (state.celestialBodyChangeColorPopup)
+            {
+                ImGui.OpenPopup("###ChangeCelestialBodyColor");
             }
         }
     }

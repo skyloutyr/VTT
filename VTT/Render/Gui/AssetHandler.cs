@@ -1480,7 +1480,7 @@
                     {
                         new PacketSetMapSkyboxAsset() { MapID = state.clientMap.ID, IsNightSkybox = false, AssetID = this._draggedRef.AssetID }.Send();
                         state.clientMap.DaySkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullWhite);
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, IsNightGradientColors = false }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, Location = PacketChangeMapColorsGradient.GradientLocation.MapDayGradient }.Send();
                         haveResult = true;
                     }
 
@@ -1488,19 +1488,32 @@
                     {
                         new PacketSetMapSkyboxAsset() { MapID = state.clientMap.ID, IsNightSkybox = true, AssetID = this._draggedRef.AssetID }.Send();
                         state.clientMap.NightSkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullWhite);
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, IsNightGradientColors = true }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SwitchKind, ColorsType = MapSkyboxColors.ColorsPointerType.FullWhite, Location = PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
                         haveResult = true;
                     }
 
                     if (!haveResult && state.mapDaySkyboxColorsAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
                     {
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, IsNightGradientColors = false }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, Location = PacketChangeMapColorsGradient.GradientLocation.MapDayGradient }.Send();
                         haveResult = true;
                     }
 
                     if (!haveResult && state.mapNightSkyboxColorsAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
                     {
-                        new PacketChangeMapSkyboxColors() { MapID = state.clientMap.ID, Action = PacketChangeMapSkyboxColors.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, IsNightGradientColors = true }.Send();
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, Location = PacketChangeMapColorsGradient.GradientLocation.MapNightGradient }.Send();
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.celestialBodyAssetHovered != null && Client.Instance.IsAdmin && (this._draggedRef?.Type == AssetType.Texture || this._draggedRef?.Type == AssetType.Model))
+                    {
+                        new PacketCelestialBodyInfo() { MapID = state.clientMap.ID, BodyID = state.celestialBodyAssetHovered.OwnID, ChangeKind = PacketCelestialBodyInfo.DataType.AssetRef, Data = this._draggedRef.AssetID }.Send();
+                        state.celestialBodyAssetHovered.AssetRef = this._draggedRef.AssetID;
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.celestialBodyGradientAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, Location = this._celestialBodyGradientEditedIsLightGradient ? PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientLight : PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientOwn, CelestialBodyID = state.celestialBodyGradientAssetHovered.OwnID }.Send();
                         haveResult = true;
                     }
                 }

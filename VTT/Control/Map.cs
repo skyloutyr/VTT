@@ -3,6 +3,7 @@
     using SixLabors.ImageSharp;
     using SixLabors.ImageSharp.PixelFormats;
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -29,14 +30,10 @@
         public Color AmbientColor { get; set; }
         public Color SunColor { get; set; }
 
-        public bool SunEnabled { get; set; } = true;
-        public float SunYaw { get; set; }
-        public float SunPitch { get; set; }
         public float SunIntensity { get; set; } = 1.0f;
         public float AmbientIntensity { get; set; } = 1.0f;
 
-        public bool EnableShadows { get; set; } = true;
-        public bool EnableDirectionalShadows { get; set; } = false;
+        public bool EnablePointShadows { get; set; } = false;
         public bool EnableDarkvision { get; set; }
         public bool EnableDrawing { get; set; } = true;
         public bool Has2DShadows { get; set; } = false;
@@ -68,6 +65,7 @@
         public MapSkyboxColors DaySkyboxColors { get; set; } = new MapSkyboxColors();
         public Guid NightSkyboxAssetID { get; set; } = Guid.Empty;
         public MapSkyboxColors NightSkyboxColors { get; set; } = new MapSkyboxColors();
+        public MapCelestialBodies CelestialBodies { get; set; } = new MapCelestialBodies();
 
         public bool NeedsSave { get; set; }
 
@@ -189,14 +187,10 @@
             this.GridType = e.GetEnum("GridType", MapGridType.Square);
             this.SunColor = e.GetColor("SunColor", new Color(new Rgba32(0.2f, 0.2f, 0.2f, 1.0f)));
             this.AmbientColor = e.GetColor("AmbientColor", new Color(new Rgba32(0.03f, 0.03f, 0.03f, 0.03f)));
-            this.SunEnabled = e.GetBool("SunEnabled", true);
-            this.SunYaw = e.GetSingle("SunYaw");
-            this.SunPitch = e.GetSingle("SunPitch");
             this.SunIntensity = e.GetSingle("SunIntensity");
             this.AmbientIntensity = e.GetSingle("AmbietIntensity", 1.0f);
             this.TurnTracker.Deserialize(e.GetMap("TurnTracker", new DataElement()));
-            this.EnableShadows = e.GetBool("EnableShadows");
-            this.EnableDirectionalShadows = e.GetBool("EnableDirectionalShadows");
+            this.EnablePointShadows = e.GetBool("EnableDirectionalShadows");
             this.EnableDarkvision = e.GetBool("EnableDarkvision");
             this.DefaultCameraPosition = e.GetVec3Legacy("DefaultCameraPosition", this.DefaultCameraPosition);
             this.DefaultCameraRotation = e.GetVec3Legacy("DefaultCameraRotation", this.DefaultCameraRotation);
@@ -251,6 +245,7 @@
             this.DaySkyboxColors.Deserialize(e.GetMap("DaySkyboxColors", new DataElement()));
             this.NightSkyboxAssetID = e.GetGuidLegacy("NightSkyboxAssetID", Guid.Empty);
             this.NightSkyboxColors.Deserialize(e.GetMap("NightSkyboxColors", new DataElement()));
+            this.CelestialBodies.Deserialize(e.GetMap("CelestialBodies", new DataElement()));
 
             if (this.IsServer)
             {
@@ -297,14 +292,10 @@
             ret.SetEnum("GridType", this.GridType);
             ret.SetColor("AmbientColor", this.AmbientColor);
             ret.SetColor("SunColor", this.SunColor);
-            ret.SetBool("SunEnabled", this.SunEnabled);
-            ret.SetSingle("SunYaw", this.SunYaw);
-            ret.SetSingle("SunPitch", this.SunPitch);
             ret.SetSingle("SunIntensity", this.SunIntensity);
             ret.SetSingle("AmbietIntensity", this.AmbientIntensity);
             ret.SetMap("TurnTracker", this.TurnTracker.Serialize());
-            ret.SetBool("EnableShadows", this.EnableShadows);
-            ret.SetBool("EnableDirectionalShadows", this.EnableDirectionalShadows);
+            ret.SetBool("EnableDirectionalShadows", this.EnablePointShadows);
             ret.SetBool("EnableDarkvision", this.EnableDarkvision);
             ret.SetVec3("DefaultCameraPosition", this.DefaultCameraPosition);
             ret.SetVec3("DefaultCameraRotation", this.DefaultCameraRotation);
@@ -323,6 +314,7 @@
             ret.SetMap("DaySkyboxColors", this.DaySkyboxColors.Serialize());
             ret.SetGuid("NightSkyboxAssetID", this.NightSkyboxAssetID);
             ret.SetMap("NightSkyboxColors", this.NightSkyboxColors.Serialize());
+            ret.SetMap("CelestialBodies", this.CelestialBodies.Serialize());
             return ret;
         }
 
@@ -354,13 +346,9 @@
                 GridType = this.GridType,
                 AmbientColor = this.AmbientColor,
                 SunColor = this.SunColor,
-                SunEnabled = this.SunEnabled,
-                SunYaw = this.SunYaw,
-                SunPitch = this.SunPitch,
                 SunIntensity = this.SunIntensity,
                 AmbientIntensity = this.AmbientIntensity,
-                EnableShadows = this.EnableShadows,
-                EnableDirectionalShadows = this.EnableDirectionalShadows,
+                EnablePointShadows = this.EnablePointShadows,
                 EnableDarkvision = this.EnableDarkvision,
                 EnableDrawing = this.EnableDrawing,
                 Has2DShadows = this.Has2DShadows,
@@ -376,6 +364,7 @@
                 NightSkyboxAssetID = this.NightSkyboxAssetID,
                 DaySkyboxColors = this.DaySkyboxColors.Clone(),
                 NightSkyboxColors = this.NightSkyboxColors.Clone(),
+                CelestialBodies = this.CelestialBodies.Clone(),
                 NeedsSave = true,
             };
 
@@ -401,12 +390,118 @@
         }
     }
 
+    public class MapCelestialBodies : ISerializable, IEnumerable<CelestialBody>
+    {
+        private readonly Dictionary<Guid, CelestialBody> _bodies = new Dictionary<Guid, CelestialBody>();
+        private readonly object @lock = new object();
+        private CelestialBody _sunRef;
+
+        public CelestialBody Sun => this._sunRef;
+
+        public MapCelestialBodies() => this.AddBody(this._sunRef = CelestialBody.CreateSun(Guid.NewGuid()));
+
+        public IEnumerator<CelestialBody> GetEnumerator()
+        {
+            lock (this.@lock)
+            {
+                foreach (KeyValuePair<Guid, CelestialBody> kv in this._bodies)
+                {
+                    yield return kv.Value;
+                }
+            }
+        }
+
+        public void AddBody(CelestialBody body)
+        {
+            lock (this.@lock)
+            {
+                this._bodies.TryAdd(body.OwnID, body);
+            }
+        }
+
+        public void RemoveBody(CelestialBody body) => this.RemoveBody(body.OwnID);
+        public void RemoveBody(Guid key)
+        {
+            lock (this.@lock)
+            {
+                this._bodies.Remove(key);
+            }
+        }
+
+        public bool TryGetBody(Guid key, out CelestialBody body) => this._bodies.TryGetValue(key, out body);
+
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        public DataElement Serialize()
+        {
+            lock (this.@lock)
+            {
+                DataElement ret = new DataElement();
+                ret.SetArray("Bodies", this._bodies.Values.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
+                return ret;
+            }
+        }
+
+        public void Deserialize(DataElement e)
+        {
+            lock (this.@lock)
+            {
+                this._bodies.Clear();
+                CelestialBody[] bodies = e.GetArray("Bodies", (n, c) => new CelestialBody(c.GetMap(n)), Array.Empty<CelestialBody>());
+                foreach (CelestialBody b in bodies)
+                {
+                    this._bodies[b.OwnID] = b;
+                    if (b.IsSun)
+                    {
+                        this._sunRef = b;
+                    }
+                }
+
+                if (this._sunRef == null && this._bodies.Count != 0)
+                {
+                    // Very very bad! We need at least one sun! Discard all and start again.
+                    this._bodies.Clear();
+                }
+
+                if (this._bodies.Count == 0)
+                {
+                    // Not allowed, sun must always be present!
+                    CelestialBody sun = CelestialBody.CreateSun(Guid.NewGuid());
+                    this._bodies[sun.OwnID] = this._sunRef = sun;
+                }
+            }
+        }
+
+        public MapCelestialBodies Clone(bool keepIds = false)
+        {
+            MapCelestialBodies ret = new MapCelestialBodies();
+            lock (this.@lock)
+            {
+                foreach (CelestialBody body in this._bodies.Values)
+                {
+                    CelestialBody b = body.Clone();
+                    if (!keepIds)
+                    {
+                        b.OwnID = Guid.NewGuid();
+                    }
+
+                    ret._bodies[b.OwnID] = b;
+                    if (b.IsSun)
+                    {
+                        ret._sunRef = b;
+                    }
+                }
+            }
+
+            return ret;
+        }
+    }
+
     public class MapSkyboxColors : ISerializable
     {
         public ColorsPointerType OwnType { get; set; }
-        public Gradient<Vector3> ColorGradient { get; set; } = new Gradient<Vector3>();
+        public Gradient<Vector4> ColorGradient { get; set; } = new Gradient<Vector4>();
         public Guid GradientAssetID { get; set; } = Guid.Empty;
-        public Vector3 SolidColor { get; set; } = Vector3.One;
+        public Vector4 SolidColor { get; set; } = Vector4.One;
 
         private Guid _lastGradientAssetID = Guid.Empty;
         private Image<Rgba32> _cachedGradientColors;
@@ -420,7 +515,7 @@
                 SolidColor = this.SolidColor
             };
 
-            foreach (KeyValuePair<float, Vector3> kv in this.ColorGradient)
+            foreach (KeyValuePair<float, Vector4> kv in this.ColorGradient)
             {
                 ret.ColorGradient[kv.Key] = kv.Value;
             }
@@ -433,20 +528,20 @@
             this.OwnType = typeTo;
             this.ColorGradient.Clear();
             this.GradientAssetID = Guid.Empty;
-            this.SolidColor = Vector3.Zero;
+            this.SolidColor = Vector4.Zero;
             switch (typeTo)
             {
                 case ColorsPointerType.SolidColor:
                 {
-                    this.SolidColor = Color.SkyBlue.Vec3();
+                    this.SolidColor = ((Vector4)Color.SkyBlue);
                     break;
                 }
 
                 case ColorsPointerType.CustomGradient:
                 {
-                    this.ColorGradient.Add(0, Color.Black.Vec3());
-                    this.ColorGradient.Add(12, Color.White.Vec3());
-                    this.ColorGradient.Add(24, Color.Black.Vec3());
+                    this.ColorGradient.Add(0, ((Vector4)Color.Black));
+                    this.ColorGradient.Add(12, ((Vector4)Color.White));
+                    this.ColorGradient.Add(24, ((Vector4)Color.Black));
                     break;
                 }
 
@@ -461,7 +556,7 @@
             }
         }
 
-        public Vector3 GetColor(Map m, float time)
+        public Vector4 GetColor(Map m, float time)
         {
             switch (this.OwnType)
             {
@@ -472,17 +567,17 @@
 
                 case ColorsPointerType.FullWhite:
                 {
-                    return Vector3.One;
+                    return Vector4.One;
                 }
 
                 case ColorsPointerType.FullBlack:
                 {
-                    return Vector3.Zero;
+                    return Vector4.Zero;
                 }
 
                 case ColorsPointerType.CustomGradient:
                 {
-                    return this.ColorGradient.Interpolate(time, GradientInterpolators.LerpVec3);
+                    return this.ColorGradient.Interpolate(time, GradientInterpolators.LerpVec4);
                 }
 
                 case ColorsPointerType.CustomImage:
@@ -496,7 +591,7 @@
 
                     if (this.GradientAssetID.IsEmpty())
                     {
-                        return Vector3.Zero;
+                        return Vector4.Zero;
                     }
 
                     AssetStatus aStat = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(this.GradientAssetID, AssetType.Texture, out Asset a);
@@ -504,7 +599,7 @@
                     {
                         this._cachedGradientColors?.Dispose();
                         this._cachedGradientColors = null;
-                        return Vector3.Zero;
+                        return Vector4.Zero;
                     }
 
                     if (this._cachedGradientColors == null)
@@ -512,32 +607,50 @@
                         this._cachedGradientColors = a.Texture.CompoundImage();
                     }
 
-                    return this._cachedGradientColors[(int)MathF.Round(Math.Clamp(time / 24.0f, 0f, 1f) * this._cachedGradientColors.Width), 0].ToVector3();
+                    return this._cachedGradientColors[(int)MathF.Round(Math.Clamp(time / 24.0f, 0f, 1f) * this._cachedGradientColors.Width), 0].ToVector4();
+                }
+
+                case ColorsPointerType.DefaultSunlight:
+                {
+                    return Client.Instance.Frontend.Renderer.SkyRenderer.LightGrad.Interpolate(time, GradientInterpolators.LerpVec4);
+                }
+
+                case ColorsPointerType.DefaultSun:
+                {
+                    return Client.Instance.Frontend.Renderer.SkyRenderer.SunGrad.Interpolate(time, GradientInterpolators.LerpVec4);
                 }
 
                 case ColorsPointerType.DefaultSky:
                 default:
                 {
-                    return Client.Instance.Frontend.Renderer.SkyRenderer.SkyGradient.Interpolate(time, GradientInterpolators.LerpVec3);
+                    return Client.Instance.Frontend.Renderer.SkyRenderer.SkyGradient.Interpolate(time, GradientInterpolators.LerpVec4);
                 }
+
             }
         }
 
         public void Deserialize(DataElement e)
         {
             this.OwnType = e.GetEnum("Kind", ColorsPointerType.DefaultSky);
-            KeyValuePair<float, Vector3>[] col = e.GetPrimitiveArrayWithLegacySupport("Gradient", (n, c) =>
+            if (e.HasKeyOfAnyType("Gradient"))
             {
-                DataElement de = c.GetMap(n);
-                return new KeyValuePair<float, Vector3>(de.GetSingle("k"), de.GetVec3Legacy("v"));
-            }, Array.Empty<KeyValuePair<float, Vector3>>());
-            this.ColorGradient.Clear();
-            foreach (KeyValuePair<float, Vector3> kv in col)
-            {
-                this.ColorGradient[kv.Key] = kv.Value;
+                KeyValuePair<float, Vector3>[] col = e.GetPrimitiveArrayWithLegacySupport("Gradient", (n, c) =>
+                {
+                    DataElement de = c.GetMap(n);
+                    return new KeyValuePair<float, Vector3>(de.GetSingle("k"), de.GetVec3Legacy("v"));
+                }, Array.Empty<KeyValuePair<float, Vector3>>());
+                this.ColorGradient.Clear();
+                foreach (KeyValuePair<float, Vector3> kv in col)
+                {
+                    this.ColorGradient[kv.Key] = new Vector4(kv.Value, 1.0f);
+                }
             }
 
-            this.SolidColor = e.GetVec3Legacy("SolidColor", Vector3.One);
+            if (e.HasKeyOfAnyType("SolidColor"))
+            {
+                this.SolidColor = new Vector4(e.GetVec3Legacy("SolidColor", Vector3.One), 1.0f);
+            }
+
             this.GradientAssetID = e.GetGuidLegacy("AssetID", Guid.Empty);
         }
 
@@ -545,8 +658,8 @@
         {
             DataElement ret = new DataElement();
             ret.SetEnum("Kind", this.OwnType);
-            ret.SetPrimitiveArray("Gradient", this.ColorGradient.ToArray());
-            ret.SetVec3("SolidColor", this.SolidColor);
+            ret.SetPrimitiveArray("Gradient4", this.ColorGradient.ToArray());
+            ret.SetVec4("SolidColor4", this.SolidColor);
             ret.SetGuid("AssetID", this.GradientAssetID);
             return ret;
         }
@@ -558,7 +671,9 @@
             FullWhite,
             SolidColor,
             CustomGradient,
-            CustomImage
+            CustomImage,
+            DefaultSunlight,
+            DefaultSun,
         }
     }
 

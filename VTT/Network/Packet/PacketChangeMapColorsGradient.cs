@@ -5,16 +5,17 @@
     using VTT.Control;
     using VTT.Util;
 
-    public class PacketChangeMapSkyboxColors : PacketBaseWithCodec
+    public class PacketChangeMapColorsGradient : PacketBaseWithCodec
     {
         public override uint PacketID => 84;
 
         public Guid MapID { get; set; }
-        public bool IsNightGradientColors { get; set; }
+        public GradientLocation Location { get; set; }
+        public Guid CelestialBodyID { get; set; }
         public ActionType Action { get; set; }
         public MapSkyboxColors.ColorsPointerType ColorsType { get; set; }
         public float GradientPointKey { get; set; }
-        public Vector3 GradientPointColor { get; set; }
+        public Vector4 GradientPointColor { get; set; }
         public float GradientPointDesination { get; set; }
         public Guid AssetID { get; set; }
 
@@ -36,7 +37,41 @@
                 return;
             }
 
-            MapSkyboxColors colors = this.IsNightGradientColors ? m.NightSkyboxColors : m.DaySkyboxColors;
+            MapSkyboxColors colors = null;
+            switch (this.Location)
+            {
+                case GradientLocation.MapDayGradient:
+                {
+                    colors = m.DaySkyboxColors;
+                    break;
+                }
+
+                case GradientLocation.MapNightGradient:
+                {
+                    colors = m.NightSkyboxColors;
+                    break;
+                }
+
+                case GradientLocation.MapCelestialBodyGradientOwn:
+                case GradientLocation.MapCelestialBodyGradientLight:
+                {
+                    if (!m.CelestialBodies.TryGetBody(this.CelestialBodyID, out CelestialBody cb))
+                    {
+                        this.ContextLogger.Log(LogLevel.Warn, $"Can't change gradient colors for non-existing celestial body {this.CelestialBodyID}");
+                        return;
+                    }
+
+                    colors = this.Location == GradientLocation.MapCelestialBodyGradientOwn ? cb.OwnColor : cb.LightColor;
+                    break;
+                }
+            }
+
+            if (colors == null)
+            {
+                this.ContextLogger.Log(LogLevel.Warn, $"Can't change gradient colors for non-existing gradient!");
+                return;    
+            }
+
             switch (this.Action)
             {
                 case ActionType.SwitchKind:
@@ -89,7 +124,17 @@
         public override void LookupData(Codec c)
         {
             this.MapID = c.Lookup(this.MapID);
-            this.IsNightGradientColors = c.Lookup(this.IsNightGradientColors);
+            this.Location = c.Lookup(this.Location);
+            switch (this.Location)
+            {
+                case GradientLocation.MapCelestialBodyGradientOwn:
+                case GradientLocation.MapCelestialBodyGradientLight:
+                {
+                    this.CelestialBodyID = c.Lookup(this.CelestialBodyID);
+                    break;
+                }
+            }
+
             this.Action = c.Lookup(this.Action);
             switch (this.Action)
             {
@@ -144,6 +189,14 @@
             ChangeGradientPointColor,
             SetSolidColor,
             SetImageAssetID
+        }
+
+        public enum GradientLocation
+        {
+            MapDayGradient,
+            MapNightGradient,
+            MapCelestialBodyGradientOwn,
+            MapCelestialBodyGradientLight,
         }
     }
 }

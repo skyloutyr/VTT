@@ -398,6 +398,12 @@
                             ImGui.Text("    video-camera");
                             ImGui.Text("    wall");
                             ImLink(lang.Translate("credits.ui_skybox"), "https://learnopengl.com/img/textures/skybox.zip");
+                            ImLink(lang.Translate("credits.sky_moon"), "https://commons.wikimedia.org/w/index.php?curid=11901243");
+                            ImLink(lang.Translate("credits.sky_venus"), "https://link.springer.com/article/10.1007/s11214-023-00956-0/figures/3");
+                            ImLink(lang.Translate("credits.sky_mars"), "https://www.nasa.gov/nasa-brand-center/images-and-media/");
+                            ImLink(lang.Translate("credits.sky_jupiter"), "https://www.nasa.gov/nasa-brand-center/images-and-media/");
+                            ImLink(lang.Translate("credits.sky_saturn"), "https://www.nasa.gov/nasa-brand-center/images-and-media/");
+                            ImLink(lang.Translate("credits.sky_uranus"), "https://www.nasa.gov/nasa-brand-center/images-and-media/");
                             ImGui.NewLine();
                             ImLink(lang.Translate("credits.atlas"), "https://game-icons.net/");
                             ImGui.NewLine();

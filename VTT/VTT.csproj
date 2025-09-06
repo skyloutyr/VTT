@@ -30,6 +30,8 @@
     <None Remove="Embed\atlas_info.json" />
     <None Remove="Embed\atlas_low.png" />
     <None Remove="Embed\avatar_missing.png" />
+    <None Remove="Embed\celestial_body.frag" />
+    <None Remove="Embed\celestial_body.vert" />
     <None Remove="Embed\cross.obj" />
     <None Remove="Embed\cube.obj" />
     <None Remove="Embed\deferred.frag" />
@@ -211,6 +213,7 @@
     <None Remove="Embed\Logo\beta-wires.png" />
     <None Remove="Embed\Logo\Logo-Main.png" />
     <None Remove="Embed\missing.glb" />
+    <None Remove="Embed\moon.png" />
     <None Remove="Embed\moverlay.frag" />
     <None Remove="Embed\moverlay.vert" />
     <None Remove="Embed\object.frag" />
@@ -235,6 +238,11 @@
     <None Remove="Embed\pl.frag" />
     <None Remove="Embed\pl.geom" />
     <None Remove="Embed\pl.vert" />
+    <None Remove="Embed\planetA.png" />
+    <None Remove="Embed\planetB.png" />
+    <None Remove="Embed\planetC.png" />
+    <None Remove="Embed\planetD.png" />
+    <None Remove="Embed\planetE.png" />
     <None Remove="Embed\pop-ding-notification-effect-2.wav" />
     <None Remove="Embed\previewAlbedo.png" />
     <None Remove="Embed\previewAOMR.png" />
@@ -250,6 +258,7 @@
     <None Remove="Embed\sphere_mediumres.obj" />
     <None Remove="Embed\sphere_uhd.obj" />
     <None Remove="Embed\square.obj" />
+    <None Remove="Embed\sun.png" />
     <None Remove="Embed\turn-tracker-back-no-object.png" />
     <None Remove="Embed\turn-tracker-back.png" />
     <None Remove="Embed\turn-tracker-front.png" />
@@ -268,6 +277,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Embed\avatar_missing.png" />
+    <EmbeddedResource Include="Embed\celestial_body.frag" />
+    <EmbeddedResource Include="Embed\celestial_body.vert" />
     <EmbeddedResource Include="Embed\dummyAlbedo.png" />
     <EmbeddedResource Include="Embed\dummyAOMR.png" />
     <EmbeddedResource Include="Embed\dummyNormal.png" />
@@ -361,6 +372,7 @@
     <EmbeddedResource Include="Embed\icons8-stop-40.png" />
     <EmbeddedResource Include="Embed\individual_color_overlay.frag" />
     <EmbeddedResource Include="Embed\individual_color_overlay.vert" />
+    <EmbeddedResource Include="Embed\moon.png" />
     <EmbeddedResource Include="Embed\object_preview.frag" />
     <EmbeddedResource Include="Embed\object_preview.vert" />
     <EmbeddedResource Include="Embed\object_shadow_ext.frag" />
@@ -374,6 +386,11 @@
     <EmbeddedResource Include="Embed\pattern5.png" />
     <EmbeddedResource Include="Embed\pattern6.png" />
     <EmbeddedResource Include="Embed\pattern7.png" />
+    <EmbeddedResource Include="Embed\planetA.png" />
+    <EmbeddedResource Include="Embed\planetB.png" />
+    <EmbeddedResource Include="Embed\planetC.png" />
+    <EmbeddedResource Include="Embed\planetD.png" />
+    <EmbeddedResource Include="Embed\planetE.png" />
     <EmbeddedResource Include="Embed\pl_ext.frag" />
     <EmbeddedResource Include="Embed\pl_ext.vert" />
     <EmbeddedResource Include="Embed\previewAlbedo.png" />
@@ -515,6 +532,7 @@
     <EmbeddedResource Include="Embed\sky.vert" />
     <EmbeddedResource Include="Embed\sphere_mediumres.obj" />
     <EmbeddedResource Include="Embed\square.obj" />
+    <EmbeddedResource Include="Embed\sun.png" />
     <EmbeddedResource Include="Embed\turn-tracker-back-no-object.png" />
     <EmbeddedResource Include="Embed\turn-tracker-back.png" />
     <EmbeddedResource Include="Embed\turn-tracker-front.png" />

@@ -1599,7 +1599,7 @@
 
             GLState.ActiveTexture.Set(14);
             shader.Uniforms.DirectionalLight.DepthSampler.Set(14);
-            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(true, false);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(CelestialBody.ShadowCastingPolicy.Never);
             GLState.ActiveTexture.Set(13);
             shader.Uniforms.PointLights.ShadowMapsSampler.Set(13);
             plr.DepthMap.Bind();

@@ -2,6 +2,7 @@
 {
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Numerics;
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;
@@ -61,6 +62,10 @@
         public bool renderedDebugOverlay = false;
         public bool changeMapSkyboxColorPopup = false;
         public bool renderedSidebarLayerControls = false;
+        public CelestialBody celestialBodyAssetHovered = null;
+        public CelestialBody celestialBodyGradientEdited = null;
+        public CelestialBody celestialBodyGradientAssetHovered = null;
+        public bool celestialBodyChangeColorPopup = false;
 
         public void Reset()
         {
@@ -125,6 +130,10 @@
             this.renderedDebugOverlay = false;
             this.changeMapSkyboxColorPopup = false;
             this.renderedSidebarLayerControls = false;
+            this.celestialBodyAssetHovered = null;
+            this.celestialBodyGradientAssetHovered = null;
+            this.celestialBodyGradientEdited = null;
+            this.celestialBodyChangeColorPopup = false;
         }
     }
 }

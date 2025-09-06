@@ -94,8 +94,14 @@
             Client.Instance.Frontend.Renderer.ObjectRenderer.UniformMainShaderData(m, shader, delta);
 
             GLState.ActiveTexture.Set(14);
-            bool isNight = m.SunPitch is < (-(MathF.PI * 0.5f)) or > (MathF.PI * 0.5f);
-            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(!m.EnableShadows || isNight, isNight);
+            CelestialBody sun = m.CelestialBodies.Sun;
+            bool isNight = sun.Enabled && sun.SunPitch is < (-(MathF.PI * 0.5f)) or > (MathF.PI * 0.5f);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(
+                !sun.Enabled ? CelestialBody.ShadowCastingPolicy.Never :
+                isNight ? CelestialBody.ShadowCastingPolicy.Always :
+                sun.ShadowPolicy
+            );
+
             GLState.ActiveTexture.Set(13);
             plr.DepthMap.Bind();
             GLState.ActiveTexture.Set(0);
@@ -171,8 +177,14 @@
             */
 
             GLState.ActiveTexture.Set(14);
-            bool isNight = m.SunPitch is < (-(MathF.PI * 0.5f)) or > (MathF.PI * 0.5f);
-            dlRenderer.BindDepthTexture(!m.EnableShadows || isNight, isNight);
+            CelestialBody sun = m.CelestialBodies.Sun;
+            bool isNight = sun.Enabled && sun.SunPitch is < (-(MathF.PI * 0.5f)) or > (MathF.PI * 0.5f);
+            Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer.BindDepthTexture(
+                !sun.Enabled ? CelestialBody.ShadowCastingPolicy.Never :
+                isNight ? CelestialBody.ShadowCastingPolicy.Always :
+                sun.ShadowPolicy
+            );
+
             GLState.ActiveTexture.Set(13);
             plr.DepthMap.Bind();
             Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(false);

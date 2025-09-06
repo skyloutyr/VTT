@@ -490,7 +490,7 @@
                         long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                         foreach (ServerClient sc in this.ClientsByID.Values)
                         {
-                            if (now - sc.LastPingResponseTime > this.TimeoutInterval)
+                            if (now - sc.LastPingResponseTime > Math.Max(this.TimeoutInterval, sc.PersonalTimeoutInterval))
                             {
                                 new PacketDisconnectReason() { DCR = DisconnectReason.Timeout }.Send(sc);
                                 this._dcRequests.Push(sc);
@@ -980,6 +980,7 @@
     {
         public ClientInfo Info { get; set; }
         public long LastPingResponseTime { get; set; }
+        public long PersonalTimeoutInterval { get; set; }
         public ActionMemory ActionMemory { get; set; }
         public bool IsAuthorized { get; set; }
 

@@ -152,6 +152,7 @@
                 new PacketMusicPlayerSetIndex() { Index = server.MusicPlayer.CurrentTrackPosition }.Send(sc);
 
                 sc.Info.IsLoggedOn = true;
+                sc.PersonalTimeoutInterval = server.TimeoutInterval;
                 new PacketClientOnlineNotification() { ClientID = sc.ID, Status = true }.Broadcast();
             }
         }

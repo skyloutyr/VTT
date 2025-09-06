@@ -435,6 +435,7 @@
             this.PacketNetworkManager = new PacketNetworkManager() { IsServer = false };
             Client.Instance.Logger.Log(LogLevel.Info, "Server connection estabilished with connection id " + this.Id);
             new PacketHandshake() { ClientID = this.Container.ID, Session = this.Id, IsServer = false, ClientVersion = Program.GetVersionBytes(), ClientSecret = IDUtil.GetSecret() }.Send(this);
+            new PacketPersonalTimeoutInfo() { TimeoutSetting = this.Container.TimeoutInterval }.Send();
             Client.Instance.Logger.Log(LogLevel.Info, "Sending handshake");
             this.Container.SessionID = this.Id;
             this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();

@@ -61,16 +61,20 @@
                 else
                 {
                     // Spec states that buffer content must be reinitialized if we failed to do a dma. subdata would reinitialize it in theory, but w/e
-                    GL.BufferData(BufferTarget.Uniform, (int)this.BufferPhysicalSize, 0, BufferUsage.StreamDraw); // Stream draw guaranteed here as this is the animations path
+                    GL.BufferData(BufferTarget.Uniform, (int)this.BufferPhysicalSize, this._cpuMemory, BufferUsage.StreamDraw); // Stream draw guaranteed here as this is the animations path
                     Client.Instance.Logger.Log(LogLevel.Warn, "Material uniform buffer object experienced a DMA failure. Slower path will be taken!");
+                    this.UpdateFull(material, animationIndex);
+                    return;
                 }
             }
 
+            /* Used to do this in case of DMA failure, but actually we need to reinitialize the entire buffer if that happens, so w/e
             this._cpuMemory->frameDiffuse = material.BaseColorAnimation.FindFrameForIndex(animationIndex).LocationUniform;
             this._cpuMemory->frameNormal = material.NormalAnimation.FindFrameForIndex(animationIndex).LocationUniform;
             this._cpuMemory->frameEmissive = material.EmissionAnimation.FindFrameForIndex(animationIndex).LocationUniform;
             this._cpuMemory->frameAOMR = material.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(animationIndex).LocationUniform;
             this._buffer.SetSubData((IntPtr)((byte*)this._cpuMemory + 16), 64, 16); // 16 byte offset is the start for animation uniforms
+            */
         }
     }
 

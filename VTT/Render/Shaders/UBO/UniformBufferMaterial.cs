@@ -10,7 +10,7 @@
 
     public class UniformBufferMaterial : UniformBufferObject<MaterialUBO>
     {
-        public const bool UseMapBuffer = true; // Const and not #define because need branching path in case of DMA failure
+        public bool UseMapBuffer => Client.Instance.Settings.EnableUBODMA;
 
         public UniformBufferMaterial(GlbMaterial material, bool anyAnimated) : base(3, 1, anyAnimated ? BufferUsage.StreamDraw : BufferUsage.StaticDraw) => this.Initialize(material);
 
@@ -67,14 +67,14 @@
                     return;
                 }
             }
-
-            /* Used to do this in case of DMA failure, but actually we need to reinitialize the entire buffer if that happens, so w/e
-            this._cpuMemory->frameDiffuse = material.BaseColorAnimation.FindFrameForIndex(animationIndex).LocationUniform;
-            this._cpuMemory->frameNormal = material.NormalAnimation.FindFrameForIndex(animationIndex).LocationUniform;
-            this._cpuMemory->frameEmissive = material.EmissionAnimation.FindFrameForIndex(animationIndex).LocationUniform;
-            this._cpuMemory->frameAOMR = material.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(animationIndex).LocationUniform;
-            this._buffer.SetSubData((IntPtr)((byte*)this._cpuMemory + 16), 64, 16); // 16 byte offset is the start for animation uniforms
-            */
+            else
+            {
+                this._cpuMemory->frameDiffuse = material.BaseColorAnimation.FindFrameForIndex(animationIndex).LocationUniform;
+                this._cpuMemory->frameNormal = material.NormalAnimation.FindFrameForIndex(animationIndex).LocationUniform;
+                this._cpuMemory->frameEmissive = material.EmissionAnimation.FindFrameForIndex(animationIndex).LocationUniform;
+                this._cpuMemory->frameAOMR = material.OcclusionMetallicRoughnessAnimation.FindFrameForIndex(animationIndex).LocationUniform;
+                this._buffer.SetSubData((IntPtr)((byte*)this._cpuMemory + 16), 64, 16); // 16 byte offset is the start for animation uniforms
+            }
         }
     }
 

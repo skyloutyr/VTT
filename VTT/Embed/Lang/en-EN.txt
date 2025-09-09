@@ -953,3 +953,5 @@ credits.sky_mars=Mars by NASA
 credits.sky_jupiter=Jupiter by NASA
 credits.sky_saturn=Saturn by NASA
 credits.sky_uranus=Uranus by NASA
+menu.settings.use_ubo_dma=Enable UBO DMA
+menu.settings.use_ubo_dma.tt=Controls memory transfer for UBOs.\nOlder drivers have been reported to cause issues with this enabled.

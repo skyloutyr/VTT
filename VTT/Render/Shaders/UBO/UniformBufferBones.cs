@@ -12,7 +12,7 @@
     public class UniformBufferBones : UniformBufferObject<Matrix4x4>
     {
         public const nuint MaxBoneCapacity = 256;
-        public const bool UseMapBuffer = true; // Const and not #define because need branching path in case of DMA failure
+        public bool UseMapBuffer => Client.Instance.Settings.EnableUBODMA;
 
         public UniformBufferBones() : base(2, MaxBoneCapacity)
         {

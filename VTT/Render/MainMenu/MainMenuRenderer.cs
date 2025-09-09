@@ -1462,6 +1462,18 @@
                         Client.Instance.Settings.Save();
                     }
 
+                    bool ubodma = Client.Instance.Settings.EnableUBODMA;
+                    if (ImGui.Checkbox(lang.Translate("menu.settings.use_ubo_dma") + "###UseUBODMA", ref ubodma))
+                    {
+                        Client.Instance.Settings.EnableUBODMA = ubodma;
+                        Client.Instance.Settings.Save();
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("menu.settings.use_ubo_dma.tt"));
+                    }
+
                     if (!bDebug)
                     {
                         ImGui.EndDisabled();

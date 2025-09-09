@@ -837,6 +837,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public GraphicsSetting DirectionalShadowsQuality { get; set; } = GraphicsSetting.High;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool EnableUBODMA { get; set; } = true;
+
 
         public void IncrementKnownMemoryValue(ChatDiceRollMemory mem, int lastChatIndex)
         {
@@ -978,7 +982,8 @@
                 DrawSidebarLayerControls = true,
                 UIDrawBuffersCapacity = 16,
                 CameraInterpolationSpeed = 2,
-                DirectionalShadowsQuality = GraphicsSetting.High
+                DirectionalShadowsQuality = GraphicsSetting.High,
+                EnableUBODMA = true
             };
 
             ret.Save();

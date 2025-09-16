@@ -1,6 +1,5 @@
 ﻿namespace VTT.Control
 {
-    using SixLabors.ImageSharp;
     using System;
     using System.IO;
     using System.Text.RegularExpressions;

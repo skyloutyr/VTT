@@ -2,7 +2,6 @@
 {
     using SixLabors.ImageSharp;
     using System;
-    using System.Numerics;
     using VTT.Control;
     using VTT.GL;
     using VTT.GL.Bindings;

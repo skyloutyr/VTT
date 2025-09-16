@@ -13,8 +13,6 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System.Threading;
     using VTT.Render.Shaders;
-    using System.Collections.Generic;
-    using System.Runtime.Intrinsics;
 
     public class SkyRenderer
     {

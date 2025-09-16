@@ -10,7 +10,6 @@
     using VTT.Render.LightShadow;
     using VTT.Render.Shaders;
     using VTT.Render.Shaders.UBO;
-    using VTT.Util;
 
     public class GlbMaterial
     {

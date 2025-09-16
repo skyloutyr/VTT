@@ -2,7 +2,6 @@
 {
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Numerics;
     using VTT.Asset;
     using VTT.Asset.Shader.NodeGraph;
     using VTT.Control;

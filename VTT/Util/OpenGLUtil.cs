@@ -4,7 +4,6 @@
     using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using VTT.Asset.Obj;
     using VTT.GL;
     using VTT.GL.Bindings;

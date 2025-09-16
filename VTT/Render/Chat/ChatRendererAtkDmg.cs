@@ -33,8 +33,8 @@
             bool hasRolls = false;
             bool hasCritR1 = false;
             bool hasCritR2 = false;
-            uint colorMax = Color.LightGreen.Argb();
-            uint colorMaxAndMin = Color.LightBlue.Argb();
+            uint colorMax = ColorAbgr.LightGreen;
+            uint colorMaxAndMin = ColorAbgr.LightBlue;
             string r1Text = string.Empty;
             string r1Tooltip = string.Empty;
             string r2Text = string.Empty;
@@ -43,14 +43,14 @@
             if (this.Container.TryGetBlockAt(4, out ChatBlock r))
             {
                 hasRolls = !string.IsNullOrEmpty(r.Text.Trim());
-                hasCritR1 = r.Color.Argb() == colorMax || r.Color.Argb() == colorMaxAndMin;
+                hasCritR1 = r.Color == colorMax || r.Color == colorMaxAndMin;
                 r1Text = r.Text;
                 r1Tooltip = r.Tooltip;
             }
 
             if (this.Container.TryGetBlockAt(5, out r))
             {
-                hasCritR2 = r.Color.Argb() == colorMax || r.Color.Argb() == colorMaxAndMin;
+                hasCritR2 = r.Color == colorMax || r.Color == colorMaxAndMin;
                 r2Text = r.Text;
                 r2Tooltip = r.Tooltip;
             }
@@ -141,11 +141,11 @@
                     }
 
                     Vector2 ts1 = ImGuiHelper.CalcTextSize(rnameandmod1);
-                    drawList.AddText(cursorScreen + new Vector2(170, 4) - new Vector2(ts1.X / 2, 0), rname.Color.Abgr(), rnameandmod1);
+                    drawList.AddText(cursorScreen + new Vector2(170, 4) - new Vector2(ts1.X / 2, 0), rname.Color, rnameandmod1);
                     ts1 = ImGuiHelper.CalcTextSize(desc.Text);
-                    drawList.AddText(cursorScreen + new Vector2(170, 20) - new Vector2(ts1.X / 2, 0), desc.Color.Abgr(), ImGuiHelper.TextOrEmpty(desc.Text));
+                    drawList.AddText(cursorScreen + new Vector2(170, 20) - new Vector2(ts1.X / 2, 0), desc.Color, ImGuiHelper.TextOrEmpty(desc.Text));
                     ts1 = ImGuiHelper.CalcTextSize(rcharname.Text);
-                    drawList.AddText(cursorScreen + new Vector2(170, 36) - new Vector2(ts1.X / 2, 0), rcharname.Color.Abgr(), ImGuiHelper.TextOrEmpty(rcharname.Text));
+                    drawList.AddText(cursorScreen + new Vector2(170, 36) - new Vector2(ts1.X / 2, 0), rcharname.Color, ImGuiHelper.TextOrEmpty(rcharname.Text));
 
                     ImGui.SetCursorPosY(cursorLocal.Y + 56);
                     return;
@@ -178,16 +178,16 @@
                 }
 
                 Vector2 ts = ImGuiHelper.CalcTextSize(rnameandmod);
-                drawList.AddText(cursorScreen + new Vector2(170, 56 + cy) - new Vector2(ts.X / 2, 0), rname.Color.Abgr(), rnameandmod);
+                drawList.AddText(cursorScreen + new Vector2(170, 56 + cy) - new Vector2(ts.X / 2, 0), rname.Color, rnameandmod);
                 ts = ImGuiHelper.CalcTextSize(desc.Text);
-                drawList.AddText(cursorScreen + new Vector2(170, 72 + cy) - new Vector2(ts.X / 2, 0), desc.Color.Abgr(), ImGuiHelper.TextOrEmpty(desc.Text));
+                drawList.AddText(cursorScreen + new Vector2(170, 72 + cy) - new Vector2(ts.X / 2, 0), desc.Color, ImGuiHelper.TextOrEmpty(desc.Text));
                 ts = ImGuiHelper.CalcTextSize(rcharname.Text);
-                drawList.AddText(cursorScreen + new Vector2(170, 96 + cy) - new Vector2(ts.X / 2, 0), rcharname.Color.Abgr(), ImGuiHelper.TextOrEmpty(rcharname.Text));
+                drawList.AddText(cursorScreen + new Vector2(170, 96 + cy) - new Vector2(ts.X / 2, 0), rcharname.Color, ImGuiHelper.TextOrEmpty(rcharname.Text));
                 drawList.AddLine(cursorScreen + new Vector2(0, 120 + cy), cursorScreen + new Vector2(340, 120 + cy), this.Container.SenderColor.Abgr());
-                uint cArgb = Color.LightGreen.Argb();
-                uint cArgb2 = Color.LightBlue.Argb();
+                uint cAbgr = ColorAbgr.LightGreen;
+                uint cAbgr2 = ColorAbgr.LightBlue;
 
-                bool crit = r1.Color.Argb() == cArgb || r1.Color.Argb() == cArgb2 || r2.Color.Argb() == cArgb || r2.Color.Argb() == cArgb2;
+                bool crit = r1.Color == cAbgr || r1.Color == cAbgr2 || r2.Color == cAbgr || r2.Color == cAbgr2;
                 bool hasdmg2 = !string.IsNullOrEmpty(dmg2.Text) && !string.Equals(dmg2.Text, "null");
 
                 if (hasdmg2)
@@ -206,7 +206,7 @@
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
-                    drawList.AddText(cursorScreen + new Vector2(cx - (ts.X * 0.5f), 156 + cy), dmgtype.Color.Abgr(), ImGuiHelper.TextOrEmpty(dmgtype.Text));
+                    drawList.AddText(cursorScreen + new Vector2(cx - (ts.X * 0.5f), 156 + cy), dmgtype.Color, ImGuiHelper.TextOrEmpty(dmgtype.Text));
 
                     dmgSize = ImGuiHelper.CalcTextSize(dmg2.Text).X;
                     ots = dmgSize + (crit ? 44 + ImGuiHelper.CalcTextSize(crit2.Text).X : 0);
@@ -221,7 +221,7 @@
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
-                    drawList.AddText(cursorScreen + new Vector2((cx * 3) - (ts.X * 0.5f), 156 + cy), dmgtype.Color.Abgr(), ImGuiHelper.TextOrEmpty(dmgtype.Text));
+                    drawList.AddText(cursorScreen + new Vector2((cx * 3) - (ts.X * 0.5f), 156 + cy), dmgtype.Color, ImGuiHelper.TextOrEmpty(dmgtype.Text));
                 }
                 else
                 {
@@ -239,7 +239,7 @@
                     }
 
                     ts = ImGuiHelper.CalcTextSize(dmgtype.Text);
-                    drawList.AddText(cursorScreen + new Vector2((cx * 2) - (ts.X * 0.5f), 156 + cy), dmgtype.Color.Abgr(), ImGuiHelper.TextOrEmpty(dmgtype.Text));
+                    drawList.AddText(cursorScreen + new Vector2((cx * 2) - (ts.X * 0.5f), 156 + cy), dmgtype.Color, ImGuiHelper.TextOrEmpty(dmgtype.Text));
                 }
 
                 ImGui.SetCursorPosY(cursorLocal.Y + 172 + cy);
@@ -257,14 +257,14 @@
             }
         }
 
-        public void RenderTooltipBlock(ImDrawListPtr drawList, Vector2 cursorScreen, string text, string tt, Color clr, ChatBlockExpressionRollContents rollContents, uint senderColor)
+        public void RenderTooltipBlock(ImDrawListPtr drawList, Vector2 cursorScreen, string text, string tt, ColorAbgr clr, ChatBlockExpressionRollContents rollContents, uint senderColor)
         {
             Vector2 tSize = ImGuiHelper.CalcTextSize(text);
             float w = tSize.X + 8;
             float h = tSize.Y + 8;
             w *= 0.5f;
             h *= 0.5f;
-            this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X - w, cursorScreen.Y - h, w * 2, h * 2), text, tSize, tt, rollContents, clr.Abgr(), senderColor);
+            this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X - w, cursorScreen.Y - h, w * 2, h * 2), text, tSize, tt, rollContents, clr, senderColor);
         }
     }
 }

@@ -48,7 +48,7 @@
                     imTextSize.Y = Math.Max(24, imTextSize.Y);
                 }
 
-                RollContainer rc = new RollContainer(cX, imTextSize.X, cY, imTextSize.Y, block.Text, block.Tooltip, (Vector4)block.Color, block.RollContents);
+                RollContainer rc = new RollContainer(cX, imTextSize.X, cY, imTextSize.Y, block.Text, block.Tooltip, block.Color, block.RollContents);
                 rollContainers.Add(rc);
                 if (int.TryParse(rc.text, out int res))
                 {
@@ -104,7 +104,7 @@
                 rollContainers.Clear();
             }
 
-            RollContainer rrc = new RollContainer(cX, imResultSize.X, cY, imResultSize.Y, result.ToString(), resString, (Vector4)Color.White, cumulativeContents);
+            RollContainer rrc = new RollContainer(cX, imResultSize.X, cY, imResultSize.Y, result.ToString(), resString, ColorAbgr.White, cumulativeContents);
             rollContainers.Add(rrc);
 
             this._lines.Add(rollContainers.ToArray());
@@ -174,7 +174,7 @@
                     float w = block.w;
                     float h = block.h;
 
-                    this.AddTooltipBlock(drawList, new RectangleF(cX, cY, w, h), block.text, default, block.tooltip, block.rollContents, block.color.Abgr(), senderColorAbgr);
+                    this.AddTooltipBlock(drawList, new RectangleF(cX, cY, w, h), block.text, default, block.tooltip, block.rollContents, block.color, senderColorAbgr);
                     ImGui.Dummy(new Vector2(w, h));
 
                     ImGui.SetCursorPos(new(ccX + block.x + block.w, ccY + block.y));
@@ -229,10 +229,10 @@
 
             public readonly string text;
             public readonly string tooltip;
-            public readonly Vector4 color;
+            public readonly ColorAbgr color;
             public readonly ChatBlockExpressionRollContents rollContents;
 
-            public RollContainer(float x, float w, float y, float h, string text, string tooltip, Vector4 color, ChatBlockExpressionRollContents contents)
+            public RollContainer(float x, float w, float y, float h, string text, string tooltip, ColorAbgr color, ChatBlockExpressionRollContents contents)
             {
                 this.x = x;
                 this.w = w;

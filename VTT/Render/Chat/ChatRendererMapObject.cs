@@ -207,7 +207,7 @@
             {
                 Vector2 nameSize = ImGui.CalcTextSize(nameBlock.Text);
                 ImGui.SetCursorPos(startingPos + new Vector2((avail.X * 0.5f) - (nameSize.X * 0.5f), 0));
-                ImGui.PushStyleColor(ImGuiCol.Text, nameBlock.Color.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, nameBlock.Color);
                 ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(nameBlock.Text));
                 ImGui.PopStyleColor();
                 if (ImGui.IsItemHovered() && descriptionBlock != null)

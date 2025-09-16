@@ -60,7 +60,7 @@
                 Vector2 tLen = tSize + (padding * 2);
                 float tW = Math.Max(24, tLen.X);
                 float tH = Math.Max(24, tLen.Y);
-                this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tW * 0.5f), cY + 16 - (tH * 0.5f), tW, tH), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color.Abgr(), senderColorAbgr);
+                this.AddTooltipBlock(drawList, new RectangleF(cX + (w * 0.5f) - (tW * 0.5f), cY + 16 - (tH * 0.5f), tW, tH), blockRolls.Text, tSize, blockRolls.Tooltip, blockRolls.RollContents, blockRolls.Color, senderColorAbgr);
             }
 
             ImGui.Dummy(new Vector2(32, 32));

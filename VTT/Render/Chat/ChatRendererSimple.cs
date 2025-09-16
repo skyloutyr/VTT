@@ -84,17 +84,17 @@
                 float szYBlock1 = Math.Max(24, sR1.Y + 8);
                 float szYBlock2 = Math.Max(24, sR2.Y + 8);
 
-                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXL - (szXBlock1 / 2), cursorScreen.Y + 24 - (szYBlock1 / 2), szXBlock1, szYBlock1), tR1, sR1, r1.Tooltip, r1.RollContents, r1.Color.Abgr(), senderColorAbgr);
-                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXR - (szXBlock2 / 2), cursorScreen.Y + 24 - (szYBlock2 / 2), szXBlock2, szYBlock2), tR2, sR2, r2.Tooltip, r2.RollContents, r2.Color.Abgr(), senderColorAbgr);
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXL - (szXBlock1 / 2), cursorScreen.Y + 24 - (szYBlock1 / 2), szXBlock1, szYBlock1), tR1, sR1, r1.Tooltip, r1.RollContents, r1.Color, senderColorAbgr);
+                this.AddTooltipBlock(drawList, new RectangleF(cursorScreen.X + cXR - (szXBlock2 / 2), cursorScreen.Y + 24 - (szYBlock2 / 2), szXBlock2, szYBlock2), tR2, sR2, r2.Tooltip, r2.RollContents, r2.Color, senderColorAbgr);
 
                 Vector2 sRn = ImGuiHelper.CalcTextSize(rnameAndMod.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 48) - (sRn / 2));
-                ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, rnameAndMod.Color);
                 ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(rnameAndMod.Text));
                 ImGui.PopStyleColor();
                 sRn = ImGuiHelper.CalcTextSize(rcharname.Text);
                 ImGui.SetCursorPos(cursorLocal + new Vector2(340 / 2f, 60) - (sRn / 2));
-                ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, rcharname.Color);
                 ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(rcharname.Text));
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPosY(cursorLocal.Y + 88);

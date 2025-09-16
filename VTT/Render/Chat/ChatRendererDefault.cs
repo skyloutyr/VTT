@@ -110,12 +110,12 @@
 
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.PushStyleColor(ImGuiCol.Text, key.Color.Abgr());
+                    ImGui.PushStyleColor(ImGuiCol.Text, key.Color);
                     ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(key.Text));
                     ImGui.PopStyleColor();
                     ImGui.TableSetColumnIndex(1);
                     Vector2 imTtStart = ImGui.GetCursorScreenPos();
-                    ImGui.PushStyleColor(ImGuiCol.Text, value.Color.Abgr());
+                    ImGui.PushStyleColor(ImGuiCol.Text, value.Color);
                     ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(value.Text));
                     ImGui.PopStyleColor();
                     Vector2 imTtEnd = imTtStart + new Vector2(ImGui.GetColumnWidth(), ImGui.GetTextLineHeight());

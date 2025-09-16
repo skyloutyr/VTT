@@ -1466,7 +1466,7 @@
             }
         }
 
-        public static void RenderBar(float current, float max, DisplayBar.DrawMode renderMode, Color barColor, bool hasNp, Vector2 customPadding, float barWidth, float maxWidth, ref bool prevWasRound, ref float penX)
+        public static void RenderBar(float current, float max, DisplayBar.DrawMode renderMode, ColorAbgr barColor, bool hasNp, Vector2 customPadding, float barWidth, float maxWidth, ref bool prevWasRound, ref float penX)
         {
             Vector2 cNow = ImGui.GetCursorPos();
             string dbText = current + "/" + max;
@@ -1478,7 +1478,7 @@
                     prevWasRound = false;
                     penX = 0;
                     ImGui.Dummy(new(0, 16));
-                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)barColor);
+                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, barColor);
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 2f);
 
                     ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (hasNp ? customPadding.X : 0));
@@ -1520,7 +1520,7 @@
                 {
                     prevWasRound = false;
                     penX = 0;
-                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, (Vector4)barColor);
+                    ImGui.PushStyleColor(ImGuiCol.PlotHistogram, barColor);
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 5f);
                     ImGui.SetCursorPosY(cNow.Y - 7);
                     float tW = dbTextSize.X;
@@ -1587,7 +1587,7 @@
                             }
                         }
 
-                        drawList.PathFillConvex(barColor.Abgr());
+                        drawList.PathFillConvex(barColor);
                         drawList.PathClear();
                     }
 

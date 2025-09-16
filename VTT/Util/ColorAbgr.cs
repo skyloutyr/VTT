@@ -1,8 +1,9 @@
 ﻿namespace VTT.Util
 {
     using SixLabors.ImageSharp;
+    using System;
 
-    public static class ColorAbgr
+    public readonly struct ColorAbgr
     {
         public static readonly uint AliceBlue = Color.AliceBlue.Abgr();
 
@@ -301,5 +302,29 @@
         public static readonly uint Yellow = Color.Yellow.Abgr();
 
         public static readonly uint YellowGreen = Color.YellowGreen.Abgr();
+
+        private readonly uint _abgr;
+        public readonly uint Abgr => this._abgr;
+        public readonly uint Argb => (this._abgr & 0xff00ff00u) | ((this._abgr & 0x00ff0000u) >> 16) | ((this._abgr & 0xff) << 16);
+
+        public ColorAbgr(uint abgr) => this._abgr = abgr;
+
+        public ColorAbgr(byte r, byte g, byte b, byte a = byte.MaxValue)
+        {
+            this._abgr =
+                ((uint)a << 24) |
+                ((uint)b << 16) |
+                ((uint)g << 8) |
+                r;
+        }
+
+        public ColorAbgr(float r, float g, float b, float a = 1.0f) : this((byte)Math.Clamp(r * 255.0f, byte.MinValue, byte.MaxValue), (byte)Math.Clamp(g * 255.0f, byte.MinValue, byte.MaxValue), (byte)Math.Clamp(b * 255.0f, byte.MinValue, byte.MaxValue), (byte)Math.Clamp(a * 255.0f, byte.MinValue, byte.MaxValue))
+        {
+        }
+
+
+        public static implicit operator uint(ColorAbgr self) => self._abgr;
+        public static implicit operator ColorAbgr(uint self) => new ColorAbgr(self);
+        public static implicit operator ColorAbgr(Color imgsharpclr) => new ColorAbgr(imgsharpclr.Abgr());
     }
 }

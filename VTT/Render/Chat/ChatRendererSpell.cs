@@ -78,10 +78,10 @@
 
                 Gui.ImCustomTexturedRect tex = Client.Instance.Frontend.Renderer.GuiRenderer.MagicIcon;
                 drawList.AddImage(tex, cursorScreen + new Vector2(4, 4), cursorScreen + new Vector2(36, 36));
-                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color.Abgr(), ImGuiHelper.TextOrEmpty(name.Text));
+                drawList.AddText(cursorScreen + new Vector2(50, 12), name.Color, ImGuiHelper.TextOrEmpty(name.Text));
                 Vector2 ts = ImGuiHelper.CalcTextSize(ImGuiHelper.TextOrEmpty(cname.Text));
-                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color.Abgr(), ImGuiHelper.TextOrEmpty(cname.Text));
-                drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color.Abgr(), ImGuiHelper.TextOrEmpty(schoollevel.Text));
+                drawList.AddText(cursorScreen + new Vector2(332, 4) - new Vector2(ts.X, 0), cname.Color, ImGuiHelper.TextOrEmpty(cname.Text));
+                drawList.AddText(cursorScreen + new Vector2(4, 32), schoollevel.Color, ImGuiHelper.TextOrEmpty(schoollevel.Text));
                 uint bcl = this.Container.SenderColor.Abgr();
                 uint fcl = ImGui.GetColorU32(ImGuiCol.Text);
                 float maxW = MathF.Max(
@@ -107,10 +107,10 @@
                 drawList.AddText(cursorScreen + new Vector2(4, 140), fcl, lang.Translate("chat.spell.target"));
                 drawList.AddLine(cursorScreen + new Vector2(0, 162), cursorScreen + new Vector2(340, 162), bcl);
                 drawList.AddLine(cursorScreen + new Vector2(maxW, 52), cursorScreen + new Vector2(maxW, 162), bcl);
-                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 74), castingtime.Color.Abgr(), TextOrDefault(castingtime.Text));
-                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 96), duration.Color.Abgr(), TextOrDefault(duration.Text));
-                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 118), range.Color.Abgr(), TextOrDefault(range.Text));
-                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 140), target.Color.Abgr(), TextOrDefault(target.Text));
+                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 74), castingtime.Color, TextOrDefault(castingtime.Text));
+                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 96), duration.Color, TextOrDefault(duration.Text));
+                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 118), range.Color, TextOrDefault(range.Text));
+                drawList.AddText(cursorScreen + new Vector2(maxW + 4, 140), target.Color, TextOrDefault(target.Text));
 
                 float cx = maxW + 4;
                 if (int.TryParse(verbal.Text, out int i) && i == 1)

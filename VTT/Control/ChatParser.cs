@@ -76,7 +76,7 @@
 
             int idx = 0;
             List<ChatBlock> blocks = new List<ChatBlock>();
-            Color c = Extensions.FromAbgr(0);
+            ColorAbgr c = 0;
             Color dc = Extensions.FromAbgr(0);
             string tt = string.Empty;
             Guid destID = Guid.Empty;
@@ -164,20 +164,20 @@
             }
         }
 
-        public static readonly Color CritColor = Color.LightGreen;
-        public static readonly Color Nat1Color = Color.Red;
-        public static readonly Color CritAndNat1Color = Color.LightBlue;
+        public static readonly ColorAbgr CritColor = ColorAbgr.LightGreen;
+        public static readonly ColorAbgr Nat1Color = ColorAbgr.Red;
+        public static readonly ColorAbgr CritAndNat1Color = ColorAbgr.LightBlue;
 
         public static ChatBlock ParseExpression(string exp)
         {
             if (TryRunExpression(exp, out object result, out RollExpressionEvaluator evaluator))
             {
-                Color rollColor = evaluator.ResultFlags switch
+                ColorAbgr rollColor = evaluator.ResultFlags switch
                 {
                     RollResultFlags.HadMaximumAndMinimumValue => CritAndNat1Color,
                     RollResultFlags.HadMaximumValue => CritColor,
                     RollResultFlags.HadMinimumValue => Nat1Color,
-                    _ => Color.White
+                    _ => ColorAbgr.White
                 };
 
                 PrepareRollsTooltip(ref exp, evaluator.RollResults);
@@ -185,12 +185,12 @@
             }
             else
             {
-                return new ChatBlock() { Color = Color.Red, Text = exp, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
+                return new ChatBlock() { Color = ColorAbgr.Red, Text = exp, Tooltip = "An exception occured while evaluating", Type = ChatBlockType.ExpressionError, RollContents = ChatBlockExpressionRollContents.None };
             }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Assignment happens when breaking out of a while(1) loop, value unused outside of loop for now, may be useful later. Assignment to a _ is syntax sugar anyway (or if an impl chooses to noop the assignment instead then the JIT should be able to NOOP these too)")]
-        public static bool ParseBlock(string text, Color userColor, ref Color color, ref Color descColor, ref string tooltip, ref int idx, ref string username, ref string destname, ref Guid destID, ref Guid portraitID, ref ChatLine.RenderType renderType, out ChatBlock cb)
+        public static bool ParseBlock(string text, Color userColor, ref ColorAbgr color, ref Color descColor, ref string tooltip, ref int idx, ref string username, ref string destname, ref Guid destID, ref Guid portraitID, ref ChatLine.RenderType renderType, out ChatBlock cb)
         {
             if (idx >= text.Length)
             {
@@ -239,7 +239,7 @@
 
                                 if (c == 'r')
                                 {
-                                    color = Extensions.FromAbgr(0);
+                                    color = 0;
                                     blockMode = BlockMode.Skip;
                                     continue;
                                 }
@@ -465,12 +465,12 @@
                     string bContent = sb.ToString();
                     if (TryRunExpression(bContent, out object result, out RollExpressionEvaluator evaluator))
                     {
-                        Color rollColor = evaluator.ResultFlags switch
+                        ColorAbgr rollColor = evaluator.ResultFlags switch
                         {
                             RollResultFlags.HadMaximumAndMinimumValue => CritAndNat1Color,
                             RollResultFlags.HadMaximumValue => CritColor,
                             RollResultFlags.HadMinimumValue => Nat1Color,
-                            _ => Color.White
+                            _ => ColorAbgr.White
                         };
 
                         PrepareRollsTooltip(ref bContent, evaluator.RollResults);
@@ -494,7 +494,7 @@
                 {
                     string t = sb.ToString();
                     int rIdx = 0;
-                    Color c = color;
+                    ColorAbgr c = color;
                     string tt = string.Empty;
                     ChatLine.RenderType rRenderType = ChatLine.RenderType.Line;
                     string rline = string.Empty;

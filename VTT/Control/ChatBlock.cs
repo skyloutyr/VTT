@@ -8,13 +8,13 @@
 
     public class ChatBlock
     {
-        private Color color;
+        private ColorAbgr color;
 
         public string Text { get; set; }
         public string Tooltip { get; set; }
-        public Color Color
+        public ColorAbgr Color
         {
-            get => this.color.Rgba() == 0 ? Extensions.FromAbgr(ImGuiNET.ImGui.GetColorU32(ImGuiNET.ImGuiCol.Text)) : this.color;
+            get => this.color.Abgr == 0 ? ImGuiNET.ImGui.GetColorU32(ImGuiNET.ImGuiCol.Text) : this.color;
             set => this.color = value;
         }
 
@@ -26,7 +26,7 @@
         {
             bw.Write(this.Text);
             bw.Write(this.Tooltip);
-            bw.Write(this.color.Argb());
+            bw.Write(this.color.Argb);
             bw.Write((byte)this.Type);
         }
 
@@ -40,7 +40,7 @@
         {
             this.Text = br.ReadString();
             this.Tooltip = br.ReadString();
-            this.Color = Extensions.FromArgb(br.ReadUInt32());
+            this.Color = br.ReadUInt32().ArgbToAbgr();
             this.Type = (ChatBlockType)br.ReadByte();
         }
 

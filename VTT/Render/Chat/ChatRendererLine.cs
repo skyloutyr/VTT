@@ -337,12 +337,12 @@
                                 float cY = vBase.Y;
                                 float w = icw.Width;
                                 float h = icw.Height;
-                                this.AddTooltipBlock(drawList, new RectangleF(cX, cY - 3, w, h), icw.Text, icw.TextSize, icw.Owner.Tooltip, icw.Owner.RollContents, icw.Owner.Color.Abgr(), senderColorAbgr, Client.Instance.Settings.ChatDiceEnabled && Client.Instance.Settings.UnifyChatDiceRendering, textDrawList);
+                                this.AddTooltipBlock(drawList, new RectangleF(cX, cY - 3, w, h), icw.Text, icw.TextSize, icw.Owner.Tooltip, icw.Owner.RollContents, icw.Owner.Color, senderColorAbgr, Client.Instance.Settings.ChatDiceEnabled && Client.Instance.Settings.UnifyChatDiceRendering, textDrawList);
                                 ImGui.Dummy(new Vector2(w, h));
                             }
                             else
                             {
-                                ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color.Abgr());
+                                ImGui.PushStyleColor(ImGuiCol.Text, icw.Owner.Color);
                                 ImGui.TextUnformatted(ImGuiHelper.TextOrEmpty(icw.Text));
                                 ImGui.PopStyleColor();
                                 Vector2 vEnd = ImGui.GetCursorScreenPos() + new Vector2(0, icl.Height);

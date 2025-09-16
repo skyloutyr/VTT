@@ -84,7 +84,7 @@
             return null;
         }
 
-        public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text, ChatBlockExpressionRollContents rollConents = ChatBlockExpressionRollContents.None) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : Extensions.FromAbgr(0), Text = text, Tooltip = tt, Type = type, RollContents = rollConents };
+        public ChatBlock CreateContextBlock(string text, string tt = "", ChatBlockType type = ChatBlockType.Text, ChatBlockExpressionRollContents rollConents = ChatBlockExpressionRollContents.None) => new ChatBlock() { Color = this.Blocks.Count > 0 ? this.Blocks[^1].Color : 0, Text = text, Tooltip = tt, Type = type, RollContents = rollConents };
 
         public bool TryGetBlockAt(int index, out ChatBlock block)
         {
@@ -102,7 +102,7 @@
             return " "; // Can't be string.Empty due to ImGui not accepting empty strings
         }
 
-        public uint GetBlockColorOr(int index, uint defaultValue) => this.TryGetBlockAt(index, out ChatBlock cb) ? cb.Color.Abgr() : defaultValue;
+        public uint GetBlockColorOr(int index, uint defaultValue) => this.TryGetBlockAt(index, out ChatBlock cb) ? cb.Color : defaultValue;
 
         public bool ImRender(Vector2 winSize, float h, int idx, SimpleLanguage lang)
         {
@@ -587,20 +587,7 @@
         /// </summary>
         public class EmojiReactions
         {
-            private readonly List<Guid>[] _reactions = new List<Guid>[12] {  
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>(),
-                new List<Guid>()
-            };
+            private readonly Dictionary<int, List<Guid>> _reactions = new Dictionary<int, List<Guid>>();
 
             private readonly int[] _numIndividualReactions = new int[12];
             private int _numTotalReactions = 0;
@@ -608,8 +595,8 @@
             public int Total => this._numTotalReactions;
 
             public int GetReactionCount(int index) => this._numIndividualReactions[index];
-            public IEnumerable<Guid> GetReacters(int index) => this._reactions[index];
-            public List<Guid> GetReactersList(int index) => this._reactions[index];
+            public IEnumerable<Guid> GetReacters(int index) => this.GetReactersList(index);
+            public List<Guid> GetReactersList(int index) => !this._reactions.TryGetValue(index, out List<Guid> l) ? (this._reactions[index] = new List<Guid>()) : l;
 
             public EmojiReactions Clone()
             {
@@ -617,8 +604,12 @@
                 ret._numTotalReactions = this._numTotalReactions;
                 for (int i = 0; i < 12; ++i)
                 {
-                    ret._numIndividualReactions[i] = this._numIndividualReactions[i];
-                    ret._reactions[i].AddRange(this._reactions[i]);
+                    int r = ret._numIndividualReactions[i] = this._numIndividualReactions[i];
+                    if (r > 0)
+                    {
+                        ret._reactions[i] = new List<Guid>();
+                        ret._reactions[i].AddRange(this._reactions[i]);
+                    }
                 }
 
                 return ret;
@@ -629,9 +620,25 @@
                 this._numTotalReactions = reactions._numTotalReactions;
                 for (int i = 0; i < 12; ++i)
                 {
-                    this._numIndividualReactions[i] = reactions._numIndividualReactions[i];
-                    this._reactions[i].Clear();
-                    this._reactions[i].AddRange(reactions._reactions[i]);
+                    int dn = this._numIndividualReactions[i];
+                    int sn = this._numIndividualReactions[i] = reactions._numIndividualReactions[i];
+                    if (dn > 0)
+                    {
+                        if (sn == 0)
+                        {
+                            this._reactions.Remove(i);
+                        }
+                        else
+                        {
+                            this._reactions[i].Clear();
+                        }
+                    }
+
+                    if (sn > 0)
+                    {
+                        this._reactions[i] = new List<Guid>();
+                        this._reactions[i].AddRange(reactions._reactions[i]);
+                    }
                 }
             }
 
@@ -641,12 +648,16 @@
                 bw.Write(this._numTotalReactions);
                 if (this._numTotalReactions > 0)
                 {
+                    int n;
                     for (int i = 0; i < 12; ++i)
                     {
-                        bw.Write(this._numIndividualReactions[i]);
-                        foreach (Guid id in this._reactions[i])
+                        bw.Write(n = this._numIndividualReactions[i]);
+                        if (n > 0)
                         {
-                            bw.Write(id);
+                            foreach (Guid id in this._reactions[i])
+                            {
+                                bw.Write(id);
+                            }
                         }
                     }
                 }
@@ -660,11 +671,32 @@
                 {
                     for (int i = 0; i < 12; ++i)
                     {
-                        this._numIndividualReactions[i] = br.ReadInt32();
-                        this._reactions[i].Clear();
-                        for (int j = 0; j < this._numIndividualReactions[i]; ++j)
+                        int n = this._numIndividualReactions[i] = br.ReadInt32();
+                        if (this._reactions.TryGetValue(i, out List<Guid> l))
                         {
-                            this._reactions[i].Add(br.ReadGuid());
+                            if (n > 0)
+                            {
+                                l.Clear();
+                            }
+                            else
+                            {
+                                this._reactions.Remove(i);
+                            }
+                        }
+                        else
+                        {
+                            if (n > 0)
+                            {
+                                this._reactions[i] = l = new List<Guid>();
+                            }
+                        }
+
+                        if (n > 0)
+                        {
+                            for (int j = 0; j < this._numIndividualReactions[i]; ++j)
+                            {
+                                l.Add(br.ReadGuid());
+                            }
                         }
                     }
                 }
@@ -672,9 +704,10 @@
 
             public void AddReaction(Guid sender, int reactionIndex)
             {
-                if (!this._reactions[reactionIndex].Contains(sender))
+                List<Guid> l = this.GetReactersList(reactionIndex);
+                if (!l.Contains(sender))
                 {
-                    this._reactions[reactionIndex].Add(sender);
+                    l.Add(sender);
                     this._numIndividualReactions[reactionIndex] += 1;
                     this._numTotalReactions += 1;
                 }
@@ -682,11 +715,20 @@
 
             public void RemoveReaction(Guid sender, int reactionIndex)
             {
-                if (this._reactions[reactionIndex].Contains(sender))
+                if (this._reactions.TryGetValue(reactionIndex, out List<Guid> l))
                 {
-                    this._reactions[reactionIndex].Remove(sender);
-                    this._numIndividualReactions[reactionIndex] -= 1;
-                    this._numTotalReactions -= 1;
+                    if (l.Contains(sender))
+                    {
+                        this._numTotalReactions -= 1;
+                        if ((this._numIndividualReactions[reactionIndex] -= 1) <= 0)
+                        {
+                            this._reactions.Remove(reactionIndex);
+                        }
+                        else
+                        {
+                            l.Remove(sender);
+                        }
+                    }
                 }
             }
         }
@@ -793,7 +835,7 @@
                 if (block.RollContents != ChatBlockExpressionRollContents.None)
                 {
                     clHasRolls = true;
-                    Color c = block.Color;
+                    ColorAbgr c = block.Color;
                     if (c.Equals(ChatParser.CritColor))
                     {
                         clHasCrits = true;

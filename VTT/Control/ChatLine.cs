@@ -8,6 +8,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Text;
+    using System.Threading;
     using VTT.Asset;
     using VTT.GL;
     using VTT.Network;
@@ -279,7 +280,7 @@
                     for (int i = 0; i < 12; ++i)
                     {
                         Vector2 locNow = cNow + new Vector2(penX, 0);
-                        int cnt = this.Reactions.GetReactionCount(i);
+                        int cnt = this.Reactions.GetReactions(i, out List<Guid> reacters);
                         if (cnt > 0)
                         {
                             string txt = cnt.ToString();
@@ -291,7 +292,6 @@
                             drawList.AddText(locNow + new Vector2(24, 0), ImGui.GetColorU32(ImGuiCol.Text), txt);
                             if (hover)
                             {
-                                List<Guid> reacters = this.Reactions.GetReactersList(i);
                                 if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
                                 {
                                     bool isReacter = reacters.Contains(Client.Instance.ID);
@@ -582,33 +582,42 @@
             }
         }
 
-        /// <summary>
-        /// Does not persist atm, needs chat storage rework to persist
-        /// </summary>
         public class EmojiReactions
         {
-            private readonly Dictionary<int, List<Guid>> _reactions = new Dictionary<int, List<Guid>>();
-
-            private readonly int[] _numIndividualReactions = new int[12];
+            private Dictionary<int, List<Guid>> _reactions = null;
+            private int[] _numIndividualReactions = null;
             private int _numTotalReactions = 0;
 
             public int Total => this._numTotalReactions;
 
-            public int GetReactionCount(int index) => this._numIndividualReactions[index];
-            public IEnumerable<Guid> GetReacters(int index) => this.GetReactersList(index);
-            public List<Guid> GetReactersList(int index) => !this._reactions.TryGetValue(index, out List<Guid> l) ? (this._reactions[index] = new List<Guid>()) : l;
+            public int GetReactions(int index, out List<Guid> reacters)
+            {
+                if (this._numTotalReactions == 0)
+                {
+                    reacters = null;
+                    return 0;
+                }
+
+                int r = this._numIndividualReactions[index];
+                reacters = r > 0 ? this._reactions[index] : null;
+                return r;
+            }
 
             public EmojiReactions Clone()
             {
                 EmojiReactions ret = new EmojiReactions();
-                ret._numTotalReactions = this._numTotalReactions;
-                for (int i = 0; i < 12; ++i)
+                if ((ret._numTotalReactions = this._numTotalReactions) > 0)
                 {
-                    int r = ret._numIndividualReactions[i] = this._numIndividualReactions[i];
-                    if (r > 0)
+                    ret._numIndividualReactions = new int[12];
+                    ret._reactions = new Dictionary<int, List<Guid>>();
+                    for (int i = 0; i < 12; ++i)
                     {
-                        ret._reactions[i] = new List<Guid>();
-                        ret._reactions[i].AddRange(this._reactions[i]);
+                        int r = ret._numIndividualReactions[i] = this._numIndividualReactions[i];
+                        if (r > 0)
+                        {
+                            ret._reactions[i] = new List<Guid>(1);
+                            ret._reactions[i].AddRange(this._reactions[i]);
+                        }
                     }
                 }
 
@@ -617,28 +626,50 @@
 
             public void CopyFrom(EmojiReactions reactions)
             {
-                this._numTotalReactions = reactions._numTotalReactions;
-                for (int i = 0; i < 12; ++i)
+                if ((this._numTotalReactions = reactions._numTotalReactions) > 0)
                 {
-                    int dn = this._numIndividualReactions[i];
-                    int sn = this._numIndividualReactions[i] = reactions._numIndividualReactions[i];
-                    if (dn > 0)
+                    if (this._numIndividualReactions == null)
                     {
-                        if (sn == 0)
-                        {
-                            this._reactions.Remove(i);
-                        }
-                        else
-                        {
-                            this._reactions[i].Clear();
-                        }
+                        this._numIndividualReactions = new int[12];
+                        this._reactions = new Dictionary<int, List<Guid>>();
                     }
 
-                    if (sn > 0)
+                    for (int i = 0; i < 12; ++i)
                     {
-                        this._reactions[i] = new List<Guid>();
-                        this._reactions[i].AddRange(reactions._reactions[i]);
+                        int dn = this._numIndividualReactions[i];
+                        int sn = this._numIndividualReactions[i] = reactions._numIndividualReactions[i];
+                        if (dn > 0)
+                        {
+                            if (sn == 0)
+                            {
+                                this._reactions.Remove(i);
+                            }
+                            else
+                            {
+                                this._reactions[i].Clear();
+                            }
+                        }
+
+                        if (sn > 0)
+                        {
+                            if (dn <= 0)
+                            {
+                                this._reactions[i] = new List<Guid>(1);
+                            }
+                            else
+                            {
+                                this._reactions[i].Clear();
+                            }
+
+                            this._reactions[i].AddRange(reactions._reactions[i]);
+                        }
                     }
+                }
+                else
+                {
+                    this._reactions?.Clear();
+                    this._reactions = null;
+                    this._numIndividualReactions = null;
                 }
             }
 
@@ -666,9 +697,10 @@
             public void Read(BinaryReader br)
             {
                 byte version = br.ReadByte();
-                this._numTotalReactions = br.ReadInt32();
-                if (this._numTotalReactions > 0)
+                if ((this._numTotalReactions = br.ReadInt32()) > 0)
                 {
+                    this._numIndividualReactions = new int[12];
+                    this._reactions = new Dictionary<int, List<Guid>>();
                     for (int i = 0; i < 12; ++i)
                     {
                         int n = this._numIndividualReactions[i] = br.ReadInt32();
@@ -687,7 +719,7 @@
                         {
                             if (n > 0)
                             {
-                                this._reactions[i] = l = new List<Guid>();
+                                this._reactions[i] = l = new List<Guid>(1);
                             }
                         }
 
@@ -704,7 +736,17 @@
 
             public void AddReaction(Guid sender, int reactionIndex)
             {
-                List<Guid> l = this.GetReactersList(reactionIndex);
+                if (this._numTotalReactions == 0)
+                {
+                    this._numIndividualReactions = new int[12];
+                    this._reactions = new Dictionary<int, List<Guid>>();
+                }
+
+                if (!this._reactions.TryGetValue(reactionIndex, out List<Guid> l))
+                {
+                    this._reactions[reactionIndex] = l = new List<Guid>(1);
+                }
+
                 if (!l.Contains(sender))
                 {
                     l.Add(sender);
@@ -715,19 +757,28 @@
 
             public void RemoveReaction(Guid sender, int reactionIndex)
             {
-                if (this._reactions.TryGetValue(reactionIndex, out List<Guid> l))
+                if (this._numTotalReactions > 0)
                 {
-                    if (l.Contains(sender))
+                    if (this._reactions.TryGetValue(reactionIndex, out List<Guid> l))
                     {
-                        this._numTotalReactions -= 1;
-                        if ((this._numIndividualReactions[reactionIndex] -= 1) <= 0)
+                        if (l.Contains(sender))
                         {
-                            this._reactions.Remove(reactionIndex);
+                            this._numTotalReactions -= 1;
+                            if ((this._numIndividualReactions[reactionIndex] -= 1) <= 0)
+                            {
+                                this._reactions.Remove(reactionIndex);
+                            }
+                            else
+                            {
+                                l.Remove(sender);
+                            }
                         }
-                        else
-                        {
-                            l.Remove(sender);
-                        }
+                    }
+
+                    if (this._numTotalReactions == 0)
+                    {
+                        this._reactions = null;
+                        this._numIndividualReactions = null;
                     }
                 }
             }

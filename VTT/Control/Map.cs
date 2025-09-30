@@ -646,10 +646,9 @@
                 }
             }
 
-            if (e.HasKeyOfAnyType("SolidColor"))
-            {
-                this.SolidColor = new Vector4(e.GetVec3Legacy("SolidColor", Vector3.One), 1.0f);
-            }
+            this.SolidColor = e.HasKeyOfAnyType("SolidColor")
+                ? new Vector4(e.GetVec3Legacy("SolidColor", Vector3.One), 1.0f)
+                : e.GetVec4("SolidColor4", Vector4.One);
 
             this.GradientAssetID = e.GetGuidLegacy("AssetID", Guid.Empty);
         }

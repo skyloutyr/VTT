@@ -16,7 +16,7 @@
         private static bool glExtensionsDetermined;
         private static void GatherGLExtensions()
         {
-            if (ArgsManager.TryGetValue(LaunchArgumentKey.DisableOpenGLEXT, out bool noExt))
+            if (ArgsManager.TryGetValue(LaunchArgumentKey.DisableOpenGLEXT, out bool noExt) && noExt)
             {
                 glExtensionsDetermined = true;
                 return;

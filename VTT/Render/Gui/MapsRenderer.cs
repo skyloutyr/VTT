@@ -204,6 +204,12 @@
                         new PacketChangeMapData() { MapID = state.clientMap.ID, Data = cDir, Type = PacketChangeMapData.DataType.CameraDirection }.Send();
                         pcmd.Send(); // Change default camera position/direction when 2d is switched to current to fix 2d zoom levels
 
+                        if (state.clientMap.CelestialBodies.Sun != null)
+                        {
+                            state.clientMap.CelestialBodies.Sun.Enabled = !m2d;
+                            new PacketCelestialBodyInfo() { MapID = state.clientMap.ID, BodyID = state.clientMap.CelestialBodies.Sun.OwnID, ChangeKind = PacketCelestialBodyInfo.DataType.Enabled, Data = !m2d }.Send();
+                        }
+
                         if (state.clientMap.DaySkyboxAssetID.IsEmpty())
                         {
                             state.clientMap.DaySkyboxColors.SwitchType(MapSkyboxColors.ColorsPointerType.FullBlack);

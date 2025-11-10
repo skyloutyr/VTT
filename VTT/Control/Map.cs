@@ -359,7 +359,7 @@
                 AmbientSoundVolume = this.AmbientSoundVolume,
                 DefaultCameraPosition = this.DefaultCameraPosition,
                 DefaultCameraRotation = this.DefaultCameraRotation,
-                FOW = this.FOW.Clone(),
+                FOW = this.FOW?.Clone(),
                 DaySkyboxAssetID = this.DaySkyboxAssetID,
                 NightSkyboxAssetID = this.NightSkyboxAssetID,
                 DaySkyboxColors = this.DaySkyboxColors.Clone(),

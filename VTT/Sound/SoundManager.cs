@@ -22,12 +22,15 @@
         public ALSoundContainer YourTurn { get; set; }
         public ALSoundContainer PingAny { get; set; }
 
-        public List<(SoundCategory, int)> ActiveSources { get; } = new List<(SoundCategory, int)>();
+        public List<SoundSourceContainer> ActiveSources { get; } = new List<SoundSourceContainer>();
 
         private readonly object _assetLock = new object();
         public List<AssetSound> AllPlayingAssets { get; } = new List<AssetSound>();
         public Dictionary<Guid, AssetSound> PlayingAssetsByID { get; } = new Dictionary<Guid, AssetSound>();
         public MusicPlayer MusicPlayer { get; } = new MusicPlayer();
+
+        public delegate void BasicSourceInstantiatedCallback(ALSoundContainer container, SoundSourceContainer sound);
+        public delegate void SoundCreatedCallback(ALSoundContainer container);
 
         public void Init()
         {
@@ -115,10 +118,25 @@
             return null;
         }
 
-        private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer)>();
+        private readonly ConcurrentQueue<(SoundCategory, ALSoundContainer, BasicSourceInstantiatedCallback)> _queuedSounds = new ConcurrentQueue<(SoundCategory, ALSoundContainer, BasicSourceInstantiatedCallback)>();
         private readonly ConcurrentQueue<Guid> _assetsToStop = new ConcurrentQueue<Guid>();
+        private readonly ConcurrentQueue<int> _srcsToStop = new ConcurrentQueue<int>();
+        private readonly ConcurrentQueue<(ALSoundContainer, WaveAudio, SoundCreatedCallback)> _soundCreationRequests = new ConcurrentQueue<(ALSoundContainer, WaveAudio, SoundCreatedCallback)>();
 
-        public void PlaySound(ALSoundContainer sc, SoundCategory cat)
+        public void LoadSoundContainerAsync(ALSoundContainer container, WaveAudio audio, SoundCreatedCallback callback = null)
+        {
+            if (Client.Instance.Settings.DisableSounds)
+            {
+                return;
+            }
+
+            if (this.IsAvailable)
+            {
+                this._soundCreationRequests.Enqueue((container, audio, callback));
+            }
+        }
+
+        public void PlaySound(ALSoundContainer sc, SoundCategory cat, BasicSourceInstantiatedCallback callback = null)
         {
             if (Client.Instance.Settings.DisableSounds)
             {
@@ -127,7 +145,7 @@
 
             if (this.IsAvailable && sc != null)
             {
-                this._queuedSounds.Enqueue((cat, sc));
+                this._queuedSounds.Enqueue((cat, sc, callback));
             }
         }
 
@@ -158,6 +176,8 @@
         }
 
         public void StopAsset(Guid assetID) => this._assetsToStop.Enqueue(assetID);
+        public void StopBasicSound(int id) => this._srcsToStop.Enqueue(id);
+        public void StopBasicSound(SoundSourceContainer src) => this._srcsToStop.Enqueue((int)src.ID);
 
         private bool _volumeChangedNotification;
         public void NotifyOfVolumeChanges() => this._volumeChangedNotification = true;
@@ -258,26 +278,42 @@
                     }
                 }
 
+                while (!this._srcsToStop.IsEmpty)
+                {
+                    if (!this._srcsToStop.TryDequeue(out int srcId))
+                    {
+                        break;
+                    }
+
+                    if (AL.IsSource((uint)srcId))
+                    {
+                        AL.SourceStop((uint)srcId);
+                    }
+                }
+
                 for (int i = this.ActiveSources.Count - 1; i >= 0; i--)
                 {
-                    (SoundCategory, int) src = this.ActiveSources[i];
-                    SourceState state = AL.GetSourceState((uint)src.Item2);
+                    SoundSourceContainer src = this.ActiveSources[i];
+                    SourceState state = AL.GetSourceState(src.ID);
                     if (this._assetsClear)
                     {
-                        AL.SourceStop((uint)src.Item2);
+                        AL.SourceStop(src.ID);
                     }
 
                     if (state == SourceState.Stopped || this._assetsClear)
                     {
-                        AL.DeleteSource((uint)src.Item2);
+                        src.StoppedCallback?.Invoke(src);
+                        AL.DeleteSource(src.ID);
                         this.ActiveSources.RemoveAt(i);
                     }
                     else
                     {
                         if (this._volumeChangedNotification)
                         {
-                            this.SetSourceVolume(src.Item1, src.Item2);
+                            this.SetSourceVolume(src.Category, (int)src.ID);
                         }
+
+                        src.Update();
                     }
                 }
 
@@ -374,7 +410,7 @@
                 this._volumeChangedNotification = false;
                 while (!this._queuedSounds.IsEmpty)
                 {
-                    if (!this._queuedSounds.TryDequeue(out (SoundCategory, ALSoundContainer) sc))
+                    if (!this._queuedSounds.TryDequeue(out (SoundCategory, ALSoundContainer, BasicSourceInstantiatedCallback) sc))
                     {
                         break;
                     }
@@ -382,10 +418,23 @@
                     int src = sc.Item2.Instantiate();
                     if (src != -1)
                     {
-                        this.ActiveSources.Add((sc.Item1, src));
+                        SoundSourceContainer ssc = new SoundSourceContainer((uint)src, sc.Item1);
+                        this.ActiveSources.Add(ssc);
                         this.SetSourceVolume(sc.Item1, src);
                         AL.SourcePlay((uint)src);
+                        sc.Item3?.Invoke(sc.Item2, ssc);
                     }
+                }
+
+                while (!this._soundCreationRequests.IsEmpty)
+                {
+                    if (!this._soundCreationRequests.TryDequeue(out (ALSoundContainer, WaveAudio, SoundCreatedCallback) sc))
+                    {
+                        break;
+                    }
+
+                    sc.Item1.CreateFromData(sc.Item2);
+                    sc.Item3?.Invoke(sc.Item1);
                 }
 
                 if (Client.Instance.NetClient?.IsConnected ?? false)
@@ -505,5 +554,49 @@
         Asset,
         Ambiance,
         Music
+    }
+
+    public class SoundSourceContainer
+    {
+        private readonly uint _srcID;
+
+        public uint ID => this._srcID;
+        public SoundCategory Category { get; }
+        public bool TrackInfo { get; set; }
+        public float SecondsPlayed { get; set; }
+
+        public Action<SoundSourceContainer> StoppedCallback { get; set; }
+
+        public SoundSourceContainer(uint srcID, SoundCategory category)
+        {
+            this._srcID = srcID;
+            this.Category = category;
+        }
+
+        public void Update()
+        {
+            if (this.TrackInfo)
+            {
+                float vS = AL.GetSource((uint)this._srcID, SourceFloatProperty.SecOffset);
+                float delta = vS - this._lastSoundVS;
+                if (delta > 0)
+                {
+                    this.SecondsPlayed += delta;
+                    this._lastSoundDelta = delta;
+                }
+                else
+                {
+                    if (float.IsNegative(delta))
+                    {
+                        this.SecondsPlayed += this._lastSoundDelta;
+                    }
+                }
+
+                this._lastSoundVS = vS;
+            }
+        }
+
+        private float _lastSoundVS;
+        private float _lastSoundDelta;
     }
 }

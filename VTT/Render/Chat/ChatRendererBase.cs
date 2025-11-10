@@ -48,7 +48,7 @@
             Invalid
         }
 
-        private static readonly Regex Base64CheckerRegex = new Regex(@"(?:[A-Z]|[a-z]|[0-9]|[+\/=])+", RegexOptions.Compiled);
+        protected static readonly Regex Base64CheckerRegex = new Regex(@"(?:[A-Z]|[a-z]|[0-9]|[+\/=])+", RegexOptions.Compiled);
         public static AssetStatus ResolveImageBlock(string reference, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap)
         {
             Guid imgAssetId = Guid.Empty;

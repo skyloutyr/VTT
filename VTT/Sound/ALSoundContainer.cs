@@ -6,12 +6,20 @@
 
     public class ALSoundContainer
     {
-        private readonly uint _alId;
-        public bool IsValid { get; private set; }
-        public bool IsDataLoaded { get; private set; }
-        public ISoundProvider WaveData { get; }
+        private uint _alId;
+        public bool IsValid { get; set; }
+        public bool IsDataLoaded { get; set; }
+        public ISoundProvider WaveData { get; set; }
+
+        public ALSoundContainer() => this.IsValid = false;
 
         public ALSoundContainer(WaveAudio waveData)
+        {
+            this._alId = AL.GenBuffer();
+            this.WaveData = waveData;
+        }
+
+        public void CreateFromData(WaveAudio waveData)
         {
             this._alId = AL.GenBuffer();
             this.WaveData = waveData;

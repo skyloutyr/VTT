@@ -43,7 +43,7 @@
         public void GetRawDataFull(out IntPtr dataPtr, out int dataLength)
         {
             dataPtr = this.DataPtr;
-            dataLength = this.DataLength;
+            dataLength = this.DataLength * sizeof(ushort);
         }
 
         // Note that this destructively frees the data pointer passed!
@@ -106,6 +106,42 @@
             this.DataLength = LoadDataFromStream((buffer, offset, size) => mpeg.ReadSamples(buffer, offset, size), this.NumChannels * this.SampleRate);
             this.Duration = mpeg.Duration.TotalSeconds;
             this.IsReady = true;
+        }
+
+        public static bool ValidateRIFFHeader(Stream s)
+        {
+            Span<byte> header = stackalloc byte[4];
+            int nRead;
+            if ((nRead = s.Read(header)) != 4)
+            {
+                s.Seek(-nRead, SeekOrigin.Current);
+                return false;
+            }
+
+            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46) // WAV header - RIFF
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool ValidateOGGHeader(Stream s)
+        {
+            Span<byte> header = stackalloc byte[4];
+            int nRead;
+            if ((nRead = s.Read(header)) != 4)
+            {
+                s.Seek(-nRead, SeekOrigin.Current);
+                return false;
+            }
+
+            if (header[0] == 0x4F && header[1] == 0x67 && header[2] == 0x67 && header[3] == 0x53) // VORBIS header - OggS
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public static bool ValidateMPEGFrame(Stream s)

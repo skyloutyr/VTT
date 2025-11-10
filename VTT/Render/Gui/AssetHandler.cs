@@ -54,28 +54,40 @@
         {
             return this._mouseOverAssets
                 ? Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s))
-                : this.FrameState.chatHovered && Client.Instance.ServerAllowsEmbeddedImages && this.AddEmbeddedChatImage(s);
+                : this.FrameState.chatHovered && this.AddEmbeddedChatAsset(s);
         }
 
-        private bool AddEmbeddedChatImage(string s)
+        private bool AddEmbeddedChatAsset(string s)
         {
             string ext = Path.GetExtension(s).ToLower();
             if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg") || ext.EndsWith("gif"))
             {
-                if (new FileInfo(s).Length <= 16777216) // 16mb limit
+                if (Client.Instance.ServerAllowsEmbeddedImages)
                 {
-                    try
+                    if (new FileInfo(s).Length <= 16777216) // 16mb limit
                     {
-                        if (Image.Identify(s) != null)
+                        try
                         {
-                            this._chatString += $"[i:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
-                            return true;
+                            if (Image.Identify(s) != null)
+                            {
+                                this._chatString += $"[i:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
+                                return true;
+                            }
+                        }
+                        catch
+                        {
+                            // NOOP, ImageSharp bad docs (throws on failure to read, but is supposed to simply return null??)
                         }
                     }
-                    catch
-                    {
-                        // NOOP, ImageSharp bad docs (throws on failure to read, but is supposed to simply return null??)
-                    }
+                }
+            }
+
+            if (ext.EndsWith("wav") || ext.EndsWith("mp3") || ext.EndsWith("ogg"))
+            {
+                if (new FileInfo(s).Length <= 16777216) // 16mb limit
+                {
+                    this._chatString = $"[m:Sound][p:{Convert.ToBase64String(File.ReadAllBytes(s))}]"; // = instead of += deliberately!
+                    return true;
                 }
             }
 

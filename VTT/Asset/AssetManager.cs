@@ -18,7 +18,6 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
-    using VTT.Sound.Bindings;
     using VTT.Util;
 
     public class AssetManager

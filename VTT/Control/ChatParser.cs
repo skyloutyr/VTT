@@ -594,7 +594,7 @@
                         {
                             try
                             {
-                                t = t.Substring(m.Index + m.Length);
+                                t = t[(m.Index + m.Length)..];
                             }
                             catch
                             {
@@ -615,7 +615,7 @@
                     }
 
                     const int MaxAllowedB64ImageSize = 22369622; // ~16mb
-                    if (isB64 && t.Length <= MaxAllowedB64ImageSize)
+                    if (isB64 && t.Length <= MaxAllowedB64ImageSize && (Server.Instance?.Settings.AllowEmbeddedImages ?? true))
                     {
                         cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
                         return true;

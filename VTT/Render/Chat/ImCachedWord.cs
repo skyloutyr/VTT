@@ -5,7 +5,6 @@
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
-    using VTT.Network;
 
     public readonly struct ImCachedWord
     {

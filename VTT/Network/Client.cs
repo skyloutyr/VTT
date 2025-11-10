@@ -66,6 +66,10 @@
         public DisconnectReason LastDisconnectReason { get; set; } = DisconnectReason.InternalClientError;
         public long TimeoutInterval { get; set; } = (long)TimeSpan.FromMinutes(1).TotalMilliseconds;
 
+        #region Current server configuration (shared)
+        public bool ServerAllowsEmbeddedImages { get; set; }
+        #endregion
+
         public Client()
         {
             Instance = this;

@@ -7,6 +7,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.IO;
     using System.Net;
     using System.Net.Sockets;
@@ -1166,6 +1167,10 @@
         [JsonConverter(typeof(GUIDConverter))]
         public Guid DefaultMapID { get; set; }
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AllowEmbeddedImages { get; set; } = true;
+
         public static ServerSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ServerDir, "Settings.json");
@@ -1180,7 +1185,8 @@
 
             ServerSettings ret = new ServerSettings()
             {
-                DefaultMapID = Guid.NewGuid()
+                DefaultMapID = Guid.NewGuid(),
+                AllowEmbeddedImages = true,
             };
 
             ret.Save();

@@ -245,6 +245,13 @@
                             }
                         }
                     }
+
+                    bool csaeiinfo = Client.Instance.ServerAllowsEmbeddedImages;
+                    if (ImGui.Checkbox($"{lang.Translate("ui.network.server_allow_embedded_images")}###EnableEmbeddedImages", ref csaeiinfo))
+                    {
+                        Client.Instance.ServerAllowsEmbeddedImages = csaeiinfo;
+                        new PacketServerSettingChange() { Data = csaeiinfo, ChangeKind = PacketServerSettingChange.SettingType.ServerAllowsEmbeddedImages }.Send();
+                    }
                 }
 
                 ImGui.End();

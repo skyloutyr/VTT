@@ -68,6 +68,7 @@
 
         public List<ChatLine> ProvideChatQueryLines(Guid asker, Guid chatQueryID, int amount)
         {
+            bool isAdmin = this.ClientInfos.TryGetValue(asker, out ClientInfo ci) && (ci?.IsAdmin ?? false);
             if (!this.ChatSearchQueries.TryGetValue(chatQueryID, out ChatSearchCollection collection)) // Uh-oh
             {
                 collection = this.ChatSearchQueries[chatQueryID] = new ChatSearchCollection();
@@ -92,7 +93,7 @@
                 }
 
                 ChatLine cl = this.ServerChat.AllChatLines[searchFrom];
-                if (collection.Matches(cl) && cl.CanSee(asker))
+                if (collection.Matches(cl) && cl.CanSee(asker) && (!cl.Flags.HasFlag(ChatLine.ChatLineFlags.Deleted) || isAdmin))
                 {
                     ret.Add(cl);
                     --amount;

@@ -112,7 +112,7 @@
                 this.BuildCache(winSize);
             }
 
-            if (Client.Instance.IsAdmin || this.CanSee(Client.Instance.ID))
+            if (Client.Instance.IsAdmin || (this.CanSee(Client.Instance.ID) && !this.Flags.HasFlag(ChatLineFlags.Deleted)))
             {
                 float scrollMin = ImGui.GetScrollY();
                 float scrollMax = scrollMin + h;
@@ -232,11 +232,19 @@
                 ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
                 ImGui.PopStyleColor();
                 ImGui.SetCursorPos(cNow);
-                ImGui.PushStyleColor(ImGuiCol.Text, this.DestColor.Abgr());
+                ImGui.PushStyleColor(ImGuiCol.Text, this.Flags.HasFlag(ChatLineFlags.Deleted) ? ColorAbgr.DarkRed : this.DestColor.Abgr());
                 ImGui.TextUnformatted(string.IsNullOrEmpty(this.DestDisplayName) ? Client.Instance.Lang.Translate("chat.all") : this.DestDisplayName);
                 ImGui.PopStyleColor();
                 float eY = ImGui.GetCursorScreenPos().Y;
                 ImGui.SameLine();
+                if (this.Flags.HasFlag(ChatLineFlags.Deleted))
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Text, ColorAbgr.DarkRed);
+                    ImGui.TextUnformatted(Client.Instance.Lang.Translate("chat.deleted"));
+                    ImGui.PopStyleColor();
+                    ImGui.SameLine();
+                }
+
                 Vector2 eV = new Vector2(ImGui.GetCursorScreenPos().X, eY);
                 ImGui.Dummy(new Vector2(0, 24));
                 if (ImGui.IsMouseHoveringRect(sV, eV))
@@ -258,6 +266,14 @@
                     if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
                     {
                         ImGui.SetClipboardText($"{this.SendTime} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
+                    }
+
+                    if (Guid.Equals(this.SenderID, Client.Instance.ID) || Client.Instance.IsAdmin)
+                    {
+                        if (ImGui.MenuItem(lang.Translate("ui.chat.delete")))
+                        {
+                            new PacketDeleteChatMessage() { CLIndex = this.Index }.Send();
+                        }
                     }
 
                     ImGui.EndPopup();
@@ -468,17 +484,8 @@
             this._cached = true;
         }
 
-        public void WriteNetwork(BinaryWriter bw)
-        {
-            this.WriteStorage(bw);
-            this.Reactions.Write(bw);
-        }
-
-        public void ReadNetwork(BinaryReader br)
-        {
-            this.ReadStorage(br);
-            this.Reactions.Read(br);
-        }
+        public void WriteNetwork(BinaryWriter bw) => this.Serialize().Write(bw);
+        public void ReadNetwork(BinaryReader br) => this.Deserialize(new DataElement(br));
 
         public void WriteStorage(BinaryWriter bw)
         {

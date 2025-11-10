@@ -956,3 +956,5 @@ credits.sky_uranus=Уран от NASA
 menu.settings.use_ubo_dma=Включить UBO DMA
 menu.settings.use_ubo_dma.tt=Управляет режимом передачи памяти для UBO.\nМожет вызывать проблемы на старых драйверах.
 ui.network.server_allow_embedded_images=Разрешить встраивание изображений в чат
+ui.chat.delete=Удалить Сообщение
+chat.deleted=(Удалено)

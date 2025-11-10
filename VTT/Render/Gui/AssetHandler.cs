@@ -50,7 +50,37 @@
             }
         }
 
-        public bool ProcessFileDrop(string s, int index) => this._mouseOverAssets && Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s));
+        public bool ProcessFileDrop(string s, int index)
+        {
+            return this._mouseOverAssets
+                ? Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s))
+                : this.FrameState.chatHovered && Client.Instance.ServerAllowsEmbeddedImages && this.AddEmbeddedChatImage(s);
+        }
+
+        private bool AddEmbeddedChatImage(string s)
+        {
+            string ext = Path.GetExtension(s).ToLower();
+            if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg") || ext.EndsWith("gif"))
+            {
+                if (new FileInfo(s).Length <= 16777216) // 16mb limit
+                {
+                    try
+                    {
+                        if (Image.Identify(s) != null)
+                        {
+                            this._chatString += $"[i:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // NOOP, ImageSharp bad docs (throws on failure to read, but is supposed to simply return null??)
+                    }
+                }
+            }
+
+            return false;
+        }
 
         private bool LoadAssetAsync(string s)
         {

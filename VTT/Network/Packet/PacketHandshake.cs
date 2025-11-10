@@ -96,7 +96,7 @@
                     sc.ActionMemory.ActionBufferSize = 128;
                 }
 
-                PacketClientInfo pci = new PacketClientInfo() { IsAdmin = sc.IsAdmin, IsObserver = sc.IsObserver, Session = sessionID, IsServer = isServer };
+                PacketClientInfo pci = new PacketClientInfo() { IsAdmin = sc.IsAdmin, IsObserver = sc.IsObserver, Session = sessionID, IsServer = isServer, ServerAllowsEmbeddedImages = server.Settings.AllowEmbeddedImages };
                 pci.Send(sc);
                 new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(sc);
                 server.Logger.Log(LogLevel.Debug, "Client handshake completion sent");

@@ -14,7 +14,7 @@
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
-            ChatLine cl = isServer ? server.ServerChat[this.CLIndex] : client.Chat.Find(x => x.Index == this.CLIndex);
+            ChatLine cl = isServer ? server.ServerChat.AllChatLines[this.CLIndex] : client.Chat.Find(x => x.Index == this.CLIndex);
             if (cl != null)
             {
                 if (this.IsAddition)
@@ -32,7 +32,10 @@
                 this.Broadcast();
                 if (cl != null)
                 {
-                    server.ServerChatExtras.NotifyOfLineDataChange(cl);
+                    lock (server.chatLock)
+                    {
+                        server.ServerChat.NotifyOfChange(cl);
+                    }
                 }
             }
         }

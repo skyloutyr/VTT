@@ -17,7 +17,7 @@
     using VTT.Render.Gui;
     using VTT.Util;
 
-    public class ChatLine
+    public class ChatLine : ISerializable
     {
         public string Sender { get; set; }
 
@@ -28,21 +28,22 @@
         public Guid PortraitID { get; set; } = Guid.Empty;
         public DateTime SendTime { get; set; } = DateTime.UnixEpoch;
 
-        public Color SenderColor { get => senderColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : senderColor; set => senderColor = value; }
-        public Color DestColor { get => destColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : destColor; set => destColor = value; }
+        public Color SenderColor { get => _senderColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : _senderColor; set => _senderColor = value; }
+        public Color DestColor { get => _destColor.Argb() == 0 ? Extensions.FromAbgr(ImGui.GetColorU32(ImGuiCol.Text)) : _destColor; set => _destColor = value; }
         public List<ChatBlock> Blocks { get; set; } = new List<ChatBlock>();
         public EmojiReactions Reactions { get; set; } = new EmojiReactions();
 
         public ChatRendererBase Renderer { get; set; }
         public RenderType Type { get; set; }
+        public ChatLineFlags Flags { get; set; } = ChatLineFlags.None;
 
         public int Index { get; set; }
 
         private bool _cached;
         private float _cachedHeight;
         private AssetPreviewReference _portraitTex;
-        private Color senderColor;
-        private Color destColor;
+        private Color _senderColor;
+        private Color _destColor;
 
         public bool CanSee(Guid id) => this.DestID.Equals(Guid.Empty) || this.SenderID.Equals(id) || this.DestID.Equals(id);
 
@@ -489,8 +490,8 @@
             bw.Write(this.SenderDisplayName);
             bw.Write(this.DestDisplayName);
             bw.Write((byte)this.Type);
-            bw.Write(this.senderColor.Argb());
-            bw.Write(this.destColor.Argb());
+            bw.Write(this._senderColor.Argb());
+            bw.Write(this._destColor.Argb());
             bw.Write(this.SendTime.ToBinary());
             bw.Write(this.Blocks.Select(b => !b.DoNotPersist).Count());
             foreach (ChatBlock cb in this.Blocks)
@@ -545,6 +546,63 @@
             }
         }
 
+        public DataElement Serialize()
+        {
+            DataElement ret = new DataElement();
+            ret.SetGuid("SID", this.SenderID);
+            ret.SetGuid("DID", this.DestID);
+            ret.SetGuid("PID", this.PortraitID);
+            ret.SetString("SDR", this.Sender);
+            ret.SetString("SDN", this.SenderDisplayName);
+            ret.SetString("DDN", this.DestDisplayName);
+            ret.SetEnum("RTP", this.Type);
+            ret.SetColor("SCL", this._senderColor);
+            ret.SetColor("DCL", this._destColor);
+            ret.SetDateTime("TIM", this.SendTime);
+            ret.SetEnum("FLA", this.Flags);
+            ret.SetArray("DAT2", this.Blocks.ToArray(), (n, c, v) =>
+            {
+                using MemoryStream ms = new MemoryStream();
+                using BinaryWriter bw = new BinaryWriter(ms);
+                v.WriteV2(bw);
+                c.SetPrimitiveArray(n, ms.ToArray());
+            });
+
+            if (this.Reactions.Total > 0)
+            {
+                ret.SetMap("REA", this.Reactions.Serialize());
+            }
+
+            return ret;
+        }
+
+        public void Deserialize(DataElement e)
+        {
+            this.SenderID = e.GetGuid("SID");
+            this.DestID = e.GetGuid("DID");
+            this.PortraitID = e.GetGuid("PID");
+            this.Sender = e.GetString("SDR");
+            this.SenderDisplayName = e.GetString("SDN");
+            this.DestDisplayName = e.GetString("DDN");
+            this.Type = e.GetEnum<RenderType>("RTP");
+            this._senderColor = e.GetColor("SCL");
+            this._destColor = e.GetColor("DCL");
+            this.SendTime = e.GetDateTime("TIM");
+            this.Flags = e.GetEnum("FLA", ChatLineFlags.None);
+            this.Blocks.Clear();
+            this.Blocks.AddRange(e.GetArray("DAT2", (n, c) =>
+            {
+                byte[] bArr = c.GetPrimitiveArray(n, Array.Empty<byte>());
+                ChatBlock blk = new ChatBlock();
+                using MemoryStream ms = new MemoryStream(bArr);
+                using BinaryReader br = new BinaryReader(ms);
+                blk.ReadV2(br);
+                return blk;
+            }, Array.Empty<ChatBlock>()));
+
+            this.Reactions.Deserialize(e.GetMap("REA", new DataElement()));
+        }
+
         public enum RenderType
         {
             Line,
@@ -569,6 +627,13 @@
             ObjectSnapshot
         }
 
+        [Flags]
+        public enum ChatLineFlags
+        {
+            None = 0,
+            Deleted = 1,
+        }
+
         private class AssetPreviewReference
         {
             public AssetPreview preview;
@@ -581,7 +646,7 @@
             }
         }
 
-        public class EmojiReactions
+        public class EmojiReactions : ISerializable
         {
             private Dictionary<int, List<Guid>> _reactions = null;
             private int[] _numIndividualReactions = null;
@@ -778,6 +843,61 @@
                     {
                         this._reactions = null;
                         this._numIndividualReactions = null;
+                    }
+                }
+            }
+
+            public DataElement Serialize()
+            {
+                DataElement ret = new DataElement();
+                if (this._numTotalReactions > 0)
+                {
+                    ret.SetInt("NTR", this._numTotalReactions);
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        if (this._numIndividualReactions[i] > 0)
+                        {
+                            ret.SetPrimitiveArray($"R_{i}", this._reactions[i].ToArray());
+                        }
+                    }
+                }
+
+                return ret;
+            }
+
+            public void Deserialize(DataElement e)
+            {
+                if ((this._numTotalReactions = e.GetInt("NTR", 0)) > 0)
+                {
+                    this._numIndividualReactions = new int[12];
+                    this._reactions = new Dictionary<int, List<Guid>>();
+                    for (int i = 0; i < 12; ++i)
+                    {
+                        Guid[] array = e.GetPrimitiveArray($"R_{i}", Array.Empty<Guid>());
+                        int n = this._numIndividualReactions[i] = array.Length;
+                        if (this._reactions.TryGetValue(i, out List<Guid> l))
+                        {
+                            if (n > 0)
+                            {
+                                l.Clear();
+                            }
+                            else
+                            {
+                                this._reactions.Remove(i);
+                            }
+                        }
+                        else
+                        {
+                            if (n > 0)
+                            {
+                                this._reactions[i] = l = new List<Guid>(1);
+                            }
+                        }
+
+                        if (n > 0)
+                        {
+                            l.AddRange(array);
+                        }
                     }
                 }
             }

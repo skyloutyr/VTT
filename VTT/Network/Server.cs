@@ -9,8 +9,10 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
     using VTT.Asset;
@@ -40,9 +42,7 @@
         public ConcurrentDictionary<Guid, ClientInfo> ClientInfos { get; } = new ConcurrentDictionary<Guid, ClientInfo>();
 
         public object chatLock = new object();
-        public List<ChatLine> ServerChat { get; } = new List<ChatLine>();
-        public ServerChatExtras ServerChatExtras { get; } = new ServerChatExtras();
-        public ConcurrentQueue<ChatLine> AppendedChat { get; } = new ConcurrentQueue<ChatLine>();
+        public ChatDatabase ServerChat { get; } = new ChatDatabase();
         public ConcurrentDictionary<Guid, TextJournal> Journals { get; } = new ConcurrentDictionary<Guid, TextJournal>();
 
         public AutoResetEvent WaitHandle { get; set; }
@@ -80,7 +80,7 @@
             int searchFrom = collection.ServerLastSearchPosition;
             if (searchFrom == int.MinValue)
             {
-                searchFrom = this.ServerChat.Count - 1;
+                searchFrom = this.ServerChat.AllChatLines.Count - 1;
             }
 
             List<ChatLine> ret = new List<ChatLine>();
@@ -91,7 +91,7 @@
                     break;
                 }
 
-                ChatLine cl = this.ServerChat[searchFrom];
+                ChatLine cl = this.ServerChat.AllChatLines[searchFrom];
                 if (collection.Matches(cl) && cl.CanSee(asker))
                 {
                     ret.Add(cl);
@@ -436,14 +436,9 @@
                     }
                 }
 
-                if (!this.AppendedChat.IsEmpty && !this.NonPersistent)
+                if (this.ServerChat.AnyChanges && !this.NonPersistent)
                 {
                     this.SaveChat();
-                }
-
-                if (this.ServerChatExtras.NeedsDiskWrite && !this.NonPersistent)
-                {
-                    this.SaveChatExtras();
                 }
 
                 foreach (TextJournal tj in this.Journals.Values)
@@ -585,71 +580,75 @@
         public void LoadChat()
         {
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
-            string expectedFile = Path.Combine(chatLoc, "log.bin");
-            bool TryLoadChat(string path, out List<ChatLine> outLst)
+            string dbName = Path.Combine(chatLoc, "chatdb");
+            if (!this.ServerChat.Read(dbName))
             {
-                List<ChatLine> ret = new List<ChatLine>();
-                outLst = ret;
-                if (File.Exists(path))
+                string expectedFile = Path.Combine(chatLoc, "log.bin");
+                bool TryLoadChat(string path, out List<ChatLine> outLst)
+                {
+                    List<ChatLine> ret = new List<ChatLine>();
+                    outLst = ret;
+                    if (File.Exists(path))
+                    {
+                        try
+                        {
+                            using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
+                            {
+                                if (br.BaseStream.CanRead && br.BaseStream.Length > 0)
+                                {
+                                    int idx = 0;
+                                    while (br.BaseStream.Position < br.BaseStream.Length - 1)
+                                    {
+                                        ChatLine cl = new ChatLine() { Index = idx++ };
+                                        cl.ReadStorage(br);
+                                        ret.Add(cl);
+                                    }
+
+                                    return true;
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            this.Logger.Log(LogLevel.Error, "Could not load server chat!");
+                            this.Logger.Exception(LogLevel.Error, e);
+                        }
+                    }
+
+                    return false;
+                }
+
+                List<ChatLine> lines = new List<ChatLine>();
+                if (!TryLoadChat(expectedFile, out lines))
+                {
+                    string pathBak = expectedFile + ".bak";
+                    if (File.Exists(pathBak))
+                    {
+                        File.Move(pathBak, expectedFile, true);
+                        TryLoadChat(expectedFile, out lines);
+                    }
+                }
+
+                string expectedExtras = Path.Combine(chatLoc, "extras.bin");
+                if (File.Exists(expectedExtras))
                 {
                     try
                     {
-                        using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
-                        {
-                            if (br.BaseStream.CanRead && br.BaseStream.Length > 0)
-                            {
-                                int idx = 0;
-                                while (br.BaseStream.Position < br.BaseStream.Length - 1)
-                                {
-                                    ChatLine cl = new ChatLine() { Index = idx++ };
-                                    cl.ReadStorage(br);
-                                    ret.Add(cl);
-                                }
-
-                                return true;
-                            }
-                        }
+                        using BinaryReader br = new BinaryReader(File.OpenRead(expectedExtras));
+                        ServerChatExtras extras = new ServerChatExtras();
+                        extras.ReadAll(br);
+                        extras.ApplyAll(lines); // No lock needed here, server isn't started
                     }
                     catch (Exception e)
                     {
-                        this.Logger.Log(LogLevel.Error, "Could not load server chat!");
+                        this.Logger.Log(LogLevel.Error, "Could not load server chat extra data!");
                         this.Logger.Exception(LogLevel.Error, e);
                     }
                 }
 
-                return false;
-            }
-
-            if (TryLoadChat(expectedFile, out List<ChatLine> lines))
-            {
-                this.ServerChat.AddRange(lines);
-            }
-            else
-            {
-                string pathBak = expectedFile + ".bak";
-                if (File.Exists(pathBak))
+                if (this.ServerChat.IsEmpty)
                 {
-                    File.Move(pathBak, expectedFile, true);
-                    if (TryLoadChat(expectedFile, out lines))
-                    {
-                        this.ServerChat.AddRange(lines);
-                    }
-                }
-            }
-
-            string expectedExtras = Path.Combine(chatLoc, "extras.bin");
-            if (File.Exists(expectedExtras))
-            {
-                try
-                {
-                    using BinaryReader br = new BinaryReader(File.OpenRead(expectedExtras));
-                    this.ServerChatExtras.ReadAll(br);
-                    this.ServerChatExtras.ApplyAll(this.ServerChat); // No lock needed here, server isn't started
-                }
-                catch (Exception e)
-                {
-                    this.Logger.Log(LogLevel.Error, "Could not load server chat extra data!");
-                    this.Logger.Exception(LogLevel.Error, e);
+                    this.ServerChat.MigrateWrite(Path.Combine(chatLoc, "chatdb"), lines);
                 }
             }
         }
@@ -669,6 +668,13 @@
         public void SaveChat()
         {
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
+            string dbName = Path.Combine(chatLoc, "chatdb");
+            lock (this.chatLock)
+            {
+                this.ServerChat.Write(dbName);
+            }
+
+            /* Old code
             string expectedFile = Path.Combine(chatLoc, "log.bin");
             Directory.CreateDirectory(chatLoc);
             if (!File.Exists(expectedFile))
@@ -695,6 +701,7 @@
                     bw.Flush();
                 }
             }
+            */
         }
 
         public void SaveChatExtras()
@@ -702,8 +709,10 @@
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
             string expectedExtras = Path.Combine(chatLoc, "extras.bin");
             using BinaryWriter bw = new BinaryWriter(File.OpenWrite(expectedExtras));
+            /* Old code
             this.ServerChatExtras.WriteAll(bw);
             this.ServerChatExtras.NeedsDiskWrite = false;
+            */
         }
 
         public void LoadAllMaps()
@@ -1317,6 +1326,379 @@
             }
 
             public void Apply(ChatLine line) => line.Reactions.CopyFrom(this.Reactions);
+        }
+    }
+
+    public class ChatDatabase
+    {
+        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = sizeof(ulong) * 4)]
+        public struct DatabaseEntryPointer
+        {
+            [FieldOffset(0)]
+            public uint dbIndex; // Unique, autoincremented
+
+            [FieldOffset(4)]
+            public int chatLineIndex; // Semi-unique, can be -1 if chat line position is vacant
+
+            [FieldOffset(8)]
+            public ulong offset; // From file start, in bytes
+
+            [FieldOffset(16)]
+            public ulong length; // From offset, in bytes
+
+            [FieldOffset(24)]
+            public ulong reserved; // Reserved for later
+        }
+
+        private readonly Dictionary<int, DatabaseEntryPointer> _lineID2DB = new Dictionary<int, DatabaseEntryPointer>();
+        private readonly List<DatabaseEntryPointer> _vacantDBEntries = new List<DatabaseEntryPointer>();
+        private uint _nextIndex;
+
+        public bool IsEmpty => this._lineID2DB.Count == 0;
+        public bool AnyChanges { get; private set; } = false;
+
+        public List<ChatLine> AllChatLines { get; } = new List<ChatLine>();
+
+        private readonly object _changesLock = new object();
+        private readonly HashSet<ChatLine> _changes = new HashSet<ChatLine>(); // HashSet to ensure uniqueness (could get multiple change notiffs for the same object which makes little sense to reflect)
+
+        // Method for handling old chat line data for the purposes of migration to the new system
+        public void MigrateWrite(string baseLocation, List<ChatLine> oldDB)
+        {
+            string db = baseLocation + ".vdb";
+            string hd = baseLocation + ".vdh";
+            using FileStream writerDB = File.OpenWrite(db);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter bw = new BinaryWriter(ms);
+            foreach (ChatLine cl in oldDB)
+            {
+                ms.Seek(0, SeekOrigin.Begin);
+                DataElement de = cl.Serialize();
+                de.Write(bw);
+                byte[] arr = ms.GetBuffer();
+                ulong actuallyWritten = (ulong)ms.Position; // Here will be the amount of bytes that have been written
+                DatabaseEntryPointer ndbe = new DatabaseEntryPointer()
+                {
+                    dbIndex = this._nextIndex++,
+                    chatLineIndex = cl.Index,
+                    offset = (ulong)writerDB.Position,
+                    length = actuallyWritten
+                };
+
+                writerDB.Seek(0, SeekOrigin.End);
+                writerDB.Write(arr, 0, (int)actuallyWritten);
+                this._lineID2DB[cl.Index] = ndbe;
+                this.AllChatLines.Add(cl);
+            }
+
+            this.WriteDBHeader(hd);
+        }
+
+        // This is, strictly speaking, not thread safe.
+        // Changes can be made to the ChatLine object in the middle of being written, which is bad
+        // However, it is up to the server to ensure that doesn't happen (locks further up the pipeline)
+        public void NotifyOfChange(ChatLine line)
+        {
+            lock (this._changesLock)
+            {
+                this._changes.Add(line);
+                this.AnyChanges = true;
+            }
+        }
+
+        private unsafe void WriteDBHeader(string hd)
+        {
+            using FileStream writerHD = File.OpenWrite(hd);
+            // Header
+            writerHD.WriteByte((byte)'V');
+            writerHD.WriteByte((byte)'T');
+            writerHD.WriteByte((byte)'D');
+            writerHD.WriteByte((byte)'H');
+
+            writerHD.WriteByte(0); // Version
+
+            // Reserved
+            Span<byte> reservedData = stackalloc byte[7];
+            writerHD.Write(reservedData);
+
+            IEnumerable<DatabaseEntryPointer> allDBEntries = Enumerable.Concat(this._lineID2DB.Values, this._vacantDBEntries).OrderBy(x => x.dbIndex);
+            Span<byte> dataSpan = stackalloc byte[sizeof(DatabaseEntryPointer)];
+            fixed (byte* dataPtr = dataSpan)
+            {
+                foreach (DatabaseEntryPointer dbeptr in allDBEntries)
+                {
+                    Marshal.StructureToPtr(dbeptr, (IntPtr)dataPtr, false);
+                    writerHD.Write(dataSpan);
+                }
+            }
+        }
+
+        public unsafe void Write(string baseLocation)
+        {
+            this.Defragment(); // Defrag before writes
+            string db = baseLocation + ".vdb";
+            string hd = baseLocation + ".vdh";
+            using FileStream writerDB = File.OpenWrite(db);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter bw = new BinaryWriter(ms);
+            bool anyHeaderChangesMade = false;
+            const ulong FragmentationThreshold = 84;
+
+            bool TryOccupyVacant(ChatLine cl, byte[] arr, ulong written, DatabaseEntryPointer? oldPtr, out bool dataFragmented)
+            {
+                dataFragmented = false;
+                int idx = this._vacantDBEntries.FindIndex(x => x.length >= written);
+                if (idx != -1) // Have a vacant fragment, we will simply occupy it
+                {
+                    anyHeaderChangesMade = true;
+                    DatabaseEntryPointer vacant = this._vacantDBEntries[idx];
+                    vacant.chatLineIndex = cl.Index;
+                    writerDB.Seek((long)vacant.offset, SeekOrigin.Begin);
+                    writerDB.Write(arr, 0, (int)written);
+
+                    // Do not forget to vacate the old pointer!
+                    if (oldPtr.HasValue)
+                    {
+                        DatabaseEntryPointer dbeptr = oldPtr.Value;
+                        dbeptr.chatLineIndex = -1;
+                        this._vacantDBEntries.Add(dbeptr); // Now vacant
+                    }
+
+                    this._lineID2DB[cl.Index] = vacant;
+                    this._vacantDBEntries.RemoveAt(idx);
+
+                    // We do need to perform some additional cleaning here - vacancy has changed, but we may fragment the data more as a result!
+                    if (vacant.length > written)
+                    {
+                        ulong leftovers = vacant.length - written;
+                        if (leftovers >= FragmentationThreshold) // Arbitrary, don't want to fragment our data too much, but want to fragment it just enough
+                        {
+                            DatabaseEntryPointer newVacant = new DatabaseEntryPointer()
+                            {
+                                dbIndex = this._nextIndex++,
+                                chatLineIndex = -1,
+                                offset = vacant.offset + written,
+                                length = leftovers
+                            };
+
+                            this._vacantDBEntries.Add(newVacant);
+                            vacant.length = written;
+                            dataFragmented = true;
+                        }
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            lock (this._changesLock)
+            {
+                foreach (ChatLine cl in this._changes)
+                {
+                    ms.Seek(0, SeekOrigin.Begin);
+                    DataElement de = cl.Serialize();
+                    de.Write(bw);
+                    byte[] arr = ms.GetBuffer();
+                    ulong actuallyWritten = (ulong)ms.Position; // Here will be the amount of bytes that have been written
+
+                    // First see if we have a corresponding entry. If we do NOT, then we need to create one
+                    if (!this._lineID2DB.TryGetValue(cl.Index, out DatabaseEntryPointer dbeptr))
+                    {
+                        // First see if we have a matching vacant. If there is one, it will get occupied
+                        if (!TryOccupyVacant(cl, arr, actuallyWritten, null, out _))
+                        {
+                            // If we are here, then we need to create a new entry. We create it with a fixed size that equals
+                            // Our array's, because it is most likely that we will not override this data further.
+                            anyHeaderChangesMade = true;
+                            dbeptr = new DatabaseEntryPointer()
+                            {
+                                dbIndex = this._nextIndex++,
+                                chatLineIndex = cl.Index,
+                                offset = (ulong)writerDB.Length, // Appended at the end of the DB
+                                length = actuallyWritten // Length == array length atp
+                            };
+
+                            writerDB.Seek(0, SeekOrigin.End);
+                            writerDB.Write(arr, 0, (int)actuallyWritten);
+                            this._lineID2DB[cl.Index] = dbeptr;
+                        }
+                    }
+                    else
+                    {
+                        // If we are here, then our entry exists. First see if we can simply override the existing one.
+                        if (dbeptr.length >= actuallyWritten)
+                        {
+                            // Simply override old data
+                            writerDB.Seek((long)dbeptr.offset, SeekOrigin.Begin);
+                            writerDB.Write(arr, 0, (int)actuallyWritten);
+                            // A case can be made here for fragmentation, but we assume that if we are overriding existing data,
+                            // Then our data is prone to being changed, and, thus, will remain in place.
+                        }
+                        else
+                        {
+                            // If we are here, then the amount of data we are writing is greater than the amount of data we have available.
+                            // First handle a special case - if we have a vacant next to our current entry - we will defragment it if we do
+                            ulong extraNeeded = actuallyWritten - dbeptr.length;
+                            int idx = this._vacantDBEntries.FindIndex(x => x.offset == dbeptr.offset + dbeptr.length && x.length >= extraNeeded);
+                            if (idx != -1)
+                            {
+                                // We can simply bite a chunk of an existing vacant off here.
+                                anyHeaderChangesMade = true;
+                                DatabaseEntryPointer vacant = this._vacantDBEntries[idx];
+                                if (vacant.length - extraNeeded < FragmentationThreshold) // Arbitrary fragmentation threshold
+                                {
+                                    // If we are here, then we should simply join up the vacant with the current entry - too little space would be left otherwie
+                                    dbeptr.length += vacant.length;
+                                    this._lineID2DB[cl.Index] = dbeptr;
+                                    this._vacantDBEntries.RemoveAt(idx);
+                                    writerDB.Seek((long)dbeptr.offset, SeekOrigin.Begin);
+                                    writerDB.Write(arr, 0, (int)actuallyWritten);
+                                }
+                                else // We would still have a decent chunk of fragmented data leftover. Here we should fragment the data further
+                                {
+                                    dbeptr.length += extraNeeded;
+                                    vacant.length -= extraNeeded;
+                                    vacant.offset += extraNeeded;
+                                    this._lineID2DB[cl.Index] = dbeptr;
+                                    this._vacantDBEntries[idx] = vacant;
+                                    writerDB.Seek((long)dbeptr.offset, SeekOrigin.Begin);
+                                    writerDB.Write(arr, 0, (int)actuallyWritten);
+                                }
+                            }
+                            else // If we are here, then we can't join our data with an existing fragment.
+                            {
+                                // First see if we have a matching vacant. If there is one, it will get occupied
+                                if (!TryOccupyVacant(cl, arr, actuallyWritten, dbeptr, out _))
+                                {
+                                    // If we are here, then not only do we not have the capacity for our current data, we don't have any matching vacants either!
+                                    // We will create a new entry pointer
+                                    anyHeaderChangesMade = true;
+                                    DatabaseEntryPointer ndbeptr = new DatabaseEntryPointer()
+                                    {
+                                        dbIndex = this._nextIndex++,
+                                        chatLineIndex = cl.Index,
+                                        offset = (ulong)writerDB.Length, // Appended at the end of the DB
+                                        length = actuallyWritten // Length == array length atp
+                                    };
+
+                                    // Write to it
+                                    writerDB.Seek(0, SeekOrigin.End);
+                                    writerDB.Write(arr, 0, (int)actuallyWritten);
+
+                                    // Reallocate old pointer
+                                    this._lineID2DB[cl.Index] = ndbeptr;
+
+                                    // And mark the old one as vacant
+                                    dbeptr.chatLineIndex = -1;
+                                    this._vacantDBEntries.Add(dbeptr);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                this._changes.Clear();
+                this.AnyChanges = false;
+            }
+        
+            if (anyHeaderChangesMade)
+            {
+                this.WriteDBHeader(hd);
+            }
+        }
+
+        public void Defragment()
+        {
+            List<(ulong, ulong, uint)> defragSections = new List<(ulong, ulong, uint)>();
+            foreach (DatabaseEntryPointer vacants in this._vacantDBEntries)
+            {
+                int idx = defragSections.FindIndex(x => x.Item2 == vacants.offset + vacants.length);
+                if (idx != -1)
+                {
+                    defragSections[idx] = (defragSections[idx].Item1, vacants.offset + vacants.length, defragSections[idx].Item3); // Expand fragment
+                }
+                else
+                {
+                    defragSections.Add((vacants.offset, vacants.offset + vacants.length, vacants.dbIndex));
+                }
+            }
+
+            this._vacantDBEntries.Clear();
+            foreach ((ulong, ulong, uint) fragment in defragSections)
+            {
+                this._vacantDBEntries.Add(new DatabaseEntryPointer()
+                {
+                    dbIndex = fragment.Item3,
+                    chatLineIndex = -1,
+                    offset = fragment.Item1,
+                    length = fragment.Item2 - fragment.Item1
+                });
+            }
+        }
+
+        public unsafe bool Read(string baseLocation)
+        {
+            string db = baseLocation + ".vdb";
+            string hd = baseLocation + ".vdh";
+            if (File.Exists(hd) && File.Exists(db))
+            {
+                using FileStream fs = File.OpenRead(hd);
+                using BinaryReader br = new BinaryReader(fs);
+                byte[] fundamentalHeaderData = br.ReadBytes(12);
+                // Header info:
+                // 0-4: Header - VTDH (4 bytes ANSI)
+                // 5-5: Version - 0 (1 byte)
+                // 6-11: Reserved
+
+                if (fundamentalHeaderData[0] != 'V' || fundamentalHeaderData[1] != 'T' || fundamentalHeaderData[2] != 'D' || fundamentalHeaderData[3] != 'H')
+                {
+                    return false; // Bad header
+                }
+
+                if (fundamentalHeaderData[4] != 0)
+                {
+                    return false; // Unsupported version
+                }
+
+                Span<byte> localDataSpan = stackalloc byte[sizeof(DatabaseEntryPointer)];
+                fixed (byte* data = localDataSpan)
+                {
+                    while (br.Read(localDataSpan) > 0)
+                    {
+                        DatabaseEntryPointer entry = Marshal.PtrToStructure<DatabaseEntryPointer>((IntPtr)data);
+                        if (entry.chatLineIndex == -1)
+                        {
+                            this._vacantDBEntries.Add(entry);
+                        }
+                        else
+                        {
+                            this._lineID2DB[entry.chatLineIndex] = entry;
+                        }
+
+                        this._nextIndex = Math.Max(this._nextIndex, entry.dbIndex);
+                    }
+
+                    this._nextIndex += 1;
+                }
+
+                using FileStream dbfs = File.OpenRead(db);
+                using BinaryReader dbbr = new BinaryReader(dbfs);
+                // Header information loaded, now load the chat lines themselves
+                foreach (KeyValuePair<int, DatabaseEntryPointer> dbEntry in this._lineID2DB.OrderBy(x => x.Key))
+                {
+                    dbfs.Seek((long)dbEntry.Value.offset, SeekOrigin.Begin);
+                    ChatLine cl = new ChatLine();
+                    cl.Index = dbEntry.Value.chatLineIndex;
+                    cl.Deserialize(new DataElement(dbbr));
+                    this.AllChatLines.Add(cl);
+                }
+
+                return true;
+            }
+
+            return false;
         }
     }
 }

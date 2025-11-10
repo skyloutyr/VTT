@@ -112,14 +112,13 @@
                 sc.ClientMapID = m.ID;
                 sc.SaveClientData();
                 server.Logger.Log(LogLevel.Debug, "Client map changed to " + m.ID);
-
-                if (server.ServerChat.Count > 0)
+                if (server.ServerChat.AllChatLines.Count > 0)
                 {
-                    int chatIndex = server.ServerChat.Count - 1;
+                    int chatIndex = server.ServerChat.AllChatLines.Count - 1;
                     int c = 0;
                     while (c < 24 && chatIndex >= 0)
                     {
-                        ChatLine cl = server.ServerChat[chatIndex--];
+                        ChatLine cl = server.ServerChat.AllChatLines[chatIndex--]; // No need for a lock since we are iterating from the end
                         if (sc.IsAdmin || cl.SenderID.Equals(sc.ID) || cl.DestID.Equals(sc.ID) || cl.DestID.Equals(Guid.Empty))
                         {
                             PacketChatLine pcl = new PacketChatLine() { Line = cl };

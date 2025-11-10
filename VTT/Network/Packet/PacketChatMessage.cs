@@ -25,11 +25,11 @@
                 lock (server.chatLock)
                 {
                     cl = ChatParser.Parse(this.Message, this.Sender.Color, this.Sender.Name);
-                    cl.Index = server.ServerChat.Count;
+                    cl.Index = server.ServerChat.AllChatLines.Count;
                     cl.SenderID = this.Sender.ID;
                     cl.SendTime = DateTime.Now;
-                    server.AppendedChat.Enqueue(cl);
-                    server.ServerChat.Add(cl);
+                    server.ServerChat.AllChatLines.Add(cl);
+                    server.ServerChat.NotifyOfChange(cl);
                 }
 
 

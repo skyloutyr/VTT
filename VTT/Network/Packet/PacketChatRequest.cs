@@ -20,8 +20,8 @@
                     while (c < 24 && chatIndex > 0)
                     {
                         ++c;
-                        ChatLine cl = server.ServerChat[--chatIndex];
-                        if (this.Sender.IsAdmin || this.Sender.ID.Equals(cl.SenderID) || this.Sender.ID.Equals(cl.DestID) || cl.DestID.Equals(Guid.Empty))
+                        ChatLine cl = server.ServerChat.AllChatLines[--chatIndex]; // This iterates from the end, no need for a lock
+                        if (this.Sender.IsAdmin || !cl.Flags.HasFlag(ChatLine.ChatLineFlags.Deleted) || this.Sender.ID.Equals(cl.SenderID) || this.Sender.ID.Equals(cl.DestID) || cl.DestID.Equals(Guid.Empty))
                         {
                             PacketChatLine pcl = new PacketChatLine() { Line = cl };
                             pcl.Send(this.Sender);

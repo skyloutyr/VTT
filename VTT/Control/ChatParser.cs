@@ -189,6 +189,9 @@
             }
         }
 
+        private static readonly Regex Base64CheckerRegex = new Regex(@"(?:[A-Z]|[a-z]|[0-9]|[+\/=])+", RegexOptions.Compiled);
+        private static readonly Regex Base64FmtRemover = new Regex(@"(data:image\/(?:(?:jpeg)|(?:jpg)|(?:png)|(?:bmp)|(?:gif)|(?:pbm)|(?:tiff)|(?:tga)|(?:webp)|(?:qoi))+;base64,)+", RegexOptions.Compiled);
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Assignment happens when breaking out of a while(1) loop, value unused outside of loop for now, may be useful later. Assignment to a _ is syntax sugar anyway (or if an impl chooses to noop the assignment instead then the JIT should be able to NOOP these too)")]
         public static bool ParseBlock(string text, Color userColor, ref ColorAbgr color, ref Color descColor, ref string tooltip, ref int idx, ref string username, ref string destname, ref Guid destID, ref Guid portraitID, ref ChatLine.RenderType renderType, out ChatBlock cb)
         {
@@ -584,13 +587,41 @@
                 case BlockMode.InlineImage:
                 {
                     string t = sb.ToString();
-                    if (Guid.TryParse(t, out _)) // Try parse just to check that we have a valid GUID passed here
+                    if (t.StartsWith("data:image/"))
+                    {
+                        Match m = Base64FmtRemover.Match(t);
+                        if (m.Success)
+                        {
+                            try
+                            {
+                                t = t.Substring(m.Index + m.Length);
+                            }
+                            catch
+                            {
+                                cb = null;
+                                return false;
+                            }
+                        }
+                    }
+
+                    bool isAssetRef = t.Length is >= 36 and <= 38 && Guid.TryParse(t, out _);
+                    bool isB64 = t.Length >= 89 && Base64CheckerRegex.IsMatch(t[..38]);
+                    bool isUrl = t.Length <= 2083 && !isAssetRef && !isB64 && Uri.IsWellFormedUriString(t, UriKind.Absolute);
+
+                    if (isAssetRef)
                     {
                         cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
                         return true;
                     }
 
-                    if (!Uri.TryCreate(t, UriKind.Absolute, out Uri result))
+                    const int MaxAllowedB64ImageSize = 22369622; // ~16mb
+                    if (isB64 && t.Length <= MaxAllowedB64ImageSize)
+                    {
+                        cb = new ChatBlock() { Color = color, Text = t, Tooltip = tooltip, Type = ChatBlockType.Image, RollContents = ChatBlockExpressionRollContents.None };
+                        return true;
+                    }
+
+                    if (!isUrl || !Uri.TryCreate(t, UriKind.Absolute, out Uri result))
                     {
                         cb = null;
                         return true;

@@ -24,15 +24,10 @@
             if (owner.Type == ChatBlockType.Image)
             {
                 this.IsExpression = false;
-                bool isAssetRef = Guid.TryParse(this.Owner.Text, out Guid imgAssetId);
-                AssetPreview ap = null;
-                Asset a = null;
-                AssetStatus imgStatus = this.ImgStatusOnConstruct = isAssetRef
-                    ? Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(imgAssetId, AssetType.Texture, out a) 
-                    : Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(this.Owner.Text, AssetType.Texture, out ap);
+                AssetStatus imgStatus = this.ImgStatusOnConstruct = ChatRendererBase.ResolveImageBlock(this.Owner.Text, out ChatRendererBase.ImageBlockImageType imgType, out Asset a, out AssetPreview ap);
                 if (imgStatus == AssetStatus.Return)
                 {
-                    if (isAssetRef)
+                    if (imgType == ChatRendererBase.ImageBlockImageType.AssetRef)
                     {
                         if (a.Type == AssetType.Texture && a.Texture != null)
                         {

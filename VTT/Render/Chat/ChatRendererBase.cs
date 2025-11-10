@@ -7,6 +7,7 @@
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Text.RegularExpressions;
+    using VTT.Asset;
     using VTT.Control;
     using VTT.Network;
     using VTT.Util;
@@ -36,6 +37,43 @@
                 ChatDiceColorMode.SenderColor => senderColor,
                 ChatDiceColorMode.OwnColor => Client.Instance.Settings.Color.ArgbToAbgr(),
                 _ => diceSetColor
+            };
+        }
+
+        public enum ImageBlockImageType
+        {
+            AssetRef,
+            URL,
+            EmbeddedBase64,
+            Invalid
+        }
+
+        private static readonly Regex Base64CheckerRegex = new Regex(@"(?:[A-Z]|[a-z]|[0-9]|[+\/=])+", RegexOptions.Compiled);
+        public static AssetStatus ResolveImageBlock(string reference, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap)
+        {
+            Guid imgAssetId = Guid.Empty;
+
+            // While we don't explicitly support registry formatted GUIDs, they are supported implicitly, so we check for length here to not break backwards compat
+            bool isAssetRef = reference.Length is >= 36 and <= 38 && Guid.TryParse(reference, out imgAssetId);
+            // Here we don't bother with base64 encoding that is too small in length (smallest possible valid png file is 67 bytes), and we check the first 38 characters for b64 encoding just in case
+            bool isB64 = reference.Length >= 89 && Base64CheckerRegex.IsMatch(reference[..38]);
+            // URL checking is more costly, so only do so if we fail all other checks. Limited to a common 2083 length limit (IE/Edge/Chromium).
+            bool isUrl = reference.Length <= 2083 && !isAssetRef && !isB64 && Uri.IsWellFormedUriString(reference, UriKind.Absolute);
+            imgType = 
+                isB64 ? ImageBlockImageType.EmbeddedBase64 :
+                isAssetRef ? ImageBlockImageType.AssetRef :
+                isUrl ? ImageBlockImageType.URL :
+                ImageBlockImageType.Invalid;
+
+            ap = null;
+            a = null;
+
+            return imgType switch 
+            {
+                ImageBlockImageType.AssetRef => Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(imgAssetId, AssetType.Texture, out a),
+                ImageBlockImageType.URL => Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(reference, AssetType.Texture, out ap),
+                ImageBlockImageType.EmbeddedBase64 => Client.Instance.AssetManager.ClientAssetLibrary.Base64Pictures.Get(reference, AssetType.Texture, out ap),
+                _ => AssetStatus.Error
             };
         }
 

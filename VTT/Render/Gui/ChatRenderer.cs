@@ -50,7 +50,7 @@
                     this._needsRefocusChat = false;
                 }
 
-                bool b = ImGui.InputTextMultiline("##ChatInput", ref inputCopy, ushort.MaxValue, new Vector2(cSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
+                bool b = ImGuiHelper.InputTextMultilinePreallocated("ChatInputBufferID", "##ChatInput", ref inputCopy, 22369622 + ushort.MaxValue, new Vector2(cSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
                 {
                     if (data != null) // null ptr check
                     {

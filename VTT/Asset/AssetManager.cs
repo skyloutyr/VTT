@@ -18,6 +18,7 @@
     using VTT.GL.Bindings;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Sound.Bindings;
     using VTT.Util;
 
     public class AssetManager
@@ -242,6 +243,7 @@
         public AssetLibrary<Guid, AssetPreview> Previews { get; }
         public AssetLibrary<Guid, AssetPreview> Portraits { get; }
         public AssetLibrary<string, AssetPreview> WebPictures { get; }
+        public AssetLibrary<string, AssetPreview> Base64Pictures { get; }
 
         public int GlMaxTextureSize { get; set; }
 
@@ -273,6 +275,13 @@
             {
                 RequestGenerator = this.RequestWebImage,
                 DataParser = this.ReceiveWebImage,
+                ValueCleaner = this.ClearWebImage
+            };
+
+            this.Base64Pictures = new AssetLibrary<string, AssetPreview>()
+            {
+                RequestGenerator = this.RequestBase64Image,
+                DataParser = this.ReceiveBase64Image,
                 ValueCleaner = this.ClearWebImage
             };
         }
@@ -526,7 +535,7 @@
             }
         }
 
-        private AssetStatus ReceiveWebImage(string id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out AssetPreview preview)
+        private AssetStatus RegisterImage(string id, AssetResponseType response, byte[] bin, AssetLibrary<string, AssetPreview> lib, out AssetPreview preview)
         {
             if (response == AssetResponseType.Ok)
             {
@@ -555,7 +564,7 @@
                                     if (hM > this.GlMaxTextureSize)
                                     {
                                         img.Dispose();
-                                        Client.Instance.DoTask(() => this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null));
+                                        Client.Instance.DoTask(() => lib.DangerousSetStatusAndData(id, AssetStatus.Error, null));
                                         return;
                                     }
                                 }
@@ -620,8 +629,8 @@
                     {
                         if (erroredOut)
                         {
-                            this.WebPictures.EraseRecord(id);
-                            this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Error, null);
+                            lib.EraseRecord(id);
+                            lib.DangerousSetStatusAndData(id, AssetStatus.Error, null);
                         }
                         else
                         {
@@ -652,8 +661,8 @@
                                 prev.FramesTotalDelay = frames.Sum(f => f.Duration);
                             }
 
-                            this.WebPictures.EraseRecord(id);
-                            this.WebPictures.DangerousSetStatusAndData(id, AssetStatus.Return, prev);
+                            lib.EraseRecord(id);
+                            lib.DangerousSetStatusAndData(id, AssetStatus.Return, prev);
                         }
                     });
                 });
@@ -668,7 +677,27 @@
             }
         }
 
+        private AssetStatus ReceiveWebImage(string id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out AssetPreview preview) => RegisterImage(id, response, bin, this.WebPictures, out preview);
+
         private void ClearWebImage(string id, AssetPreview preview) => preview.Free();
+        #endregion
+
+        #region Base64 Handling
+        private void RequestBase64Image(string id, AssetType type)
+        {
+            if (type == AssetType.Texture)
+            {
+                byte[] data = Convert.FromBase64String(id);
+                this.Base64Pictures.Receive(id, AssetType.Texture, AssetResponseType.Ok, Convert.FromBase64String(id), null);
+            }
+            else
+            {
+                this.Base64Pictures.Receive(id, AssetType.Texture, AssetResponseType.InternalError, Array.Empty<byte>(), null);
+            }
+        }
+
+        private AssetStatus ReceiveBase64Image(string id, AssetType type, AssetResponseType response, byte[] bin, AssetMetadata meta, out AssetPreview preview) => RegisterImage(id, response, bin, this.Base64Pictures, out preview);
+
         #endregion
 
         public void Clear()
@@ -676,6 +705,7 @@
             this.ClearAssets();
             this.Previews.Clear();
             this.WebPictures.Clear();
+            this.Base64Pictures.Clear();
             Client.Instance.Frontend.Sound?.ClearAssets();
             ParticleSystem.ImageEmissionLocations.Clear();
         }
@@ -692,6 +722,7 @@
             this.Assets.Pulse();
             this.Previews.Pulse();
             this.WebPictures.Pulse();
+            this.Base64Pictures.Pulse();
         }
     }
 

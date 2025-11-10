@@ -202,22 +202,16 @@
                         if (icw.Owner.Type == ChatBlockType.Image)
                         {
                             bool needGammaCorrection = false;
-                            Asset a = null;
-                            AssetPreview ap = null;
-                            bool isAssetRef = Guid.TryParse(icw.Owner.Text, out Guid assetId);
-                            AssetStatus imgStatus = isAssetRef 
-                                ? Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(assetId, AssetType.Texture, out a) 
-                                : Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(icw.Owner.Text, AssetType.Texture, out ap);
-
+                            AssetStatus imgStatus = ResolveImageBlock(icw.Owner.Text, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap);
                             bool haveTextureReadyHere = false;
-                            if (isAssetRef && a != null && a.Texture != null && a.Texture.glReady)
+                            if (imgType == ImageBlockImageType.AssetRef && a != null && a.Texture != null && a.Texture.glReady)
                             {
                                 Texture t = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
                                 haveTextureReadyHere = t.IsAsyncReady;
                             }
 
                             // Check for non return or the flags in case of us simply lagging behind 1 frame
-                            if (imgStatus != icw.ImgStatusOnConstruct && (imgStatus != AssetStatus.Return || (isAssetRef ? haveTextureReadyHere : ap != null && ap.GLTex != null && ap.GLTex.IsAsyncReady)))
+                            if (imgStatus != icw.ImgStatusOnConstruct && (imgStatus != AssetStatus.Return || (imgType == ImageBlockImageType.AssetRef ? haveTextureReadyHere : ap != null && ap.GLTex != null && ap.GLTex.IsAsyncReady)))
                             {
                                 // If we are here some result has arrived to us from the web. Must invalidate cache. This frame just dummy and flag for cache invalidation
                                 ImGui.Dummy(new Vector2(24, 24));
@@ -233,14 +227,14 @@
                                 {
                                     case AssetStatus.Return:
                                     {
-                                        if (isAssetRef 
+                                        if (imgType == ImageBlockImageType.AssetRef 
                                             ? a == null || a.Texture == null || !a.Texture.glReady
                                             : ap == null || ap.GLTex == null || !ap.GLTex.IsAsyncReady) // Impossible but sanity check in case of race condidion
                                         {
                                             goto case AssetStatus.Await; 
                                         }
 
-                                        if (isAssetRef)
+                                        if (imgType == ImageBlockImageType.AssetRef)
                                         {
                                             Texture t = a.Texture.GetOrCreateGLTexture(false,true, out VTT.Asset.Glb.TextureAnimation animationData);
                                             imgTexture = t;

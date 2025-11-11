@@ -1,10 +1,11 @@
 ﻿namespace VTT.Sound.Bindings
 {
     using System.Runtime.InteropServices;
+    using VTT.Util;
 
     public static unsafe class ALLoader
     {
-        const string Lib = "OpenAL32";
+        const string Lib = InterlopHelper.OpenALLibName;
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void alGenBuffers(int n, uint* buffers);

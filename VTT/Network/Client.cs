@@ -102,6 +102,7 @@
             Localisation.GatherAll();
             this.Lang = Localisation.SwitchLanguage(this.Settings.Language);
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(ShaderNodeTemplate).TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(InterlopHelper).TypeHandle);
             this.Frontend = new ClientWindow();
         }
 

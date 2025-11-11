@@ -3,29 +3,11 @@
     using System;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using VTT.Util;
 
     public static unsafe class GLFWLoader
     {
-        const string Lib = "glfw";
-        static GLFWLoader() => NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), GLFWLibResolver);
-
-        private static IntPtr GLFWLibResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            return string.Equals(libraryName, Lib) ?
-                NativeLibrary.Load(Environment.OSVersion.Platform switch
-                {
-                    PlatformID.Win32NT => "glfw3",
-                    PlatformID.Win32S => "glfw3",
-                    PlatformID.Win32Windows => "glfw3",
-                    PlatformID.WinCE => "glfw3",
-                    PlatformID.Unix => "libglfw.so.3",
-                    PlatformID.MacOSX => "libglfw.3.dylib",
-                    _ => "libglfw"
-
-                }, assembly, searchPath) :
-                IntPtr.Zero;
-        }
-
+        const string Lib = InterlopHelper.GLFWLibName;
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int glfwInit();

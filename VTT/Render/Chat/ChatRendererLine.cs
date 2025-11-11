@@ -7,6 +7,7 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
     using System.Text;
     using VTT.Asset;
     using VTT.Control;
@@ -307,9 +308,7 @@
                                     }
                                 }
 
-                                imgSize.X = MathF.Min(320, imgSize.X);
-                                imgSize.Y = MathF.Min(320, imgSize.Y);
-
+                                (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 320, 320);
                                 if (needGammaCorrection)
                                 {
                                     ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(1));

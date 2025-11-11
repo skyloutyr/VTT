@@ -2,9 +2,11 @@
 {
     using System;
     using System.Numerics;
+    using System.Security.Cryptography;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;
+    using VTT.Util;
 
     public readonly struct ImCachedWord
     {
@@ -43,13 +45,11 @@
                                         hMax = Math.Max(wMax, (int)(frame.Location.Height * tex.Size.Height));
                                     }
 
-                                    this.Width = MathF.Min(320, wMax);
-                                    this.Height = MathF.Min(320, hMax);
+                                    (this.Width, this.Height) = VTTMath.ClampKeepAR(wMax, hMax, 320, 320);
                                 }
                                 else
                                 {
-                                    this.Width = MathF.Min(320, tex.Size.Width);
-                                    this.Height = MathF.Min(320, tex.Size.Height);
+                                    (this.Width, this.Height) = VTTMath.ClampKeepAR(tex.Size.Width, tex.Size.Height, 320, 320);
                                 }
                             }
                             else
@@ -78,13 +78,11 @@
                                     hMax = Math.Max(hMax, frame.Height);
                                 }
 
-                                this.Width = MathF.Min(320, wMax);
-                                this.Height = MathF.Min(320, hMax);
+                                (this.Width, this.Height) = VTTMath.ClampKeepAR(wMax, hMax, 320, 320);
                             }
                             else
                             {
-                                this.Width = MathF.Min(320, ap.GLTex.Size.Width);
-                                this.Height = MathF.Min(320, ap.GLTex.Size.Height);
+                                (this.Width, this.Height) = VTTMath.ClampKeepAR(ap.GLTex.Size.Width, ap.GLTex.Size.Height, 320, 320);
                             }
                         }
                         else

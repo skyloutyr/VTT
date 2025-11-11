@@ -50,5 +50,49 @@
         }
 
         public static bool CompareFloat(float f, float to, float epsilon = 1e-5f) => MathF.Abs(f - to) <= epsilon;
+
+        public static (float, float) ClampKeepAR(float w, float h, float mw, float mh)
+        {
+            if (w <= mw && h <= mh)
+            {
+                return (w, h);
+            }
+
+            float ar = w / h;
+            // Three cases to look at
+            // One - both are larger than maximum allowed.
+            if (w > mw && h > mh)
+            {
+                // Find the maximum delta, treat that side
+                float dx = w - mw;
+                float dy = h - mh;
+                if (dx > dy)
+                {
+                    w = mw;
+                    h = w / ar; // In this case w > h, so to preserve aspect h = w / ar (ar > 1)
+                    return (w, h);
+                }
+                else
+                {
+                    h = mh;
+                    w = h * ar; // In this case h >= w, so to preserve aspect w = h * ar (ar <= 1)
+                    return (w, h);
+                }
+            }
+
+            // Two - width is greater, but height isn't
+            if (w > mw)
+            {
+                w = mw;
+                h = w / ar; // In this case w > h, so to preserve aspect h = w / ar (ar > 1)
+                return (w, h);
+            }
+            else // Three - height is greater, but width isn't
+            {
+                h = mh;
+                w = h * ar; // In this case h >= w, so to preserve aspect w = h * ar (ar <= 1)
+                return (w, h);
+            }
+        }
     }
 }

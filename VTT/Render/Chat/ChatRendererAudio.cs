@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Numerics;
+    using System.Threading;
     using VTT.Control;
     using VTT.Network;
     using VTT.Render.Gui;
@@ -15,8 +16,10 @@
     {
         private Guid _soundId = Guid.Empty;
         private SoundSourceContainer _directSound = null;
+        private static readonly object asyncAssetLoadingLock = new object();
         private static readonly Dictionary<string, ALSoundContainer> embedSoundBank = new Dictionary<string, ALSoundContainer>();
         private double _currentDirectSoundDuration = 0;
+        private bool _asyncLoadingAudio = false;
 
         public ChatRendererAudio(ChatLine container) : base(container)
         {
@@ -48,108 +51,142 @@
             ImGui.SetCursorPos(here + new Vector2(24, 8));
             if (ImGui.InvisibleButton("PlaySoundAssetOfLine_" + this.Container.Index, new Vector2(48, 20)))
             {
-                if (!isPlaying)
+                if (!this._asyncLoadingAudio)
                 {
-                    if (this.Container.TryGetBlockAt(0, out ChatBlock cb))
+                    if (!isPlaying)
                     {
-                        if (Guid.TryParse(cb.Text, out Guid assetID))
+                        if (this.Container.TryGetBlockAt(0, out ChatBlock cb))
                         {
-                            this._soundId = Client.Instance.Frontend.Sound.PlayAsset(assetID);
-                        }
-                        else
-                        {
-                            bool isB64 = cb.Text.Length >= 89 && Base64CheckerRegex.IsMatch(cb.Text[..38]);
-                            if (isB64)
+                            if (Guid.TryParse(cb.Text, out Guid assetID))
                             {
-                                if (!embedSoundBank.TryGetValue(cb.Text, out ALSoundContainer sc))
+                                this._soundId = Client.Instance.Frontend.Sound.PlayAsset(assetID);
+                            }
+                            else
+                            {
+                                bool isB64 = cb.Text.Length >= 89 && Base64CheckerRegex.IsMatch(cb.Text[..38]);
+                                if (isB64)
                                 {
-                                    // The problem here becomes that we need to identify MP3 vs WAV vs OGG sound files...
-                                    byte[] data = Convert.FromBase64String(cb.Text);
-                                    using MemoryStream ms = new MemoryStream(data);
-                                    bool isMp3 = WaveAudio.ValidateMPEGFrame(ms);
-                                    ms.Seek(0, SeekOrigin.Begin);
-                                    bool isOgg = WaveAudio.ValidateOGGHeader(ms);
-                                    ms.Seek(0, SeekOrigin.Begin);
-                                    bool isWav = WaveAudio.ValidateRIFFHeader(ms);
-                                    ms.Seek(0, SeekOrigin.Begin);
-                                    if (isMp3 || isOgg || isWav)
+                                    if (!embedSoundBank.TryGetValue(cb.Text, out ALSoundContainer sc))
                                     {
-                                        WaveAudio wa = null;
-                                        if (isWav)
+                                        // The problem here becomes that we need to identify MP3 vs WAV vs OGG sound files...
+                                        byte[] data = Convert.FromBase64String(cb.Text);
+                                        MemoryStream ms = new MemoryStream(data);
+                                        bool isMp3 = WaveAudio.ValidateMPEGFrame(ms);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        bool isOgg = WaveAudio.ValidateOGGHeader(ms);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        bool isWav = WaveAudio.ValidateRIFFHeader(ms);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        if (isMp3 || isOgg || isWav)
                                         {
-                                            wa = new WaveAudio();
-                                            wa.Load(ms);
-                                        }
-
-                                        if (isMp3)
-                                        {
-                                            using NLayer.MpegFile mpeg = new NLayer.MpegFile(ms);
-                                            wa = new WaveAudio(mpeg);
-                                        }
-
-                                        if (isOgg)
-                                        {
-                                            using NVorbis.VorbisReader vr = new NVorbis.VorbisReader(ms);
-                                            wa = new WaveAudio(vr);
-                                        }
-
-                                        if (wa != null)
-                                        {
-                                            // Yes, this calls a callback from a callback from a callback from a callback
-                                            // Yes, the above sentence is 100% correct
-                                            // Multithreading moment 
-                                            Client.Instance.Frontend.Sound.LoadSoundContainerAsync(embedSoundBank[cb.Text] = new ALSoundContainer(), wa, x =>
+                                            void LoadAudioAsset(object state)
                                             {
-                                                Client.Instance.Frontend.Sound.PlaySound(x, SoundCategory.Unknown, (con, obj) =>
+                                                WaveAudio wa = null;
+                                                if (isWav)
                                                 {
-                                                    this._directSound = obj;
-                                                    obj.TrackInfo = true;
-                                                    obj.StoppedCallback = x => Client.Instance.DoTask(() => this._directSound = null);
-                                                });
+                                                    wa = new WaveAudio();
+                                                    wa.Load(ms);
+                                                    ms.Dispose();
+                                                }
 
-                                                this._currentDirectSoundDuration = wa.Duration; // Safe here, don't care for multithreading nonsense and will always stay constant
-                                            });
+                                                if (isMp3)
+                                                {
+                                                    using NLayer.MpegFile mpeg = new NLayer.MpegFile(ms);
+                                                    wa = new WaveAudio(mpeg);
+                                                    ms.Dispose();
+                                                }
+
+                                                if (isOgg)
+                                                {
+                                                    using NVorbis.VorbisReader vr = new NVorbis.VorbisReader(ms);
+                                                    wa = new WaveAudio(vr);
+                                                    ms.Dispose();
+                                                }
+
+                                                bool wasAsync = this._asyncLoadingAudio;
+                                                this._asyncLoadingAudio = false;
+                                                if (wa != null)
+                                                {
+                                                    // Yes, this calls a callback from a callback from a callback from a callback
+                                                    // Yes, the above sentence is 100% correct
+                                                    // Multithreading moment 
+                                                    ALSoundContainer alsc;
+                                                    if (wasAsync)
+                                                    {
+                                                        lock (asyncAssetLoadingLock)
+                                                        {
+                                                            alsc = embedSoundBank[cb.Text] = new ALSoundContainer();
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        alsc = embedSoundBank[cb.Text] = new ALSoundContainer();
+                                                    }
+
+                                                    Client.Instance.Frontend.Sound.LoadSoundContainerAsync(alsc, wa, x =>
+                                                    {
+                                                        Client.Instance.Frontend.Sound.PlaySound(x, SoundCategory.Unknown, (con, obj) =>
+                                                        {
+                                                            this._directSound = obj;
+                                                            obj.TrackInfo = true;
+                                                            obj.StoppedCallback = x => Client.Instance.DoTask(() => this._directSound = null);
+                                                        });
+
+                                                        this._currentDirectSoundDuration = wa.Duration; // Safe here, don't care for multithreading nonsense and will always stay constant
+                                                    });
+                                                }
+                                            }
+
+                                            if (Client.Instance.Settings.AsyncAssetLoading)
+                                            {
+                                                this._asyncLoadingAudio = true;
+                                                ThreadPool.QueueUserWorkItem(LoadAudioAsset);
+                                            }
+                                            else
+                                            {
+                                                LoadAudioAsset(null);
+                                            }
                                         }
                                     }
-                                }
-                                else
-                                {
-                                    Client.Instance.Frontend.Sound.PlaySound(sc, SoundCategory.Unknown, (con, obj) =>
+                                    else
                                     {
-                                        this._directSound = obj;
-                                        obj.TrackInfo = true;
-                                        obj.StoppedCallback = x => Client.Instance.DoTask(() => this._directSound = null);
-                                    });
+                                        Client.Instance.Frontend.Sound.PlaySound(sc, SoundCategory.Unknown, (con, obj) =>
+                                        {
+                                            this._directSound = obj;
+                                            obj.TrackInfo = true;
+                                            obj.StoppedCallback = x => Client.Instance.DoTask(() => this._directSound = null);
+                                        });
 
-                                    this._currentDirectSoundDuration = sc.WaveData.Duration; // Safe here, don't care for multithreading nonsense and will always stay constant
+                                        this._currentDirectSoundDuration = sc.WaveData.Duration; // Safe here, don't care for multithreading nonsense and will always stay constant
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                else
-                {
-                    if (haveSoundAsset)
+                    else
                     {
-                        if (sound != null)
+                        if (haveSoundAsset)
                         {
-                            Client.Instance.Frontend.Sound.StopAsset(sound.AssetID);
-                            this._soundId = Guid.Empty;
+                            if (sound != null)
+                            {
+                                Client.Instance.Frontend.Sound.StopAsset(sound.AssetID);
+                                this._soundId = Guid.Empty;
+                            }
+                            else
+                            {
+                                this._soundId = Guid.Empty;
+                            }
                         }
                         else
                         {
+                            if (this._directSound != null)
+                            {
+                                Client.Instance.Frontend.Sound.StopBasicSound(this._directSound);
+                                this._directSound = null;
+                            }
+
                             this._soundId = Guid.Empty;
                         }
-                    }
-                    else
-                    {
-                        if (this._directSound != null)
-                        {
-                            Client.Instance.Frontend.Sound.StopBasicSound(this._directSound);
-                            this._directSound = null;
-                        }
-
-                        this._soundId = Guid.Empty;
                     }
                 }
             }
@@ -159,7 +196,17 @@
 
             ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             drawList.AddRectFilled(lHere, lHere + new Vector2(48, 20), ImGui.GetColorU32(active ? ImGuiCol.ButtonActive : hover ? ImGuiCol.ButtonHovered : ImGuiCol.Button), 20f);
-            drawList.AddImage(isPlaying ? uiRoot.PlayerStop : uiRoot.PlayIcon, lHere, lHere + new Vector2(20, 20));
+            if (this._asyncLoadingAudio)
+            {
+                int pbframe = (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * GuiRenderer.Instance.LoadingSpinnerFrames);
+                float pbtexelIndexStart = (float)pbframe / GuiRenderer.Instance.LoadingSpinnerFrames;
+                float pbtexelSize = 1f / GuiRenderer.Instance.LoadingSpinnerFrames;
+                drawList.AddImage(GuiRenderer.Instance.LoadingSpinner, lHere, lHere + new Vector2(20, 20), new Vector2(pbtexelIndexStart, 0), new Vector2(pbtexelIndexStart + pbtexelSize, 1));
+            }
+            else
+            {
+                drawList.AddImage(isPlaying ? uiRoot.PlayerStop : uiRoot.PlayIcon, lHere, lHere + new Vector2(20, 20));
+            }
 
             float fillVal = 0;
             double timeC = 0;

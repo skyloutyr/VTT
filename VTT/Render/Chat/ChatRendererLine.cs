@@ -308,16 +308,39 @@
                                     }
                                 }
 
-                                (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 320, 320);
+                                float originalSzX = imgSize.X;
+                                float originalSzY = imgSize.Y;
+                                (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 320, 320, out bool originalSizeChanged);
                                 if (needGammaCorrection)
                                 {
                                     ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(1));
                                 }
 
+                                Vector2 cPosBeforeImage = ImGui.GetCursorScreenPos();
                                 ImGui.Image(imgTexture, imgSize, imgSt, imgUv);
                                 if (needGammaCorrection)
                                 {
                                     ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(0));
+                                }
+
+                                if (originalSizeChanged && ImGui.IsMouseHoveringRect(cPosBeforeImage, cPosBeforeImage + imgSize) && !Client.Instance.Frontend.GameHandle.IsAnyAltDown())
+                                {
+                                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+                                    ImGuiHelper.BeginTooltipEx(ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration);
+                                    if (needGammaCorrection)
+                                    {
+                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(1));
+                                    }
+
+                                    (originalSzX, originalSzY) = VTTMath.ClampKeepAR(originalSzX, originalSzY, Client.Instance.Frontend.Width, Client.Instance.Frontend.Height, out _);
+                                    ImGui.Image(imgTexture, new Vector2(originalSzX, originalSzY), imgSt, imgUv);
+                                    if (needGammaCorrection)
+                                    {
+                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(GammaSetterCallback), new IntPtr(0));
+                                    }
+
+                                    ImGui.EndTooltip();
+                                    ImGui.PopStyleVar();
                                 }
                             }
                         }

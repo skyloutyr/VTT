@@ -51,10 +51,11 @@
 
         public static bool CompareFloat(float f, float to, float epsilon = 1e-5f) => MathF.Abs(f - to) <= epsilon;
 
-        public static (float, float) ClampKeepAR(float w, float h, float mw, float mh)
+        public static (float, float) ClampKeepAR(float w, float h, float mw, float mh, out bool sizeChanged)
         {
             if (w <= mw && h <= mh)
             {
+                sizeChanged = false;
                 return (w, h);
             }
 
@@ -70,12 +71,14 @@
                 {
                     w = mw;
                     h = w / ar; // In this case w > h, so to preserve aspect h = w / ar (ar > 1)
+                    sizeChanged = true;
                     return (w, h);
                 }
                 else
                 {
                     h = mh;
                     w = h * ar; // In this case h >= w, so to preserve aspect w = h * ar (ar <= 1)
+                    sizeChanged = true;
                     return (w, h);
                 }
             }
@@ -85,12 +88,14 @@
             {
                 w = mw;
                 h = w / ar; // In this case w > h, so to preserve aspect h = w / ar (ar > 1)
+                sizeChanged = true;
                 return (w, h);
             }
             else // Three - height is greater, but width isn't
             {
                 h = mh;
                 w = h * ar; // In this case h >= w, so to preserve aspect w = h * ar (ar <= 1)
+                sizeChanged = true;
                 return (w, h);
             }
         }

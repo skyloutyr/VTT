@@ -433,6 +433,8 @@
             ImGradient(string.Empty, size, grad, solidColor, true, static (x, y) => { }, ref f, ref v);
         }
 
+        public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags) => ImGuiNativeExtras.BeginTooltipEx(windowFlags);
+
         public readonly struct ImColorGradientsResult
         {
             public readonly bool editPerformed;
@@ -661,6 +663,62 @@
             }
 
             return res;
+        }
+
+        private static class ImGuiNativeExtras
+        {
+            private const string LibName = "cimgui";
+
+            private static int libAvailabilityStatus;
+
+            // The symbol is actually defined and exported by the compiled cimgui.dll, but never wrapped by ImGuiNative, so we expose it here
+            [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+            private static extern byte igBeginTooltipEx(int tooltipFlags, int windowFlags);
+
+            public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags)
+            {
+                switch (libAvailabilityStatus)
+                {
+                    case 0: // Default
+                    {
+                        try
+                        {
+                            libAvailabilityStatus = 1;
+                            return igBeginTooltipEx(0, (int)windowFlags) != 0;
+                        }
+                        catch (DllNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return ImGui.BeginTooltip();
+                        }
+                        catch (BadImageFormatException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return ImGui.BeginTooltip();
+                        }
+                        catch (EntryPointNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return ImGui.BeginTooltip();
+                        }
+                    }
+
+                    case 1:
+                    {
+                        return igBeginTooltipEx(0, (int)windowFlags) != 0; // Passing 0 for tooltip flags bc only two are defined - none and override, none of which are useful
+                    }
+
+                    case 2:
+                    {
+                        return ImGui.BeginTooltip();
+                    }
+
+                    default:
+                    {
+                        return false;
+                    }
+                }
+            }
         }
 
         public class UIStreamingBufferCollection

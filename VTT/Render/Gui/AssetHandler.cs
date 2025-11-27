@@ -24,6 +24,8 @@
 
     public partial class GuiRenderer
     {
+        private string[] _supportedImageFormats;
+
         public void HandleFileDrop(string[] e)
         {
             foreach (string s in e)
@@ -60,7 +62,7 @@
         private bool AddEmbeddedChatAsset(string s)
         {
             string ext = Path.GetExtension(s).ToLower();
-            if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg") || ext.EndsWith("gif"))
+            if (this._supportedImageFormats.Contains(ext, StringComparer.OrdinalIgnoreCase))
             {
                 if (Client.Instance.ServerAllowsEmbeddedImages)
                 {
@@ -133,7 +135,7 @@
                 return true;
             }
 
-            if (ext.EndsWith("png") || ext.EndsWith("jpg") || ext.EndsWith("jpeg"))
+            if (this._supportedImageFormats.Contains(ext, StringComparer.OrdinalIgnoreCase))
             {
                 Client.Instance.Frontend.AssetLoader.EnqueueLoad(AsyncAssetLoader.AssetLoadType.Texture, s, x =>
                 {

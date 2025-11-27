@@ -260,6 +260,8 @@
             this.DebugEnabled = ArgsManager.TryGetValue<bool>(LaunchArgumentKey.DebugMode, out _);
             this.ChatInputBuffer = new ChatBuffer();
             this.LoadStatuses();
+
+            this._supportedImageFormats = Configuration.Default.ImageFormats.SelectMany(x => x.FileExtensions).Distinct().Where(x => !string.IsNullOrEmpty(x)).Select(x => $".{x}").ToArray();
         }
 
         private ImCustomTexturedRect[] _modeTextures;

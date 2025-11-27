@@ -47,6 +47,7 @@
             }
         }
 
+        public void EnsureCapacity(int nSz) => this.CheckSize(nSz);
         private void CheckSize(int nSz)
         {
             if (this._allocatedSize <= nSz)
@@ -117,6 +118,8 @@
         }
 
         public unsafe T* GetPointer(int element = 0) => this._ptr + element;
+        public Span<T> AsSpan() => new Span<T>(this._ptr, this._nextElementIndex);
+        public Span<T> AsAllocatedSpan() => new Span<T>(this._ptr, this._allocatedSize);
 
         public void Free() => MemoryHelper.Free(this._ptr);
 

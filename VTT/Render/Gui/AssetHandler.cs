@@ -70,7 +70,8 @@
                         {
                             if (Image.Identify(s) != null)
                             {
-                                this._chatString += $"[i:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
+                                string converted = $"[i:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
+                                this.AddChatAction(() => this.ChatInputBuffer.AppendText(converted));
                                 return true;
                             }
                         }
@@ -86,7 +87,8 @@
             {
                 if (new FileInfo(s).Length <= 16777216) // 16mb limit
                 {
-                    this._chatString = $"[m:Sound][p:{Convert.ToBase64String(File.ReadAllBytes(s))}]"; // = instead of += deliberately!
+                    string converted = $"[m:Sound][p:{Convert.ToBase64String(File.ReadAllBytes(s))}]";
+                    this.AddChatAction(() => this.ChatInputBuffer.SetText(converted));
                     return true;
                 }
             }
@@ -1507,13 +1509,15 @@
                     {
                         if (this._draggedRef?.Type == AssetType.Sound)
                         {
-                            this._chatString = $"[m:Sound][p:{this._draggedRef.AssetID}]";
+                            string set = $"[m:Sound][p:{this._draggedRef.AssetID}]";
+                            this.AddChatAction(() => this.ChatInputBuffer.SetText(set));
                             haveResult = true;
                         }
 
                         if (this._draggedRef?.Type == AssetType.Texture)
                         {
-                            this._chatString += $"[i:{this._draggedRef.AssetID}]";
+                            string set = $"[i:{this._draggedRef.AssetID}]";
+                            this.AddChatAction(() => this.ChatInputBuffer.AppendText(set));
                             haveResult = true;
                         }
                     }

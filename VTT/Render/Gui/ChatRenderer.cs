@@ -3,7 +3,11 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Text;
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
@@ -16,6 +20,7 @@
         public static GuiRenderer Instance => Client.Instance.Frontend.Renderer.GuiRenderer;
 
         public bool MoveChatToEnd { get; set; }
+        public ChatBuffer ChatInputBuffer { get; set; }
 
         public void SendChat(string line)
         {
@@ -25,6 +30,13 @@
             this._chatMemory.Add(line);
             this._cChatIndex = this._chatMemory.Count;
         }
+
+        private readonly Queue<Action> _chatActions = new Queue<Action>();
+        /// <summary>
+        /// Use this method if a chat text change is needed while the chat might be focused by the user. <br/>
+        /// If not used, ImGUI overrides the buffer modification bc of it being focused!
+        /// </summary>
+        public void AddChatAction(Action a) => this._chatActions.Enqueue(a);
 
         private unsafe void RenderChat(SimpleLanguage lang, GuiState state)
         {
@@ -43,13 +55,13 @@
                 loseFocus = false;
                 ImGui.SetCursorPosY(cSize.Y - 100);
                 sendSignal = false;
-                string inputCopy = this._chatString;
                 if (this._needsRefocusChat)
                 {
                     ImGui.SetKeyboardFocusHere();
                     this._needsRefocusChat = false;
                 }
 
+                /* Old chat handling code
                 bool b = ImGuiHelper.InputTextMultilinePreallocated("ChatInputBufferID", "##ChatInput", ref inputCopy, 22369622 + ushort.MaxValue, new Vector2(cSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
                 {
                     if (data != null) // null ptr check
@@ -65,14 +77,27 @@
 
                     return 0;
                 });
-                if (b && !sendSignal)
+                */
+                if (this._chatActions.Count > 0)
                 {
-                    this._chatString = inputCopy;
+                    ImGuiHelper.ClearActiveID();
+                    while (this._chatActions.Count > 0)
+                    {
+                        this._chatActions.Dequeue()();
+                    }
+
+                    ImGui.SetKeyboardFocusHere();
+                }
+
+                bool b = this.ChatInputBuffer.RenderInput(cSize, out sendSignal);
+                if (sendSignal)
+                {
+                    this._needsRefocusChat = true;
                 }
 
                 if (ImGui.IsItemHovered())
                 {
-                    if (inputCopy.StartsWith("/w ") || inputCopy.StartsWith("/whisper ") || inputCopy.StartsWith("[d:")) // Whisper help
+                    if (this.ChatInputBuffer.StartsWith("/w ") || this.ChatInputBuffer.StartsWith("/whisper ") || this.ChatInputBuffer.StartsWith("[d:")) // Whisper help
                     {
                         ImGui.BeginTooltip();
                         foreach (ClientInfo client in Client.Instance.ClientInfos.Values)
@@ -102,7 +127,7 @@
                             if (--this._cChatIndex >= 0 && this._chatMemory.Count > 0)
                             {
                                 loseFocus = true;
-                                this._chatString = this._chatMemory[this._cChatIndex];
+                                this.ChatInputBuffer.SetText(this._chatMemory[this._cChatIndex]);
                                 this._needsRefocusChat = true;
                             }
 
@@ -115,7 +140,7 @@
                                 if (++this._cChatIndex < this._chatMemory.Count && this._chatMemory.Count > 0)
                                 {
                                     loseFocus = true;
-                                    this._chatString = this._chatMemory[this._cChatIndex];
+                                    this.ChatInputBuffer.SetText(this._chatMemory[this._cChatIndex]);
                                     this._needsRefocusChat = true;
                                 }
 
@@ -244,35 +269,241 @@
                 ImGui.SetKeyboardFocusHere(-1);
                 if (Client.Instance.NetClient?.IsConnected ?? false)
                 {
-                    if (!string.IsNullOrEmpty(this._chatString))
+                    if (!this.ChatInputBuffer.IsEmpty())
                     {
-                        if (this._chatString.StartsWith("/as "))
+                        string txt = this.ChatInputBuffer.GetText();
+                        if (txt.StartsWith("/as "))
                         {
                             if (Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects.Count > 0)
                             {
                                 string n = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].Name;
                                 string p = Client.Instance.Frontend.Renderer.SelectionManager.SelectedObjects[0].ID.ToString();
-                                this._chatString = $"[n:{n}][o:{p}]" + this._chatString[4..];
+                                txt = $"[n:{n}][o:{p}]" + txt[4..];
                             }
                             else
                             {
-                                this._chatString = this._chatString[4..];
+                                txt = txt[4..];
                             }
                         }
 
-                        PacketChatMessage pcm = new PacketChatMessage() { Message = this._chatString };
+                        if (txt.StartsWith("/me "))
+                        {
+                            txt = Client.Instance.Settings.Name + txt[4..];
+                        }
+
+                        PacketChatMessage pcm = new PacketChatMessage() { Message = txt };
                         pcm.Send();
-                        this._chatMemory.Add(this._chatString);
+                        this._chatMemory.Add(txt);
                         this._cChatIndex = this._chatMemory.Count;
                     }
                 }
 
-                this._chatString = "";
+                this.ChatInputBuffer.Clear();
             }
 
             if (chatChanged)
             {
                 this._chatClientRect = cSize;
+            }
+        }
+
+        public unsafe class ChatBuffer
+        {
+            private const int MaxUTF8CharactersInBuffer = 22435188; // Arbitrary ~22MB
+            private const byte NullTerminator = 0x0;
+
+            private readonly byte* _bufferUTF8;
+            private readonly uint _bufferUTF8Size;
+            private readonly byte* _label;
+
+
+            private readonly UnsafeResizeableArray<byte> _comparisonBuffer;
+
+            public ChatBuffer()
+            {
+                this._bufferUTF8 = (byte*)MemoryHelper.AllocateBytesZeroed(this._bufferUTF8Size = MaxUTF8CharactersInBuffer);
+                byte[] d = Encoding.UTF8.GetBytes("##ChatInput");
+                this._label = (byte*)MemoryHelper.AllocateBytes((nuint)(d.Length + 1));
+                fixed (byte* ptr = d)
+                {
+                    Buffer.MemoryCopy(ptr, this._label, d.Length, d.Length);
+                }
+
+                this._label[d.Length] = NullTerminator; // NULL terminator
+                this._comparisonBuffer = new UnsafeResizeableArray<byte>(256); // Arbitrary
+            }
+
+            public void Free()
+            {
+                MemoryHelper.Free(this._bufferUTF8);
+                MemoryHelper.Free(this._label);
+                this._comparisonBuffer.Free();
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private int GetNullTerminatorLocation()
+            {
+                int i = -1; // Unorthodox -1 starter so we always output the exact location of our null terminator character
+                while (this._bufferUTF8[++i] != NullTerminator && i < this._bufferUTF8Size) ;
+                return i;
+            }
+
+            public bool IsEmpty() => this._bufferUTF8[0] == NullTerminator;
+            public void Clear() => this._bufferUTF8[0] = NullTerminator; // Simply null terminate immediately, should clear the string out
+            public void SetText(string text)
+            {
+                int i = Encoding.UTF8.GetBytes(text, new Span<byte>(this._bufferUTF8, (int)this._bufferUTF8Size));
+                this._bufferUTF8[Math.Min(i, this._bufferUTF8Size)] = NullTerminator;
+            }
+
+            public void PopCharactersAtStart(int nChars)
+            {
+                int offset = 0;
+                char c = '\0';
+                char* cptr = &c;
+                Decoder decoder = Encoding.UTF8.GetDecoder();
+                while (true)
+                {
+                    if (decoder.GetChars(this._bufferUTF8 + offset++, 1, cptr, 1, false) == 1)
+                    {
+                        if (c == '\0')
+                        {
+                            break; // Reached end of string
+                        }
+
+                        if (--nChars <= 0)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (offset >= this._bufferUTF8Size)
+                    {
+                        break; // Reached end of buffer
+                    }
+                }
+
+                // Here offset is n+1, where n is the amout of bytes we need to actually pop.
+                if (--offset <= 0)
+                {
+                    return; // We are at the start of the string, nothing to pop
+                }
+
+                // To actually pop the characters we will iteratively override bytes until we reach EOS
+                int i = 0;
+                while (true)
+                {
+                    byte b = this._bufferUTF8[i] = this._bufferUTF8[i + offset];
+                    if (b == NullTerminator)
+                    {
+                        break; // Break on null terminator
+                    }
+
+                    if ((++i + offset) >= this._bufferUTF8Size)
+                    {
+                        this._bufferUTF8[i - 1] = NullTerminator; // Terminate the string
+                        break; // Break upon buffer overflow
+                    }
+                }
+            }
+
+            public void AppendText(string text)
+            {
+                int i = this.GetNullTerminatorLocation();
+                int j = Encoding.UTF8.GetBytes(text, new Span<byte>(this._bufferUTF8 + i, (int)this._bufferUTF8Size - i));
+                this._bufferUTF8[Math.Min(i + j, this._bufferUTF8Size)] = NullTerminator;
+            }
+
+            public void PrependText(string text)
+            {
+                // Here we are fundamentally in a difficult position
+                // We need to 'shift' all bytes to the right n characters, where n is our input's size
+                // To do this in an optimal matter we start from the end.
+
+                // Step 1 - find the end of the current string
+                int i = this.GetNullTerminatorLocation();
+                if (i == 0)
+                {
+                    this.SetText(text);
+                    return; // Can early exit as there is no data in the string
+                }
+
+
+                // Step 2 - find the bytes of our input
+                byte[] data = Encoding.UTF8.GetBytes(text);
+                int rightShift = data.Length; // NULL terminator NOT included here bc we start overriding from it
+                bool wasOOB = i + rightShift >= this._bufferUTF8Size;
+                while (i >= 0)
+                {
+                    int dst = i + rightShift;
+                    if (dst >= this._bufferUTF8Size)
+                    {
+                        continue; // Would write to OOB
+                    }
+
+                    this._bufferUTF8[dst] = this._bufferUTF8[i--];
+                }
+
+                if (wasOOB)
+                {
+                    this._bufferUTF8[this._bufferUTF8Size] = NullTerminator;
+                }
+
+                fixed (byte* src = data)
+                {
+                    Buffer.MemoryCopy(src, this._bufferUTF8, data.Length, data.Length); // Do not null terminate here
+                }
+            }
+
+            public string GetText()
+            {
+                int i = this.GetNullTerminatorLocation();
+                return Encoding.UTF8.GetString(new Span<byte>(this._bufferUTF8, i));
+            }
+
+            public bool StartsWith(string input)
+            {
+                this._comparisonBuffer.EnsureCapacity(input.Length * 4);
+                int i = Encoding.UTF8.GetBytes(input, this._comparisonBuffer.AsAllocatedSpan());
+                if (i >= this._bufferUTF8Size - 1)
+                {
+                    return false; // String too big, can't start with it
+                }
+
+                int j = 0;
+                while (j < i)
+                {
+                    if (this._bufferUTF8[j] != this._comparisonBuffer[j])
+                    {
+                        return false;
+                    }
+
+                    j += 1;
+                }
+
+                return true;
+            }
+
+            public bool RenderInput(Vector2 cSize, out bool callbackSignalled)
+            {
+                bool sendSignal = false;
+                byte ret = ImGuiNative.igInputTextMultiline(this._label, this._bufferUTF8, this._bufferUTF8Size, new Vector2(cSize.X - 64, 128), ImGuiInputTextFlags.CallbackCharFilter, (data) =>
+                {
+                    if (data != null) // null ptr check
+                    {
+                        ushort c = data->EventChar;
+                        if (c == 10 && !ImGui.IsKeyDown(ImGuiKey.LeftShift)) // Enter: 0xA in UTF16
+                        {
+                            sendSignal = true;
+                            return 1;
+                        }
+                    }
+
+                    return 0;
+                }, (void*)0);
+
+                callbackSignalled = sendSignal;
+                return ret != 0;
             }
         }
     }

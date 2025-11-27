@@ -435,6 +435,8 @@
 
         public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags) => ImGuiNativeExtras.BeginTooltipEx(windowFlags);
 
+        public static void ClearActiveID() => ImGuiNativeExtras.ClearActiveID();
+
         public readonly struct ImColorGradientsResult
         {
             public readonly bool editPerformed;
@@ -671,9 +673,55 @@
 
             private static int libAvailabilityStatus;
 
-            // The symbol is actually defined and exported by the compiled cimgui.dll, but never wrapped by ImGuiNative, so we expose it here
+            // The symbols are actually defined and exported by the compiled cimgui.dll, but never wrapped by ImGuiNative, so we expose them here
+
             [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
             private static extern byte igBeginTooltipEx(int tooltipFlags, int windowFlags);
+
+            [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+            private static extern void igClearActiveID();
+
+            public static void ClearActiveID()
+            {
+                switch (libAvailabilityStatus)
+                {
+                    case 0: // Default
+                    {
+                        try
+                        {
+                            libAvailabilityStatus = 1;
+                            igClearActiveID();
+                            break;
+                        }
+                        catch (DllNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            break;
+                        }
+                        catch (BadImageFormatException)
+                        {
+                            libAvailabilityStatus = 2;
+                            break;
+                        }
+                        catch (EntryPointNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            break;
+                        }
+                    }
+
+                    case 1:
+                    {
+                        igClearActiveID();
+                        break;
+                    }
+
+                    default:
+                    {
+                        break;
+                    }
+                }
+            }
 
             public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags)
             {

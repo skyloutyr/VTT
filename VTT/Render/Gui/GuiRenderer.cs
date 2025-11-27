@@ -164,7 +164,6 @@
         private Guid _editedShaderId;
 
         private Guid _deletedMapId;
-        private string _chatString = string.Empty;
 
         private Vector2 _chatClientRect = default;
 
@@ -259,6 +258,7 @@
             this.ShaderEditorRenderer = new ShaderGraphEditorRenderer();
             this.ShaderEditorRenderer.Create();
             this.DebugEnabled = ArgsManager.TryGetValue<bool>(LaunchArgumentKey.DebugMode, out _);
+            this.ChatInputBuffer = new ChatBuffer();
             this.LoadStatuses();
         }
 

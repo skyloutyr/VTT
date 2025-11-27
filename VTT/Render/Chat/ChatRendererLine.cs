@@ -7,7 +7,6 @@
     using System.Linq;
     using System.Numerics;
     using System.Runtime.InteropServices;
-    using System.Security.Cryptography;
     using System.Text;
     using VTT.Asset;
     using VTT.Control;

@@ -1,7 +1,6 @@
 ﻿namespace VTT.GLFW
 {
     using System;
-    using System.Reflection;
     using System.Runtime.InteropServices;
     using VTT.Util;
 

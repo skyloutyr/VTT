@@ -1,7 +1,6 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
-    using System.IO;
 
     public class PacketServerSettingChange : PacketBaseWithCodec
     {

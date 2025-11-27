@@ -49,6 +49,8 @@
         }
 
         protected static readonly Regex Base64CheckerRegex = new Regex(@"(?:[A-Z]|[a-z]|[0-9]|[+\/=])+", RegexOptions.Compiled);
+
+        // TODO optimize base64 images by encoding in a [b64:GUID:DATA] format and using the GUID as the key instead of the entire data string
         public static AssetStatus ResolveImageBlock(string reference, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap)
         {
             Guid imgAssetId = Guid.Empty;

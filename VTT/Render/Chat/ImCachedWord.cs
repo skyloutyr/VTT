@@ -2,7 +2,6 @@
 {
     using System;
     using System.Numerics;
-    using System.Security.Cryptography;
     using VTT.Asset;
     using VTT.Control;
     using VTT.GL;

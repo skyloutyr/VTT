@@ -60,6 +60,8 @@
 
         public ConcurrentDictionary<Guid, ChatSearchCollection> ChatSearchQueries { get; } = new ConcurrentDictionary<Guid, ChatSearchCollection>();
 
+        public List<WhitelistEntry> Whitelist { get; } = new List<WhitelistEntry>() { new WhitelistEntry() { EntryKind = WhitelistEntry.Kind.IPAddress, Address = IPAddress.Loopback } };
+
         public Server(IPAddress address, int port) : base(address, port)
         {
             Instance = this;
@@ -246,12 +248,48 @@
             this.Settings = ServerSettings.Load();
             this.OptionNoDelay = true;
             this.OptionKeepAlive = true;
+            if (this.Settings.IsWhitelist)
+            {
+                this.LoadWhitelist();
+            }
+
             this.LoadAllAsync();
             this.Logger.Log(LogLevel.Info, "Server creation complete");
             this.running = true;
             new Thread(this.RunWorker) { IsBackground = true, Priority = ThreadPriority.Lowest }.Start();
             this.Start();
             this.WaitHandle = wh;
+        }
+
+        private void LoadWhitelist()
+        {
+            string whitelist = Path.Combine(IOVTT.ServerDir, "whitelist.txt");
+            if (File.Exists(whitelist))
+            {
+                using StreamReader sr = new StreamReader(File.OpenRead(whitelist));
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (string.IsNullOrEmpty(line))
+                    {
+                        continue;
+                    }
+
+                    if (WhitelistEntry.TryParse(line, out WhitelistEntry entry))
+                    {
+                        if (entry.EntryKind == WhitelistEntry.Kind.Name)
+                        {
+                            this.Logger.Log(LogLevel.Warn, $"Insecure whitelist entry {line}! Please identify clients using their Guid or IP address!");
+                        }
+
+                        this.Whitelist.Add(entry);
+                    }
+                    else
+                    {
+                        this.Logger.Log(LogLevel.Error, $"Malformed whitelist entry at {line}!");
+                    }
+                }
+            }
         }
 
         private void LoadAllAsync()
@@ -987,6 +1025,82 @@
         }
     }
 
+    public class WhitelistEntry
+    {
+        public Kind EntryKind { get; set; }
+        public IPAddress Address { get; set; }
+        public Guid ID { get; set; }
+        public string Name { get; set; }
+
+        public WhitelistEntry()
+        {
+            // NOOP
+        }
+
+        public static bool TryParse(string sIn, out WhitelistEntry entry)
+        {
+            entry = null;
+            if (string.IsNullOrEmpty(sIn))
+            {
+                return false;
+            }
+
+            if (IPAddress.TryParse(sIn, out IPAddress address))
+            {
+                entry = new WhitelistEntry() { Address = address, EntryKind = Kind.IPAddress };
+                return true;
+            }
+
+            if (Guid.TryParse(sIn, out Guid id))
+            {
+                entry = new WhitelistEntry() { ID = id, EntryKind = Kind.GUID };
+                return true;
+            }
+
+            entry = new WhitelistEntry() { EntryKind = Kind.Name, Name = sIn };
+            return true;
+        }
+
+        public bool Validate(ServerClient sc)
+        {
+            switch (this.EntryKind)
+            {
+                case Kind.IPAddress:
+                {
+                    if (sc.Socket.RemoteEndPoint is IPEndPoint ipep)
+                    {
+                        return ipep.Address.Equals(this.Address);
+                    }
+
+                    // Should be impossible?
+                    return false;
+                }
+
+                case Kind.GUID:
+                {
+                    return Guid.Equals(sc.ID, this.ID);
+                }
+
+                case Kind.Name:
+                {
+                    return string.Equals(this.Name, sc.Name, StringComparison.Ordinal);
+                }
+
+                default:
+                {
+                    return false;
+                }
+            }
+        }
+
+        public enum Kind
+        {
+            IPAddress,
+            GUID,
+            Name
+        }
+    }
+
     public class ServerClient : TcpSession
     {
         public ClientInfo Info { get; set; }
@@ -1060,6 +1174,8 @@
             this.EnsureDataCorrectness();
         }
 
+        protected override void OnConnecting() => base.OnConnecting();
+
         protected override void OnError(SocketError error)
         {
             base.OnError(error);
@@ -1103,7 +1219,6 @@
             base.OnSent(sent, pending);
             this.Container.NetworkOut.Increment(sent);
         }
-
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
@@ -1181,6 +1296,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool AllowEmbeddedImages { get; set; } = true;
 
+        [DefaultValue(false)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool IsWhitelist { get; set; } = false;
+
         public static ServerSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ServerDir, "Settings.json");
@@ -1197,6 +1316,7 @@
             {
                 DefaultMapID = Guid.NewGuid(),
                 AllowEmbeddedImages = true,
+                IsWhitelist = false
             };
 
             ret.Save();

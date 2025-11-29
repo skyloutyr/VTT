@@ -63,6 +63,17 @@
                     return;
                 }
 
+                if (server.Settings.IsWhitelist)
+                {
+                    if (!server.Whitelist.Any(x => x.Validate(sc)))
+                    {
+                        server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Server has the whitelist enabled and the client is not on it!");
+                        new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(sc);
+                        sc.Disconnect();
+                        return;
+                    }
+                }
+
                 if (ci.Secret != null)
                 {
                     if (ci.Secret.Length != 32 || this.ClientSecret.Length != 32)

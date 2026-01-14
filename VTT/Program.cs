@@ -56,7 +56,7 @@
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
             Code = Assembly.GetExecutingAssembly();
             Console.Clear();
-            Version = new Version(1, 2, 32);
+            Version = new Version(1, 2, 33);
             ArgsManager.Parse(args);
             IOVTT.LoadLocations();
             if (ArgsManager.TryGetValue(LaunchArgumentKey.HeadlessServerPort, out int port))

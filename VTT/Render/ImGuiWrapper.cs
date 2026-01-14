@@ -171,6 +171,9 @@ void main()
                     this._keyMappings[k] = igk;
                 }
             }
+
+            // Enum.GetValues is a bit screwey with C-like enums (multiple keys can map to the same value) so we map missing ones
+            this._keyMappings[Keys.Tab] = ImGuiKey.Tab; // Also maps to NamedKey_BEGIN
         }
 
         public void Render(double time)

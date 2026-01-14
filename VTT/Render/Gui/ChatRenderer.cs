@@ -3,8 +3,8 @@
     using ImGuiNET;
     using SixLabors.ImageSharp;
     using System;
-    using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Text;
@@ -38,6 +38,7 @@
         /// </summary>
         public void AddChatAction(Action a) => this._chatActions.Enqueue(a);
 
+        private static readonly List<(string, float)> currentChatAutocompleteScores = new List<(string, float)>();
         private unsafe void RenderChat(SimpleLanguage lang, GuiState state)
         {
             ImGui.SetNextWindowBgAlpha(0.0f);
@@ -89,6 +90,7 @@
                     ImGui.SetKeyboardFocusHere();
                 }
 
+                Vector2 preChatPosition = ImGui.GetCursorScreenPos();
                 bool b = this.ChatInputBuffer.RenderInput(cSize, out sendSignal);
                 if (sendSignal)
                 {
@@ -97,25 +99,135 @@
 
                 if (ImGui.IsItemHovered())
                 {
-                    if (this.ChatInputBuffer.StartsWith("/w ") || this.ChatInputBuffer.StartsWith("/whisper ") || this.ChatInputBuffer.StartsWith("[d:")) // Whisper help
+                    state.chatHovered = true;
+                }
+
+                int chatStartIndex = 
+                    this.ChatInputBuffer.StartsWith("/w ") ? 0 : 
+                    this.ChatInputBuffer.StartsWith("/whisper ") ? 1 : 
+                    this.ChatInputBuffer.StartsWith("[d:") ? 2 : 
+                    -1;
+                if (chatStartIndex >= 0) // Whisper help
+                {
+                    Vector2 tSize =
+                        chatStartIndex == 0 ? ImGui.CalcTextSize("/w ") :
+                        chatStartIndex == 2 ? ImGui.CalcTextSize("[d:") :
+                        ImGui.CalcTextSize("/whisper ");
+                    List<string> clients = Client.Instance.ClientInfos.Values.Where(x => !x.ID.IsEmpty() && x.IsLoggedOn).Select(x => x.Name).ToList();
+                    string clientName = this.ChatInputBuffer.Substring(chatStartIndex == 1 ? 9 : 3, clients.Select(x => x.Length).Max());
+                    if (clientName.Contains(' '))
                     {
-                        ImGui.BeginTooltip();
-                        foreach (ClientInfo client in Client.Instance.ClientInfos.Values)
+                        clientName = clientName[..clientName.IndexOf(' ')];
+                        if (clients.Contains(clientName) || clientName.ToLower().StartsWith("gm"))
                         {
-                            if (client.ID.Equals(Guid.Empty) || !client.IsLoggedOn)
+                            chatStartIndex = -1; // We already have our client, do not show popup
+                        }
+                    }
+
+                    if (chatStartIndex != -1)
+                    {
+                        ImGui.SetNextWindowPos(preChatPosition + tSize + ImGui.GetStyle().FramePadding);
+                        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+                        ImGuiHelper.BeginTooltipEx(ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoDecoration);
+                        static void ScoreBySimilarity(List<string> all, string input)
+                        {
+                            currentChatAutocompleteScores.Clear();
+                            if (string.IsNullOrEmpty(input))
                             {
-                                continue;
+                                currentChatAutocompleteScores.AddRange(all.Select(x => (x, 1.0f)));
+                                return;
                             }
 
-                            ImGui.PushStyleColor(ImGuiCol.Text, client.Color.Abgr());
-                            ImGui.Text(client.Name);
-                            ImGui.PopStyleColor();
+                            // special case for 1-length words
+                            if (input.Length == 1)
+                            {
+                                int max = all.Select(x => x.Length).Max();
+                                foreach (string str in all)
+                                {
+                                    if (string.IsNullOrEmpty(str))
+                                    {
+                                        continue;
+                                    }
+
+                                    bool haveStart = str.Contains(input[0]);
+                                    float v = !haveStart ? -1 : (float)max / str.Length;
+                                    currentChatAutocompleteScores.Add((str, v));
+                                }
+
+                                return;
+                            }
+
+                            static List<string> GetPairs(string input)
+                            {
+                                int amt = input.Length - 1;
+                                List<string> ret = new List<string>(amt);
+                                for (int i = 0; i < amt; ++i)
+                                {
+                                    ret.Add(input.Substring(i, 2));
+                                }
+
+                                return ret;
+                            }
+
+                            static float CompareStrings(string str1, string str2)
+                            {
+                                List<string> pairs1 = GetPairs(str1);
+                                List<string> pairs2 = GetPairs(str2);
+                                int intersection = 0;
+                                int union = pairs1.Count + pairs2.Count;
+                                for (int i = 0; i < pairs1.Count; ++i)
+                                {
+                                    string pair1 = pairs1[i];
+                                    for (int j = 0; j < pairs2.Count; ++j)
+                                    {
+                                        string pair2 = pairs2[j];
+                                        if (string.Equals(pair1, pair2, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            intersection++;
+                                            pairs2.RemoveAt(j);
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                return 2.0f * intersection / union;
+                            }
+
+                            foreach (string str in all)
+                            {
+                                if (string.IsNullOrEmpty(str))
+                                {
+                                    continue;
+                                }
+
+                                currentChatAutocompleteScores.Add((str, CompareStrings(str, input)));
+                            }
+                        }
+
+                        ScoreBySimilarity(clients, clientName);
+                        int scoredIndex = 0;
+                        foreach ((string, float) name in currentChatAutocompleteScores.OrderByDescending(x => x.Item2))
+                        {
+                            if (name.Item2 > 0)
+                            {
+                                if (scoredIndex == 0)
+                                {
+                                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.ButtonActive));
+                                }
+
+                                ImGui.TextUnformatted(name.Item1);
+                                if (scoredIndex == 0)
+                                {
+                                    ImGui.PopStyleColor();
+                                }
+                            }
+
+                            scoredIndex += 1;
                         }
 
                         ImGui.EndTooltip();
+                        ImGui.PopStyleVar();
                     }
-
-                    state.chatHovered = true;
                 }
 
                 if (!b && ImGui.IsItemFocused() && Client.Instance.Frontend.GameHandle.IsAnyControlDown())
@@ -150,6 +262,15 @@
                     }
                 }
 
+                if (!b && ImGui.IsItemFocused() && chatStartIndex != -1 && ImGui.IsKeyPressed(ImGuiKey.Tab))
+                {
+                    if (currentChatAutocompleteScores.Count > 0)
+                    {
+                        loseFocus = true;
+                        this.ChatInputBuffer.SetText(string.Concat(this.ChatInputBuffer.GetText().AsSpan(0, chatStartIndex == 1 ? 9 : 3), currentChatAutocompleteScores.OrderByDescending(x => x.Item2).First().Item1, " "));
+                        this._needsRefocusChat = true;
+                    }
+                }
 
                 ImGui.SameLine();
                 float bscX = ImGui.GetCursorPosX();
@@ -459,6 +580,55 @@
             {
                 int i = this.GetNullTerminatorLocation();
                 return Encoding.UTF8.GetString(new Span<byte>(this._bufferUTF8, i));
+            }
+
+            public string Substring(int start, int length)
+            {
+                // The problem we have is that start is the offset in characters...
+                int offset = 0;
+                char c = '\0';
+                char* cptr = &c;
+                Decoder decoder = Encoding.UTF8.GetDecoder();
+                while (start > 0)
+                {
+                    if (decoder.GetChars(this._bufferUTF8 + offset++, 1, cptr, 1, false) == 1)
+                    {
+                        if (c == '\0')
+                        {
+                            break; // Reached end of string
+                        }
+
+                        start -= 1;
+                    }
+
+                    if (offset >= this._bufferUTF8Size)
+                    {
+                        return string.Empty; // Reached end of buffer
+                    }
+                }
+
+                // At this point we have our offset into the string, now we need to iteratively decode up to length characters
+                StringBuilder sb = new StringBuilder(length); // Preallocate a string of length length
+                while (length > 0)
+                {
+                    if (decoder.GetChars(this._bufferUTF8 + offset++, 1, cptr, 1, false) == 1)
+                    {
+                        if (c == '\0')
+                        {
+                            break; // Reached end of string
+                        }
+
+                        sb.Append(*cptr); // Very iffy
+                        length -= 1;
+                    }
+
+                    if (offset >= this._bufferUTF8Size)
+                    {
+                        break; // Reached end of buffer
+                    }
+                }
+
+                return sb.ToString();
             }
 
             public bool StartsWith(string input)

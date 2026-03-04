@@ -193,13 +193,14 @@
 
                 if (!this.SendTime.Equals(DateTime.UnixEpoch))
                 {
-                    string time = this.SendTime.ToString("HH:mm:ss");
+                    DateTime dt = this.SendTime.ToLocalTime();
+                    string time = dt.ToString("HH:mm:ss");
                     float ocpx = ImGui.GetCursorPosX();
                     ImGui.SetCursorPosX(winSize.X - 12 - ImGui.CalcTextSize(time).X);
                     ImGui.Text(time);
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetTooltip(this.SendTime.ToLongDateString() + "\n" + this.SendTime.ToLongTimeString());
+                        ImGui.SetTooltip(dt.ToLongDateString() + "\n" + dt.ToLongTimeString());
                     }
 
                     ImGui.SameLine();
@@ -265,7 +266,7 @@
                 {
                     if (ImGui.MenuItem(lang.Translate("ui.chat.copy")))
                     {
-                        ImGui.SetClipboardText($"{this.SendTime} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
+                        ImGui.SetClipboardText($"{this.SendTime.ToLocalTime()} {this.SenderDisplayName}: " + this.Renderer?.ProvideTextForClipboard(this.SendTime, this.SenderDisplayName, lang) ?? " ");
                     }
 
                     if (Guid.Equals(this.SenderID, Client.Instance.ID) || Client.Instance.IsAdmin)

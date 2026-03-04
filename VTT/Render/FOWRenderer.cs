@@ -17,6 +17,7 @@
     public class FOWRenderer
     {
         public Texture FOWTexture { get; set; }
+        public Texture FakeFOWTexture { get; set; }
         public Vector2 FOWOffset { get; set; }
         public Vector2 FOWWorldSize
         {
@@ -88,6 +89,14 @@
             this._polyOutlineEbo.Bind();
             this._polyOutlineVao.SetVertexSize<float>(3);
             this._polyOutlineVao.PushElement(ElementType.Vec3);
+
+            this.FakeFOWTexture = new Texture(TextureTarget.Texture2D);
+            using Image<Rgba64> img = new Image<Rgba64>(1, 1, new Rgba64(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue, ushort.MaxValue));
+            this.FakeFOWTexture.Bind();
+            OpenGLUtil.NameObject(GLObjectType.Texture, this.FakeFOWTexture, "Fake FOW texture 64bpp");
+            this.FakeFOWTexture.SetFilterParameters(FilterParam.Nearest, FilterParam.Nearest);
+            this.FakeFOWTexture.SetWrapParameters(WrapParam.ClampToEdge, WrapParam.ClampToEdge, WrapParam.ClampToEdge);
+            this.FakeFOWTexture.SetImage(img, SizedInternalFormat.RgbaUnsignedShort, 0, PixelDataType.UnsignedShort);
 
             OpenGLUtil.NameObject(GLObjectType.VertexArray, this._vao, "FOW selection vao");
             OpenGLUtil.NameObject(GLObjectType.Buffer, this._vbo, "FOW selection vbo");
@@ -357,7 +366,7 @@
             GLState.ActiveTexture.Set(15);
             if (isFake)
             {
-                Client.Instance.Frontend.Renderer.White.Bind();
+                this.FakeFOWTexture.Bind();
             }
             else
             {

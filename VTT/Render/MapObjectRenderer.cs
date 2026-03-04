@@ -942,10 +942,10 @@
 
         private readonly float[] _alphaForLayerDelta = new float[5] { 
             1.0f,
-            0.75f,
             0.5f,
             0.25f,
-            0.125f
+            0.125f,
+            0.0625f
         };
 
         private void RenderDeferred(Map m, double delta)
@@ -1040,15 +1040,7 @@
 
                 currentShader = forwardShader;
                 currentShader.Program.Bind();
-                if (i <= 0)
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(false);
-                }
-                else
-                {
-                    Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(true);
-                }
-
+                Client.Instance.Frontend.Renderer.MapRenderer.FOWRenderer.BindTexture(i > 0);
                 int cLayer = Client.Instance.Frontend.Renderer.MapRenderer.CurrentLayer;
                 float objectLayerAlpha = i > 0 ? this._alphaForLayerDelta[Math.Clamp(i - cLayer, 0, 5)] : 1.0f;
                 this._passthroughData.GridAlpha = i == -2 && m.GridEnabled ? 1.0f : 0.0f;

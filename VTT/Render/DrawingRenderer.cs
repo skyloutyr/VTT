@@ -303,12 +303,12 @@
                 if (tHit.HasValue)
                 {
                     Matrix4x4 model = Matrix4x4.CreateScale(this.CurrentRadius) * Matrix4x4.CreateTranslation(tHit.Value);
-                    ShaderProgram shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
+                    FastAccessShader<FOWDependentOverlayUniforms> shader = Client.Instance.Frontend.Renderer.ObjectRenderer.OverlayShader;
                     shader.Bind();
-                    shader["view"].Set(cam.View);
-                    shader["projection"].Set(cam.Projection);
-                    shader["model"].Set(model);
-                    shader["u_color"].Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
+                    shader.Uniforms.Transform.View.Set(cam.View);
+                    shader.Uniforms.Transform.Projection.Set(cam.Projection);
+                    shader.Uniforms.Transform.Model.Set(model);
+                    shader.Uniforms.Color.Set((new Vector4(1, 1, 1, this.CurrentColor.W * 2) - this.CurrentColor) * new Vector4(1, 1, 1, 0.3f));
                     GLState.Blend.Set(true);
                     GLState.BlendFunc.Set((BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha));
                     this.EraserSphere.Render();

@@ -917,7 +917,7 @@
                     this._lineModeFirstPoint = null;
                 }
 
-                ShaderProgram overlayShader = this.BoxesOverlay;
+                FastAccessShader<IndividualColorOverlay> overlayShader = this.BoxesOverlay;
                 Camera cam = Client.Instance.Frontend.Renderer.MapRenderer.ClientCamera;
 
                 GLState.CullFace.Set(true);
@@ -928,8 +928,8 @@
                 GLState.DepthMask.Set(false);
 
                 overlayShader.Bind();
-                overlayShader["view"].Set(cam.View);
-                overlayShader["projection"].Set(cam.Projection);
+                overlayShader.Uniforms.Transform.View.Set(cam.View);
+                overlayShader.Uniforms.Transform.Projection.Set(cam.Projection);
 
                 this.OverlayVAO.Bind();
                 this.OverlayVBO.Bind();
@@ -942,7 +942,7 @@
 
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateRotationZ(-box.Rotation) * Matrix4x4.CreateTranslation(new Vector3(box.Center, 0));
                     Vector2 halfExtent = (box.End - box.Start) * 0.5f;
-                    overlayShader["model"].Set(transform);
+                    overlayShader.Uniforms.Transform.Model.Set(transform);
                     this.CreateRectangle(halfExtent, clr.Argb(), box == this._boxSelected ? Color.MediumBlue.Argb() : box.IsMouseOver ? Color.RoyalBlue.Argb() : clr.Argb());
                     GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
@@ -960,7 +960,7 @@
 
                     Matrix4x4 transform = Matrix4x4.Identity * Matrix4x4.CreateTranslation(new Vector3(c, 0));
                     Vector2 halfExtent = (end - start) * 0.5f;
-                    overlayShader["model"].Set(transform);
+                    overlayShader.Uniforms.Transform.Model.Set(transform);
                     this.CreateRectangle(halfExtent, clr.Argb(), Color.RoyalBlue.Argb());
                     GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
@@ -973,7 +973,7 @@
                     Vector2 r = n.Rotate(MathF.PI * 0.5f) * this._lineModeLineWidth * 0.5f;
                     Vector2 c = start + ((end - start) * 0.5f);
                     Matrix4x4 transform = Matrix4x4.Identity;
-                    overlayShader["model"].Set(transform);
+                    overlayShader.Uniforms.Transform.Model.Set(transform);
                     this.CreateRectangleFromPoints(start - r, start + r, end + r, end - r, Color.SlateBlue.Argb(), Color.RoyalBlue.Argb());
                     GLState.DrawArrays(PrimitiveType.Triangles, 0, 6 * 5);
                 }
@@ -1008,7 +1008,7 @@
                         this.OverlayVBO.SetSubData((IntPtr)this._reusedBuffer.GetPointer(), sizeof(float) * 4 * 3 * 3 * this._numQuadDrawPoints, 0);
                     }
 
-                    overlayShader["model"].Set(Matrix4x4.Identity);
+                    overlayShader.Uniforms.Transform.Model.Set(Matrix4x4.Identity);
                     GLState.DrawArrays(PrimitiveType.Triangles, 0, 3 * 3 * this._numQuadDrawPoints);
                 }
 

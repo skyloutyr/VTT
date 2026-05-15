@@ -169,41 +169,44 @@
             {
                 if (!this._hasWorkForSecondary && !this._hasWorkForPrimary && this.IsNextPBOAvailable() && this._tasks.TryDequeue(out AsyncTextureUploadRequest request))
                 {
-                    int actualMips;
-                    Size[] imgSizes;
-                    int neededBytes;
-                    if (request.DataType == AsyncTextureUploadRequest.ImageDataType.Image)
+                    if (request.Texture.IsGLAllocated)
                     {
-                        actualMips = this.DeterminePossibleMipMaps(request.Image.Size, request.MipmapAmount, out imgSizes, out neededBytes);
-                    }
-                    else
-                    {
-                        actualMips = request.CompressedData.numMips;
-                        imgSizes = request.CompressedData.sizes;
-                        neededBytes = request.CompressedData.dataLength.Sum();
-                    }
+                        int actualMips;
+                        Size[] imgSizes;
+                        int neededBytes;
+                        if (request.DataType == AsyncTextureUploadRequest.ImageDataType.Image)
+                        {
+                            actualMips = this.DeterminePossibleMipMaps(request.Image.Size, request.MipmapAmount, out imgSizes, out neededBytes);
+                        }
+                        else
+                        {
+                            actualMips = request.CompressedData.numMips;
+                            imgSizes = request.CompressedData.sizes;
+                            neededBytes = request.CompressedData.dataLength.Sum();
+                        }
 
-                    request.MipmapAmount = actualMips;
-                    request.MipmapSizes = imgSizes;
-                    request.MipmapDataByteSize = neededBytes;
-                    request.PBOIndex = this._pboIndex;
-                    this.CheckBufferSize(neededBytes);
-                    OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo[this._pboIndex]);
-                    this._mappedPtr = (IntPtr)OGL.MapBufferRange(BufferTarget.PixelUnpack, 0, this._pboSize[this._pboIndex], BufferRangeAccessMask.Write | BufferRangeAccessMask.Unsynchronized | BufferRangeAccessMask.InvalidateBuffer); 
-                    if (this._mappedPtr.Equals(IntPtr.Zero))
-                    {
-                        Client.Instance.Settings.AsyncTextureUploading = false;
-                        Client.Instance.Settings.Save();
-                        throw new OutOfMemoryException("OpenGL (likely) ran out of memory for PBO allocation! Please disable async texture loading in the client config!");
-                    }
+                        request.MipmapAmount = actualMips;
+                        request.MipmapSizes = imgSizes;
+                        request.MipmapDataByteSize = neededBytes;
+                        request.PBOIndex = this._pboIndex;
+                        this.CheckBufferSize(neededBytes);
+                        OGL.BindBuffer(BufferTarget.PixelUnpack, this._pbo[this._pboIndex]);
+                        this._mappedPtr = (IntPtr)OGL.MapBufferRange(BufferTarget.PixelUnpack, 0, this._pboSize[this._pboIndex], BufferRangeAccessMask.Write | BufferRangeAccessMask.Unsynchronized | BufferRangeAccessMask.InvalidateBuffer);
+                        if (this._mappedPtr.Equals(IntPtr.Zero))
+                        {
+                            Client.Instance.Settings.AsyncTextureUploading = false;
+                            Client.Instance.Settings.Save();
+                            throw new OutOfMemoryException("OpenGL (likely) ran out of memory for PBO allocation! Please disable async texture loading in the client config!");
+                        }
 
-                    OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
-                    this._requestWorkedWith = request;
-                    request.Texture.AsyncState = AsyncLoadState.Processing;
-                    this._pboTextures[this._pboIndex] = (request.Texture, request.Texture.GetUniqueID());
-                    this._hasWorkForSecondary = true;
-                    this._waitHandleSecondary.Set();
-                    this._pboIndex = Client.Instance.Settings.NumAsyncTextureBuffers == 1 ? 0 : (this._pboIndex + 1) % Client.Instance.Settings.NumAsyncTextureBuffers;
+                        OGL.BindBuffer(BufferTarget.PixelUnpack, 0);
+                        this._requestWorkedWith = request;
+                        request.Texture.AsyncState = AsyncLoadState.Processing;
+                        this._pboTextures[this._pboIndex] = (request.Texture, request.Texture.GetUniqueID());
+                        this._hasWorkForSecondary = true;
+                        this._waitHandleSecondary.Set();
+                        this._pboIndex = Client.Instance.Settings.NumAsyncTextureBuffers == 1 ? 0 : (this._pboIndex + 1) % Client.Instance.Settings.NumAsyncTextureBuffers;
+                    }
                 }
             }
 

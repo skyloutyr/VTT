@@ -55,7 +55,9 @@
         public TextureTarget Target => this._type;
         public IntPtr AsyncFenceID { get; set; }
 
-        private static readonly ConcurrentDictionary<uint, Guid> _textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
+        public bool IsGLAllocated => this._glId == 0;
+
+        private static readonly ConcurrentDictionary<uint, Guid> textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
 
         public Texture(TextureTarget tt, bool gl = true)
         {
@@ -63,20 +65,20 @@
             if (gl)
             {
                 this._glId = GL.GenTexture();
-                _textureProtection[this._glId] = Guid.NewGuid();
+                textureProtection[this._glId] = Guid.NewGuid();
             }
         }
 
         public void Allocate()
         {
             this._glId = GL.GenTexture();
-            _textureProtection[this._glId] = Guid.NewGuid();
+            textureProtection[this._glId] = Guid.NewGuid();
         }
 
-        public Guid GetUniqueID() => _textureProtection[this._glId];
+        public Guid GetUniqueID() => textureProtection[this._glId];
         public bool CheckUniqueID(Guid id)
         {
-            bool b = _textureProtection.TryGetValue(this._glId, out Guid gid);
+            bool b = textureProtection.TryGetValue(this._glId, out Guid gid);
             return b && id.Equals(gid);
         }
 
@@ -248,7 +250,8 @@
             if (this._glId > 0)
             {
                 GL.DeleteTexture(this._glId);
-                _textureProtection.TryRemove(this._glId, out _);
+                textureProtection.TryRemove(this._glId, out _);
+                this._glId = 0;
             }
 
             if (!IntPtr.Zero.Equals(this.AsyncFenceID))

@@ -636,7 +636,7 @@
                         MapObject mainSelectCandidate = null;
 
                         // For lights and shadows purposes observers are treated as admins
-                        bool isAdmin = Client.Instance.IsAdmin || Client.Instance.IsObserver; 
+                        bool isAdmin = Client.Instance.IsAdmin || Client.Instance.IsObserver;
                         bool noCursor = false;
                         if (isAdmin)
                         {

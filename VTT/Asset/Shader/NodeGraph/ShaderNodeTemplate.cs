@@ -2678,10 +2678,6 @@ $OUTPUT@1$ = floatBitsToUint(frame_update_updatedt_gridsz.y);",
                 new NodeOutput() { Name = "World Bitangent", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "World Normal", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "World Position", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Geometry Tangent", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Geometry Bitangent", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Geometry Normal", SelfType = NodeValueType.Vec3 },
-                new NodeOutput() { Name = "Geometry Position", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Screen Position", SelfType = NodeValueType.Vec3 },
                 new NodeOutput() { Name = "Screen Size", SelfType = NodeValueType.Vec2 }
             },
@@ -2689,23 +2685,15 @@ $OUTPUT@1$ = floatBitsToUint(frame_update_updatedt_gridsz.y);",
 $OUTPUT@1$ = f_tbn[1];
 $OUTPUT@2$ = f_tbn[2];
 $OUTPUT@3$ = f_world_position;
-$OUTPUT@4$ = f_tangent;
-$OUTPUT@5$ = f_bitangent;
-$OUTPUT@6$ = f_normal;
-$OUTPUT@7$ = f_position;
-$OUTPUT@8$ = gl_FragCoord.xyz;
-$OUTPUT@9$ = al_sky_colors_viewportsz.zw;",
+$OUTPUT@4$ = gl_FragCoord.xyz;
+$OUTPUT@5$ = al_sky_colors_viewportsz.zw;",
 (ctx, matrix, outIndex) => outIndex switch {
     0 => ctx.CreateMatrix(Vector3.UnitX),
     1 => ctx.CreateMatrix(Vector3.UnitY),
     2 => ctx.CreateMatrix(Vector3.UnitZ),
     3 => ctx.CreateMatrix(Vector3.Zero),
-    4 => ctx.CreateMatrix(Vector3.UnitX),
-    5 => ctx.CreateMatrix(Vector3.UnitY),
-    6 => ctx.CreateMatrix(Vector3.UnitZ),
-    7 => ctx.CreateMatrix(Vector3.Zero),
-    8 => ctx.CreateScreenPositions(),
-    9 => ctx.CreateViewportSize(),
+    4 => ctx.CreateScreenPositions(),
+    5 => ctx.CreateViewportSize(),
     _ => ctx.CreateMatrix(Vector3.Zero)
 });
 

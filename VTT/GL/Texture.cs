@@ -55,7 +55,7 @@
         public TextureTarget Target => this._type;
         public IntPtr AsyncFenceID { get; set; }
 
-        public bool IsGLAllocated => this._glId == 0;
+        public bool IsGLAllocated => this._glId != 0;
 
         private static readonly ConcurrentDictionary<uint, Guid> textureProtection = new ConcurrentDictionary<uint, Guid>(); // Kinda really bad performance wise, but we don't expect to create too many textures anyway so maybe fine?
 

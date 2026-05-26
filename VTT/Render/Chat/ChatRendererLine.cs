@@ -262,13 +262,13 @@
                                             {
                                                 float tW = ap.GLTex.Size.Width;
                                                 float tH = ap.GLTex.Size.Height;
-                                                imgSize = new Vector2(tW, tH);
                                                 AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
                                                 float progress = (float)frame.TotalDurationToHere / ap.FramesTotalDelay;
                                                 float sS = frame.X / tW;
                                                 float sE = sS + (frame.Width / tW);
                                                 float tS = frame.Y / tH;
                                                 float tE = tS + (frame.Height / tH);
+                                                imgSize = new Vector2(frame.Width, frame.Height);
                                                 imgSt = new Vector2(sS, tS);
                                                 imgUv = new Vector2(sE, tE);
                                             }

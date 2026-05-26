@@ -48,7 +48,22 @@
                                 }
                                 else
                                 {
-                                    (this.Width, this.Height) = VTTMath.ClampKeepAR(tex.Size.Width, tex.Size.Height, 320, 320, out _);
+                                    if (ap != null && ap.IsAnimated)
+                                    {
+                                        int wMax = 0;
+                                        int hMax = 0;
+                                        foreach (AssetPreview.FrameData frame in ap.Frames)
+                                        {
+                                            wMax = Math.Max(wMax, (int)(frame.Width / (float)tex.Size.Width));
+                                            hMax = Math.Max(wMax, (int)(frame.Height / (float)tex.Size.Height));
+                                        }
+
+                                        (this.Width, this.Height) = VTTMath.ClampKeepAR(wMax, hMax, 320, 320, out _);
+                                    }
+                                    else
+                                    {
+                                        (this.Width, this.Height) = VTTMath.ClampKeepAR(tex.Size.Width, tex.Size.Height, 320, 320, out _);
+                                    }
                                 }
                             }
                             else

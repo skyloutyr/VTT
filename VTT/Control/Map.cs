@@ -474,6 +474,8 @@
         public MapCelestialBodies Clone(bool keepIds = false)
         {
             MapCelestialBodies ret = new MapCelestialBodies();
+            ret._sunRef = null;
+            ret._bodies.Clear();
             lock (this.@lock)
             {
                 foreach (CelestialBody body in this._bodies.Values)

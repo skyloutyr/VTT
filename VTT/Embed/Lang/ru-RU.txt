@@ -958,3 +958,5 @@ menu.settings.use_ubo_dma.tt=Управляет режимом передачи 
 ui.network.server_allow_embedded_images=Разрешить встраивание изображений в чат
 ui.chat.delete=Удалить Сообщение
 chat.deleted=(Удалено)
+ui.turn_tracker.round.label=Раунд:
+ui.turn_tracker.round.value=Раунд: {0}

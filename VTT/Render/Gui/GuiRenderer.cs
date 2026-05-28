@@ -339,7 +339,7 @@
             this.RenderMusicPlayer(lang, this.FrameState, time);
             this.RenderLogs(lang);
             this.RenderTurnTrackerControls(cMap, lang, this.FrameState);
-            this.RenderTurnTrackerOverlay(cMap, window_flags, this.FrameState);
+            this.RenderTurnTrackerOverlay(cMap, lang, window_flags, this.FrameState);
             this.RenderPerformanceMonitor(lang);
 
             // Should be always in front of others

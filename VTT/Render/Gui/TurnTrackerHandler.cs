@@ -76,7 +76,7 @@
             return ret;
         }
 
-        private unsafe void RenderTurnTrackerOverlay(Map cMap, ImGuiWindowFlags window_flags, GuiState state)
+        private unsafe void RenderTurnTrackerOverlay(Map cMap, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
             this._turnTrackerVisible = false;
             if (this.ShaderEditorRenderer.popupState || this.ParticleEditorRenderer.popupState)
@@ -446,6 +446,17 @@
                             ImGui.SetCursorPosX(textPosition.X - (tW / 2));
                             ImGui.SetCursorPosY(textPosition.Y);
                             ImGui.TextUnformatted(cMap.TurnTracker.EntryName);
+
+                            string rText = lang.Translate("ui.turn_tracker.round.value", cMap.TurnTracker.Round);
+                            float rtw = ImGui.CalcTextSize(rText).X;
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vec4(0, 0, 0, 1));
+                            ImGui.SetCursorPosX(textPosition.X - (rtw / 2) + 1);
+                            ImGui.SetCursorPosY(-1);
+                            ImGui.TextUnformatted(rText);
+                            ImGui.PopStyleColor();
+                            ImGui.SetCursorPosX(textPosition.X - (rtw / 2));
+                            ImGui.SetCursorPosY(-2);
+                            ImGui.TextUnformatted(rText);
                         }
                     }
 
@@ -696,6 +707,17 @@
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.SetTooltip(lang.Translate("ui.turn_tracker.right"));
+                        }
+
+                        ImGui.SameLine();
+                        ImGui.TextUnformatted(lang.Translate("ui.turn_tracker.round.label"));
+                        ImGui.SameLine();
+                        ImGui.PopItemWidth();
+                        ImGui.PushItemWidth(120);
+                        int cRound = cMap.TurnTracker.Round;
+                        if (ImGui.InputInt("##TurnRoundNumValInput", ref cRound, 1, 1, ImGuiInputTextFlags.CharsDecimal))
+                        {
+                            new PacketChangeTurnTrackerRound() { MapID = cMap.ID, NewRound = cRound }.Send();
                         }
 
                         ImGui.PopItemWidth();

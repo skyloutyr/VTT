@@ -4,6 +4,7 @@
     using System;
     using System.Collections.Generic;
     using VTT.Network;
+    using VTT.Network.Packet;
     using VTT.Util;
 
     public class TurnTracker : ISerializable
@@ -18,6 +19,7 @@
         public Color CurrentColor { get; set; } = Color.White;
 
         public bool Visible { get; set; } = false;
+        public int Round { get; set; } = 0;
 
         public Map Container { get; set; }
 
@@ -29,7 +31,7 @@
 
         public TurnTracker CloneWithoutObjects(Map container)
         {
-            TurnTracker ret = new TurnTracker(container) { Visible = this.Visible };
+            TurnTracker ret = new TurnTracker(container) { Visible = this.Visible, Round = this.Round };
             foreach (Team t in this.Teams)
             {
                 if (!string.IsNullOrEmpty(t.Name))
@@ -156,13 +158,27 @@
                 return;
             }
 
+            int roundAdvancement = 0;
             if (idx < 0)
             {
+                roundAdvancement = -((Math.Abs(idx) / this.Entries.Count) + 1);
                 idx = this.Entries.Count - (Math.Abs(idx) % this.Entries.Count);
             }
+            else
+            {
+                if (idx >= this.Entries.Count)
+                {
+                    roundAdvancement = idx / this.Entries.Count;
+                    idx %= this.Entries.Count;
+                }
+            }
 
-            idx %= this.Entries.Count;
             this.EntryIndex = idx;
+            if (this.Container.IsServer && roundAdvancement != 0)
+            {
+                this.ChangeRound(this.Round + roundAdvancement);
+            }
+
             if (!this.Container.IsServer && Client.Instance != null && Client.Instance.Settings.EnableSoundTurnTracker && !Client.Instance.IsAdmin) // Client side only
             {
                 Entry e = this.GetAt(idx);
@@ -173,6 +189,22 @@
                         Client.Instance.Frontend.Sound.PlaySound(Client.Instance.Frontend.Sound.YourTurn, Sound.SoundCategory.UI);
                     }
                 }
+            }
+        }
+
+        public void ChangeRound(int to)
+        {
+            to = Math.Max(0, to);
+            int roundDelta = to - this.Round;
+            this.Round = to;
+            foreach (MapObject mo in this.Container.IterateObjects(null))
+            {
+                // TODO tick status effect timers! This happens client-side from here too.
+            }
+
+            if (this.Container.IsServer)
+            {
+                new PacketChangeTurnTrackerRound() { MapID = this.Container.ID, NewRound = this.Round }.Broadcast(c => Guid.Equals(c.ClientMapID, this.Container.ID));
             }
         }
 
@@ -267,6 +299,7 @@
         {
             DataElement ret = new DataElement();
             ret.SetInt("Index", this.EntryIndex);
+            ret.SetInt("Round", this.Round);
             ret.SetBool("Visible", this.Visible);
             ret.SetArray("Entries", this.Entries.ToArray(), (n, c, v) =>
             {
@@ -288,6 +321,7 @@
             this.Teams.Clear();
             this.Entries.Clear();
             this.EntryIndex = e.GetInt("Index");
+            this.Round = e.GetInt("Round");
             this.Visible = e.GetBool("Visible");
             this.Teams.AddRange(e.GetArray("Teams", (n, c) =>
             {

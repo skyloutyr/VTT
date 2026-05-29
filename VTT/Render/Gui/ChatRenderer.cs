@@ -11,6 +11,7 @@
     using VTT.Control;
     using VTT.Network;
     using VTT.Network.Packet;
+    using VTT.Render.Chat;
     using VTT.Util;
 
     public partial class GuiRenderer
@@ -410,6 +411,17 @@
                         if (txt.StartsWith("/me "))
                         {
                             txt = Client.Instance.Settings.Name + txt[4..];
+                        }
+
+                        if (txt.StartsWith("/pos "))
+                        {
+                            txt = ChatRendererPosition.CreateChatMessage(Client.Instance.Frontend.Renderer.MapRenderer.TerrainRaycastResult ?? Vector3.Zero, txt[5..]);
+                        }
+
+                        if (txt.StartsWith("/posw ") || txt.StartsWith("/wpos "))
+                        {
+                            int secondSpaceIndex = txt.IndexOf(' ', 6);
+                            txt = $"/w {txt[6..secondSpaceIndex]} " + ChatRendererPosition.CreateChatMessage(Client.Instance.Frontend.Renderer.MapRenderer.TerrainRaycastResult ?? Vector3.Zero, txt[(secondSpaceIndex + 1)..]);
                         }
 
                         PacketChatMessage pcm = new PacketChatMessage() { Message = txt };

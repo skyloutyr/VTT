@@ -477,6 +477,7 @@
                     RenderType.Spell => new ChatRendererSpell(this),
                     RenderType.Sound => new ChatRendererAudio(this),
                     RenderType.ObjectSnapshot => new ChatRendererMapObject(this),
+                    RenderType.Position => new ChatRendererPosition(this),
                     _ => default
                 };
             }
@@ -632,7 +633,8 @@
             Image,
             RollExpression,
             Sound,
-            ObjectSnapshot
+            ObjectSnapshot,
+            Position
         }
 
         [Flags]

@@ -13,6 +13,7 @@
         public string OwnerName { get; set; }
         public Color OwnerColor { get; set; }
         public Vector3 Position { get; set; }
+        public bool IsSilentWhenCreated { get; set; }
 
         public PingType Type { get; set; }
 
@@ -24,6 +25,7 @@
             this.OwnerColor = e.GetColor("OwnerColor");
             this.Position = e.GetVec3Legacy("Position");
             this.Type = (PingType)e.GetByte("Type");
+            this.IsSilentWhenCreated = e.GetBool("Silent", false);
         }
 
         public DataElement Serialize()
@@ -35,6 +37,7 @@
             ret.SetColor("OwnerColor", this.OwnerColor);
             ret.SetVec3("Position", this.Position);
             ret.SetByte("Type", (byte)this.Type);
+            ret.SetBool("Silent", this.IsSilentWhenCreated);
             return ret;
         }
 

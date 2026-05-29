@@ -963,3 +963,7 @@ ui.turn_tracker.round.value=Round: {0}
 ui.turn_tracker.grayscale.tt=Enable Grayscale.\nIf enabled, the portrait in the turn tracker will have the gray-scale effect applied.
 ui.turn_tracker.colormod.tt=Color Modifier.\nThis is a multiplied over the colour of the portrait in the tracker.\nIf grayscale is enabled, this is applied After the grayscale effect.
 ui.popup.change_turn_tracker_entry_color_mod=Change Turn Tracker Entry Colour
+ui.chat.embed_location.wrong_map=Different Map!
+ui.chat.embed_location.wrong_map.tt=This location was linked on a different map.
+ui.chat.embed_location.goto_location=Goto {0:0.##}, {1:0.##}, {2:0.##}
+ui.chat.embed_location.goto_location.tt=Click this button to go to the linked location.

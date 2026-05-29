@@ -326,5 +326,8 @@
         public static implicit operator uint(ColorAbgr self) => self._abgr;
         public static implicit operator ColorAbgr(uint self) => new ColorAbgr(self);
         public static implicit operator ColorAbgr(Color imgsharpclr) => new ColorAbgr(imgsharpclr.Abgr());
+
+        public static bool operator ==(ColorAbgr l, ColorAbgr r) => l._abgr == r._abgr;
+        public static bool operator !=(ColorAbgr l, ColorAbgr r) => l._abgr != r._abgr;
     }
 }

@@ -139,7 +139,7 @@
             {
                 p.DeathTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + (p.IsEmote() ? 4000 : 10000);
                 this.ActivePings.Add(p);
-                if (Client.Instance.Settings.EnableSoundPing && !p.IsEmote())
+                if (Client.Instance.Settings.EnableSoundPing && !p.IsEmote() && !p.IsSilentWhenCreated)
                 {
                     Client.Instance.Frontend.Sound.PlaySound(Client.Instance.Frontend.Sound.PingAny, SoundCategory.MapFX);
                 }

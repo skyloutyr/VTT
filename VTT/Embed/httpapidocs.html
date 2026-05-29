@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTT HTTP API DOCS</title>
+</head>
+<style>
+    .tag {
+        background-color: brown;
+        border: 2px solid red;
+        text-align: center;
+        margin: auto;
+        color: whitesmoke;
+    }
+
+    .prop {
+        display: inline-block;
+        background-color: chocolate;
+        border: 2px solid goldenrod;
+        text-align: center;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        color: gold;
+    }
+
+    .indentblock {
+        display: block;
+        padding-left: 24px;
+    }
+</style>
+<body>
+    <h1>VTT HTTP API Documentation</h1>
+    <div class="tag">Manifest: 1.0</div>
+    <div class="prop">TCP</div>
+    <div class="prop">HTTP/1.1</div>
+    <div class="prop">UTF-8 or ANSI</div>
+    <div class="prop">en-US</div>
+    <hr>
+    <br>
+    <h2>Basic usage concepts:</h2>
+    Submit a <b>GET</b> request to receive this page.
+    <br>
+    Submit a <b>POST</b> request to issue API interactions.
+    <br>
+    For WebSockets, send plaintext containing the same contents as the POST request body. Alternatively, may send JSON as plaintext with the same KV pairs. To include the AUTH token, append it as the auth parameter. Whenever a server processes the WS message, it will respond with a JSON object (plaintext), that, at the very least, will include the statuscode of the result under the status key. Successful method results will also include their method identifier under the method key.
+    <hr>
+    <h2>Authorization:</h2>
+    A <b>GET</b> request to receive this page does not require authorization.
+    <br>
+    To use the API anonimously, submit POST requests without a Authorization header. Most API request require an authorized user. Those that do not, will specify a <div class="prop">Anonimous</div> tag.
+    If an API request is made that requires an authorized user, but no Authorization was provided, the API will return a 401 - Unauthorized status code.
+    If an API request is made that requires an authorized user, and the authorization provided was invalid, the API will return a 401 - Unauthorized status code.
+    If an API request is made that requires an authorized user, and the credentials do not have premission for the operation, the API will return a 403 - Forbidden status code.
+    <br>
+    To authorize a client, include the Authorization header, where the header content is either <b>Basic BASE64ENCID:SECRET</b>, or <b>Auth AUTHTOKEN</b>.
+    The BASE64ENCID:SECRET is a Base-64 encoded string, where the non-encoded content is ID:SECRET. ID is the GUID of the client to authorize as, and SECRET is base64 encoded secret.
+    If authorization was correct, the server will respond 200 OK with content that is the AUTH token for the current session. A session lasts as long as the VTT server is online. When the session terminates, the AUTH token provided is no longer valid.
+    If authorization was not correct, the server will send a 401 - Unauthorized status code.
+    <br>
+    <h2>KeepAlive and WebSocket:</h2>
+    If KeepAlive was specified, the server will return a 426 - Upgrade Requried status code, indicating that the client should upgrade the connection to a WebSocket.
+    To upgrade to a WebSocket, send any HTTP request with a Upgrade: websocket Connection: Upgrade headers. The server will respond with a 101 - Switching Protocols response, with the headers being the same.
+    <h2>HTTPS:</h2>
+    Secure connections and WSS are currently not supported.
+    <h2>API Methods:</h2>
+    <hr>
+    <h3>Authorize</h3>
+    <div class="prop">Anonimous</div>
+    <br>
+    POST: method=<b>authorize</b>&ID=%GUID%&secret=%B64SECRET%
+    <br>
+    WS: { "method": "Authorize", "id": "%GUID%", "secret": "%B64SECRET%" }
+    <br>
+    <br>
+    Sends an authorization request to the server.
+    <br>
+    <br>
+    <b>Parameters:</b>
+    <div class="indentblock">
+        <b>method</b>: must be <b>Authorize</b>.
+        <br>
+        <b>id</b>: The GUID of the client, standard GUID format.
+        <br>
+        <b>secret</b>: The base-64 encoded secret of the client.
+    </div>
+    <br>
+    <b>Returns:</b> 
+    <div class="indentblock">
+        200 - OK if authorization successful, with the body being the AUTH key to use for the current session.
+        <br>
+        401 - Unauthorized if invalid.
+        <br>
+        WS: { "status": STATUSCODE, "auth": "AUTHKEY" }
+    </div>
+    <hr>
+    <h3>Message</h3>
+    <div class="prop">Authorized</div>
+    <div class="prop">Action</div>
+    <div class="prop">Noreturn</div>
+    <br>
+    POST: method=<b>message</b>&message=%MSG%
+    <br>
+    WS: { "method": "message", "auth": "%AUTH%", "message": "%MSG%" }
+    <br>
+    <br>
+    Sends a chat message to the server from a specified user. The message syntax is exactly the same as if it were sent by the actual client.
+    The client does not need to be online to send this message.
+    Note that the MSG parameter may not include the <b>&</b> symbol if sent by POST or non-json WS. It may be escaped with a <b>\a</b> syntax.
+    <br>
+    <br>
+    <b>Parameters:</b>
+    <div class="indentblock">
+        <b>method</b>: must be <b>message</b>.
+        <br>
+        <b>message</b>: The chat message to send.
+    </div>
+    <br>
+    <b>Returns:</b> 
+    <div class="indentblock">
+        401 - Unauthorized if no authorization was provided.
+        <br>
+        200 - OK if the operation was successful.
+        <br>
+        WS: { "status": STATUSCODE }
+    </div>
+</body>
+</html>

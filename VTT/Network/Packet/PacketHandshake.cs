@@ -18,58 +18,56 @@
             if (isServer)
             {
                 server.Logger.Log(LogLevel.Debug, "Client handshake initiated for " + this.ClientID);
-                ServerClient sc = (ServerClient)server.FindSession(sessionID);
-
                 if (ClientID.Equals(Guid.Empty))
                 {
                     server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ", illegal client ID!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.IllegalOperation }.Send(sc);
-                    sc.Disconnect();
+                    new PacketDisconnectReason() { DCR = DisconnectReason.IllegalOperation }.Send(this.Sender);
+                    this.Sender.Disconnect();
                     return;
                 }
 
                 ClientInfo ci = server.GetOrCreateClientInfo(this.ClientID);
-                sc.Info = ci;
+                this.Sender.Info = ci;
 
-                if (!server.ClientsByID.TryAdd(sc.ID, sc))
+                if (!server.ClientsByID.TryAdd(this.Sender.ID, this.Sender))
                 {
                     server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ", it is likely that a client with the same ID already exists!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.AlreadyConnected }.Send(sc);
-                    sc.Disconnect();
+                    new PacketDisconnectReason() { DCR = DisconnectReason.AlreadyConnected }.Send(this.Sender);
+                    this.Sender.Disconnect();
                     return;
                 }
 
                 if (Program.GetVersionBytes() != this.ClientVersion)
                 {
                     server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client-Server version mismatch!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
-                    sc.Disconnect();
+                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this.Sender);
+                    this.Sender.Disconnect();
                     return;
                 }
 
                 if (this.ClientSecret == null)
                 {
                     server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret not specified!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
-                    sc.Disconnect();
+                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this.Sender);
+                    this.Sender.Disconnect();
                     return;
                 }
 
                 if (ci.IsBanned)
                 {
                     server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client is banned on this server!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(sc);
-                    sc.Disconnect();
+                    new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(this.Sender);
+                    this.Sender.Disconnect();
                     return;
                 }
 
                 if (server.Settings.IsWhitelist)
                 {
-                    if (!server.Whitelist.Any(x => x.Validate(sc)))
+                    if (!server.Whitelist.Any(x => x.Validate(this.Sender)))
                     {
                         server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Server has the whitelist enabled and the client is not on it!");
-                        new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(sc);
-                        sc.Disconnect();
+                        new PacketDisconnectReason() { DCR = DisconnectReason.Banned }.Send(this.Sender);
+                        this.Sender.Disconnect();
                         return;
                     }
                 }
@@ -79,8 +77,8 @@
                     if (ci.Secret.Length != 32 || this.ClientSecret.Length != 32)
                     {
                         server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret format incorrect!");
-                        new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
-                        sc.Disconnect();
+                        new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this.Sender);
+                        this.Sender.Disconnect();
                         return;
                     }
 
@@ -89,8 +87,8 @@
                         if (ci.Secret[i] != this.ClientSecret[i])
                         {
                             server.Logger.Log(LogLevel.Error, "Could not authorise client " + this.ClientID + ": Client secret mismatch!");
-                            new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(sc);
-                            sc.Disconnect();
+                            new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this.Sender);
+                            this.Sender.Disconnect();
                             return;
                         }
                     }
@@ -100,28 +98,28 @@
                     ci.Secret = this.ClientSecret; // Save happens later, may as well just set the data
                 }
 
-                sc.IsAuthorized = true;
+                this.Sender.IsAuthorized = true;
                 server.ClientInfos[ci.ID] = ci;
-                if (sc.IsAdmin)
+                if (this.Sender.IsAdmin)
                 {
-                    sc.ActionMemory.ActionBufferSize = 128;
+                    this.Sender.ActionMemory.ActionBufferSize = 128;
                 }
 
-                PacketClientInfo pci = new PacketClientInfo() { IsAdmin = sc.IsAdmin, IsObserver = sc.IsObserver, Session = sessionID, IsServer = isServer, ServerAllowsEmbeddedImages = server.Settings.AllowEmbeddedImages };
-                pci.Send(sc);
-                new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(sc);
+                PacketClientInfo pci = new PacketClientInfo() { IsAdmin = this.Sender.IsAdmin, IsObserver = this.Sender.IsObserver, Session = sessionID, IsServer = isServer, ServerAllowsEmbeddedImages = server.Settings.AllowEmbeddedImages };
+                pci.Send(this.Sender);
+                new PacketClientData() { InfosToUpdate = server.ClientInfos.Values.ToList() }.Send(this.Sender);
                 server.Logger.Log(LogLevel.Debug, "Client handshake completion sent");
-                if (!server.TryGetMap(sc.ClientMapID, out Map m))
+                if (!server.TryGetMap(this.Sender.ClientMapID, out Map m))
                 {
-                    sc.ClientMapID = server.Settings.DefaultMapID;
+                    this.Sender.ClientMapID = server.Settings.DefaultMapID;
                     m = server.GetExistingMap(server.Settings.DefaultMapID);
-                    sc.SaveClientData();
+                    this.Sender.SaveClientData();
                 }
 
                 PacketMap mp = new PacketMap() { Map = m, Session = sessionID, IsServer = IsServer };
-                mp.Send(sc); // Send the client current map information, wait for MapAck packet
-                sc.ClientMapID = m.ID;
-                sc.SaveClientData();
+                mp.Send(this.Sender); // Send the client current map information, wait for MapAck packet
+                this.Sender.ClientMapID = m.ID;
+                this.Sender.SaveClientData();
                 server.Logger.Log(LogLevel.Debug, "Client map changed to " + m.ID);
                 if (server.ServerChat.AllChatLines.Count > 0)
                 {
@@ -130,40 +128,40 @@
                     while (c < 24 && chatIndex >= 0)
                     {
                         ChatLine cl = server.ServerChat.AllChatLines[chatIndex--]; // No need for a lock since we are iterating from the end
-                        if (sc.IsAdmin || cl.SenderID.Equals(sc.ID) || cl.DestID.Equals(sc.ID) || cl.DestID.Equals(Guid.Empty))
+                        if (this.Sender.IsAdmin || cl.SenderID.Equals(this.Sender.ID) || cl.DestID.Equals(this.Sender.ID) || cl.DestID.Equals(Guid.Empty))
                         {
                             PacketChatLine pcl = new PacketChatLine() { Line = cl };
-                            pcl.Send(sc);
+                            pcl.Send(this.Sender);
                             ++c;
                         }
                     }
                 }
 
-                new PacketCommunique() { Request = RequestType.ChatMoveToEndRequest }.Send(sc);
-                if (sc.IsAdmin)
+                new PacketCommunique() { Request = RequestType.ChatMoveToEndRequest }.Send(this.Sender);
+                if (this.Sender.IsAdmin)
                 {
                     PacketAssetDef pad = new PacketAssetDef() { ActionType = AssetDefActionType.Initialize, Dir = server.AssetManager.Root };
-                    pad.Send(sc);
+                    pad.Send(this.Sender);
                     server.Logger.Log(LogLevel.Debug, "AssetRef data sent");
                     PacketMapPointer pmp = new PacketMapPointer() { Data = server.EnumerateMapData().Select(x => (x.MapID, x.MapFolder, x.MapName)).ToList(), IsServer = true, Remove = false, Session = sessionID };
-                    pmp.Send(sc);
-                    new PacketSetDefaultMap() { MapID = server.Settings.DefaultMapID }.Send(sc);
+                    pmp.Send(this.Sender);
+                    new PacketSetDefaultMap() { MapID = server.Settings.DefaultMapID }.Send(this.Sender);
                 }
 
                 foreach (TextJournal tj in server.Journals.Values)
                 {
-                    if (tj.IsPublic || sc.ID.Equals(tj.OwnerID) || sc.IsAdmin)
+                    if (tj.IsPublic || this.Sender.ID.Equals(tj.OwnerID) || this.Sender.IsAdmin)
                     {
-                        new PacketFullJournal() { Journal = tj }.Send(sc);
+                        new PacketFullJournal() { Journal = tj }.Send(this.Sender);
                     }
                 }
 
-                new PacketMusicPlayerFullData() { SerializedMusicPlayer = server.MusicPlayer.Serialize() }.Send(sc);
-                new PacketMusicPlayerSetIndex() { Index = server.MusicPlayer.CurrentTrackPosition }.Send(sc);
+                new PacketMusicPlayerFullData() { SerializedMusicPlayer = server.MusicPlayer.Serialize() }.Send(this.Sender);
+                new PacketMusicPlayerSetIndex() { Index = server.MusicPlayer.CurrentTrackPosition }.Send(this.Sender);
 
-                sc.Info.IsLoggedOn = true;
-                sc.PersonalTimeoutInterval = server.TimeoutInterval;
-                new PacketClientOnlineNotification() { ClientID = sc.ID, Status = true }.Broadcast();
+                this.Sender.Info.IsLoggedOn = true;
+                this.Sender.PersonalTimeoutInterval = server.TimeoutInterval;
+                new PacketClientOnlineNotification() { ClientID = this.Sender.ID, Status = true }.Broadcast();
             }
         }
 

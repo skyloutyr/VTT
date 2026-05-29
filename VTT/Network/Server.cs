@@ -3,7 +3,6 @@
     using NetCoreServer;
     using Newtonsoft.Json;
     using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -13,12 +12,13 @@
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using VTT.Asset;
     using VTT.Control;
     using VTT.Network.Packet;
-    using VTT.Network.UndoRedo;
     using VTT.Util;
 
     public class Server : TcpServer
@@ -566,6 +566,9 @@
                     Guid id = Guid.Parse(Path.GetFileNameWithoutExtension(file));
                     ClientInfo ci = JsonConvert.DeserializeObject<ClientInfo>(File.ReadAllText(file));
                     ci.ID = id;
+                    using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+                    ci.SessionAuthToken = new byte[32];
+                    rng.GetBytes(ci.SessionAuthToken);
                     this.ClientInfos[id] = ci;
                 }
             }
@@ -612,6 +615,9 @@
             }
 
             ci = new ClientInfo() { ID = id };
+            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            ci.SessionAuthToken = new byte[32];
+            rng.GetBytes(ci.SessionAuthToken);
             this.ClientInfos.TryAdd(id, ci);
             return ci;
         }
@@ -1001,8 +1007,7 @@
             return m;
         }
 
-
-        protected override TcpSession CreateSession() => new ServerClient(this);
+        protected override TcpSession CreateSession() => new SessionHandler(this);
 
         protected override void OnStopped()
         {
@@ -1022,6 +1027,119 @@
             this.Stop();
             this.running = false;
             this.Logger.Log(LogLevel.Info, "Server shut down");
+        }
+    }
+
+    public sealed class SessionHandler : TcpSession
+    {
+        public Server Container { get; set; }
+
+        public SessionProtocol Kind { get; set; } = SessionProtocol.Undetermined;
+        public ServerClient VTTSession { get; set; }
+        public HTTPAPIEndpoint HTTPAPISession { get; set; }
+
+        public SessionHandler(TcpServer server) : base(server) => this.Container = (Server)server;
+
+        protected override void OnError(SocketError error)
+        {
+            base.OnError(error);
+            this.VTTSession?.OnError(error);
+        }
+
+        protected override void OnConnected()
+        {
+            base.OnConnected();
+            this.VTTSession?.OnConnected();
+        }
+
+        protected override void OnDisconnected()
+        {
+            base.OnDisconnected();
+            this.VTTSession?.OnDisconnected();
+        }
+
+        protected override void OnSent(long sent, long pending)
+        {
+            base.OnSent(sent, pending);
+            this.VTTSession?.OnSent(sent, pending);
+        }
+
+        protected override void OnReceived(byte[] buffer, long offset, long size)
+        {
+            base.OnReceived(buffer, offset, size);
+            if (this.Kind == SessionProtocol.Undetermined)
+            {
+                this.DetermineProtocol(buffer, offset, size);
+            }
+
+            this.VTTSession?.OnReceived(buffer, offset, size);
+            this.HTTPAPISession?.OnReceived(buffer, offset, size);
+        }
+
+        private byte[] _internalProtoDetermineBuffer = new byte[PacketNetworkManager.HeaderSize];
+        private int _internalProtoBufferFill = 0;
+        private int _prevInternalProtoBufferFill = 0;
+        private static readonly string[] httpHeaders = new string[] { "get", "head", "post", "put", "delete", "connect", "options", "trace", "patch" };
+
+        private void DetermineProtocol(byte[] buffer, long offset, long size)
+        {
+            // This is on first connection only.
+            // To determine valid VTT packet, we only need PacketNetworkManager.HeaderSize bytes.
+            // There is a buffer problem here if we get less than 8 bytes in the initial connection - that really should never happen though
+            this._prevInternalProtoBufferFill = this._internalProtoBufferFill;
+            for (int i = this._prevInternalProtoBufferFill; i < Math.Min(PacketNetworkManager.HeaderSize, size); ++i)
+            {
+                this._internalProtoDetermineBuffer[i] = buffer[offset + i];
+                this._internalProtoBufferFill += 1;
+            }
+
+            if (this._internalProtoBufferFill == PacketNetworkManager.HeaderSize)
+            {
+                // By current implementation, VTT packet header is 8 bytes - first 4 must be the magic, second 4 must be the length.
+                if (BitConverter.ToInt32(this._internalProtoDetermineBuffer, 0) == PacketNetworkManager.HeaderMagic)
+                {
+                    // Here we either have a VTT packet, or were unlickily fuzzed into it.
+                    // Can't do anything about fuzz anyway, so just assume VTT
+                    this.Kind = SessionProtocol.VTT;
+                    this.VTTSession = new ServerClient(this.Container, this);
+                    this.VTTSession.OnConnected(); // Call here as we have approved the connection
+                    if (this._prevInternalProtoBufferFill != 0) // Got our 8 bytes in pieces for some ungodly reason
+                    {
+                        this.VTTSession.OnReceived(this._internalProtoDetermineBuffer, 0, this._prevInternalProtoBufferFill);
+                    }
+
+                    this._prevInternalProtoBufferFill = this._internalProtoBufferFill = 0;
+                    this._internalProtoDetermineBuffer = null; // Cleanup
+                    return;
+                }
+
+                // Try for an HTTP connection
+                string asciiStr = Encoding.ASCII.GetString(this._internalProtoDetermineBuffer).ToLower();
+                if (httpHeaders.Any(asciiStr.StartsWith))
+                {
+                    // Looks like HTTP
+                    this.Kind = SessionProtocol.HTTPAPI;
+                    this.HTTPAPISession = new HTTPAPIEndpoint(this.Container, this);
+                    if (this._prevInternalProtoBufferFill != 0) // Got our 8 bytes in pieces for some ungodly reason
+                    {
+                        this.HTTPAPISession.OnReceived(this._internalProtoDetermineBuffer, 0, this._prevInternalProtoBufferFill);
+                    }
+
+                    this._prevInternalProtoBufferFill = this._internalProtoBufferFill = 0;
+                    this._internalProtoDetermineBuffer = null; // Cleanup
+                    return;
+                }
+
+                this.Kind = SessionProtocol.Unknown; // Do not know what this is
+            }
+        }
+
+        public enum SessionProtocol
+        {
+            Undetermined,
+            VTT,
+            HTTPAPI,
+            Unknown
         }
     }
 
@@ -1067,7 +1185,7 @@
             {
                 case Kind.IPAddress:
                 {
-                    if (sc.Socket.RemoteEndPoint is IPEndPoint ipep)
+                    if (sc.Session.Socket.RemoteEndPoint is IPEndPoint ipep)
                     {
                         return ipep.Address.Equals(this.Address);
                     }
@@ -1098,192 +1216,6 @@
             IPAddress,
             GUID,
             Name
-        }
-    }
-
-    public class ServerClient : TcpSession
-    {
-        public ClientInfo Info { get; set; }
-        public long LastPingResponseTime { get; set; }
-        public long PersonalTimeoutInterval { get; set; }
-        public ActionMemory ActionMemory { get; set; }
-        public bool IsAuthorized { get; set; }
-
-        public Guid ID
-        {
-            get => this.Info.ID;
-            set => this.Info.ID = value;
-        }
-
-        public Guid ClientMapID
-        {
-            get => this.Info.MapID;
-            set => this.Info.MapID = value;
-        }
-
-        public bool IsAdmin
-        {
-            get => this.Info.IsAdmin;
-            set => this.Info.IsAdmin = true;
-        }
-
-        public bool IsObserver
-        {
-            get => this.Info.IsObserver;
-            set => this.Info.IsObserver = value;
-        }
-
-        public bool CanDraw
-        {
-            get => this.Info.CanDraw;
-            set => this.Info.CanDraw = value;
-        }
-
-        public PacketNetworkManager LocalNetManager { get; set; }
-
-        public string Name
-        {
-            get => this.Info.Name;
-            set => this.Info.Name = value;
-        }
-        public Color Color
-        {
-            get => this.Info.Color;
-            set => this.Info.Color = value;
-        }
-
-        public Image<Rgba32> Image
-        {
-            get => this.Info.Image;
-            set => this.Info.Image = value;
-        }
-
-        public Server Container { get; set; }
-
-        public ServerClient(TcpServer server) : base(server)
-        {
-            this.Container = (Server)server;
-            this.LocalNetManager = new PacketNetworkManager() { IsServer = true };
-            this.ActionMemory = new ActionMemory(this);
-            this.IsAuthorized = false;
-        }
-
-        public void SetClientInfo(ClientInfo info)
-        {
-            this.Info = info;
-            this.EnsureDataCorrectness();
-        }
-
-        protected override void OnConnecting() => base.OnConnecting();
-
-        protected override void OnError(SocketError error)
-        {
-            base.OnError(error);
-            Network.Server.Instance.Logger.Log(LogLevel.Warn, "Client socket errpr " + error);
-        }
-
-        protected override void OnConnected() // C->S connection
-        {
-            Network.Server.Instance.Logger.Log(LogLevel.Info, "Client connected with session id " + this.Id.ToString());
-            Network.Server.Instance.Logger.Log(LogLevel.Info, "Connecting client IP address is " + this.Socket.RemoteEndPoint.ToString());
-            base.OnConnected();
-            this.LastPingResponseTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        }
-
-        protected override void OnDisconnected()
-        {
-            Network.Server.Instance.Logger.Log(LogLevel.Info, "Client disconnected");
-            base.OnDisconnected();
-            if (this.Info != null)
-            {
-                Guid id = this.ID;
-                Network.Server.Instance.ClientsByID.TryRemove(id, out ServerClient sc);
-                if (sc != null)
-                {
-                    sc.Info.IsLoggedOn = false;
-                }
-                else
-                {
-                    if (this.Info != null)
-                    {
-                        this.Info.IsLoggedOn = false;
-                    }
-                }
-
-                new PacketClientOnlineNotification() { ClientID = sc?.ID ?? id, Status = false }.Broadcast();
-            }
-        }
-
-        protected override void OnSent(long sent, long pending)
-        {
-            base.OnSent(sent, pending);
-            this.Container.NetworkOut.Increment(sent);
-        }
-
-        protected override void OnReceived(byte[] buffer, long offset, long size)
-        {
-            this.Container.NetworkIn.Increment(size);
-            base.OnReceived(buffer, offset, size);
-            foreach (PacketBase packet in this.LocalNetManager.Receive(buffer, offset, size))
-            {
-                if (!this.IsAuthorized && packet is not PacketHandshake)
-                {
-                    this.Container?.Logger.Log(LogLevel.Error, $"Client tried sending a packet before handshake, disconnecting!");
-                    new PacketDisconnectReason() { DCR = DisconnectReason.ProtocolMismatch }.Send(this);
-                    this.Disconnect();
-                    return;
-                }
-
-                packet.Sender = this;
-                packet.Act(this.Id, (Server)this.Server, null, true);
-            }
-
-            if (this.LocalNetManager.IsInvalidProtocol) // Do not notify the client of disconnection, since protocol is invalid
-            {
-                this.Container?.Logger.Log(LogLevel.Error, $"Client did not follow VTT's network protocol, disconnecting!");
-                this.Disconnect();
-                return;
-            }
-        }
-
-        public void EnsureDataCorrectness()
-        {
-            if (this.ClientMapID.Equals(Guid.Empty))
-            {
-                this.ClientMapID = this.Container.Settings.DefaultMapID;
-                this.SaveClientData();
-            }
-            else
-            {
-                if (!this.Container.TryGetMap(this.ClientMapID, out _))
-                {
-                    this.ClientMapID = this.Container.Settings.DefaultMapID;
-                    this.SaveClientData();
-                }
-            }
-
-            bool aOld = this.IsAdmin;
-            this.IsAdmin = Equals(this.ID, Network.Server.Instance.LocalAdminID);
-            if (this.IsAdmin != aOld)
-            {
-                this.SaveClientData();
-            }
-        }
-
-        public void SaveClientData()
-        {
-            string clientLoc = Path.Combine(IOVTT.ServerDir, "Clients", this.ID.ToString() + ".json");
-            Directory.CreateDirectory(Path.Combine(IOVTT.ServerDir, "Clients"));
-            try
-            {
-                File.WriteAllText(clientLoc, JsonConvert.SerializeObject(this.Info));
-                Network.Server.Instance.Logger.Log(LogLevel.Debug, "Client data for " + this.ID + " saved");
-            }
-            catch (Exception e)
-            {
-                Network.Server.Instance.Logger.Log(LogLevel.Error, "Could not save client data for " + this.ID);
-                Network.Server.Instance.Logger.Exception(LogLevel.Error, e);
-            }
         }
     }
 

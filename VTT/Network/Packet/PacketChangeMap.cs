@@ -16,15 +16,14 @@
         {
             if (isServer) // Client asking server to change the map
             {
-                ServerClient senderSc = (ServerClient)server.FindSession(sessionID);
-                server.Logger.Log(LogLevel.Debug, "Client " + senderSc.ID + " asked for a map change");
+                server.Logger.Log(LogLevel.Debug, "Client " + this.Sender.ID + " asked for a map change");
                 if (!server.TryGetMap(this.NewMapID, out _))
                 {
                     server.Logger.Log(LogLevel.Warn, "Client asked to move to a non-existing map!");
                     return;
                 }
 
-                if (senderSc.IsAdmin) // Only admins can force a map change on other clients
+                if (this.Sender.IsAdmin) // Only admins can force a map change on other clients
                 {
                     foreach (Guid id in this.Clients)
                     {
@@ -63,11 +62,11 @@
                 else // Clients are allowed to change their own map on a request
                 {
                     server.Logger.Log(LogLevel.Debug, "Map change committed");
-                    senderSc.ClientMapID = this.NewMapID;
-                    senderSc.SaveClientData();
+                    this.Sender.ClientMapID = this.NewMapID;
+                    this.Sender.SaveClientData();
                     PacketChangeMap pcm = new PacketChangeMap() { Clients = Array.Empty<Guid>(), IsServer = true, NewMapID = this.NewMapID, Session = sessionID };
-                    pcm.Send(senderSc);
-                    new PacketClientData() { InfosToUpdate = new System.Collections.Generic.List<ClientInfo>() { senderSc.Info } }.Broadcast();
+                    pcm.Send(this.Sender);
+                    new PacketClientData() { InfosToUpdate = new System.Collections.Generic.List<ClientInfo>() { this.Sender.Info } }.Broadcast();
                 }
             }
             else // Server asking the client to change map

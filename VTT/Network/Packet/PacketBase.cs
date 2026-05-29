@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Reflection;
     using VTT.Util;
@@ -41,6 +42,10 @@
                     maxPId = idx;
                 }
             }
+
+#if DEBUG
+            Debugger.Log(0, string.Empty, $"Last packet ID is {maxPId}.\n");
+#endif
         }
 
         public Guid Session { get; set; }
@@ -83,9 +88,9 @@
 
         public void Send(ServerClient sc)
         {
-            this.Session = sc.Id;
+            this.Session = sc.Session.Id;
             this.IsServer = true;
-            sc.SendAsync(this.EncodeDataToBuffer());
+            sc.Session.SendAsync(this.EncodeDataToBuffer());
         }
 
         private byte[] EncodeDataToBuffer()

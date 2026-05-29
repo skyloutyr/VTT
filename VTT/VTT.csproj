@@ -65,6 +65,7 @@
     <None Remove="Embed\grid.vert" />
     <None Remove="Embed\highlight.frag" />
     <None Remove="Embed\highlight.vert" />
+    <None Remove="Embed\httpapidocs.html" />
     <None Remove="Embed\icon-beta-hw.png" />
     <None Remove="Embed\icon-beta-ny.png" />
     <None Remove="Embed\icon-beta.png" />
@@ -302,6 +303,7 @@
     <EmbeddedResource Include="Embed\game-radar-ping-3.wav" />
     <EmbeddedResource Include="Embed\emojiping.frag" />
     <EmbeddedResource Include="Embed\emojiping.vert" />
+    <EmbeddedResource Include="Embed\httpapidocs.html" />
     <EmbeddedResource Include="Embed\icon-beta-hw.png" />
     <EmbeddedResource Include="Embed\icon-beta-ny.png" />
     <EmbeddedResource Include="Embed\icon-beta_small-hw.png" />

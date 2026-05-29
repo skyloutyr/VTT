@@ -7,7 +7,7 @@
 
     public class PacketNetworkManager
     {
-        private const int HeaderSize = 8;
+        public const int HeaderSize = 8;
         public const int HeaderMagic = 0x56545450;
 
         public bool IsServer { get; set; }

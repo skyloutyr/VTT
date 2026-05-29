@@ -24,30 +24,29 @@
                 {
                     if (isServer) // Server side only
                     {
-                        ServerClient sc = (ServerClient)server.FindSession(sessionID);
-                        if (server.TryGetMap(sc.ClientMapID, out Map m))
+                        if (server.TryGetMap(this.Sender.ClientMapID, out Map m))
                         {
                             if (this.RequestData == 1) // Resend map data request
                             {
                                 PacketMap mp = new PacketMap() { Map = m, Session = sessionID, IsServer = isServer };
-                                mp.Send(sc); // Send the client current map information, wait for MapAck packet
+                                mp.Send(this.Sender); // Send the client current map information, wait for MapAck packet
                             }
                             else // Send object datas
                             {
                                 foreach (MapObject mo in m.IterateObjects(null))
                                 {
                                     PacketMapObject mop = new PacketMapObject() { Obj = mo, Session = sessionID, IsServer = isServer };
-                                    mop.Send(sc);
+                                    mop.Send(this.Sender);
                                     l.Log(LogLevel.Debug, "Sent a object packet to client for object " + mo.ID);
                                 }
 
                                 PacketFOWData pfowd = new PacketFOWData() { Image = m.FOW?.Canvas, MapID = m.ID, Status = m.FOW != null && !m.FOW.IsDeleted };
-                                pfowd.Send(sc);
+                                pfowd.Send(this.Sender);
                             }
                         }
                         else
                         {
-                            l.Log(LogLevel.Warn, $"Client {sc.ID} 's map is set to non-existing ID!");
+                            l.Log(LogLevel.Warn, $"Client {this.Sender.ID} 's map is set to non-existing ID!");
                         }
                     }
 

@@ -14,9 +14,8 @@
         {
             if (isServer)
             {
-                ServerClient sc = (ServerClient)server.FindSession(sessionID);
                 AssetManager am = server.AssetManager;
-                server.Logger.Log(Util.LogLevel.Debug, "Client " + sc.ID + " asked for asset at " + this.AssetID);
+                server.Logger.Log(Util.LogLevel.Debug, "Client " + this.Sender.ID + " asked for asset at " + this.AssetID);
                 if (am.Refs.ContainsKey(this.AssetID))
                 {
                     try
@@ -27,13 +26,13 @@
                             : am.ServerAssetCache.GetBinary(this.AssetID);
 
                         PacketAssetResponse par = new PacketAssetResponse() { AssetID = this.AssetID, AssetType = aRef.Type, Binary = binary, Metadata = aRef.Meta, IsServer = true, ResponseType = AssetResponseType.Ok, Session = sessionID };
-                        par.Send(sc);
+                        par.Send(this.Sender);
                         server.Logger.Log(Util.LogLevel.Debug, "Sent client asset");
                     }
                     catch (Exception e)
                     {
                         PacketAssetResponse par = new PacketAssetResponse() { AssetID = this.AssetID, AssetType = this.AssetType, Binary = Array.Empty<byte>(), Metadata = AssetMetadata.Broken, IsServer = true, ResponseType = AssetResponseType.InternalError, Session = sessionID };
-                        par.Send(sc);
+                        par.Send(this.Sender);
                         server.Logger.Log(Util.LogLevel.Error, "Internal server error while sending asset!");
                         server.Logger.Exception(Util.LogLevel.Error, e);
                     }
@@ -41,7 +40,7 @@
                 else
                 {
                     PacketAssetResponse par = new PacketAssetResponse() { AssetID = this.AssetID, AssetType = this.AssetType, Binary = Array.Empty<byte>(), Metadata = AssetMetadata.Broken, IsServer = true, ResponseType = AssetResponseType.NoAsset, Session = sessionID };
-                    par.Send(sc);
+                    par.Send(this.Sender);
                     server.Logger.Log(Util.LogLevel.Warn, "Client requested a non-existing asset!");
                 }
             }

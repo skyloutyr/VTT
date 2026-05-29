@@ -16,8 +16,7 @@
         {
             if (isServer) // C->S request
             {
-                ServerClient sc = (ServerClient)server.FindSession(sessionID);
-                if (sc.IsAdmin) // Only admins can manage assets
+                if (this.Sender.IsAdmin) // Only admins can manage assets
                 {
                     AssetDirectory dir = server.AssetManager.GetDirAt(this.Path);
                     if (this.Remove)
@@ -39,7 +38,7 @@
                 }
                 else
                 {
-                    server.Logger.Log(Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client " + this.Sender.ID + " asked to modify asset data without being an administrator!");
                 }
             }
         }

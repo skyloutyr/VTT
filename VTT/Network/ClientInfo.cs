@@ -88,6 +88,9 @@
         [JsonIgnore]
         public byte[] Secret { get; set; }
 
+        [JsonIgnore]
+        public byte[] SessionAuthToken { get; set; }
+
         public void Write(BinaryWriter bw)
         {
             bw.Write(this.ID.ToByteArray());

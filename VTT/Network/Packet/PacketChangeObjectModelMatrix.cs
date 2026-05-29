@@ -108,7 +108,7 @@
                 server.Logger.Log(LogLevel.Info, "Notifying clients of " + broadcastChanges.Count + " changes and " + senderChanges.Count + " rejects");
                 if (senderChanges.Count > 0)
                 {
-                    PacketChangeObjectModelMatrix pmoS = new PacketChangeObjectModelMatrix() { MovedObjects = senderChanges, IsServer = true, Session = this.Sender.Id, MovementInducerID = this.MovementInducerID, Type = this.Type };
+                    PacketChangeObjectModelMatrix pmoS = new PacketChangeObjectModelMatrix() { MovedObjects = senderChanges, IsServer = true, MovementInducerID = this.MovementInducerID, Type = this.Type };
                     pmoS.Send(this.Sender);
                 }
 

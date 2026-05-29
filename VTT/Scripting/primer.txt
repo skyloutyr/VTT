@@ -1,0 +1,838 @@
+﻿Scripts are to hook to the main process of VTT in three main ways:
+
+1) Extensions
+2) Modules
+3) Plugins
+
+An extension is a small runtime script that can be executed within the default VTT's instance without anything extra required
+Extensions can be loaded and dropped dynamically, and hook into the asset system
+Extensions can modify the behaviours of the app by hooking to existing supports, such as
+	a) Particle behaviour
+	b) Object events, such as selection, moving, getting a turn, etc
+	b) Map events, such as time change, chat message, object changes, etc
+
+Extensions can't add new functionality, but they can override existing ones. 
+An extension must return a boolean value indicating whether the default behaviour should be run aswell.
+
+Modules require campagin support, but are server-wide behaviour modifiers. 
+Modules can modify base behaviours and renders, and add new ones, like a custom chat syntax.
+Modules are to be loaded/unloaded at runtime, but they persist for a session.
+When a client joins a server with a module installed, it downloads the module first. Only when the client confirms
+that the module has been downloaded and activated, may the server send any additional info.
+Modules are for extending functionality and adding new one, but they still lay away from direct app modifications, 
+and must hook onto existing events (though those are more numerous than extensions)
+
+Plugins are direct app-behaviour modifiers. Plugins can use scripting to load DLL modules.
+Plugins can mark themselves as client-side, server-side, or both. The server doesn't validate client-side plugins
+The client doesn't validate server-side plugins, but common-side ones must be present on both for the connection to be established
+
+===================================================================================================================================
+
+Scripting syntax and feature primer:
+Scripting uses the System.Linq.Expression namespace to generate code at runtime.
+Scripts are executed from the .vts extension files.
+
+C-like syntax, typed, but new types are not allowed (except struct types).
+Memory is manually managed by the C# implementation, using unsafe C-like pointers and static lookup tables.
+Memory is allocated on a per-script basis, and cleaned up when the script goes out of scope.
+Since scripts are not allowed to define types, all primitives are auto-cleaned up.
+There is a global scope, which is only cleaned up when the script's global scope itself is disposed, 
+which is determined by the nature of the script itself.
+Scripts are instanced - a singular script may have many instances of it running at the same time. The global scope is per-instance.
+A script knows its instance ID, in case it needs it for anything.
+
+Execution is js-like - functions are defined and implemented first, 
+then anything outside of function scope is executed when a new instance of the script is created.
+There is a cleanup event a script may hook to if it needs to clean up something manually.
+
+===================================================================================================================================
+
+Syntax:
+Inline/multiline comment: /* ... */
+Single-line comment: // ...
+Expressions are separated by ;
+Whitespaces are meaningless, x = y is the same as x=y
+Newlines are meaningless, x = y is the same as x\n=\ny
+Constructors are c-like, no new required.
+
+Literals:
+Any number without a decimal dot will be interpreted as i32. A number that doesn't fit will be truncated.
+To specify a number as a specific type use the constructor expression, like ui32(19).
+Values will be attempted to be interpreted as best as they can in value assignments and method calls.
+Assigning a number to a ui8 type as simply 3 will attempt to interpret 3 to a ui8 type on compilation.
+If the number in script is too large to fit within a default i32 type, but is assigned to a larger type
+the interpreter for the compiler will give the benefit of the doubt, and assume the correct specified type.
+Hex values are supported through a 0x.... syntax.
+Binary values are supported through a 0b.... syntax.
+
+To specify strings or characters the "" literal is used. Anything inbetween the quotes is interpreted as string/char.
+If a char is wanted, but more data is specified, a syntax error is raised.
+string str = "hello!";			// Valid
+char ch = "hello!";				// Syntax error - character values must be exactly 1 wide.
+strings are multiline by default. Any linebreak inbetween "" will be interpreted as a \n
+
+Any syntax specific symbols can be escaped with a backslash '\', including itself.
+Special mappings for characters exist - \n (newline), \t (tab), \r (return), \0 (null terminator), \e (EOF)
+
+Strings can contain expressions within them, that will be evaluated whenever the string value is.
+To specify a string like that, prefix the first quote with '$' ($"..."). From that point onwards, any expression can be embedded 
+into the string using the {} syntax ($"... {EXPRESSION} ...")
+A given expression must evaluate to a string, or a type that can be implicitly converted to a string (numbers, bools, etc).
+Attempts to convert internal or custom types to a string implicitly cause to a syntax error.
+Anything within the brackets is treated as a separate code section with its own local scope.
+
+Collection expression:
+Arrays can be initialized with a collection expression. To do so, the following syntax is used:
+[]{VALUES}
+
+===================================================================================================================================
+
+Variable declaration: 
+(?namespace) (?export) (?const) TYPE NAME = VALUE
+(?namespace) (?export) (?const) TYPE[(?dynamic)] NAME = [SIZE]
+
+Exports/imports are explained later. For now know that the keyword exists and is optional.
+Namespaces are explained later. For now know that the keyword exists and is optional.
+
+const is used to signify that the variable is a constant value.
+Constants defined in the GLOBAL scope are available to all scopes and are evaluated upon script instantiation.
+Constants defined elsewhere are available to all child scopes, and are evaluated as normal variable declarations.
+It is NOT an error to write to a const, so long as the writing scope is the one that defined it.
+Child scopes are NOT allowed to write to a parent's const.
+You should use const whenever applicable for optimization reasons.
+If a constant is defined in the GLOBAL scope, and is NEVER written to, outside of its declaration
+the compiler MAY replace all references to that const with its VALUE expression, if it deems it to be optimal
+that is, the assignment expression would be easier to evaluate than dereferencing the varable itself.
+
+NULL can be assigned with a default keyword. Keyword MUST be explicit, if not present, is a syntax error.
+TYPE NAME = default; // valid
+TYPE NAME; // Syntax error - expected assignment, got ;
+Default is auto-converted to an appropriate type - 0 for numbers, vecx(0) for vectors, and so on.
+
+Built-in types:
+	NAME	C# IMPLEMENTING TYPE		DEFAULT
+	i8		(sbyte)						0
+	ui8		(byte)						0
+	i16		(short)						0
+	ui16	(ushort)					0
+	i32		(int)						0
+	ui32	(uint)						0
+	i64		(long)						0
+	ui64	(ulong)						0
+	f16		(Half)						0
+	f32		(float)						0.0
+	f64		(double)					0.0
+	nint	(nint)						0
+	string	(string)					""
+	char	(char)						'\0'
+	bool	(bool)						false
+	vec2	(Vector2/PointF)			{0, 0}
+	vec3	(Vector3)					{0, 0, 0}
+	vec4	(Vector4/RectangleF)		{0, 0, 0, 0}
+	mat4	(Matrix4x4)					{0, 0, 0, 0, ..., 0}
+	plane	(Plane)						{0, 0, 0, 0}
+	aabb	(AABox)						{0, 0, 0, 0, 0, 0}
+	point	(Vector2/PointF)			{0, 0}
+	rect	(Vector4/RectangleF)		{0, 0, 0, 0}
+	cam		(VectorCamera)				{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	ray		(Ray)						{0, 0, 0, 0, 0, 0}
+	bbox	(BBBox)						{0, 0, 0, ..., 0}
+	color	(ColorAbgr)					0
+	id		(Guid)						Guid.Empty
+	version	(Version)					new Version(0, 0, 0)			<--- Treated like a value type!
+	data	(DataElement)				null
+	grad	(Gradient<Vector4>)			null
+	hsv		(HSVColor)					null
+	img		(Image<Rgba32>)				null
+	logger	(Logger)					null
+	lang	(SimpleLanguage)			null
+	interlop(?)							null
+
+Array declarations:
+
+To declare an array, tupe is followed by square brackets []
+Instead of assigning a value, place square brackets with the number corresponding to the allocated size of the array inside.
+Number can be an expression.
+Number can't be zero. Use default keyword for zero-sized arrays.
+
+vec2[] pts1 = [12];		// Valid, allocates a 12-sized array of vec2
+vec2[] pts2;			// Syntax error - expected assignment, got ;
+vec2[] pts3 = [0];		// Syntax error - arrays can't be zero-sized. Use default for an empty array
+vec2[] pts4 = default;	// Valid, internally becomes an Array.Empty<Vector2>
+
+Arrays can't be multi-dimensional, but arrays of arrays are permitted.
+If an array of arrays is declared, sizes of internal arrays are allowed to vary, as it internally becomes a nint anyway.
+vec2[][] ptsa1 = [3];		// Valid, declares 3 arrays of vec2[] types, assigned to Array.Empty<>
+vec2[][] ptsa2 = [3][2];	// Valid, declares 3 arrays of vec2[] types, each assigned to a new array with defined size of 2.
+vec2[][] ptsa3;				// Syntax error - expected assignment, got ;
+vec2[][] ptsa4 = default;	// Valid, declares an Array.Empty<Vector2[]>
+vec2[,] ptsa5 = default;	// Syntax error - unexpected character ',' in array type declaration.
+
+Arrays can be dynamic, if indicated with a dynamic keyword. Dynamic arrays do not have a fixed size, and act as list.
+Dynamic arrays have access to pop/push/peek (stack), enqueue/dequeue (queue), and remove/insert (list) methods.
+For the scripting, there is no distinction between these types. Intenally represented by a custom unsafe type, which keeps pointers.
+vec2[dynamic] ptsl1 = [1];				// Valid, declares a dynamic-sized array with a preallocated size of 1.
+vec2[dynamic] ptsl2 = default;			// Valid, declares a dynamic-sized array with a preallocated size of 1.
+vec2 ptsl3 = [dynamic];					// Syntax error - [dynamic] is not a valid value assignment for the vec2 type.
+vec2[dynamic] ptsl4 = [0];				// Syntax error - arrays can't be zero-sized. Use default for an empty array.
+vec2[dynamic][dynamic] ptsl5 = [1][2];	// Valid, declares a dynamic array of dynamic arrays of vec2 type, with the given preallocated sizes.
+vec2[][dynamic] ptsl6 = [3];			// Valid, declares a fixed-size array of 3 dynamic-sized vec2 arrays with a preallocated size of 1.
+
+All variable names must be unique to their local scope/hook/namespace. Redefining a variable with the same name is a syntax error
+vec2 vec = default;		// OK
+bool vec = default;		// Syntax error - vec already defined.
+
+Variable names must start with an ASCII text character (non-number, non-special symbol), and must not contain any whitespaces or non-numbers/non-letters characters.
+i32 var = default;		// OK
+i32 4ta	= default;		// Syntax error - '4ta' is not a valid variable name.
+i32 x nm = default;		// Syntax error - expected an assignment, got 'nm'.
+
+===================================================================================================================================
+
+Method declarations:
+
+(?namespace) (?export) RETURNTYPE NAME (PARAMS) {
+	METHOD BODY
+}
+
+Exports/imports are explained later. For now know that the keyword exists and is optional.
+RETURNTYPE must be of the type the method returns upon completion. If the method returns nothing, it must be marked with a void keyword.
+RETURNTYPE may be of any of the built-in types, internal types (explained later), or a custom-defined type.
+RETURNTYPE may not be default.
+If RETURNTYPE is of an array, whether it is dynamic or fixed must be specified in RETURNTYPE.
+
+void Act1() {		// Valid
+	...
+}
+
+default Act2() {	// Syntax error - default is not a valid method return type
+	...
+}
+
+vec2[] Act3() {		// Valid
+	...
+}
+
+PARAMS declaration:
+Individual parameters are declared as
+(?reference) (?default) TYPE NAME
+There can be any number of parameters in a given method. They must be separated by a ',', if there is more than 1.
+
+reference - allows a parameter to be passed by reference, rather than a value. Optional, by default most things are passed by value.
+default - declares the parameter as being optional to specify when invoking the method.
+If the parameter has a default keyword, it must be specified as default TYPE NAME = VALUE, where VALUE is an expression evaluated upon script instancing.
+VALUE can also be default.
+Parameters without the default keyword are not allowed to be specified after any parameter was specified with the default keyword.
+...(default vec2 va = default)											// Valid
+...(default vec2 va)													// Syntax error - default parameter did not have a value specified
+...(vec2 va, default vec2 vb = default, default vec2 vc = vec2(1, 0))	// Valid
+...(vec2 va, default vec2 vb = default, vec2 vc)						// Syntax error - parameters following a default specified parameter can't be non-default!
+
+reference and default keywords are mutually exclusive - a parameter can't be both
+...(reference default vec2 va = default)								// Syntax error - reference parameters can't be default
+
+All methods must have a unique signature to their scope/hook/namespace. Defining a method with an existing signature is a syntax error
+void Act() ...						// OK
+void Act() ...						// Syntax error - Act already defined.
+vec2 Act() ...						// Syntax error - Act already defined.
+void Act(i32 id) ...				// OK
+void Act(default i64 id = default)  // OK
+
+Method names must start with an ASCII text character (non-number, non-special symbol), and must not contain any whitespaces or non-numbers/non-letters characters.
+The same rule applies to parameter names.
+All parameter names must be unique within the method's inner scope (+parameter list).
+void Foo() ...					// OK
+void 4ta() ...					// Syntax error - '4ta' is not a valid method name.
+void F oo() ...					// Syntax error - expected parameter list, got 'oo'.
+void Bar(i32 a, i32 b, i32 a)	// Syntax error - 'a' already defined.
+
+Methods declared within a typedef declaration are instanced by default - that is, they have a secret parameter that is the instance
+of the object the method is being invoked on. To access this parameter, use the 'this' keyword.
+
+===================================================================================================================================
+
+Namespaces:
+
+Methods and variables can be grouped into namespaces with the 'namespace' block and keyword
+namespace NAME {
+	...
+}
+
+Methods can also be defined to be within a certain namespace without the block through the 'namespace' keyword
+namespace(NAMESPACE) RETURNTYPE NAME (PARAMS) {
+	...
+}
+
+A namespace can be redeclared, all methods that are within the same namespace are grouped together, even if defined separately
+but method signatures must remain unique across the same namespace
+namespace Foo { 
+	void A() ...	// OK
+}
+
+namespace Foo {
+	void B() ...	// Also OK
+	void A() ...	// Syntax error - A already defined
+}
+
+Namespaces can be nested within eachother
+namespace Foo {
+	namespace Bar {				// Valid
+		...
+	}
+
+	namespace Delta {			// Valid
+		...
+	}
+
+	namespace Bar {				// Also valid
+		...
+	}
+}
+
+Namespaces are implicitly declared within the global script scope. 
+Declaring a namespace within a hook or another scope is not an error, but namespace remains global.
+Methods within namespaces are implicitly export. Declaring it with an export keyword is not an error.
+
+Variables can also be declared within namespaces. They act the same as if they were declared in the global scope.
+The same rules that apply to methods in namespace declarations apply to variables.
+
+Note, that namespaces do not provide a unique scope. Everything declared within them is declared within global scope.
+===================================================================================================================================
+
+Export/Import
+
+Any variable/method declared is declared within local scope. Even things declared globally (outside of methods) are evaluated
+within the script instantiation scope. To share within the global scope, export/import keywords must be used!
+
+Export:
+export(NAME) is a keyword that may be prepended to variable declarations. Note, that this is simply a shorthand for
+	TYPE VARNAME = VALUE;
+	export VARNAME as NAME;
+For variables, specifying the NAME in round brackets is optional. 
+Not specifying it is equivalent to exporting with the variable's own name.
+
+export is a keyword that may be prepended to method declarations. 
+A method defined as export can be called from any scope within the current script.
+This effectively maps the method as a static feature from C#. 
+Methods declared as export can't access any variables declared outside of its scope.
+
+export VALUE as NAME is a language expression that exports a given value to a name.
+VALUE in this case may be a literal expression, or a name of a variable (but not a method!).
+Note that when a value is exported, it will be assigned to a type. 
+Attempts to export a differently typed value to an already typed name will cause a syntax error.
+export(filter) vec2 point = vec2(10.0, 11.0);				// Valid
+export vec2(0.0, 10.0) as filter;							// Valid
+point = import filter;										// Valid
+export 10.0 as filter;										// Syntax error - invalid export to 'filter', expected vec2, got i32!
+
+Import:
+To import values, the import expression may be used.
+	TYPE VARNAME = import NAME;
+	VARNAME = import NAME;
+	import NAME; (shorthand for TYPE NAME = import NAME)
+	METHODNAME(import NAME)
+	TYPE VARNAME = TYPE(import NAME)
+
+Note that you are importing and exporting VALUES, not REFERENCES, except for arrays, dynamic arrays and certain internal types.
+Importing from a NAME to which nothing has been exported to is a syntax error.
+Importing from a NAME, to which the export might or does happen is not a syntax error.
+Importing from a NAME during runtime, to which an export hadn't happened yet produces the same result as assigning to default.
+i32 a = 10;
+i32 b = import foo;		// Syntax error - foo is never exported in the current script.
+i32 c = import bar;		// OK, since export to bar exists within the script. However, since it hadn't happened yet, c equals the default for i32, which is 0.
+export c as bar;		// OK, 0 is now exported to bar
+
+Imports/exports may match an existing scope variable in name, in which case the keywords specify which one to use.
+i32 x = 10;
+export x as x;		// OK, global scope now has a value '10' by the key 'x'
+x = 20;				// OK, local scope variable by the name 'x' now has the value '20'
+i32 y = x;			// OK, y now equals 20, which is the value of the local variable x
+y = import x;		// OK, y now equals 10, which is the value of the global scope by the key 'x'
+
+To import from a namespace, you must use the whole nested namespace path, separating individual namespaced by the '.' symbol
+namespace Foo {
+	namespace Bar {
+		export i32 val = 42;
+	}
+}
+
+namespace(Foo.Bar) export i32 val2 = 20;	// OK
+i32 x = import Foo.Bar.val;					// OK
+i32 y = import val;							// Syntax error - val is never exported in the current script.
+i32 z = import Bar.val;						// Syntax error = Bar.val is never exported in the current script.
+i32 a = val2;								// Syntax error - val2 is undefined within the current scope.
+i32 b = import Foo.Bar.val2;				// OK
+i32 c = Foo.Bar.val2;						// OK, so long as Foo.Bar.val2 is accessed within the global scope or its child scope.
+
+!!!=====================================!!!
+	 Justification for import/export:
+!!!=====================================!!!
+Main priority for scripts was to add extension support, so that users could easily add their own extra functionality that was missing.
+However, VTT is internally multithreaded quite heavily, and a typical script should not have to deal with multithreading woes
+Especially since some multithreading is dynamic, and user-settings based.
+For example, a common extension is a particle system behaviour.
+Consider, that particle system creation happens on a separate thread, aswell as updates (for performance reasons).
+If a custom script wants to access map data, it CAN'T do so in the particle update script due to multithreading!
+The map may already be switched, the object may be in flux(deleted/moved/whatever), and accessing anything else like that
+can lead to any outcomes - in short, we have undefined behaviour, which is the last thing a script should deal with.
+As a result, particle scripts must hook to two events - 
+	particle update(happens on particle thread), and 
+	container update(happens on main thread)
+But there must be a way to share data between threads. To facilitate this, the import/export keywords are created.
+The script internally holds a table of pointers to data (all nints). 
+To 'export' something, is to do a *pointer = value
+to 'import' something, is to do a *pointer
+
+NAME for exports/imports is compile-time. Internally, a pointer table is constructed and validated.
+NAME only serves as a KEY for this TABLE during COMPILATION time. No runtime overhead is introduced by NAME.
+The overhead of import/export exists, but is minimal, as it is a simple pointer dereference/value assignment.
+Overhead may be significant if the interpreter (for the compiler) marks an import/export as 'volatile', in which case locks will be used.
+
+Volatile assignment is as follows:
+	1) import/export happen in different scopes, which are not parent/child scopes.
+	2.0) EITHER import/export to the same NAME key happen in hooks, the thread IDs of which don't match (or are negative).
+	2.1) OR import/export happens within a method marked as export, AND the method is/may be called in a hook with a thread ID not matching 0
+	3) At least one of the hooks is internally marked as 'volatile', that is, invoked in such a manner, that it may cause race conditions.
+	4) The import/export type is NOT atomic - that is, can't fit within a single register space on the compiler's CPU (sizeof(nint)).
+
+Volatile can also be manually assigned by the script writer by using the volatile keyword.
+If such a keyword is present on at least ONE import/export by a given NAME, then all imports/exports of that NAME are treated as volatile.
+
+Thread ID system is as follows - each thread has a unique local ID 
+	main/render/update: 0
+	server: 1
+	network: 2
+	sound: 3
+	particle: 4
+	...
+	INDIVIDUAL NETWORK: -1
+	WORKER THREADS: -1
+	ASSET BACKGROUND WORKER: -1
+
+Any positive thread ID may match only its own ID (1 == 1 for example)
+Any negative thread ID never matches any thread ID (-1 != -1 for example)
+
+Hook markings as volatile is a more complicated topic, but it is safe to assume a hook to be volatile, if it is invoked within an update of any kind.
+Thread safety is not needed for atomic types, for even if we get a race condition, we won't have partial data transfer.
+If this optimization is NOT desired, and thread safety is crucial even for an atomic, use the 'volatile' keyword to override it.
+
+Note that these evaluations are done per import/export by a KEY, and are only done at COMPILE TIME.
+
+Locks are internally placed as a simple lock call. A paired empty object will be created for a NAME
+and all access with import/export will become a
+lock(NAME) {
+	...
+}
+-like expression.
+It should not be possible to cause a deadlock through this mechanism. If it is, please provide a script that causes it to happen.
+
+===================================================================================================================================
+
+Method calls:
+To call a script-defined method that is local to a current hook, simply call it by a name
+METHODNAME(PARAMS);
+
+To call a script-defined method that is NOT local to a current hook, use
+import METHODNAME(PARAMS);
+or
+METHODNAME(PARAMS);
+Use the import syntax call if the exported method matches the already defined within current scope/hook by name.
+If multiple methods would match the call (default parameters), then the one with the most matching signature is invoked.
+
+void Act() ...														// Method A
+vec2 Act(default i32 id = default) ...								// Method B
+vec2 Act(default i32 id = default, default bool doA = false) ...	// Method C
+Act();					// Invokes A
+vec2 result = Act();	// Invokes B - assignment to vec2 requires return type to match, closest signature is of B
+Act(0, true);			// Invokes C due to parameters
+vec3 result2 = Act();	// Syntax error - no matching overloads for Act() found.
+
+Signature match is calculated as follows:
+	Get all methods that could possibly be invoked(match return type and parameters provided)
+	For each default parameter unfufilled, add +1 to score
+	Get the method with the lowest score
+
+Methods can be called at any site where expression is requested. It is valid to call a method to fufill a method parameter
+bool Foo() ...
+void Bar(default bool b = false) ...
+Bar(Foo());								// Valid
+
+Callees do not have access to the caller's scope.
+i32 x = 0;
+
+void Act()
+{
+	x = 10;			// Syntax error - x is not defined.
+}
+
+Act();
+
+Passing a parameter can be dome by either referencing an existing variable (or importing), or by passing a literal value.
+void Foo(i32 id) ...
+Foo(12);				// OK
+i32 x = 12;
+Foo(x);					// OK
+export x as nx;
+Foo(import nx);			// OK
+Foo(a);					// Syntax error - a is not defined.
+i32 a = 12;
+
+If the method definition specified a reference parameter, a variable MUST be passed in!
+void Foo(reference i32 x) ...
+i32 x = default;
+Foo(x);					// OK
+Foo(10);				// Syntax error - expected a variable, got '10'
+export x as global_x;
+Foo(import global_x);	// Syntax error - imports can't be passed as reference parameters.
+
+To call a namespaced method, it must be prepended with the whole namespace path, using the '.' separator
+namespace Foo {
+	namespace Bar {
+		void Act() {
+			...
+		}
+	}
+}
+
+Foo.Bar.Act();						// Valid
+Act();								// Syntax error - Act() is not defined within the current scope.
+namespace(Foo.Bar) void Act2() {	// OK
+	...
+}
+
+Act2();								// Syntax error - Act2() is not defined within the current scope.
+Foo.Bar.Act2();						// OK
+
+To call instanced methods, use the ':' separator
+Object:Method();					// Instanced method call on the object 'Object'
+
+===================================================================================================================================
+
+Custom types
+
+A custom type can be defined with a typedef expression
+typedef (?reference) NAME {
+	...
+}
+
+Type definitions are always implicitly done in global scope.
+Defining a type within any other scope is not an error, but acts as if it was global scope defined.
+Types must have unique names within the script. Redefining a type is a syntax error.
+Types can be defined within a namespace. Types also act as namespaces themselves.
+typedef Foo {
+	export void Bar() {
+		...
+	}
+}
+
+can be called as Foo.Bar().
+
+Types can define any number of variables to themselves. These variables are local to the type scope, and are instanced.
+Defining variables with the export keyword inside of a typedef exports them as global scope variables within the type's namespace
+and demotes them from being instance-specific.
+typedef Foo {
+	i32 a = default;		// Local to the scope of an instance of Foo
+	export i32 b = default;	// Becomes global, imported as import Foo.b, can't be accessed from the instance of Foo
+}
+
+Types can be value-type or reference-type in how they are internally treated.
+A type is considered value-type if, and only if
+	1) All variables it defines are value-type themselves
+	2) The type definition is not marked as reference.
+Types can be explicitly made reference-types by defining them with a reference keyword
+typedef A {											// Value-type, as all variables are value-type
+													// Version is NOT value-type, but defined with export, making it global scope
+	i32 value = default;
+	export version revision = version(1, 0, 0);
+}
+
+typedef B {											// Reference-type, as version is a reference-type object
+	version remote = default;
+}
+
+typedef C {											// Value-type, as all variables are value-type
+	i32 accumulator = default;
+	A a = default;
+}
+
+typedef reference D {								// Reference-type, because specified with the reference keyword
+	i32 value = 1;
+}
+
+Types can specify a constructor with a constructor keyword
+constructor(PARAMS) {
+	...
+}
+
+Constructor is ran when a new instance of the type is created with the TYPE() expression.
+All types have a parameterless constructor, which can be overridden for desired behaviour.
+Constructors behave like instance methods, and most method definition rules apply here.
+Constructors can't have the export or namespace keywords.
+Constructors don't expect a method name, or a return type.
+Internal signature of constructors looks like
+namespace(TYPENAME) export TYPENAME __ctor(PARAMS) {
+	...
+}
+
+It is not an error to import a constructor by this signature.
+
+Types can define methods. If a method is declared without the export keyword, it is considered an instance method.
+typedef Foo {
+	i32 num = default;
+
+	constructor(i32 val) {
+		this.num = val;				// Instance variable
+	}
+
+	i32 getValue() {
+		return this.num;
+	}
+
+	void setValue(i32 val) {
+		this.num = val;
+	}
+}
+
+Foo a = Foo(3);						// Valid
+Foo b = Foo();						// Valid
+a.num = 5;							// Valid
+b.num = a:getValue();				// Valid, b.num is now 5;
+a.num = b.getValue();				// Syntax error - Foo.getValue is an instance method, but was not invoked like one
+a.num = Foo.getValue(b);			// Technically valid
+
+Types are allocated before their constructor is invoked.
+Types are freed when they go out of scope. Global scope types are never freed.
+Exporting a type is a way to preserve it past scope, as it will 'live' within the global table memory.
+Importing a type from that table will import it by value if it can. If you need to preserve changes, re-export after you are done.
+Types can implement their own destructor, if they need to free/move/keep track of some resources with the destructor keyword
+destructor() {
+	...
+}
+
+destructors are always parameterless instance methods.
+typedef A {
+	i32 value = 1;
+	constructor(i32 v) {
+		value = v;
+	}
+
+	void increment() {
+		this.value += 1;
+	}
+
+	destructor() {
+		export this.value as LastA;
+	}
+}
+
+void Act() {
+	// First, a blank A is allocated (memory used is based on variables A declares)
+	// At this point, a.value is 1.
+	A a = A(10);
+	// Here the internal constructor runs as A.__ctor(a, 10), which sets the value to 10;
+	a:increment();
+	// Calls A.increment(a); Note, that in this case the internal definition for instance methods has this always reference-backed!
+	// Actual internal method signature:
+	// namespace(A) export void increment(reference A this)
+	// Here the method returns, and the destructor is called by
+	// A.__dtor(a);
+	// Which exports value(10) to LastA
+	// Finally, memory is 'freed' - may not actually be released yet due to fragmentation reasons
+}
+
+===================================================================================================================================
+
+C# interlop
+
+Sometimes an internal C# type may be required for a method. Those can be operated with using the special interlop keyword.
+The keyword is special because anything marked by it starts acting as an 'opaque' type, not visible fully to scripting
+For example, if an access to a MapObject is needed directly, it would be declared as
+interlop myMO = Map.GetObjectInterlop(map, id);
+Notice the lack of the type. The compiler will still perform a type validity check here:
+interlop settingsInstance = App.GetClientSettingsInterlop();	// OK
+i32 i = settingsInstance + 0;									// Syntax error - can't cast type VTT.Network.Client.ClientSettings to i32
+
+To construct a new object of the interlop type, use the new keyword:
+interlop dl = new("VTT.Util.DirectionalLight", vec3(0, 0, -1), vec3(1, 1, 1));
+Note that the type string must directly map to an existing C# type, and won't introduce performance overhead(doesn't compile to reflection!)
+To instantiate generic types, use
+interlop list = new("System.Collections.Generic.List<>", "System.Numerics.Vector3", 10);				// Instantiates a List<Vector3>(10)
+interlop dict = new("System.Collections.Generic.Dictionary<>", []{"System.String", "System.Int32"});	// Instantiates a Dictionary<string, int>
+
+However, the new keyword has the main restriction to its usage, being
+For extensions and modules only certain namespaces are allowed. The allowed list is internal, and can be modified with the 'require' keyword
+require System.Numerics; // Will allow everything within System.Numerics to be used.
+The require keyword itself is restricted, and for for extensions the restrictions are very strict.
+Attempting to require a restricted namespace results in a security error
+require System.Cryptography;		// Security error - System.Cryptography is not allowed to be required by extensions
+If a Module requires something, the user will be prompted by a window, asking them for permissions. If permissions are not granted,
+the module loading fails, which may result in a connection failure (if module is two-sided).
+Plugins do not have this restriction.
+As a rule of thumb, basic System types, collections, maths, and everything within the VTT namespace is not restricted for the new keyword
+If an interlop type is instantiated by the script (not obtained by API, instantiated with the new keyword)
+it is up to the script to manage and clean up the memory used by this object. The script can do so by using the free keyword.
+interlop foo = new("VTT.Util.ULongCounter");
+...
+free foo;										// Will release the object, so that the C# runtime can eventually collect it. 
+foo:Increment(1);								// Runtime error - attempt to call an instance method without a value
+
+===================================================================================================================================
+
+Flow Control
+
+Standard flow control features are present:
+Conditions
+	A condition is specified with the if...else keywords:
+	if(CONDITION){
+		...
+	}
+	else {
+		...
+	}
+
+	Else is optional.
+	CONDITION must evaluate to a bool type.
+
+For loops:
+	A for loop is specified with the for keyword:
+	for(DECLARATION;CONDITION;FINALLY){
+		...
+	} 
+	The loop may declare up to one local variable within the DECLARATION statement.
+	The loop will continue to execute for as long as CONDITION is satisfied. This applies to the first execution aswell.
+	The loop will not execute, if CONDITION does not resolve to true, even on the first cycle.
+	At the end of all operations within a given iteration of the loop, the FINALLY clause will run.
+	Effective structure of the for(...) loop is
+
+	DECLARATION
+	LABEL_loopStart:
+	if (CONDITION) {
+		...
+		FINALLY
+		goto LABEL_loopStart
+	}
+
+Foreach iterators:
+	For array and collection types (including interlop and IEnumerable<> instances), a foreach expression can be used:
+	foreach(TYPE NAME in ENUMERABLE) {
+		...
+	}
+
+	This invokes the internal enumerator of the ENUMERABLE, similar to C#.
+
+While loops:
+	A while loop is present with the while keyword
+	while(CONDITION) {
+		...
+	}
+
+	A while loop will continuosly execute its body, so long as CONDITION is fufilled.
+	The loop will not execute, if CONDITION does not resolve to true, even on the first cycle.
+
+Break/Return
+	A break keyword is used to break out of the execution of the current loop (for/foreach/while).
+	break can't be used to break the execution of any parent loops, only the one the keyword is used in.
+	If the break keyword is not located within a loop body, it generates a syntax error.
+
+	A return keyword is used to stop the execution of the current method body.
+	It will automatically clean up all scopes, and run destructors on custom types whenever needed.
+	It will not free interloped types.
+	Return may specify a value, variable or expression afterwards, if it is needed by the method's return type.
+	Providing no return value for a method that isn't void is a syntax error.
+	Providing a return value for a method that is void, or doesn't match the value returned is a syntax error.
+
+Inline if
+	A condition can be inlined with the ?| syntax
+	CONDITION ? EVAL_IF_TRUE | EVAL_IF_FALSE
+	Both the true and the false clauses must be present.
+	An inline if can only be present as a part of an assignment, method parameter or a value in an expression.
+
+Switch/Case
+	A switch/case statement may be created with the following syntax
+	switch(VALUE) {
+		case(MATCH_1) {
+			...
+		}
+
+		case(MATCH_2) {
+			...
+		}
+
+		...
+
+		case default {
+			...
+		}
+	}
+
+	case default is a special keyword combination, available only in a switch block. In this case, default doesn't mean the
+	default value for the VALUE's type, but a case, where no other cases matched.
+	In case an actual match for an unknown default value is desired, use the standard syntax of case(default)
+	A break keyword is not needed to finish the execution of a case block.
+	To fall through a block, use the fall keyword:
+	switch(VALUE) {
+		case(A) {
+			...
+		}
+
+		case(C) fall
+		case(D) fall
+		case(B) {
+			...
+		}
+		...
+
+	You can't fall out of a non-empty block. Consider moving the desired logic into a separate method invocation.
+	switch(foo) {
+		case(a) {
+			...
+		}
+
+		case(B) fall
+		case(C) {			// OK
+			...
+		}
+
+		case(D) {
+			fall			// Syntax error - fall may only be applied to empty blocks!
+		}
+		...
+
+Non-null checks
+	In some cases when working with reference-types, a null check may be needed. To perform a null check, use the null expression
+	null(VALUE)		// Returns true if the VALUE was null, false otherwise.
+	the null feature will never return true for value types.
+
+===================================================================================================================================
+
+Hooks
+
+Hooks are a way to handle events dispatched either by the script itself, or by the runtime itself.
+Hooks are declared with a hook keyword:
+(?runtime) hook RETURNTYPE HOOKNAME(PARAMS) {
+	...
+}
+
+To execute a defined hook, use the dispatch keyword:
+dispatch HOOKNAME(PARAMS);
+
+If a runtime keyword is used, the hook will be automatically registered to the appropriate internal event upon script instantiation.
+In this case, the HOOKNAME is used to look up the internal event. If no internal event by that HOOKNAME is found a syntax error is generated
+Runtime hooks can be dispatched as normal.
+hooks are always defined within the global scope, but can be placed inside of namespaces.
+It is not an error to define a hook within another scope or a hook, but it will be treated as if it was defined within the global scope.
+Each defined hook guarantees its own scope for everything executed within its block.
+
+Multiple hook declarations can share the same HOOKNAME, in which case they will all be executed by the dispatch call or the runtime.
+If multiple hooks with the same HOOKNAME are declared, their signature must match. Non-matching signatures generate a syntax error.
+
+Only runtime hooks are permitted to have a RETURNTYPE that isn't void. Declaring a RETURNTYPE for a non-runtime hook that isn't void
+is a syntax error.
+If the hook is declared as runtime, the compiler evaluates whether it can be hooked to an existing internal event by that name.
+If no event is found, or its signature doesn't match, a syntax error is generated.
+
+===================================================================================================================================
+
+BNF
+
+TBD

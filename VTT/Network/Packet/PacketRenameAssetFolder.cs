@@ -15,8 +15,7 @@
         {
             if (isServer)
             {
-                ServerClient sc = (ServerClient)server.FindSession(sessionID);
-                if (sc.IsAdmin)
+                if (this.Sender.IsAdmin)
                 {
                     server.Logger.Log(Util.LogLevel.Info, "Client asked to rename " + this.Path + " to " + this.Name);
                     AssetDirectory ad = server.AssetManager.GetDirAt(this.Path);
@@ -35,7 +34,7 @@
                 }
                 else
                 {
-                    server.Logger.Log(Util.LogLevel.Warn, "Client " + sc.ID + " asked to modify asset data without being an administrator!");
+                    server.Logger.Log(Util.LogLevel.Warn, "Client " + this.Sender.ID + " asked to modify asset data without being an administrator!");
                 }
             }
             else

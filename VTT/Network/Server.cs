@@ -1119,6 +1119,12 @@
                 {
                     // Looks like HTTP
                     this.Kind = SessionProtocol.HTTPAPI;
+                    if (!this.Container.Settings.AllowHTTPAPI)
+                    {
+                        this.Disconnect(); // If the server does not allow API, then we immediately kill the connection the moment it looks like HTTP
+                        return;
+                    }
+
                     this.HTTPAPISession = new HTTPAPIEndpoint(this.Container, this);
                     if (this._prevInternalProtoBufferFill != 0) // Got our 8 bytes in pieces for some ungodly reason
                     {
@@ -1232,6 +1238,10 @@
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool IsWhitelist { get; set; } = false;
 
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool AllowHTTPAPI { get; set; } = true;
+
         public static ServerSettings Load()
         {
             string expectedLocation = Path.Combine(IOVTT.ServerDir, "Settings.json");
@@ -1248,7 +1258,8 @@
             {
                 DefaultMapID = Guid.NewGuid(),
                 AllowEmbeddedImages = true,
-                IsWhitelist = false
+                IsWhitelist = false,
+                AllowHTTPAPI = true
             };
 
             ret.Save();

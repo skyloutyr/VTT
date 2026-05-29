@@ -66,65 +66,6 @@
     <h2>HTTPS:</h2>
     Secure connections and WSS are currently not supported.
     <h2>API Methods:</h2>
-    <hr>
-    <h3>Authorize</h3>
-    <div class="prop">Anonimous</div>
-    <br>
-    POST: method=<b>authorize</b>&ID=%GUID%&secret=%B64SECRET%
-    <br>
-    WS: { "method": "Authorize", "id": "%GUID%", "secret": "%B64SECRET%" }
-    <br>
-    <br>
-    Sends an authorization request to the server.
-    <br>
-    <br>
-    <b>Parameters:</b>
-    <div class="indentblock">
-        <b>method</b>: must be <b>Authorize</b>.
-        <br>
-        <b>id</b>: The GUID of the client, standard GUID format.
-        <br>
-        <b>secret</b>: The base-64 encoded secret of the client.
-    </div>
-    <br>
-    <b>Returns:</b> 
-    <div class="indentblock">
-        200 - OK if authorization successful, with the body being the AUTH key to use for the current session.
-        <br>
-        401 - Unauthorized if invalid.
-        <br>
-        WS: { "status": STATUSCODE, "auth": "AUTHKEY" }
-    </div>
-    <hr>
-    <h3>Message</h3>
-    <div class="prop">Authorized</div>
-    <div class="prop">Action</div>
-    <div class="prop">Noreturn</div>
-    <br>
-    POST: method=<b>message</b>&message=%MSG%
-    <br>
-    WS: { "method": "message", "auth": "%AUTH%", "message": "%MSG%" }
-    <br>
-    <br>
-    Sends a chat message to the server from a specified user. The message syntax is exactly the same as if it were sent by the actual client.
-    The client does not need to be online to send this message.
-    Note that the MSG parameter may not include the <b>&</b> symbol if sent by POST or non-json WS. It may be escaped with a <b>\a</b> syntax.
-    <br>
-    <br>
-    <b>Parameters:</b>
-    <div class="indentblock">
-        <b>method</b>: must be <b>message</b>.
-        <br>
-        <b>message</b>: The chat message to send.
-    </div>
-    <br>
-    <b>Returns:</b> 
-    <div class="indentblock">
-        401 - Unauthorized if no authorization was provided.
-        <br>
-        200 - OK if the operation was successful.
-        <br>
-        WS: { "status": STATUSCODE }
-    </div>
+#PRAGMA AUTOGEN_ENTRY
 </body>
 </html>

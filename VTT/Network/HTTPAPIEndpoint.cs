@@ -243,7 +243,23 @@
             return string.Empty;
         }
 
-        private string MakeAPIDocs() => IOVTT.ResourceToString("VTT.Embed.httpapidocs.html");
+        private string MakeAPIDocs()
+        {
+            string basePage = IOVTT.ResourceToString("VTT.Embed.httpapidocs.html");
+            if (basePage.Contains("#PRAGMA AUTOGEN_ENTRY"))
+            {
+                StringBuilder autogen = new StringBuilder();
+                foreach (string doc in APIMethod.MethodDocs)
+                {
+                    autogen.AppendLine("<hr>");
+                    autogen.Append(doc);
+                }
+
+                basePage = basePage.Replace("#PRAGMA AUTOGEN_ENTRY", autogen.ToString());
+            }
+
+            return basePage;
+        }
 
         void IWebSocket.SendUpgrade(HttpResponse response)
         {

@@ -6,10 +6,22 @@
     using VTT.Network.Packet;
     using VTT.Util;
 
+    [APIMethodDocs(
+        Name = "Message",
+        Tags = new string[] { "Authorized", "Action", "Noreturn" },
+        Returns = new string[] {
+            "200 - OK if the operation was successful.",
+            "401 - Unauthorized if no authorization was provided.",
+            "WS: { \"status\": STATUSCODE }"
+        },
+
+        Desc = "Sends a chat message to the server from a specified user. The message syntax is exactly the same as if it were sent by the actual client. The client does not need to be online to send this message. Note that the MSG parameter may not include the & symbol if sent by POST or non-json WS. It may be escaped with a \\a syntax."
+    )]
     public class MethodChatMessage : APIMethod
     {
         public override string Identifier => "message";
 
+        [APIMethodDocs(Name = "message", ValueKey = "%MSG%", Desc = "The chat message to send.")]
         private string _msg;
 
         public override void Act(HTTPAPIEndpoint api)

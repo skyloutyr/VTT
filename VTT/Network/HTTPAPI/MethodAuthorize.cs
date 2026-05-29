@@ -3,11 +3,25 @@
     using System;
     using System.Collections.Generic;
 
+    [APIMethodDocs(
+        Name = "Authorize", 
+        Tags = new string[] {"Anonimous"}, 
+        Returns = new string[] {
+            "200 - OK if authorization successful, with the body being the AUTH key to use for the current session.",
+            "401 - Unauthorized if invalid.",
+            "WS: { \"status\": STATUSCODE, \"auth\": \"AUTHKEY\" }"
+        },
+
+        Desc = "Sends an authorization request to the server."
+    )]
     public class MethodAuthorize : APIMethod
     {
         public override string Identifier => "authorize";
 
+        [APIMethodDocs(Name = "id", ValueKey = "%GUID%", Desc = "The GUID of the client, standard GUID format.")]
         private Guid _id;
+
+        [APIMethodDocs(Name = "secret", ValueKey = "%B64SECRET%", Desc = "The base-64 encoded secret of the client.")]
         private byte[] _secret;
 
         public override void Act(HTTPAPIEndpoint api)

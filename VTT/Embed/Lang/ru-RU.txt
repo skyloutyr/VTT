@@ -960,3 +960,6 @@ ui.chat.delete=Удалить Сообщение
 chat.deleted=(Удалено)
 ui.turn_tracker.round.label=Раунд:
 ui.turn_tracker.round.value=Раунд: {0}
+ui.turn_tracker.grayscale.tt=Режим Серого Цвета.\nЕсли включено, то портрет в трекере ходов будет только в серых тонах.
+ui.turn_tracker.colormod.tt=Модификатор Цвета.\nЭто множитель цветового значения портрета в порядке хода.\nЕсли включён режим серого цвета, то этот эффект применяется После него.
+ui.popup.change_turn_tracker_entry_color_mod=Поменять Цвет Элемента Трекера Ходов

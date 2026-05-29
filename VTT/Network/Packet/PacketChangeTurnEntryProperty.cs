@@ -1,6 +1,7 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
@@ -19,6 +20,8 @@
         }
 
         public float NewValue { get; set; }
+        public TurnTracker.Entry.RenderEffects RenderEffect { get; set; }
+        public Vector4 ColorMod { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -86,6 +89,18 @@
 
                         break;
                     }
+
+                    case ChangeType.RenderEffect:
+                    {
+                        e.RenderEffect = this.RenderEffect;
+                        break;
+                    }
+
+                    case ChangeType.ColorMod:
+                    {
+                        e.ColorMod = this.ColorMod;
+                        break;
+                    }
                 }
 
                 if (isServer)
@@ -111,13 +126,31 @@
             this.Type = c.Lookup(this.Type);
             this.EntryIndex = c.Lookup(this.EntryIndex);
             this.EntryRefID = c.Lookup(this.EntryRefID);
-            if (this.Type is ChangeType.Team or ChangeType.ValueExpression)
+            switch (this.Type)
             {
-                this.NewTeam = c.Lookup(this.NewTeam);
-            }
-            else
-            {
-                this.NewValue = c.Lookup(this.NewValue);
+                case ChangeType.Team or ChangeType.ValueExpression:
+                {
+                    this.NewTeam = c.Lookup(this.NewTeam);
+                    break;
+                }
+
+                case ChangeType.Value:
+                {
+                    this.NewValue = c.Lookup(this.NewValue);
+                    break;
+                }
+
+                case ChangeType.RenderEffect:
+                {
+                    this.RenderEffect = c.Lookup(this.RenderEffect);
+                    break;
+                }
+
+                case ChangeType.ColorMod:
+                {
+                    this.ColorMod = c.Lookup(this.ColorMod);
+                    break;
+                }
             }
         }
 
@@ -125,7 +158,9 @@
         {
             Team,
             Value,
-            ValueExpression
+            ValueExpression,
+            RenderEffect,
+            ColorMod
         }
     }
 }

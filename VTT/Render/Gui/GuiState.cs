@@ -65,6 +65,7 @@
         public CelestialBody celestialBodyGradientEdited = null;
         public CelestialBody celestialBodyGradientAssetHovered = null;
         public bool celestialBodyChangeColorPopup = false;
+        public bool turnTrackerEntryChangeColorPopup = false;
 
         public void Reset()
         {
@@ -133,6 +134,7 @@
             this.celestialBodyGradientAssetHovered = null;
             this.celestialBodyGradientEdited = null;
             this.celestialBodyChangeColorPopup = false;
+            this.turnTrackerEntryChangeColorPopup = false;
         }
     }
 }

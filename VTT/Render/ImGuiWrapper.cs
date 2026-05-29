@@ -36,17 +36,28 @@ void main()
 }";
 
         private static string ImGuiFragmentSource => @"#version 330 core
+#define EFFECT_GRAYSCALE 1u
 uniform sampler2D in_fontTexture;
 in vec4 color;
 in vec2 texCoord;
 out vec4 outputColor;
 
 uniform bool gamma_correct;
+uniform uint preprocessor_effects;
 uniform float gamma_factor;
 
 void main()
 {
-    outputColor = color * texture(in_fontTexture, texCoord);
+    vec4 texClr = texture(in_fontTexture, texCoord);
+    if (preprocessor_effects != 0u)
+    {
+        if ((preprocessor_effects & EFFECT_GRAYSCALE) == EFFECT_GRAYSCALE)
+        {
+            texClr = vec4(vec3(dot(texClr.rgb, vec3(0.2126, 0.7152, 0.0722))), texClr.a);
+        }
+    }
+
+    outputColor = color * texClr;
     if (gamma_correct)
     {
         outputColor.rgb = pow(outputColor.rgb, vec3(1.0/gamma_factor));
@@ -414,10 +425,24 @@ void main()
 
             this._shader["projection_matrix"].Set(Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1, 1));
             this._shader["gamma_correct"].Set(false);
+            this._shader["preprocessor_effects"].Set(0u);
             this._shader["gamma_factor"].Set(Client.Instance.Settings.Gamma);
         }
 
         public void ToggleGamma(bool gamma) => this._shader["gamma_correct"].Set(gamma);
+
+        private uint _effects = 0;
+        public void ToggleGrayscaleEffect(bool grayscale)
+        {
+            this._effects = grayscale ? this._effects | 1u : this._effects & ~1u;
+            this._shader["preprocessor_effects"].Set(this._effects);
+        }
+
+        public void SetEffects(uint effects)
+        {
+            this._effects = effects;
+            this._shader["preprocessor_effects"].Set(this._effects);
+        }
 
         unsafe void RenderDrawData()
         {

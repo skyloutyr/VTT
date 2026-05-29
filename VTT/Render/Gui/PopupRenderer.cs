@@ -1280,6 +1280,26 @@
 
                 ImGui.EndPopup();
             }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_turn_tracker_entry_color_mod") + "###ChangeTurnTrackerColor"))
+            {
+                ImGui.ColorPicker4(lang.Translate("ui.generic.color") + "###Turn Tracker Entry Color Mod", ref this._editedTurnTrackerEntryColor);
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
+                bool bo = ImGui.Button(ok);
+                if (bo)
+                {
+                    new PacketChangeTurnEntryProperty() { EntryIndex = this._editedTurnTrackerEntryIndex, EntryRefID = this._editedTurnTrackerEntry.ObjectID, ColorMod = this._editedTurnTrackerEntryColor, Type = PacketChangeTurnEntryProperty.ChangeType.ColorMod }.Send();
+                }
+
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                    this._editedTurnTrackerEntry = null;
+                }
+
+                ImGui.EndPopup();
+            }
         }
 
         private readonly ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
@@ -1457,6 +1477,11 @@
             if (state.celestialBodyChangeColorPopup)
             {
                 ImGui.OpenPopup("###ChangeCelestialBodyColor");
+            }
+
+            if (state.turnTrackerEntryChangeColorPopup)
+            {
+                ImGui.OpenPopup("###ChangeTurnTrackerColor");
             }
         }
     }

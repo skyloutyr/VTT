@@ -155,6 +155,9 @@
 
         private Vector4 _editedTeamColor;
         private string _editedTeamName;
+        private Vector4 _editedTurnTrackerEntryColor;
+        private TurnTracker.Entry _editedTurnTrackerEntry;
+        private int _editedTurnTrackerEntryIndex;
 
         private AssetRef _draggedRef;
         public AssetRef DraggedAssetReference => this._draggedRef;

@@ -1,10 +1,10 @@
 ﻿namespace VTT.Render.Gui
 {
     using ImGuiNET;
-    using System.Numerics;
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using System.Runtime.InteropServices;
     using VTT.Asset;
     using VTT.Control;
@@ -12,6 +12,7 @@
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
+    using static VTT.Render.ImGuiWrapper;
     using Vec2 = System.Numerics.Vector2;
     using Vec4 = System.Numerics.Vector4;
 
@@ -75,6 +76,9 @@
             drawList.AddText(cHere + new Vec2(12, 12) - (ImGui.CalcTextSize(displayText) * 0.5f), ImGui.GetColorU32(ImGuiCol.Text), displayText);
             return ret;
         }
+
+        private static readonly ImDrawCallback EffectsSetterCallback = SetEffectsCallback;
+        private static void SetEffectsCallback(ImDrawCmdPtr command, int drawIdxSize, int fbWidth, int fbHeight, IntPtr userData) => Client.Instance.Frontend.GuiWrapper.SetEffects((uint)userData);
 
         private unsafe void RenderTurnTrackerOverlay(Map cMap, SimpleLanguage lang, ImGuiWindowFlags window_flags, GuiState state)
         {
@@ -171,6 +175,11 @@
                                                 portrairColor = !Client.Instance.IsAdmin ? ImColBlack : new Vec4(0.5f, 0.5f, 0.5f, 1.0f);
                                             }
 
+                                            if (Client.Instance.IsAdmin || mo.MapLayer <= 0)
+                                            {
+                                                portrairColor = e.ColorMod;
+                                            }
+
                                             float arDesired = portraitAspectRatio;
                                             Texture glTex = ap.GetGLTexture();
                                             if (glTex != null && glTex.IsAsyncReady)
@@ -211,11 +220,29 @@
                                                     float sE = sS + (frame.Width / atW);
                                                     float tS = frame.Y / atH;
                                                     float tE = tS + (frame.Height / atH);
+                                                    if (e.RenderEffect != TurnTracker.Entry.RenderEffects.None)
+                                                    {
+                                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(EffectsSetterCallback), new IntPtr((uint)e.RenderEffect));
+                                                    }
+
                                                     idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(sS + (frame.Width / atW * arCorrectionW), tS + (frame.Height / atH * arCorrectionH)), new Vec2(sE - (frame.Width / atW * arCorrectionW), tE - (frame.Height / atH * arCorrectionH)), new Color(portrairColor).Abgr());
+                                                    if (e.RenderEffect != TurnTracker.Entry.RenderEffects.None)
+                                                    {
+                                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(EffectsSetterCallback), new IntPtr(0));
+                                                    }
                                                 }
                                                 else
                                                 {
+                                                    if (e.RenderEffect != TurnTracker.Entry.RenderEffects.None)
+                                                    {
+                                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(EffectsSetterCallback), new IntPtr((uint)e.RenderEffect));
+                                                    }
+
                                                     idl.AddImage(ap.GLTex, cursor + pen, cursor + pen + sz, new Vec2(arCorrectionW, arCorrectionH), new Vec2(1 - arCorrectionW, 1 - arCorrectionH), new Color(portrairColor).Abgr());
+                                                    if (e.RenderEffect != TurnTracker.Entry.RenderEffects.None)
+                                                    {
+                                                        ImGui.GetWindowDrawList().AddCallback(Marshal.GetFunctionPointerForDelegate(EffectsSetterCallback), new IntPtr(0));
+                                                    }
                                                 }
                                             }
                                         }
@@ -877,6 +904,41 @@
                                 */
 
                                 ImGui.PopItemWidth();
+                                ImGui.SameLine();
+                                bool bGrayscale = e.RenderEffect.HasFlag(TurnTracker.Entry.RenderEffects.Grayscale);
+                                if (ImGui.Checkbox("##TTIsGrayscale" + e.ObjectID, ref bGrayscale))
+                                {
+                                    if (bGrayscale)
+                                    {
+                                        e.RenderEffect |= TurnTracker.Entry.RenderEffects.Grayscale;
+                                    }
+                                    else
+                                    {
+                                        e.RenderEffect &= ~TurnTracker.Entry.RenderEffects.Grayscale;
+                                    }
+
+                                    new PacketChangeTurnEntryProperty() { EntryIndex = i, EntryRefID = e.ObjectID, RenderEffect = e.RenderEffect, Type = PacketChangeTurnEntryProperty.ChangeType.RenderEffect }.Send();
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.turn_tracker.grayscale.tt"));
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.ColorButton("##TTColorMod" + e.ColorMod, e.ColorMod, ImGuiColorEditFlags.AlphaPreview))
+                                {
+                                    state.turnTrackerEntryChangeColorPopup = true;
+                                    this._editedTurnTrackerEntry = e;
+                                    this._editedTurnTrackerEntryColor = e.ColorMod;
+                                    this._editedTurnTrackerEntryIndex = i;
+                                }
+
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.SetTooltip(lang.Translate("ui.turn_tracker.colormod.tt"));
+                                }
+
                                 ImGui.SameLine();
                                 if (this.DeleteIcon.ImImageButton("DeleteTurnEntry" + i + "_" + e.ObjectID, Vec12x12))
                                 {

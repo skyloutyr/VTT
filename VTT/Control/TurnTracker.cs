@@ -3,6 +3,7 @@
     using SixLabors.ImageSharp;
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using VTT.Network;
     using VTT.Network.Packet;
     using VTT.Util;
@@ -352,6 +353,8 @@
             public Guid ObjectID { get; set; }
             public float NumericValue { get; set; }
             public Team Team { get; set; }
+            public RenderEffects RenderEffect { get; set; } = RenderEffects.None;
+            public Vector4 ColorMod { get; set; } = Vector4.One;
 
             internal string readTeamName;
 
@@ -363,6 +366,8 @@
                 this.ObjectID = e.GetGuidLegacy("ID");
                 this.NumericValue = e.GetSingle("Value");
                 this.readTeamName = e.GetString("Team");
+                this.RenderEffect = e.GetEnum("REffect", RenderEffects.None);
+                this.ColorMod = e.GetVec4("Color", Vector4.One);
             }
 
             public DataElement Serialize()
@@ -371,6 +376,8 @@
                 ret.SetGuid("ID", this.ObjectID);
                 ret.SetSingle("Value", this.NumericValue);
                 ret.SetString("Team", this.Team.Name);
+                ret.SetEnum("REffect", this.RenderEffect);
+                ret.SetVec4("Color", this.ColorMod);
                 return ret;
             }
 
@@ -389,6 +396,13 @@
             public static bool operator >(Entry left, Entry right) => left is not null && left.CompareTo(right) > 0;
 
             public static bool operator >=(Entry left, Entry right) => left is null ? right is null : left.CompareTo(right) >= 0;
+
+            [Flags]
+            public enum RenderEffects
+            {
+                None,
+                Grayscale = 1,
+            }
         }
 
         public class Team : ISerializable

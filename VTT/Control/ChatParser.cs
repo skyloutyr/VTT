@@ -526,11 +526,58 @@
                         }
                         else
                         {
+                            // Problem here is that we can have multiple clients with the same exact name. VTT spec allows it, but there is a need to distinguish the two.
+                            List<ClientInfo> matches = new();
                             foreach (ClientInfo ci in Server.Instance.ClientInfos.Values)
                             {
-                                if (ci.Name.ToLower().Equals(t.ToLower()))
+                                if (ci.Name.ToLower().Equals(t.ToLower()) && !ci.IsBanned) // Don't whisper to banned clients, that's strange
                                 {
-                                    id = ci.ID;
+                                    matches.Add(ci);
+                                    break;
+                                }
+                            }
+
+                            switch (matches.Count)
+                            {
+                                case 1:
+                                {
+                                    id = matches[0].ID;
+                                    break;
+                                }
+
+                                case >= 2:
+                                {
+                                    // Assume that if there are multiple matches, the sender wants to send to an online client.
+                                    // Ensure that any are online first though
+                                    if (matches.Any(x => x.IsLoggedOn))
+                                    {
+                                        matches.RemoveAll(x => !x.IsLoggedOn);
+                                        if (matches.Count == 1)
+                                        {
+                                            id = matches[0].ID;
+                                            break;
+                                        }
+                                    }
+
+                                    // At this point we still have multiple clients to select from.
+                                    // Assume we want to whisper to the one most recently logged on
+                                    // This is not the best option, as if there are multiple clients logged on at the same time
+                                    // With the same name, it is impossible to pick the one that logged on first
+                                    // But at this point the admin should tell the clients to sort out their names
+                                    ulong now = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                                    ulong deltaMin = ulong.MaxValue;
+                                    ClientInfo bestMatch = null;
+                                    foreach (ClientInfo match in matches)
+                                    {
+                                        ulong delta = now - match.LastLogOnTime;
+                                        if (delta < deltaMin)
+                                        {
+                                            deltaMin = delta;
+                                            bestMatch = match;
+                                        }
+                                    }
+
+                                    id = bestMatch.ID;
                                     break;
                                 }
                             }

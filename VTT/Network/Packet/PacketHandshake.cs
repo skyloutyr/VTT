@@ -160,6 +160,7 @@
                 new PacketMusicPlayerSetIndex() { Index = server.MusicPlayer.CurrentTrackPosition }.Send(this.Sender);
 
                 this.Sender.Info.IsLoggedOn = true;
+                this.Sender.Info.LastLogOnTime = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 this.Sender.PersonalTimeoutInterval = server.TimeoutInterval;
                 new PacketClientOnlineNotification() { ClientID = this.Sender.ID, Status = true }.Broadcast();
             }

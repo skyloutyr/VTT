@@ -17,6 +17,10 @@
                 if (client.ClientInfos.TryGetValue(this.ClientID, out ClientInfo ci))
                 {
                     ci.IsLoggedOn = this.Status;
+                    if (this.Status)
+                    {
+                        ci.LastLogOnTime = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    }
                 }
                 else
                 {

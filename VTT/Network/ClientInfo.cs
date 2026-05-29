@@ -48,6 +48,11 @@
         [JsonConverter(typeof(ImageBase64Converter))]
         public Image<Rgba32> Image { get; set; }
 
+        [DefaultValue(0)]
+        [JsonProperty(PropertyName = "LastLogOnTime", DefaultValueHandling = DefaultValueHandling.Populate)]
+        public ulong LastLogOnTime { get; set; } = 0ul;
+
+
         public static ClientInfo Empty { get; } = new ClientInfo()
         {
             ID = Guid.Empty,
@@ -58,6 +63,7 @@
             IsObserver = false,
             CanDraw = false,
             Image = null,
+            LastLogOnTime = 0,
         };
 
         public ClientInfo()
@@ -102,6 +108,7 @@
             bw.Write(this.IsLoggedOn);
             bw.Write(this.IsBanned);
             bw.Write(this.CanDraw);
+            bw.Write(this.LastLogOnTime);
             if (this.Image == null)
             {
                 bw.Write(0);
@@ -127,6 +134,7 @@
             this.IsLoggedOn = br.ReadBoolean();
             this.IsBanned = br.ReadBoolean();
             this.CanDraw = br.ReadBoolean();
+            this.LastLogOnTime = br.ReadUInt64();
             int amt = br.ReadInt32();
             this.Image = amt == 0 ? null : SixLabors.ImageSharp.Image.Load<Rgba32>(br.ReadBytes(amt));
         }

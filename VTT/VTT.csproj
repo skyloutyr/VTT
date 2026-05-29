@@ -250,6 +250,7 @@
     <None Remove="Embed\previewNormal.png" />
     <None Remove="Embed\shadowcast.frag" />
     <None Remove="Embed\shadowcast.vert" />
+    <None Remove="Embed\shapes.png" />
     <None Remove="Embed\simple-interface-tone.wav" />
     <None Remove="Embed\sky.frag" />
     <None Remove="Embed\sky.vert" />
@@ -400,6 +401,7 @@
     <EmbeddedResource Include="Embed\previewNormal.png" />
     <EmbeddedResource Include="Embed\shadowcast.frag" />
     <EmbeddedResource Include="Embed\shadowcast.vert" />
+    <EmbeddedResource Include="Embed\shapes.png" />
     <EmbeddedResource Include="Embed\skybox-ui-example.png" />
     <EmbeddedResource Include="Embed\skybox.frag" />
     <EmbeddedResource Include="Embed\skybox.vert" />

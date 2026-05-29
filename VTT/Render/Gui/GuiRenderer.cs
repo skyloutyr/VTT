@@ -133,6 +133,7 @@
         public ImCustomTexturedRect Pipette { get; set; }
 
         public Texture SkyboxUIExample { get; set; }
+        public Texture TagShapes { get; set; }
 
         public int LoadingSpinnerFrames { get; set; }
         #endregion
@@ -249,6 +250,8 @@
             this.CreateDiceIcons();
 
             this.SkyboxUIExample = OpenGLUtil.LoadUIImage("skybox-ui-example");
+
+            this.TagShapes = OpenGLUtil.LoadUIImage("shapes");
 
             this.LoadingSpinner = OpenGLUtil.LoadUIImage("icons8-loading-circle");
             this.LoadingSpinnerFrames = (int)MathF.Ceiling((float)this.LoadingSpinner.Size.Width / this.LoadingSpinner.Size.Height);

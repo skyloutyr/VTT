@@ -107,6 +107,9 @@
         public Guid PairedPortalID { get; set; } = Guid.Empty;
         public Guid PairedPortalMapID { get; set; } = Guid.Empty;
 
+        public readonly object TagsLock = new object();
+        public List<Tag> Tags { get; } = new List<Tag>();
+
         #region Client Data
         public AABox ClientBoundingBox
         {
@@ -231,6 +234,7 @@
             ret.SetGuid("PortalLink", this.PairedPortalID);
             ret.SetGuid("PortalMap", this.PairedPortalMapID);
             ret.SetVec3("PortalScale", this.PortalSize);
+            ret.SetArray("Tags", this.Tags.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             return ret;
         }
 
@@ -297,6 +301,17 @@
             this.PairedPortalID = e.GetGuid("PortalLink", Guid.Empty);
             this.PairedPortalMapID = e.GetGuid("PortalMap", Guid.Empty);
             this.PortalSize = e.GetVec3("PortalScale", Vector3.One);
+            this.Tags.Clear();
+            foreach (Tag t in e.GetArray("Tags", (n, e) =>
+            {
+                DataElement d = e.GetMap(n);
+                Tag t = new Tag();
+                t.Deserialize(d);
+                return t;
+            }, Array.Empty<Tag>()))
+            {
+                this.Tags.Add(t);
+            }
         }
 
         public MapObject Clone()
@@ -346,8 +361,8 @@
                 ret.StatusEffects.Add(s.Key, s.Value);
             }
 
+            ret.Tags.AddRange(this.Tags.Select(x => x.Clone()));
             this.Particles.CloneTo(ret);
-
             return ret;
         }
 

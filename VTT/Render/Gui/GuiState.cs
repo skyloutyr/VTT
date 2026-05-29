@@ -66,6 +66,9 @@
         public CelestialBody celestialBodyGradientAssetHovered = null;
         public bool celestialBodyChangeColorPopup = false;
         public bool turnTrackerEntryChangeColorPopup = false;
+        public MapObject tagCustomAssetImageHoveredOwner = null;
+        public Tag tagCustomAssetImageHovered = null;
+        public Tag tagCustomB64ImageTextHovered = null;
 
         public void Reset()
         {
@@ -135,6 +138,8 @@
             this.celestialBodyGradientEdited = null;
             this.celestialBodyChangeColorPopup = false;
             this.turnTrackerEntryChangeColorPopup = false;
+            this.tagCustomAssetImageHovered = null;
+            this.tagCustomAssetImageHoveredOwner = null;
         }
     }
 }

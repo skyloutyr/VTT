@@ -56,7 +56,42 @@
         {
             return this._mouseOverAssets
                 ? Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s))
-                : this.FrameState.chatHovered && this.AddEmbeddedChatAsset(s);
+                : this.FrameState.chatHovered ? this.AddEmbeddedChatAsset(s) 
+                : this.FrameState.tagCustomB64ImageTextHovered != null && this.AddEmbeddedB64TagImage(s);
+        }
+
+        private bool AddEmbeddedB64TagImage(string s)
+        {
+            string ext = Path.GetExtension(s).ToLower();
+            if (this._supportedImageFormats.Contains(ext, StringComparer.OrdinalIgnoreCase))
+            {
+                if (Client.Instance.ServerAllowsEmbeddedImages)
+                {
+                    if (new FileInfo(s).Length <= 32768) // 32kb limit
+                    {
+                        try
+                        {
+                            ImageInfo ii;
+                            if ((ii = Image.Identify(s)) != null && ii.Width <= 64 && ii.Height <= 32)
+                            {
+                                string converted = $"{Convert.ToBase64String(File.ReadAllBytes(s))}";
+                                if (converted.Length <= 49152)
+                                {
+                                    this.FrameState.tagCustomB64ImageTextHovered.EmbedB64Image = converted;
+                                    new PacketObjectTag() { MapID = this.FrameState.tagCustomAssetImageHoveredOwner.MapID, ObjectID = this.FrameState.tagCustomAssetImageHoveredOwner.ID, TagID = this.FrameState.tagCustomB64ImageTextHovered.ID, TagData = this.FrameState.tagCustomB64ImageTextHovered.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
+                                    return true;
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // NOOP, ImageSharp bad docs (throws on failure to read, but is supposed to simply return null??)
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         private bool AddEmbeddedChatAsset(string s)
@@ -1562,6 +1597,13 @@
                     if (!haveResult && state.celestialBodyGradientAssetHovered != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
                     {
                         new PacketChangeMapColorsGradient() { MapID = state.clientMap.ID, Action = PacketChangeMapColorsGradient.ActionType.SetImageAssetID, AssetID = this._draggedRef.AssetID, Location = this._celestialBodyGradientEditedIsLightGradient ? PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientLight : PacketChangeMapColorsGradient.GradientLocation.MapCelestialBodyGradientOwn, CelestialBodyID = state.celestialBodyGradientAssetHovered.OwnID }.Send();
+                        haveResult = true;
+                    }
+
+                    if (!haveResult && state.tagCustomAssetImageHovered != null && state.tagCustomAssetImageHoveredOwner != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        state.tagCustomAssetImageHovered.AssetID = this._draggedRef.AssetID;
+                        new PacketObjectTag() { MapID = state.tagCustomAssetImageHoveredOwner.MapID, ObjectID = state.tagCustomAssetImageHoveredOwner.ID, TagID = state.tagCustomAssetImageHovered.ID, TagData = state.tagCustomAssetImageHovered.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
                         haveResult = true;
                     }
                 }

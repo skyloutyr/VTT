@@ -185,8 +185,8 @@
         public void EnqueueSpecializedTaskNextUpdate(RepeatableActionContainer a) => this._actionsToDoNextFrame.Enqueue(a);
 
         private ClientSettings.FullscreenMode? _lastFsMode;
-        private Size? oldScreenSize;
-        private Point? oldPos;
+        private Size? _oldScreenSize;
+        private Point? _oldPos;
 
         public void SwitchFullscreen(ClientSettings.FullscreenMode? fsMode)
         {
@@ -208,10 +208,10 @@
                     case ClientSettings.FullscreenMode.Normal:
                     {
                         Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Normal;
-                        int ow = this.oldScreenSize?.Width ?? 1366;
-                        int oh = this.oldScreenSize?.Height ?? 768;
-                        int ox = this.oldPos?.X ?? 32;
-                        int oy = this.oldPos?.Y ?? 32;
+                        int ow = this._oldScreenSize?.Width ?? 1366;
+                        int oh = this._oldScreenSize?.Height ?? 768;
+                        int ox = this._oldPos?.X ?? 32;
+                        int oy = this._oldPos?.Y ?? 32;
                         Glfw.HideWindow(win);
                         Glfw.SetWindowMonitor(win, IntPtr.Zero, ox, oy, ow, oh, Glfw.DontCare);
                         Glfw.SetWindowAttrib(win, WindowProperty.Resizable, true);
@@ -229,13 +229,15 @@
                     case ClientSettings.FullscreenMode.Fullscreen:
                     {
                         Client.Instance.Settings.ScreenMode = ClientSettings.FullscreenMode.Fullscreen;
+                        Glfw.GetWindowSize(win, out int ww, out int wh);
+                        this._oldScreenSize = new Size(ww, wh);
+                        Glfw.GetWindowPos(win, out int wx, out int wy);
+                        _oldPos = new Point(wx, wy);
                         Glfw.HideWindow(win);
                         Glfw.SetWindowMonitor(win, Glfw.GetPrimaryMonitor(), 0, 0, w, h, Glfw.DontCare);
                         Glfw.SetWindowAttrib(win, WindowProperty.Decorated, false);
                         Glfw.SetWindowAttrib(win, WindowProperty.Floating, false);
                         Glfw.ShowWindow(win);
-                        Glfw.GetWindowPos(win, out int wx, out int wy);
-                        oldPos = new Point(wx, wy);
                         Client.Instance.Frontend.GameHandle.Decorated.Value = false;
                         break;
                     }

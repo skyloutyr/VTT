@@ -686,7 +686,6 @@
         {
             if (type == AssetType.Texture)
             {
-                byte[] data = Convert.FromBase64String(id);
                 this.Base64Pictures.Receive(id, AssetType.Texture, AssetResponseType.Ok, Convert.FromBase64String(id), null);
             }
             else

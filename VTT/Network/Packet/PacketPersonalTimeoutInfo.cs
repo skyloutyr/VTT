@@ -15,9 +15,6 @@
             }
         }
 
-        public override void LookupData(Codec c)
-        {
-            this.TimeoutSetting = c.Lookup(this.TimeoutSetting);
-        }
+        public override void LookupData(Codec c) => this.TimeoutSetting = c.Lookup(this.TimeoutSetting);
     }
 }

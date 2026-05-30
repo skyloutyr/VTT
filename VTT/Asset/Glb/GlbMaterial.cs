@@ -81,8 +81,6 @@
         public UniformBufferMaterial UBO { get; set; }
 
         private static GlbMaterial lastMaterial;
-        private static double lastAnimationFrameIndex;
-        private static UniformBlockMaterial lastProgram;
 
         public bool GetTexturesAsyncStatus()
         {
@@ -93,12 +91,7 @@
                 this.OcclusionMetallicRoughnessTexture.IsAsyncReady;
         }
 
-        public static void ResetState()
-        {
-            lastMaterial = null;
-            lastAnimationFrameIndex = 0;
-            lastProgram = null;
-        }
+        public static void ResetState() => lastMaterial = null;
 
         public void Uniform(double textureAnimationFrameIndex)
         {

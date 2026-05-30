@@ -329,5 +329,15 @@
 
         public static bool operator ==(ColorAbgr l, ColorAbgr r) => l._abgr == r._abgr;
         public static bool operator !=(ColorAbgr l, ColorAbgr r) => l._abgr != r._abgr;
+        public static ColorAbgr operator |(ColorAbgr l, uint r) => new(l._abgr | r);
+        public static ColorAbgr operator |(ColorAbgr l, ColorAbgr r) => l | r._abgr;
+        public static ColorAbgr operator &(ColorAbgr l, uint r) => new(l._abgr & r);
+        public static ColorAbgr operator &(ColorAbgr l, ColorAbgr r) => l & r._abgr;
+        public static ColorAbgr operator ^(ColorAbgr l, uint r) => new(l._abgr ^ r);
+        public static ColorAbgr operator ^(ColorAbgr l, ColorAbgr r) => l ^ r._abgr;
+        public static ColorAbgr operator ~(ColorAbgr self) => new(~self._abgr);
+
+        public override bool Equals(object obj) => obj is ColorAbgr c && c == this;
+        public override int GetHashCode() => this._abgr.GetHashCode();
     }
 }

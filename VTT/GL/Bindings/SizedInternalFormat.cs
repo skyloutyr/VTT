@@ -1,5 +1,6 @@
 ﻿namespace VTT.GL.Bindings
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1069:Enums values should not be duplicated", Justification = "Ported from glarb.h")]
     public enum SizedInternalFormat
     {
         Red8 = 0x8229,

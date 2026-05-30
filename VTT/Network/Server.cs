@@ -663,8 +663,7 @@
                     return false;
                 }
 
-                List<ChatLine> lines = new List<ChatLine>();
-                if (!TryLoadChat(expectedFile, out lines))
+                if (!TryLoadChat(expectedFile, out List<ChatLine> lines))
                 {
                     string pathBak = expectedFile + ".bak";
                     if (File.Exists(pathBak))
@@ -1382,6 +1381,7 @@
                 this.Reactions.Write(bw);
             }
 
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Reading version for future")]
             public void Read(BinaryReader br)
             {
                 byte version = br.ReadByte();

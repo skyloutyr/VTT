@@ -768,6 +768,7 @@
                 }
             }
 
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Reading version for future")]
             public void Read(BinaryReader br)
             {
                 byte version = br.ReadByte();

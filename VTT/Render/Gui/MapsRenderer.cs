@@ -15,9 +15,7 @@
 
     public partial class GuiRenderer
     {
-        private float _dayGradientKeyMem = 0;
         private Vector4 _dayGradientValueMem = Vector4.Zero;
-        private float _nightGradientKeyMem = 0;
         private Vector4 _nightGradientValueMem = Vector4.Zero;
         private float _celestialBodyPreviewTime = 12f;
         private bool _celestialBodyGradientEditedIsLightGradient = false;

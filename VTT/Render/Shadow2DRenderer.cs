@@ -1061,9 +1061,6 @@
             OpenGLUtil.EndSection();
         }
 
-        private int _bvhDebugDepth = 0;
-        private bool _bvhDebugPeriodDown = false;
-        private bool _bvhDebugCommaDown = false;
         private void RenderBVHDebug(Map2DShadowLayer m, int targetDepth, uint color)
         {
             foreach (Shadow2DBVH.ShadowOBB2D box in m.BVH.EnumerateBoxesAtDepth(targetDepth))

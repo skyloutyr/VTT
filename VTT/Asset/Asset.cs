@@ -100,9 +100,8 @@
                 l.Log(LogLevel.Info, "Compiling custom glsl shader");
                 if (ShaderGraph.TryInjectCustomShaderCode(isParticleShader, true, this.Data, out string fullVertCode, out string fullFragCode))
                 {
-                    string err = string.Empty;
                     bool result = isParticleShader
-                        ? ShaderGraph.TryCompileCustomShader(true, fullVertCode, fullFragCode, out err, out this._cachedShaderPtc)
+                        ? ShaderGraph.TryCompileCustomShader(true, fullVertCode, fullFragCode, out string err, out this._cachedShaderPtc)
                         : ShaderGraph.TryCompileCustomShader(false, fullVertCode, fullFragCode, out err, out this._cachedShaderFwd);
                     if (!result)
                     {

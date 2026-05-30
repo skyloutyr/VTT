@@ -7,13 +7,12 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Linq.Expressions;
-    using System.Net.Sockets;
     using System.Reflection;
     using System.Text;
     using VTT.Network.HTTPAPI;
     using VTT.Util;
 
-    public class HTTPAPIEndpoint : IWebSocket
+    public sealed class HTTPAPIEndpoint : IWebSocket
     {
         public Server Container { get; }
         public TcpSession Session { get; }
@@ -50,9 +49,9 @@
             ).Compile();
         }
         
-        private HttpRequest _request;
-        private HttpResponse _response;
-        private WebSocket _ws;
+        private readonly HttpRequest _request;
+        private readonly HttpResponse _response;
+        private readonly WebSocket _ws;
         private bool _isWS;
 
         public HTTPAPIEndpoint(TcpServer server, TcpSession session)
@@ -145,7 +144,7 @@
                             int eqIdx = akv.IndexOf('=');
                             if (eqIdx != -1)
                             {
-                                data[akv.Substring(0, eqIdx)] = akv.Substring(eqIdx + 1);
+                                data[akv[..eqIdx]] = akv[(eqIdx + 1)..];
                             }
                         }
 
@@ -159,7 +158,7 @@
         {
             if (auth.StartsWith("basic ", StringComparison.InvariantCultureIgnoreCase))
             {
-                string kv = Encoding.UTF8.GetString(Convert.FromBase64String(auth.Substring(6)));
+                string kv = Encoding.UTF8.GetString(Convert.FromBase64String(auth[6..]));
                 string[] split = kv.Split(':');
                 if (split.Length != 2)
                 {
@@ -180,7 +179,7 @@
 
             if (auth.StartsWith("auth ", StringComparison.InvariantCultureIgnoreCase))
             {
-                return this.IterateClientsForKV(Guid.Empty, Convert.FromBase64String(auth.Substring(5)), out ci, out oc);
+                return this.IterateClientsForKV(Guid.Empty, Convert.FromBase64String(auth[5..]), out ci, out oc);
             }
 
             ci = null;
@@ -267,31 +266,6 @@
             this._response.Clear();
         }
 
-        void IWebSocket.OnWsConnecting(HttpRequest request)
-        {
-        }
-
-        void IWebSocket.OnWsConnected(HttpResponse response)
-        {
-        }
-
-        bool IWebSocket.OnWsConnecting(HttpRequest request, HttpResponse response)
-        {
-            return true;
-        }
-
-        void IWebSocket.OnWsConnected(HttpRequest request)
-        {
-        }
-
-        void IWebSocket.OnWsDisconnecting()
-        {
-        }
-
-        void IWebSocket.OnWsDisconnected()
-        {
-        }
-
         void IWebSocket.OnWsReceived(byte[] buffer, long offset, long size)
         {
             string text = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Trim();
@@ -343,8 +317,8 @@
                     int eqIdx = akv.IndexOf('=');
                     if (eqIdx != -1)
                     {
-                        string key = akv.Substring(0, eqIdx);
-                        string value = akv.Substring(eqIdx + 1);
+                        string key = akv[..eqIdx];
+                        string value = akv[(eqIdx + 1)..];
                         if (!string.Equals(key, "auth", StringComparison.InvariantCultureIgnoreCase))
                         {
                             kvs[key] = value;
@@ -367,10 +341,6 @@
             this.HandleAPIRequest(aclient, sclient, kvs);
         }
 
-        void IWebSocket.OnWsClose(byte[] buffer, long offset, long size, int status = 1000)
-        {
-        }
-
         private bool SendPong(ReadOnlySpan<byte> buffer)
         {
             this._ws.PrepareSendFrame(138, true, buffer);
@@ -378,22 +348,7 @@
             return true;
         }
 
-        void IWebSocket.OnWsPing(byte[] buffer, long offset, long size)
-        {
-            this.SendPong(buffer.AsSpan((int)offset, (int)size));
-        }
-
-        void IWebSocket.OnWsPong(byte[] buffer, long offset, long size)
-        {
-        }
-
-        void IWebSocket.OnWsError(string error)
-        {
-        }
-
-        void IWebSocket.OnWsError(SocketError error)
-        {
-        }
+        void IWebSocket.OnWsPing(byte[] buffer, long offset, long size) => this.SendPong(buffer.AsSpan((int)offset, (int)size));
 
         private void HandleAPIRequest(ClientInfo authorizedSC, ServerClient onlineSC, Dictionary<string, string> kvs)
         {
@@ -475,7 +430,6 @@
                         sb.Remove(sb.Length - 1, 1);
                     }
 
-                    string ret = sb.ToString();
                     this._response.SetBody(sb.ToString());
                 }
 

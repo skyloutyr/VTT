@@ -120,10 +120,7 @@
             }
         }
 
-        public void OnSent(long sent, long pending)
-        {
-            this.Container.NetworkOut.Increment(sent);
-        }
+        public void OnSent(long sent, long pending) => this.Container.NetworkOut.Increment(sent);
 
         public void OnReceived(byte[] buffer, long offset, long size)
         {

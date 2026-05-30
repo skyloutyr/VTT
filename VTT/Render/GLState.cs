@@ -7,7 +7,7 @@
 
     public static class GLState
     {
-        private static List<IStateParameter> commitalState = new List<IStateParameter>();
+        private static readonly List<IStateParameter> commitalState = new List<IStateParameter>();
 
         private static StateEntry<T> RegisterState<T>(StateEntry<T> state)
         {
@@ -104,8 +104,8 @@
             private T _valueNow;
             private T _valueGLState;
             private bool _valueChanged;
-            private Action<T> _committer;
-            private Func<T, T, bool> _comparer;
+            private readonly Action<T> _committer;
+            private readonly Func<T, T, bool> _comparer;
             internal bool _instant;
 
             public StateEntry(T valueDefault, Action<T> committer, Func<T, T, bool> comparer, bool instant)

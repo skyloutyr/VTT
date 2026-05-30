@@ -118,12 +118,7 @@
                 return false;
             }
 
-            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46) // WAV header - RIFF
-            {
-                return true;
-            }
-
-            return false;
+            return header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46; // WAVE header - RIFF
         }
 
         public static bool ValidateOGGHeader(Stream s)
@@ -136,12 +131,7 @@
                 return false;
             }
 
-            if (header[0] == 0x4F && header[1] == 0x67 && header[2] == 0x67 && header[3] == 0x53) // VORBIS header - OggS
-            {
-                return true;
-            }
-
-            return false;
+            return header[0] == 0x4F && header[1] == 0x67 && header[2] == 0x67 && header[3] == 0x53; // VORBIS header - OggS
         }
 
         public static bool ValidateMPEGFrame(Stream s)

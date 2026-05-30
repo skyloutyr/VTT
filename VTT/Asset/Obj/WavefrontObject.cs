@@ -19,6 +19,7 @@
 
         public Vector3[] triangles;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0042:Deconstruct variable declaration", Justification = "Deconstruction here impedes code readability")]
         public WavefrontObject(string[] lines, VertexFormat desiredFormat)
         {
             List<Vector3> positions = new List<Vector3>();

@@ -142,8 +142,6 @@
 
         private int _lastLogNum;
         private string _newFolderNameString = string.Empty;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "To be reworked - directory movement pending")]
-        private AssetDirectory _contextDir;
         private bool _mouseOverAssets;
         private bool _lmbDown;
 

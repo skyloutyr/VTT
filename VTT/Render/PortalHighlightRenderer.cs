@@ -61,10 +61,7 @@
             OpenGLUtil.NameObject(GL.Bindings.GLObjectType.Texture, this._tex, "Portal highlight texture 1x2");
         }
 
-        public void AddObject(MapObject portal)
-        {
-            this._portalsToProcess.Add(portal);
-        }
+        public void AddObject(MapObject portal) => this._portalsToProcess.Add(portal);
 
         public void Render(Map m, double dt)
         {

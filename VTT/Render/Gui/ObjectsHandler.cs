@@ -52,7 +52,7 @@
                         {
                             VTT.Asset.Glb.TextureAnimation.Frame frame = anim.FindFrameForIndex(double.NaN);
                             renderSize = Vector2.Zero;
-                            (renderSize.X, renderSize.Y) = VTTMath.ClampKeepAR(tex.Size.Width, tex.Size.Height, 64, 24, out bool originalSizeChanged);
+                            (renderSize.X, renderSize.Y) = VTTMath.ClampKeepAR(frame.Location.Width, frame.Location.Height, 64, 24, out _);
                             return true;
                         }
                     }
@@ -74,60 +74,35 @@
                             return false;
                         }
 
-                        Texture imgTexture = null;
-                        Vector2 imgSize = Vector2.Zero;
-                        Vector2 imgSt = Vector2.Zero;
-                        Vector2 imgUv = Vector2.One;
-                        bool needGammaCorrection = false;
+                        Vector2 imgSize;
                         if (imgType == ImageBlockImageType.AssetRef)
                         {
                             Texture tex = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
-                            imgTexture = tex;
                             if (animationData != null && animationData.Frames.Length > 1)
                             {
                                 VTT.Asset.Glb.TextureAnimation.Frame frame = animationData.FindFrameForIndex(double.NaN);
                                 Vector2 tSzV2 = new Vector2(tex.Size.Width, tex.Size.Height);
                                 imgSize = new Vector2(frame.Location.Width, frame.Location.Height) * tSzV2;
-                                imgSt = new Vector2(frame.Location.Left, frame.Location.Top);
-                                imgUv = new Vector2(frame.Location.Right, frame.Location.Bottom);
                             }
                             else
                             {
                                 imgSize = new Vector2(tex.Size.Width, tex.Size.Height);
-                                imgSt = Vector2.Zero;
-                                imgUv = Vector2.One;
                             }
-
-                            needGammaCorrection = a.Texture.Meta?.GammaCorrect ?? false;
                         }
                         else
                         {
-                            imgTexture = ap.GLTex;
                             if (ap.IsAnimated && ap.FramesTotalDelay > 0)
                             {
-                                float tW = ap.GLTex.Size.Width;
-                                float tH = ap.GLTex.Size.Height;
                                 AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
-                                float progress = (float)frame.TotalDurationToHere / ap.FramesTotalDelay;
-                                float sS = frame.X / tW;
-                                float sE = sS + (frame.Width / tW);
-                                float tS = frame.Y / tH;
-                                float tE = tS + (frame.Height / tH);
                                 imgSize = new Vector2(frame.Width, frame.Height);
-                                imgSt = new Vector2(sS, tS);
-                                imgUv = new Vector2(sE, tE);
                             }
                             else
                             {
                                 imgSize = new Vector2(ap.GLTex.Size.Width, ap.GLTex.Size.Height);
-                                imgSt = Vector2.Zero;
-                                imgUv = Vector2.One;
                             }
                         }
 
-                        float originalSzX = imgSize.X;
-                        float originalSzY = imgSize.Y;
-                        (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 64, 32, out bool originalSizeChanged);
+                        (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 64, 32, out _);
                         renderSize = imgSize;
                         return true;
                     }
@@ -229,10 +204,10 @@
                             break; // Can't render here, image is not ready yet
                         }
 
-                        Texture imgTexture = null;
-                        Vector2 imgSize = Vector2.Zero;
-                        Vector2 imgSt = Vector2.Zero;
-                        Vector2 imgUv = Vector2.One;
+                        Texture imgTexture;
+                        Vector2 imgSize;
+                        Vector2 imgSt;
+                        Vector2 imgUv;
                         bool needGammaCorrection = false;
                         if (imgType == ImageBlockImageType.AssetRef)
                         {
@@ -263,7 +238,6 @@
                                 float tW = ap.GLTex.Size.Width;
                                 float tH = ap.GLTex.Size.Height;
                                 AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
-                                float progress = (float)frame.TotalDurationToHere / ap.FramesTotalDelay;
                                 float sS = frame.X / tW;
                                 float sE = sS + (frame.Width / tW);
                                 float tS = frame.Y / tH;
@@ -311,6 +285,278 @@
                     break;
                 }
             }
+        }
+
+        private void ImTagSettings(SimpleLanguage lang, MapObject mo, Tag t, int tagIndex,
+            Action<PacketObjectTag.ActionType> tagUpdateCallback, Action<Tag> tagDuplicateCallback, Action tagAssetHoverCallback, Action tagB64HoverCallback
+            )
+        {
+            if (ImGui.BeginChild("##Tag_" + t.ID, new Vector2(320, 0), ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY, ImGuiWindowFlags.ChildWindow | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            {
+                this.RenderTagIntoList(ImGui.GetWindowDrawList(), new Vector2(t.Kind == Tag.TagKind.Text ? 48 : 24, 24), t);
+                ImGui.Dummy(new Vector2(t.Kind == Tag.TagKind.Text ? 48 : 24, 24));
+                ImGui.SameLine();
+                string txt = t.Text;
+                ImGui.PushItemWidth(128);
+                if (ImGui.InputText("##TagText", ref txt, 32))
+                {
+                    t.Text = txt;
+                }
+
+                ImGui.PopItemWidth();
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.text.tt"));
+                }
+
+                if (ImGui.IsItemDeactivatedAfterEdit())
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                }
+
+                ImGui.SameLine();
+                if (tagIndex == 0)
+                {
+                    ImGui.BeginDisabled();
+                }
+
+                if (ImGui.ArrowButton("##TagMoveUp", ImGuiDir.Up))
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.MoveUp);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.move_up.tt"));
+                }
+
+                if (tagIndex == 0)
+                {
+                    ImGui.EndDisabled();
+                }
+
+                ImGui.SameLine();
+                if (tagIndex == mo.Tags.Count - 1)
+                {
+                    ImGui.BeginDisabled();
+                }
+
+                if (ImGui.ArrowButton("##TagMoveDown", ImGuiDir.Down))
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.MoveDown);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.move_down.tt"));
+                }
+
+                if (tagIndex == mo.Tags.Count - 1)
+                {
+                    ImGui.EndDisabled();
+                }
+
+                ImGui.SameLine();
+                if (ImGui.ImageButton("##TagDuplicate", this.CopyIcon.Texture, new Vector2(16, 16), this.CopyIcon.ST, this.CopyIcon.UV))
+                {
+                    Tag t1 = t.Clone();
+                    tagDuplicateCallback(t1);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.duplicate.tt"));
+                }
+
+                ImGui.SameLine();
+                if (ImGui.ImageButton("##TagDelete", this.DeleteIcon.Texture, new Vector2(16, 16), this.DeleteIcon.ST, this.DeleteIcon.UV))
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.Delete);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.delete.tt"));
+                }
+
+                Vector4 tagColor1 = t.Color1;
+                ImGui.TextUnformatted(lang.Translate("ui.tag.clr1"));
+                ImGui.SameLine();
+                if (ImGui.ColorEdit4("##BGTagClr", ref tagColor1, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
+                {
+                    t.Color1 = tagColor1;
+                }
+
+                if (ImGui.IsItemDeactivatedAfterEdit())
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                }
+
+                if (t.Kind is Tag.TagKind.Shape or Tag.TagKind.Text)
+                {
+                    Vector4 tagColor2 = t.Color2;
+                    ImGui.TextUnformatted(lang.Translate("ui.tag.clr2"));
+                    ImGui.SameLine();
+                    if (ImGui.ColorEdit4("##BorderTagClr", ref tagColor2, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
+                    {
+                        t.Color2 = tagColor2;
+                    }
+
+                    if (ImGui.IsItemDeactivatedAfterEdit())
+                    {
+                        tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                    }
+                }
+
+                Vector4 tagColor3 = t.TextColor;
+                ImGui.TextUnformatted(lang.Translate("ui.tag.clr3"));
+                ImGui.SameLine();
+                if (ImGui.ColorEdit4("##TextTagClr", ref tagColor3, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
+                {
+                    t.TextColor = tagColor3;
+                }
+
+                if (ImGui.IsItemDeactivatedAfterEdit())
+                {
+                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                }
+
+                bool tIsPublic = t.IsPublic;
+                ImGui.TextUnformatted(lang.Translate("ui.tag.public"));
+                ImGui.SameLine();
+                if (ImGui.Checkbox("##TagIsPublic", ref tIsPublic))
+                {
+                    t.IsPublic = tIsPublic;
+                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.public.tt"));
+                }
+
+                ImGui.TextUnformatted(lang.Translate("ui.tag.type"));
+                ImGui.SameLine();
+                string[] types = { lang.Translate("ui.tag.type.none"), lang.Translate("ui.tag.type.shape"), lang.Translate("ui.tag.type.text"), lang.Translate("ui.tag.type.asset"), lang.Translate("ui.tag.type.b64img") };
+                int tagType = (int)t.Kind;
+                ImGui.PushItemWidth(192);
+                if (ImGui.Combo("##TagTypeCombo", ref tagType, types, types.Length))
+                {
+                    t.Kind = (Tag.TagKind)tagType;
+                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                }
+
+                ImGui.PopItemWidth();
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.tag.type.tt"));
+                }
+
+                switch (t.Kind)
+                {
+                    case Tag.TagKind.Shape:
+                    {
+                        ImGui.TextUnformatted(lang.Translate("ui.tag.shape"));
+                        ImGui.SameLine();
+                        string[] shapeTypes = Enum.GetValues<Tag.ShapeKind>().Select(x => lang.Translate($"ui.tag.shape.type.{Enum.GetName(x).ToLower()}")).ToArray();
+                        int currentShapeIndex = (int)t.Shape;
+                        ImGui.PushItemWidth(192);
+                        if (ImGui.BeginCombo("##TagShapeCombo", shapeTypes[currentShapeIndex]))
+                        {
+                            Tag.ShapeKind[] shapeKinds = Enum.GetValues<Tag.ShapeKind>();
+                            for (int i = 0; i < shapeKinds.Length; i++)
+                            {
+                                Tag.ShapeKind shapeKind = shapeKinds[i];
+                                bool selected = i == currentShapeIndex;
+                                bool selectableClicked = ImGui.Selectable("##TagShapeComboItem_" + i, selected);
+                                ImGui.SameLine();
+                                float uvStep = 1.0f / 22.0f;
+                                float uvStart = uvStep * i;
+                                Vector2 beforeLocalTagImage = ImGui.GetCursorScreenPos();
+                                ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0), new Vector2(uvStart + uvStep, 0.5f), t.Color1);
+                                ImGui.SetCursorScreenPos(beforeLocalTagImage);
+                                ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0.5f), new Vector2(uvStart + uvStep, 1), t.Color2);
+                                ImGui.SameLine();
+                                ImGui.Text(shapeTypes[i]);
+                                if (selectableClicked)
+                                {
+                                    ImGui.SetItemDefaultFocus();
+                                    currentShapeIndex = i;
+                                    t.Shape = (Tag.ShapeKind)i;
+                                    tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                                }
+                            }
+
+                            ImGui.EndCombo();
+                        }
+
+                        ImGui.PopItemWidth();
+                        break;
+                    }
+
+                    case Tag.TagKind.Text:
+                    {
+                        float borderRounding = t.BorderRounding;
+                        if (ImGui.SliderFloat("##TagTextBorderRounding", ref borderRounding, 0f, 16f))
+                        {
+                            t.BorderRounding = borderRounding;
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.tag.border_rounding.tt"));
+                        }
+
+                        if (ImGui.IsItemDeactivatedAfterEdit())
+                        {
+                            tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                        }
+
+                        break;
+                    }
+
+                    case Tag.TagKind.CustomImageAsset:
+                    {
+                        if (ImGuiHelper.ImAssetRecepticle(lang, t.AssetID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out bool mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
+                        {
+                            tagAssetHoverCallback();
+                        }
+
+                        if (mouseOver)
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.tag.custom_asset.tt"));
+                        }
+
+                        if (ImGui.Button(lang.Translate("ui.tag.custom_asset.delete")))
+                        {
+                            t.AssetID = Guid.Empty;
+                            tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                        }
+
+                        break;
+                    }
+
+                    case Tag.TagKind.CustomImageB64:
+                    {
+                        ImGui.Button(lang.Translate("ui.tag.custom_b64.action_" + (string.IsNullOrEmpty(t.EmbedB64Image) ? "upload" : "modify")), new Vector2(ImGui.GetContentRegionAvail().X, 24));
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip(lang.Translate("ui.tag.custom_b64.tt"));
+                            tagB64HoverCallback();
+                        }
+
+                        if (ImGui.Button(lang.Translate("ui.tag.custom_b64.delete")))
+                        {
+                            t.EmbedB64Image = string.Empty;
+                            tagUpdateCallback(PacketObjectTag.ActionType.Update);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            ImGui.EndChild();
         }
 
         private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state, double time)
@@ -646,274 +892,28 @@
                                 int tagIndex = 0;
                                 foreach (Tag t in mo.Tags)
                                 {
-                                    if (ImGui.BeginChild("##Tag_" + t.ID, new Vector2(320, 0), ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY, ImGuiWindowFlags.ChildWindow | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
-                                    {
-                                        this.RenderTagIntoList(ImGui.GetWindowDrawList(), new Vector2(t.Kind == Tag.TagKind.Text ? 48 : 24, 24), t);
-                                        ImGui.Dummy(new Vector2(t.Kind == Tag.TagKind.Text ? 48 : 24, 24));
-                                        ImGui.SameLine();
-                                        string txt = t.Text;
-                                        ImGui.PushItemWidth(128);
-                                        if (ImGui.InputText("##TagText", ref txt, 32))
+                                    this.ImTagSettings(lang, mo, t, tagIndex,
+                                        x => (x switch
                                         {
-                                            t.Text = txt;
-                                        }
-
-                                        ImGui.PopItemWidth();
-                                        if (ImGui.IsItemHovered())
+                                            PacketObjectTag.ActionType.Update => new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update },
+                                            PacketObjectTag.ActionType.MoveUp => new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.MoveUp },
+                                            PacketObjectTag.ActionType.MoveDown => new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.MoveDown },
+                                            PacketObjectTag.ActionType.Delete => new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.Delete },
+                                            _ => null
+                                        }).Send(),
+                                        x => new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = x.ID, TagData = x.Serialize(), Action = PacketObjectTag.ActionType.Create }.Send(),
+                                        () => 
                                         {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.text.tt"));
-                                        }
-
-                                        if (ImGui.IsItemDeactivatedAfterEdit())
+                                            state.tagCustomAssetImageHoveredOwner = mo;
+                                            state.tagCustomAssetImageHovered = t;
+                                        },
+                                        () =>
                                         {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
+                                            state.tagCustomAssetImageHoveredOwner = mo;
+                                            state.tagCustomB64ImageTextHovered = t;
                                         }
+                                    );
 
-                                        ImGui.SameLine();
-                                        if (tagIndex == 0)
-                                        {
-                                            ImGui.BeginDisabled();
-                                        }
-
-                                        if (ImGui.ArrowButton("##TagMoveUp", ImGuiDir.Up))
-                                        {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.MoveUp }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.move_up.tt"));
-                                        }
-
-                                        if (tagIndex == 0)
-                                        {
-                                            ImGui.EndDisabled();
-                                        }
-
-                                        ImGui.SameLine();
-                                        if (tagIndex == mo.Tags.Count - 1)
-                                        {
-                                            ImGui.BeginDisabled();
-                                        }
-
-                                        if (ImGui.ArrowButton("##TagMoveDown", ImGuiDir.Down))
-                                        {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.MoveDown }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.move_down.tt"));
-                                        }
-
-                                        if (tagIndex == mo.Tags.Count - 1)
-                                        {
-                                            ImGui.EndDisabled();
-                                        }
-
-                                        ImGui.SameLine();
-                                        if (ImGui.ImageButton("##TagDuplicate", this.CopyIcon.Texture, new Vector2(16, 16), this.CopyIcon.ST, this.CopyIcon.UV))
-                                        {
-                                            Tag t1 = t.Clone();
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t1.ID, TagData = t1.Serialize(), Action = PacketObjectTag.ActionType.Create }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.duplicate.tt"));
-                                        }
-
-                                        ImGui.SameLine();
-                                        if (ImGui.ImageButton("##TagDelete", this.DeleteIcon.Texture, new Vector2(16, 16), this.DeleteIcon.ST, this.DeleteIcon.UV))
-                                        {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, Action = PacketObjectTag.ActionType.Delete }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.delete.tt"));
-                                        }
-
-                                        Vector4 tagColor1 = t.Color1;
-                                        ImGui.TextUnformatted(lang.Translate("ui.tag.clr1"));
-                                        ImGui.SameLine();
-                                        if (ImGui.ColorEdit4("##BGTagClr", ref tagColor1, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
-                                        {
-                                            t.Color1 = tagColor1;
-                                        }
-
-                                        if (ImGui.IsItemDeactivatedAfterEdit())
-                                        {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                        }
-
-                                        if (t.Kind is Tag.TagKind.Shape or Tag.TagKind.Text)
-                                        {
-                                            Vector4 tagColor2 = t.Color2;
-                                            ImGui.TextUnformatted(lang.Translate("ui.tag.clr2"));
-                                            ImGui.SameLine();
-                                            if (ImGui.ColorEdit4("##BorderTagClr", ref tagColor2, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
-                                            {
-                                                t.Color2 = tagColor2;
-                                            }
-
-                                            if (ImGui.IsItemDeactivatedAfterEdit())
-                                            {
-                                                new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                            }
-                                        }
-
-                                        Vector4 tagColor3 = t.TextColor;
-                                        ImGui.TextUnformatted(lang.Translate("ui.tag.clr3"));
-                                        ImGui.SameLine();
-                                        if (ImGui.ColorEdit4("##TextTagClr", ref tagColor3, ImGuiColorEditFlags.AlphaPreview | ImGuiColorEditFlags.NoInputs))
-                                        {
-                                            t.TextColor = tagColor3;
-                                        }
-
-                                        if (ImGui.IsItemDeactivatedAfterEdit())
-                                        {
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                        }
-
-                                        bool tIsPublic = t.IsPublic;
-                                        ImGui.TextUnformatted(lang.Translate("ui.tag.public"));
-                                        ImGui.SameLine();
-                                        if (ImGui.Checkbox("##TagIsPublic", ref tIsPublic))
-                                        {
-                                            t.IsPublic = tIsPublic;
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                        }
-
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.public.tt"));
-                                        }
-
-                                        ImGui.TextUnformatted(lang.Translate("ui.tag.type"));
-                                        ImGui.SameLine();
-                                        string[] types = { lang.Translate("ui.tag.type.none"), lang.Translate("ui.tag.type.shape"), lang.Translate("ui.tag.type.text"), lang.Translate("ui.tag.type.asset"), lang.Translate("ui.tag.type.b64img") };
-                                        int tagType = (int)t.Kind;
-                                        ImGui.PushItemWidth(192);
-                                        if (ImGui.Combo("##TagTypeCombo", ref tagType, types, types.Length))
-                                        {
-                                            t.Kind = (Tag.TagKind)tagType;
-                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                        }
-
-                                        ImGui.PopItemWidth();
-                                        if (ImGui.IsItemHovered())
-                                        {
-                                            ImGui.SetTooltip(lang.Translate("ui.tag.type.tt"));
-                                        }
-
-                                        switch (t.Kind)
-                                        {
-                                            case Tag.TagKind.Shape:
-                                            {
-                                                ImGui.TextUnformatted(lang.Translate("ui.tag.shape"));
-                                                ImGui.SameLine();
-                                                string[] shapeTypes = Enum.GetValues<Tag.ShapeKind>().Select(x => lang.Translate($"ui.tag.shape.type.{Enum.GetName(x).ToLower()}")).ToArray();
-                                                int currentShapeIndex = (int)t.Shape;
-                                                ImGui.PushItemWidth(192);
-                                                if (ImGui.BeginCombo("##TagShapeCombo", shapeTypes[currentShapeIndex]))
-                                                {
-                                                    Tag.ShapeKind[] shapeKinds = Enum.GetValues<Tag.ShapeKind>();
-                                                    for (int i = 0; i < shapeKinds.Length; i++)
-                                                    {
-                                                        Tag.ShapeKind shapeKind = shapeKinds[i];
-                                                        bool selected = i == currentShapeIndex;
-                                                        bool selectableClicked = ImGui.Selectable("##TagShapeComboItem_" + i, selected);
-                                                        ImGui.SameLine();
-                                                        float uvStep = 1.0f / 22.0f;
-                                                        float uvStart = uvStep * i;
-                                                        Vector2 beforeLocalTagImage = ImGui.GetCursorScreenPos();
-                                                        ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0), new Vector2(uvStart + uvStep, 0.5f), t.Color1);
-                                                        ImGui.SetCursorScreenPos(beforeLocalTagImage);
-                                                        ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0.5f), new Vector2(uvStart + uvStep, 1), t.Color2);
-                                                        ImGui.SameLine();
-                                                        ImGui.Text(shapeTypes[i]);
-                                                        if (selectableClicked)
-                                                        {
-                                                            ImGui.SetItemDefaultFocus();
-                                                            currentShapeIndex = i;
-                                                            t.Shape = (Tag.ShapeKind)i;
-                                                            new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                                        }
-                                                    }
-
-                                                    ImGui.EndCombo();
-                                                }
-
-                                                ImGui.PopItemWidth();
-                                                break;
-                                            }
-
-                                            case Tag.TagKind.Text:
-                                            {
-                                                float borderRounding = t.BorderRounding;
-                                                if (ImGui.SliderFloat("##TagTextBorderRounding", ref borderRounding, 0f, 16f))
-                                                {
-                                                    t.BorderRounding = borderRounding;
-                                                }
-
-                                                if (ImGui.IsItemHovered())
-                                                {
-                                                    ImGui.SetTooltip(lang.Translate("ui.tag.border_rounding.tt"));
-                                                }
-
-                                                if (ImGui.IsItemDeactivatedAfterEdit())
-                                                {
-                                                    new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                                }
-
-                                                break;
-                                            }
-
-                                            case Tag.TagKind.CustomImageAsset:
-                                            {
-                                                if (ImGuiHelper.ImAssetRecepticle(lang, t.AssetID, this.AssetImageIcon, new Vector2(0, 24), static x => x.Type == AssetType.Texture, out bool mouseOver) && this._draggedRef != null && this._draggedRef.Type == AssetType.Texture)
-                                                {
-                                                    state.tagCustomAssetImageHoveredOwner = mo;
-                                                    state.tagCustomAssetImageHovered = t;
-                                                }
-
-                                                if (mouseOver)
-                                                {
-                                                    ImGui.SetTooltip(lang.Translate("ui.tag.custom_asset.tt"));
-                                                }
-
-                                                if (ImGui.Button(lang.Translate("ui.tag.custom_asset.delete")))
-                                                {
-                                                    t.AssetID = Guid.Empty;
-                                                    new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                                }
-
-                                                break;
-                                            }
-
-                                            case Tag.TagKind.CustomImageB64:
-                                            {
-                                                ImGui.Button(lang.Translate("ui.tag.custom_b64.action_" + (string.IsNullOrEmpty(t.EmbedB64Image) ? "upload" : "modify")), new Vector2(ImGui.GetContentRegionAvail().X, 24));
-                                                if (ImGui.IsItemHovered())
-                                                {
-                                                    ImGui.SetTooltip(lang.Translate("ui.tag.custom_b64.tt"));
-                                                    state.tagCustomAssetImageHoveredOwner = mo;
-                                                    state.tagCustomB64ImageTextHovered = t;
-                                                }
-
-                                                if (ImGui.Button(lang.Translate("ui.tag.custom_b64.delete")))
-                                                {
-                                                    t.EmbedB64Image = string.Empty;
-                                                    new PacketObjectTag() { MapID = mo.MapID, ObjectID = mo.ID, TagID = t.ID, TagData = t.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
-                                                }
-
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    ImGui.EndChild();
                                     tagIndex += 1;
                                 }
                             }

@@ -1101,7 +1101,6 @@
 
         public void UniformCommonShaderData(Map m, double delta, UniformBlockFrameData frameDataUniforms, UniformState<bool> gammaEnabled, UniformState<float> gammaFactor)
         {
-            PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
             /* Old non-ubo handling code
             if (!Client.Instance.Settings.UseUBO) // If UBOs are used all uniforms are in the UBO
             {

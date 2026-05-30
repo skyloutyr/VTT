@@ -41,48 +41,6 @@
                 ImGui.EndPopup();
             }
 
-            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.rename_folder") + "###Rename Folder"))
-            {
-                ImGui.InputText(lang.Translate("ui.popup.rename_folder.name") + "###Folder Name", ref this._newFolderNameString, 255);
-                bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
-                bool bo = ImGui.Button(ok);
-
-                if (bo || bc)
-                {
-                    ImGui.CloseCurrentPopup();
-                }
-
-                if (bo && !string.IsNullOrEmpty(this._newFolderNameString))
-                {
-                    PacketRenameAssetFolder praf = new PacketRenameAssetFolder() { IsServer = false, Name = this._newFolderNameString, Path = this._contextDir.GetPath(), Session = Client.Instance.SessionID };
-                    praf.Send(Client.Instance.NetClient);
-                }
-
-                ImGui.EndPopup();
-            }
-
-            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.confirm_delete") + "###Confirm Delete"))
-            {
-                ImGui.TextWrapped(lang.Translate("ui.popup.confirm_delete.text"));
-                bool bc = ImGui.Button(cancel);
-                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
-                bool bo = ImGui.Button(ok);
-
-                if (bo || bc)
-                {
-                    ImGui.CloseCurrentPopup();
-                }
-
-                if (bo)
-                {
-                    PacketAddRemoveAssetFolder paraf = new PacketAddRemoveAssetFolder() { IsServer = false, Name = string.Empty, Path = this._contextDir.GetPath(), Remove = true, Session = Client.Instance.SessionID };
-                    paraf.Send(Client.Instance.NetClient);
-                }
-
-                ImGui.EndPopup();
-            }
-
             if (ImGui.BeginPopupModal(lang.Translate("ui.popup.change_bar_color") + "###Change Bar Color"))
             {
                 DisplayBar db = this._editedMapObject.Bars[this._editedBarIndex];
@@ -1329,16 +1287,6 @@
             {
                 ImGui.OpenPopup("###Create New Folder");
                 this._newFolderNameString = "New Folder";
-            }
-
-            if (state.editFolderPopup)
-            {
-                ImGui.OpenPopup("###Rename Folder");
-            }
-
-            if (state.deleteFolderPopup)
-            {
-                ImGui.OpenPopup("###Confirm Delete");
             }
 
             if (state.editAssetPopup)

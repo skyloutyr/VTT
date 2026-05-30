@@ -434,8 +434,8 @@ public static unsafe class StbDxt
 
             r >>= 4; g >>= 4; b >>= 4;
 
-            max16 = unchecked((ushort)((OMatch5[r * 2 + 0] << 11) | (OMatch6[g * 2 + 0] << 5) | OMatch5[b * 2 + 0]));
-            min16 = unchecked((ushort)((OMatch5[r * 2 + 1] << 11) | (OMatch6[g * 2 + 1] << 5) | OMatch5[b * 2 + 1]));
+            max16 = unchecked((ushort)((OMatch5[(r * 2) + 0] << 11) | (OMatch6[(g * 2) + 0] << 5) | OMatch5[(b * 2) + 0]));
+            min16 = unchecked((ushort)((OMatch5[(r * 2) + 1] << 11) | (OMatch6[(g * 2) + 1] << 5) | OMatch5[(b * 2) + 1]));
         }
         else
         {
@@ -506,8 +506,8 @@ public static unsafe class StbDxt
         { // constant color
             int r = block[0], g = block[1], b = block[2];
             mask = 0xaaaaaaaa;
-            max16 = unchecked((ushort)((OMatch5[r * 2 + 0] << 11) | (OMatch6[g * 2 + 0] << 5) | OMatch5[b * 2 + 0]));
-            min16 = unchecked((ushort)((OMatch5[r * 2 + 1] << 11) | (OMatch6[g * 2 + 1] << 5) | OMatch5[b * 2 + 1]));
+            max16 = unchecked((ushort)((OMatch5[(r * 2) + 0] << 11) | (OMatch6[(g * 2) + 0] << 5) | OMatch5[(b * 2) + 0]));
+            min16 = unchecked((ushort)((OMatch5[(r * 2) + 1] << 11) | (OMatch6[(g * 2) + 1] << 5) | OMatch5[(b * 2) + 1]));
         }
         else
         {
@@ -689,7 +689,7 @@ public static unsafe class StbDxt
         int tot = nBlocksX * nBlocksY;
         if (multithread)
         {
-            Parallel.For(0, tot, () => new UnsafeArray<Rgba32>(16), (int i, ParallelLoopState storage, UnsafeArray<Rgba32> arr) =>
+            Parallel.For(0, tot, () => new UnsafeArray<Rgba32>(16), (i, storage, arr) =>
             {
                 int x = i % nBlocksX;
                 int y = i / nBlocksX;

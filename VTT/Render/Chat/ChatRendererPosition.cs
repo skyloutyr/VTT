@@ -9,11 +9,8 @@
 
     public class ChatRendererPosition : ChatRendererBase
     {
-        private Guid _localOwnID;
-        public ChatRendererPosition(ChatLine container) : base(container)
-        {
-            this._localOwnID = Guid.NewGuid();
-        }
+        private readonly Guid _localOwnID;
+        public ChatRendererPosition(ChatLine container) : base(container) => this._localOwnID = Guid.NewGuid();
 
         public override void Cache(Vector2 windowSize, out float width, out float height)
         {
@@ -38,7 +35,7 @@
             this.Container.TryGetBlockAt(4, out ChatBlock posZBlock);
             Vector2 start = ImGui.GetCursorScreenPos();
             ImGui.Dummy(new(320f, 48f));
-            ImGui.SetCursorScreenPos(start + new Vector2(160f - ImGui.CalcTextSize(msg).X / 2f, 0f));
+            ImGui.SetCursorScreenPos(start + new Vector2(160f - (ImGui.CalcTextSize(msg).X / 2f), 0f));
             ColorAbgr clr = msgBlock?.Color ?? ColorAbgr.Transparent;
             if (clr != ColorAbgr.Transparent)
             {

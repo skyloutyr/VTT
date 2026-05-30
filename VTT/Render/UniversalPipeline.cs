@@ -119,7 +119,6 @@
             Vector3 ambientColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetAmbientColor().Vec3();
             Color skyColor = Client.Instance.Frontend.Renderer.SkyRenderer.GetSkyColor();
             */
-            SunShadowRenderer dlRenderer = Client.Instance.Frontend.Renderer.ObjectRenderer.DirectionalLightRenderer;
             PointLightsRenderer plr = Client.Instance.Frontend.Renderer.PointLightsRenderer;
 
             GL.BindFramebuffer(FramebufferTarget.All, this.FramebufferDeferredFinal.Value);

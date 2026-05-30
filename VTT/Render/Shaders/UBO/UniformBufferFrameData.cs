@@ -13,10 +13,7 @@
 
     public sealed class UniformBufferFrameData : UniformBufferObject<FrameUBO>
     {
-        public UniformBufferFrameData() : base(1)
-        {
-            OpenGLUtil.NameObject(GLObjectType.Buffer, this._buffer, "Frame UBO");
-        }
+        public UniformBufferFrameData() : base(1) => OpenGLUtil.NameObject(GLObjectType.Buffer, this._buffer, "Frame UBO");
 
         public unsafe void SetBlank(Camera cam, DirectionalLight sun, Vector4 clearColor)
         {

@@ -18,6 +18,7 @@
     using VTT.Network.Packet;
     using VTT.Render.Gui;
     using VTT.Util;
+    using static VTT.Render.Chat.ChatRendererBase;
 
     public static class ImGuiHelper
     {
@@ -436,6 +437,145 @@
         public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags) => ImGuiNativeExtras.BeginTooltipEx(windowFlags);
 
         public static void ClearActiveID() => ImGuiNativeExtras.ClearActiveID();
+
+        public readonly record struct CustomImageReference(string Data, Guid AssetID, bool TypeKnown = false, ImageBlockImageType DefiniteType = ImageBlockImageType.Invalid)
+        {
+            public CustomImageReference(string data) : this(data, Guid.Empty, false, ImageBlockImageType.Invalid) { }
+            public CustomImageReference(string data, ImageBlockImageType knownType) : this(data, Guid.Empty, true, knownType) { }
+            public CustomImageReference(Guid id) : this(string.Empty, id, true, ImageBlockImageType.AssetRef) { }
+        }
+
+        public readonly record struct CustomImageResult(AssetStatus Result, IntPtr Texture, Vector2 ImgSize, Vector2 ST, Vector2 UV, bool WantsGammaCorrection, ImageBlockImageType ImageType);
+        public static CustomImageResult IdentifyCustomAssetOrImage(in CustomImageReference img, Vector2 defaultImgSize, Vector2 desiredMaxImageSize)
+        {
+            bool needGammaCorrection = false;
+            ImageBlockImageType imgType = img.DefiniteType;
+            AssetStatus imgStatus = AssetStatus.Error;
+            Asset a = null;
+            AssetPreview ap = null;
+            if (img.TypeKnown)
+            {
+                switch (img.DefiniteType)
+                {
+                    case ImageBlockImageType.Invalid:
+                    {
+                        return new CustomImageResult(AssetStatus.Error, IntPtr.Zero, Vector2.Zero, Vector2.Zero, Vector2.Zero, false, ImageBlockImageType.Invalid);
+                    }
+
+                    case ImageBlockImageType.AssetRef:
+                    {
+                        imgStatus = Client.Instance.AssetManager.ClientAssetLibrary.Assets.Get(img.AssetID, AssetType.Texture, out a);
+                        break;
+                    }
+
+                    case ImageBlockImageType.URL:
+                    {
+                        imgStatus = Client.Instance.AssetManager.ClientAssetLibrary.WebPictures.Get(img.Data, AssetType.Texture, out ap);
+                        break;
+                    }
+
+                    case ImageBlockImageType.EmbeddedBase64:
+                    {
+                        imgStatus = Client.Instance.AssetManager.ClientAssetLibrary.Base64Pictures.Get(img.Data, AssetType.Texture, out ap);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                imgStatus = ResolveImageBlock(img.Data, out imgType, out a, out ap);
+            }
+
+            IntPtr imgTexture;
+            Vector2 imgSize;
+            Vector2 imgSt;
+            Vector2 imgUv;
+            switch (imgStatus)
+            {
+                case AssetStatus.Return:
+                {
+                    if (imgType == ImageBlockImageType.AssetRef
+                        ? a == null || a.Texture == null || !a.Texture.glReady
+                        : ap == null || ap.GLTex == null || !ap.GLTex.IsAsyncReady) // Impossible but sanity check in case of race condidion
+                    {
+                        goto case AssetStatus.Await;
+                    }
+
+                    if (imgType == ImageBlockImageType.AssetRef)
+                    {
+                        Texture t = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
+                        imgTexture = t;
+                        if (animationData != null && animationData.Frames.Length > 1)
+                        {
+                            VTT.Asset.Glb.TextureAnimation.Frame frame = animationData.FindFrameForIndex(double.NaN);
+                            Vector2 tSzV2 = new Vector2(t.Size.Width, t.Size.Height);
+                            imgSize = new Vector2(frame.Location.Width, frame.Location.Height) * tSzV2;
+                            imgSt = new Vector2(frame.Location.Left, frame.Location.Top);
+                            imgUv = new Vector2(frame.Location.Right, frame.Location.Bottom);
+                        }
+                        else
+                        {
+                            imgSize = new Vector2(t.Size.Width, t.Size.Height);
+                            imgSt = Vector2.Zero;
+                            imgUv = Vector2.One;
+                        }
+
+                        needGammaCorrection = a.Texture.Meta?.GammaCorrect ?? false;
+                    }
+                    else
+                    {
+                        imgTexture = ap.GLTex;
+                        if (ap.IsAnimated && ap.FramesTotalDelay > 0)
+                        {
+                            float tW = ap.GLTex.Size.Width;
+                            float tH = ap.GLTex.Size.Height;
+                            AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
+                            float sS = frame.X / tW;
+                            float sE = sS + (frame.Width / tW);
+                            float tS = frame.Y / tH;
+                            float tE = tS + (frame.Height / tH);
+                            imgSize = new Vector2(frame.Width, frame.Height);
+                            imgSt = new Vector2(sS, tS);
+                            imgUv = new Vector2(sE, tE);
+                        }
+                        else
+                        {
+                            imgSize = new Vector2(ap.GLTex.Size.Width, ap.GLTex.Size.Height);
+                            imgSt = Vector2.Zero;
+                            imgUv = Vector2.One;
+                        }
+                    }
+
+                    break;
+                }
+
+                case AssetStatus.NoAsset:
+                case AssetStatus.Error:
+                {
+                    imgTexture = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.Texture;
+                    imgSize = defaultImgSize; // Blank for errors, have no idea of the image's size (will be 24/24 either way)
+                    imgSt = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.ST;
+                    imgUv = Client.Instance.Frontend.Renderer.GuiRenderer.NoImageIcon.UV;
+                    break;
+                }
+
+                case AssetStatus.Await:
+                default:
+                {
+                    int frame = (int)((int)Client.Instance.Frontend.UpdatesExisted % 90 / 90.0f * Client.Instance.Frontend.Renderer.GuiRenderer.LoadingSpinnerFrames);
+                    float texelIndexStart = (float)frame / Client.Instance.Frontend.Renderer.GuiRenderer.LoadingSpinnerFrames;
+                    float texelSize = 1f / Client.Instance.Frontend.Renderer.GuiRenderer.LoadingSpinnerFrames;
+                    imgTexture = Client.Instance.Frontend.Renderer.GuiRenderer.LoadingSpinner;
+                    imgSize = defaultImgSize;
+                    imgSt = new Vector2(texelIndexStart, 0);
+                    imgUv = new Vector2(texelIndexStart + texelSize, 1);
+                    break;
+                }
+            }
+
+            (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, desiredMaxImageSize.X, desiredMaxImageSize.Y, out _);
+            return new CustomImageResult(imgStatus, imgTexture, imgSize, imgSt, imgUv, needGammaCorrection, imgType);
+        }
 
         public readonly struct ImColorGradientsResult
         {

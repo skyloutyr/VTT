@@ -2,6 +2,7 @@
 {
     using ImGuiNET;
     using SixLabors.ImageSharp;
+    using SixLabors.ImageSharp.PixelFormats;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -63,47 +64,10 @@
 
                 case Tag.TagKind.CustomImageB64:
                 {
-                    AssetStatus imgStatus = ResolveImageBlock(t.EmbedB64Image, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap);
-                    if (imgStatus == AssetStatus.Return)
+                    ImGuiHelper.CustomImageResult result = ImGuiHelper.IdentifyCustomAssetOrImage(new ImGuiHelper.CustomImageReference(t.EmbedB64Image, ImageBlockImageType.EmbeddedBase64), new Vector2(24, 24), new Vector2(64, 32));
+                    if (result.Result == AssetStatus.Return)
                     {
-                        if (imgType == ImageBlockImageType.AssetRef
-                                            ? a == null || a.Texture == null || !a.Texture.glReady
-                                            : ap == null || ap.GLTex == null || !ap.GLTex.IsAsyncReady) // Impossible but sanity check in case of race condidion
-                        {
-                            renderSize = Vector2.Zero;
-                            return false;
-                        }
-
-                        Vector2 imgSize;
-                        if (imgType == ImageBlockImageType.AssetRef)
-                        {
-                            Texture tex = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
-                            if (animationData != null && animationData.Frames.Length > 1)
-                            {
-                                VTT.Asset.Glb.TextureAnimation.Frame frame = animationData.FindFrameForIndex(double.NaN);
-                                Vector2 tSzV2 = new Vector2(tex.Size.Width, tex.Size.Height);
-                                imgSize = new Vector2(frame.Location.Width, frame.Location.Height) * tSzV2;
-                            }
-                            else
-                            {
-                                imgSize = new Vector2(tex.Size.Width, tex.Size.Height);
-                            }
-                        }
-                        else
-                        {
-                            if (ap.IsAnimated && ap.FramesTotalDelay > 0)
-                            {
-                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
-                                imgSize = new Vector2(frame.Width, frame.Height);
-                            }
-                            else
-                            {
-                                imgSize = new Vector2(ap.GLTex.Size.Width, ap.GLTex.Size.Height);
-                            }
-                        }
-
-                        (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 64, 32, out _);
-                        renderSize = imgSize;
+                        renderSize = result.ImgSize;
                         return true;
                     }
 
@@ -194,77 +158,17 @@
 
                 case Tag.TagKind.CustomImageB64:
                 {
-                    AssetStatus imgStatus = ResolveImageBlock(t.EmbedB64Image, out ImageBlockImageType imgType, out Asset a, out AssetPreview ap);
-                    if (imgStatus == AssetStatus.Return)
+                    ImGuiHelper.CustomImageResult imgResult = ImGuiHelper.IdentifyCustomAssetOrImage(new ImGuiHelper.CustomImageReference(t.EmbedB64Image, ImageBlockImageType.EmbeddedBase64), size, new Vector2(64, 32));
+                    if (imgResult.Result == AssetStatus.Return)
                     {
-                        if (imgType == ImageBlockImageType.AssetRef
-                                            ? a == null || a.Texture == null || !a.Texture.glReady
-                                            : ap == null || ap.GLTex == null || !ap.GLTex.IsAsyncReady) // Impossible but sanity check in case of race condidion
-                        {
-                            break; // Can't render here, image is not ready yet
-                        }
-
-                        Texture imgTexture;
-                        Vector2 imgSize;
-                        Vector2 imgSt;
-                        Vector2 imgUv;
-                        bool needGammaCorrection = false;
-                        if (imgType == ImageBlockImageType.AssetRef)
-                        {
-                            Texture tex = a.Texture.GetOrCreateGLTexture(false, true, out VTT.Asset.Glb.TextureAnimation animationData);
-                            imgTexture = tex;
-                            if (animationData != null && animationData.Frames.Length > 1)
-                            {
-                                VTT.Asset.Glb.TextureAnimation.Frame frame = animationData.FindFrameForIndex(double.NaN);
-                                Vector2 tSzV2 = new Vector2(tex.Size.Width, tex.Size.Height);
-                                imgSize = new Vector2(frame.Location.Width, frame.Location.Height) * tSzV2;
-                                imgSt = new Vector2(frame.Location.Left, frame.Location.Top);
-                                imgUv = new Vector2(frame.Location.Right, frame.Location.Bottom);
-                            }
-                            else
-                            {
-                                imgSize = new Vector2(tex.Size.Width, tex.Size.Height);
-                                imgSt = Vector2.Zero;
-                                imgUv = Vector2.One;
-                            }
-
-                            needGammaCorrection = a.Texture.Meta?.GammaCorrect ?? false;
-                        }
-                        else
-                        {
-                            imgTexture = ap.GLTex;
-                            if (ap.IsAnimated && ap.FramesTotalDelay > 0)
-                            {
-                                float tW = ap.GLTex.Size.Width;
-                                float tH = ap.GLTex.Size.Height;
-                                AssetPreview.FrameData frame = ap.GetCurrentFrame((int)(((Client.Instance.Frontend.UpdatesExisted) & int.MaxValue) * (100f / 60f)));
-                                float sS = frame.X / tW;
-                                float sE = sS + (frame.Width / tW);
-                                float tS = frame.Y / tH;
-                                float tE = tS + (frame.Height / tH);
-                                imgSize = new Vector2(frame.Width, frame.Height);
-                                imgSt = new Vector2(sS, tS);
-                                imgUv = new Vector2(sE, tE);
-                            }
-                            else
-                            {
-                                imgSize = new Vector2(ap.GLTex.Size.Width, ap.GLTex.Size.Height);
-                                imgSt = Vector2.Zero;
-                                imgUv = Vector2.One;
-                            }
-                        }
-
-                        float originalSzX = imgSize.X;
-                        float originalSzY = imgSize.Y;
-                        (imgSize.X, imgSize.Y) = VTTMath.ClampKeepAR(imgSize.X, imgSize.Y, 64, 32, out bool originalSizeChanged);
-                        if (needGammaCorrection)
+                        if (imgResult.WantsGammaCorrection)
                         {
                             drawList.AddCallback(Marshal.GetFunctionPointerForDelegate(ChatRendererLine.GammaSetterCallback), new IntPtr(1));
                         }
 
                         Vector2 cPosBeforeImage = ImGui.GetCursorScreenPos();
-                        drawList.AddImage(imgTexture, start, start + imgSize, imgSt, imgUv, t.Color1.Abgr());
-                        if (needGammaCorrection)
+                        drawList.AddImage(imgResult.Texture, start, start + imgResult.ImgSize, imgResult.ST, imgResult.UV, t.Color1.Abgr());
+                        if (imgResult.WantsGammaCorrection)
                         {
                             drawList.AddCallback(Marshal.GetFunctionPointerForDelegate(ChatRendererLine.GammaSetterCallback), new IntPtr(0));
                         }
@@ -951,7 +855,7 @@
                             float availX = ImGui.GetContentRegionAvail().X;
                             for (int i = 0; i < mo.Bars.Count; i++)
                             {
-                                if (ImGui.BeginChild("##Bar_" + i, new Vector2(280, 64), ImGuiChildFlags.Borders))
+                                if (ImGui.BeginChild("##Bar_" + i, new Vector2(280, 0), ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY))
                                 {
                                     DisplayBar db = mo.Bars[i];
                                     float cVal = db.CurrentValue;
@@ -994,13 +898,87 @@
                                         ImGui.SetTooltip(lang.Translate("ui.bars.delete"));
                                     }
 
-                                    string[] modes = new string[] { lang.Translate("ui.bars.mode.standard"), lang.Translate("ui.bars.mode.compact"), lang.Translate("ui.bars.mode.round") };
+                                    bool barPublic = db.IsPublic;
+                                    if (ImGui.Checkbox($"{lang.Translate("ui.bars.is_public")}###DBIsPublic_" + i, ref barPublic))
+                                    {
+                                        db.IsPublic = barPublic;
+                                        new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db }.Send();
+                                    }
+
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.SetTooltip(lang.Translate("ui.bars.is_public.tt"));
+                                    }
+
+                                    string[] modes = new string[] { lang.Translate("ui.bars.mode.standard"), lang.Translate("ui.bars.mode.compact"), lang.Translate("ui.bars.mode.round"), lang.Translate("ui.bars.mode.shape"), lang.Translate("ui.bars.mode.image") };
                                     int barRenderMode = (int)db.RenderMode;
                                     if (ImGui.Combo("##DBRenderMode_" + i, ref barRenderMode, modes, modes.Length))
                                     {
                                         db.RenderMode = (DisplayBar.DrawMode)barRenderMode;
                                         PacketMapObjectBar pmob = new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db };
                                         pmob.Send();
+                                    }
+
+                                    switch (db.RenderMode)
+                                    {
+                                        case DisplayBar.DrawMode.Shape:
+                                        {
+                                            string[] shapeTypes = Enum.GetValues<Tag.ShapeKind>().Select(x => lang.Translate($"ui.tag.shape.type.{Enum.GetName(x).ToLower()}")).ToArray();
+                                            int currentShapeIndex = (int)db.ShapeKind;
+                                            ImGui.TextUnformatted(lang.Translate("ui.bars.shape"));
+                                            ImGui.SameLine();
+                                            ImGui.PushItemWidth(192);
+                                            if (ImGui.BeginCombo("##BarShapeCombo_" + i, shapeTypes[currentShapeIndex]))
+                                            {
+                                                Tag.ShapeKind[] shapeKinds = Enum.GetValues<Tag.ShapeKind>();
+                                                for (int j = 0; j < shapeKinds.Length; j++)
+                                                {
+                                                    Tag.ShapeKind shapeKind = shapeKinds[j];
+                                                    bool selected = j == currentShapeIndex;
+                                                    bool selectableClicked = ImGui.Selectable($"##BarShapeComboItem_{i}_{j}", selected);
+                                                    ImGui.SameLine();
+                                                    float uvStep = 1.0f / 22.0f;
+                                                    float uvStart = uvStep * j;
+                                                    Vector2 beforeLocalTagImage = ImGui.GetCursorScreenPos();
+                                                    ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0), new Vector2(uvStart + uvStep, 0.5f), db.DrawColor.Vec4());
+                                                    ImGui.SetCursorScreenPos(beforeLocalTagImage);
+                                                    ImGui.Image(this.TagShapes, new Vector2(16, 16), new Vector2(uvStart, 0.5f), new Vector2(uvStart + uvStep, 1), db.DrawColor.ContrastBlackOrWhite().Vec4());
+                                                    ImGui.SameLine();
+                                                    ImGui.Text(shapeTypes[j]);
+                                                    if (selectableClicked)
+                                                    {
+                                                        ImGui.SetItemDefaultFocus();
+                                                        currentShapeIndex = j;
+                                                        db.ShapeKind = (Tag.ShapeKind)j;
+                                                        new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db }.Send();
+                                                    }
+                                                }
+
+                                                ImGui.EndCombo();
+                                            }
+
+                                            ImGui.PopItemWidth();
+                                            break;
+                                        }
+
+                                        case DisplayBar.DrawMode.Image:
+                                        {
+                                            ImGui.Button(lang.Translate("ui.bars.custom_img"), new Vector2(ImGui.GetContentRegionAvail().X, 24));
+                                            if (ImGui.IsItemHovered())
+                                            {
+                                                state.barCustomAssetImageHovered = db;
+                                                state.barCustomAssetImageHoveredOwner = mo;
+                                                ImGui.SetTooltip(lang.Translate("ui.bars.custom_img.tt"));
+                                            }
+
+                                            if (ImGui.Button(lang.Translate("ui.bars.custom_img.delete")))
+                                            {
+                                                db.CustomImage = string.Empty;
+                                                new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = mo.MapID, ContainerID = mo.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = db }.Send();
+                                            }
+
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -1837,7 +1815,7 @@
                 if (mo != null && mo.ClientRenderedThisFrame)
                 {
                     bool renderName = mo.CanEdit(Client.Instance.ID) || Client.Instance.IsAdmin || Client.Instance.IsObserver || mo.IsNameVisible;
-                    bool renderBars = mo.CanEdit(Client.Instance.ID) || Client.Instance.IsAdmin || Client.Instance.IsObserver;
+                    bool renderBars = mo.CanEdit(Client.Instance.ID) || Client.Instance.IsAdmin || Client.Instance.IsObserver || mo.Bars.Any(x => x.IsPublic);
 
                     if (!renderName && !renderBars)
                     {
@@ -1865,14 +1843,9 @@
                         switch (db.RenderMode)
                         {
                             case DisplayBar.DrawMode.Default:
-                            {
-                                layoutgenPrevBarWasInline = false;
-                                layoutgenPenX = 0;
-                                barsHeight += 16;
-                                break;
-                            }
-
                             case DisplayBar.DrawMode.Compact:
+                            case DisplayBar.DrawMode.Image:
+                            case DisplayBar.DrawMode.Shape:
                             {
                                 layoutgenPrevBarWasInline = false;
                                 layoutgenPenX = 0;
@@ -2016,13 +1989,19 @@
                                 ImGui.Dummy(customPadding);
                             }
 
+                            bool displayAllBars = mo.CanEdit(Client.Instance.ID) || Client.Instance.IsAdmin || Client.Instance.IsObserver;
                             bool prevWasRound = false;
                             float penX = 0;
                             for (int i = 0; i < mo.Bars.Count; i++)
                             {
                                 DisplayBar db = mo.Bars[i];
+                                if (!displayAllBars && !db.IsPublic)
+                                {
+                                    continue;
+                                }
+
                                 float mW = MathF.Max(112, tX - 16);
-                                RenderBar(db.CurrentValue, db.MaxValue, db.RenderMode, db.DrawColor, hasNp, customPadding, mW, tX, ref prevWasRound, ref penX);
+                                RenderBar(db.CurrentValue, db.MaxValue, db.RenderMode, db.DrawColor, hasNp, customPadding, mW, tX, db.ShapeKind, db.CustomImage, ref prevWasRound, ref penX);
                             }
                         }
                     }
@@ -2115,10 +2094,17 @@
             }
         }
 
-        public static void RenderBar(float current, float max, DisplayBar.DrawMode renderMode, ColorAbgr barColor, bool hasNp, Vector2 customPadding, float barWidth, float maxWidth, ref bool prevWasRound, ref float penX)
+        public static void RenderBar(float current, float max, DisplayBar.DrawMode renderMode, ColorAbgr barColor, bool hasNp, Vector2 customPadding, float barWidth, float maxWidth, Tag.ShapeKind shapeType, string customImageData, ref bool prevWasRound, ref float penX)
         {
             Vector2 cNow = ImGui.GetCursorPos();
+            Vector2 cNowWnd = ImGui.GetCursorScreenPos();
             string dbText = current + "/" + max;
+            float progress = current / max;
+            if (float.IsNaN(progress))
+            {
+                progress = 0;
+            }
+
             Vector2 dbTextSize = ImGui.CalcTextSize(dbText);
             switch (renderMode)
             {
@@ -2207,12 +2193,6 @@
                     uint clrEmpty = ImGui.GetColorU32(ImGuiCol.FrameBg);
                     Vector2 center = dCHere + new Vector2(28, 24);
                     drawList.AddCircleFilled(center, 24, clrEmpty);
-                    float progress = current / max;
-                    if (float.IsNaN(progress))
-                    {
-                        progress = 0;
-                    }
-
                     float angleStep = MathF.PI * 2 / 32f;
                     float angleNeeded = MathF.PI * 2 * progress;
                     if (progress > 0)
@@ -2257,6 +2237,55 @@
 
                     ImGui.SetCursorPosY(cNow.Y + 48);
                     ImGui.SetCursorPosX(ImGui.GetStyle().WindowPadding.X);
+                    break;
+                }
+
+                case DisplayBar.DrawMode.Shape:
+                case DisplayBar.DrawMode.Image:
+                {
+                    prevWasRound = false;
+                    penX = 0;
+                    int imgAmt = max > 100 ? 100 : (int)MathF.Round(max);
+                    IntPtr barTexture;
+                    Vector2 barTextureST;
+                    Vector2 barTextureUV;
+                    if (renderMode == DisplayBar.DrawMode.Shape)
+                    {
+                        barTexture = Instance.TagShapes;
+                        float uvStep = 1.0f / 22.0f;
+                        float uvStart = uvStep * (int)shapeType;
+                        barTextureST = new Vector2(uvStart, 0f);
+                        barTextureUV = new Vector2(uvStart + uvStep, 0.5f);
+                    }
+                    else
+                    {
+                        ImGuiHelper.CustomImageResult result = ImGuiHelper.IdentifyCustomAssetOrImage(new ImGuiHelper.CustomImageReference(customImageData), new Vector2(16, 16), new Vector2(16, 16));
+                        barTexture = result.Texture;
+                        barTextureST = result.ST;
+                        barTextureUV = result.UV;
+                        // Gamma is not supported for custom assets in bars due to optimization reasons!
+                    }
+
+                    ImGui.Dummy(new Vector2(barWidth, 16));
+                    ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                    float lPenX = hasNp ? customPadding.X : 0;
+                    float cW = hasNp ? barWidth - customPadding.X * 2.0f : barWidth - 16f;
+                    float lStepX = imgAmt * 16 > cW ? cW / imgAmt : 16f;
+                    uint clrEmpty = ImGui.GetColorU32(ImGuiCol.FrameBg);
+                    uint clrContrastFull = new Color(new Abgr32(barColor)).ContrastBlackOrWhite().Abgr();
+                    uint clrContrastEmpty = new Color(new Abgr32(clrEmpty)).ContrastBlackOrWhite().Abgr();
+                    for (float i = 0; i < imgAmt; ++i)
+                    {
+                        bool filled = i / imgAmt <= progress && progress > 0;
+                        drawList.AddImage(barTexture, cNowWnd + new Vector2(lPenX, 0), cNowWnd + new Vector2(lPenX + 16, 16), barTextureST, barTextureUV, filled ? barColor : clrEmpty);
+                        if (renderMode == DisplayBar.DrawMode.Shape)
+                        {
+                            drawList.AddImage(barTexture, cNowWnd + new Vector2(lPenX, 0), cNowWnd + new Vector2(lPenX + 16, 16), barTextureST + new Vector2(0, 0.5f), barTextureUV + new Vector2(0, 0.5f), filled ? clrContrastFull : clrContrastEmpty);
+                        }
+
+                        lPenX += lStepX;
+                    }
+
                     break;
                 }
             }

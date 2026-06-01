@@ -21,6 +21,7 @@
     using VTT.Network.Packet;
     using VTT.Sound;
     using VTT.Util;
+    using static VTT.GL.VertexFormat;
 
     public partial class GuiRenderer
     {
@@ -57,28 +58,45 @@
             return this._mouseOverAssets
                 ? Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s))
                 : this.FrameState.chatHovered ? this.AddEmbeddedChatAsset(s) 
-                : this.FrameState.tagCustomB64ImageTextHovered != null && this.AddEmbeddedB64TagImage(s);
+                : this.FrameState.tagCustomB64ImageTextHovered != null ? this.AddEmbeddedB64TagImage(s)
+                : this.FrameState.barCustomAssetImageHovered != null && this.AddEmbeddedB64BarImage(s);
         }
 
-        private bool AddEmbeddedB64TagImage(string s)
+        private bool AddEmbeddedB64BarImage(string s) => this.AddEmbeddedB64Image(s, 32768, 49152, i => i.Width <= 32 && i.Height <= 32, x =>
+        {
+            this.FrameState.barCustomAssetImageHovered.CustomImage = x;
+            int i = this.FrameState.barCustomAssetImageHoveredOwner.Bars.FindIndex(x => x == this.FrameState.barCustomAssetImageHovered);
+            if (i != -1)
+            {
+                this.FrameState.barCustomAssetImageHovered.CustomImage = x;
+                new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = this.FrameState.barCustomAssetImageHoveredOwner.MapID, ContainerID = this.FrameState.barCustomAssetImageHoveredOwner.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = this.FrameState.barCustomAssetImageHovered }.Send();
+            }
+        });
+
+        private bool AddEmbeddedB64TagImage(string s) => this.AddEmbeddedB64Image(s, 32768, 49152, i => i.Width <= 64 && i.Height <= 32, x =>
+        {
+            this.FrameState.tagCustomB64ImageTextHovered.EmbedB64Image = x;
+            new PacketObjectTag() { MapID = this.FrameState.tagCustomAssetImageHoveredOwner.MapID, ObjectID = this.FrameState.tagCustomAssetImageHoveredOwner.ID, TagID = this.FrameState.tagCustomB64ImageTextHovered.ID, TagData = this.FrameState.tagCustomB64ImageTextHovered.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
+        });
+
+        private bool AddEmbeddedB64Image(string s, int fileLimit, int convertedLimit, Predicate<ImageInfo> imagePredicate, Action<string> submitAction)
         {
             string ext = Path.GetExtension(s).ToLower();
             if (this._supportedImageFormats.Contains(ext, StringComparer.OrdinalIgnoreCase))
             {
                 if (Client.Instance.ServerAllowsEmbeddedImages)
                 {
-                    if (new FileInfo(s).Length <= 32768) // 32kb limit
+                    if (new FileInfo(s).Length <= fileLimit) // 32kb limit
                     {
                         try
                         {
                             ImageInfo ii;
-                            if ((ii = Image.Identify(s)) != null && ii.Width <= 64 && ii.Height <= 32)
+                            if ((ii = Image.Identify(s)) != null && imagePredicate(ii))
                             {
                                 string converted = $"{Convert.ToBase64String(File.ReadAllBytes(s))}";
-                                if (converted.Length <= 49152)
+                                if (converted.Length <= convertedLimit)
                                 {
-                                    this.FrameState.tagCustomB64ImageTextHovered.EmbedB64Image = converted;
-                                    new PacketObjectTag() { MapID = this.FrameState.tagCustomAssetImageHoveredOwner.MapID, ObjectID = this.FrameState.tagCustomAssetImageHoveredOwner.ID, TagID = this.FrameState.tagCustomB64ImageTextHovered.ID, TagData = this.FrameState.tagCustomB64ImageTextHovered.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
+                                    submitAction(converted);
                                     return true;
                                 }
                             }
@@ -1605,6 +1623,17 @@
                         state.tagCustomAssetImageHovered.AssetID = this._draggedRef.AssetID;
                         new PacketObjectTag() { MapID = state.tagCustomAssetImageHoveredOwner.MapID, ObjectID = state.tagCustomAssetImageHoveredOwner.ID, TagID = state.tagCustomAssetImageHovered.ID, TagData = state.tagCustomAssetImageHovered.Serialize(), Action = PacketObjectTag.ActionType.Update }.Send();
                         haveResult = true;
+                    }
+
+                    if (!haveResult && state.barCustomAssetImageHovered != null && state.barCustomAssetImageHoveredOwner != null && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture)
+                    {
+                        int i = state.barCustomAssetImageHoveredOwner.Bars.FindIndex(x => x == state.barCustomAssetImageHovered);
+                        if (i != -1)
+                        {
+                            state.barCustomAssetImageHovered.CustomImage = this._draggedRef.AssetID.ToString();
+                            new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = state.barCustomAssetImageHoveredOwner.MapID, ContainerID = state.barCustomAssetImageHoveredOwner.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = state.barCustomAssetImageHovered }.Send();
+                            haveResult = true;
+                        }
                     }
                 }
 

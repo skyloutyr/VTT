@@ -662,6 +662,9 @@
         public float MaxValue { get; set; }
         public Color DrawColor { get; set; }
         public DrawMode RenderMode { get; set; } = DrawMode.Default;
+        public Tag.ShapeKind ShapeKind { get; set; } = Tag.ShapeKind.Circle;
+        public string CustomImage { get; set; } = string.Empty;
+        public bool IsPublic { get; set; } = false;
 
         public void Deserialize(DataElement e)
         {
@@ -671,6 +674,9 @@
             this.RenderMode = e.Has("DrawMode", DataType.Int)
                 ? e.GetEnum("DrawMode", DrawMode.Default)
                 : e.GetBool("Compact", false) ? DrawMode.Compact : DrawMode.Default;
+            this.ShapeKind = e.GetEnum("Shape", Tag.ShapeKind.Circle);
+            this.CustomImage = e.GetString("Img", string.Empty);
+            this.IsPublic = e.GetBool("Public", false);
         }
 
         public DataElement Serialize()
@@ -680,6 +686,9 @@
             ret.SetSingle("Max", this.MaxValue);
             ret.SetColor("Color", this.DrawColor);
             ret.SetEnum("DrawMode", this.RenderMode);
+            ret.SetEnum("Shape", this.ShapeKind);
+            ret.SetString("Img", this.CustomImage);
+            ret.SetBool("Public", this.IsPublic);
             return ret;
         }
 
@@ -690,7 +699,10 @@
                 CurrentValue = this.CurrentValue,
                 MaxValue = this.MaxValue,
                 DrawColor = this.DrawColor,
-                RenderMode = this.RenderMode
+                RenderMode = this.RenderMode,
+                ShapeKind = this.ShapeKind,
+                CustomImage = this.CustomImage,
+                IsPublic = this.IsPublic,
             };
         }
 
@@ -705,7 +717,9 @@
         {
             Default,
             Compact,
-            Round
+            Round,
+            Shape,
+            Image
         }
     }
 

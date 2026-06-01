@@ -35,14 +35,9 @@
                         switch (dm)
                         {
                             case DisplayBar.DrawMode.Default:
-                            {
-                                layoutgenPrevBarWasInline = false;
-                                layoutgenPenX = 0;
-                                height += 16;
-                                break;
-                            }
-
                             case DisplayBar.DrawMode.Compact:
+                            case DisplayBar.DrawMode.Image:
+                            case DisplayBar.DrawMode.Shape:
                             {
                                 layoutgenPrevBarWasInline = false;
                                 layoutgenPenX = 0;
@@ -225,11 +220,39 @@
                 {
                     int index1 = Math.Max(0, cb.Text.IndexOf('/'));
                     int index2 = Math.Max(0, cb.Text.IndexOf('/', index1 + 1));
+                    int index3 = cb.Text.IndexOf('/', index2 + 1);
                     if (float.TryParse(cb.Text.AsSpan(0, index1), out float current) &&
                         float.TryParse(cb.Text.AsSpan(index1 + 1, index2 - index1 - 1), out float max) &&
-                        Enum.TryParse(cb.Text.AsSpan(index2 + 1), out DisplayBar.DrawMode drawMode))
+                        Enum.TryParse(index3 == -1 ? cb.Text.AsSpan(index2 + 1) : cb.Text.AsSpan(index2 + 1, index3 - index2 - 1), out DisplayBar.DrawMode drawMode))
                     {
-                        GuiRenderer.RenderBar(current, max, drawMode, cb.Color, false, Vector2.Zero, 320f, 340f, ref prevWasRound, ref penX);
+                        switch (drawMode)
+                        {
+                            case DisplayBar.DrawMode.Default:
+                            case DisplayBar.DrawMode.Compact:
+                            {
+                                GuiRenderer.RenderBar(current, max, drawMode, cb.Color, false, Vector2.Zero, 320f, 340f, Tag.ShapeKind.Circle, string.Empty, ref prevWasRound, ref penX);
+                                break;
+                            }
+
+                            case DisplayBar.DrawMode.Shape:
+                            case DisplayBar.DrawMode.Image:
+                            {
+                                if (drawMode == DisplayBar.DrawMode.Shape)
+                                {
+                                    if (Enum.TryParse(cb.Text.AsSpan(index3 + 1), out Tag.ShapeKind shapeKind))
+                                    {
+                                        GuiRenderer.RenderBar(current, max, drawMode, cb.Color, false, Vector2.Zero, 320f, 340f, shapeKind, string.Empty, ref prevWasRound, ref penX);
+                                    }
+                                }
+                                else
+                                {
+                                    GuiRenderer.RenderBar(current, max, drawMode, cb.Color, false, Vector2.Zero, 320f, 340f, Tag.ShapeKind.Circle, cb.Text[(index3 + 1)..], ref prevWasRound, ref penX);
+                                }
+
+                                break;
+                            }
+                        }
+
                     }
                 }
             }

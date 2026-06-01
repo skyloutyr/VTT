@@ -69,6 +69,8 @@
         public MapObject tagCustomAssetImageHoveredOwner = null;
         public Tag tagCustomAssetImageHovered = null;
         public Tag tagCustomB64ImageTextHovered = null;
+        public MapObject barCustomAssetImageHoveredOwner = null;
+        public DisplayBar barCustomAssetImageHovered = null;
 
         public void Reset()
         {
@@ -140,6 +142,8 @@
             this.turnTrackerEntryChangeColorPopup = false;
             this.tagCustomAssetImageHovered = null;
             this.tagCustomAssetImageHoveredOwner = null;
+            this.barCustomAssetImageHoveredOwner = null;
+            this.barCustomAssetImageHovered = null;
         }
     }
 }

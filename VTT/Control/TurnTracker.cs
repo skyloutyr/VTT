@@ -174,7 +174,9 @@
                 }
             }
 
+            Entry oldEntry = this.GetAt(this.EntryIndex);
             this.EntryIndex = idx;
+            Entry newEntry = this.GetAt(this.EntryIndex);
             if (this.Container.IsServer && roundAdvancement != 0)
             {
                 this.ChangeRound(this.Round + roundAdvancement);
@@ -182,12 +184,36 @@
 
             if (!this.Container.IsServer && Client.Instance != null && Client.Instance.Settings.EnableSoundTurnTracker && !Client.Instance.IsAdmin) // Client side only
             {
-                Entry e = this.GetAt(idx);
-                if (this.Container.GetObject(e.ObjectID, out MapObject mo))
+                if (this.Container.GetObject(newEntry.ObjectID, out MapObject mo))
                 {
                     if (mo.OwnerID.Equals(Client.Instance.ID))
                     {
                         Client.Instance.Frontend.Sound.PlaySound(Client.Instance.Frontend.Sound.YourTurn, Sound.SoundCategory.UI);
+                    }
+                }
+            }
+
+            if (this.Container.IsServer && newEntry != oldEntry)
+            {
+                if (this.Container.GetObject(oldEntry.ObjectID, out MapObject oldMo))
+                {
+                    lock (oldMo.Lock)
+                    {
+                        foreach (StatusEffect se in oldMo.StatusEffects)
+                        {
+                            se.HandleServerSideTurnTrackerTrigger(StatusEffect.CounterAutomationTrigger.TurnEnd, oldMo, this.Container);
+                        }
+                    }
+                }
+
+                if (this.Container.GetObject(newEntry.ObjectID, out MapObject newMo))
+                {
+                    lock (newMo.Lock)
+                    {
+                        foreach (StatusEffect se in newMo.StatusEffects)
+                        {
+                            se.HandleServerSideTurnTrackerTrigger(StatusEffect.CounterAutomationTrigger.TurnStart, newMo, this.Container);
+                        }
                     }
                 }
             }
@@ -198,13 +224,19 @@
             to = Math.Max(0, to);
             int roundDelta = to - this.Round;
             this.Round = to;
-            foreach (MapObject mo in this.Container.IterateObjects(null))
-            {
-                // TODO tick status effect timers! This happens client-side from here too.
-            }
-
             if (this.Container.IsServer)
             {
+                foreach (MapObject mo in this.Container.IterateObjects(null))
+                {
+                    lock (mo.Lock)
+                    {
+                        foreach (StatusEffect se in mo.StatusEffects)
+                        {
+                            se.HandleServerSideTurnTrackerTrigger(StatusEffect.CounterAutomationTrigger.RoundRollover, mo, this.Container);
+                        }
+                    }
+                }
+
                 new PacketChangeTurnTrackerRound() { MapID = this.Container.ID, NewRound = this.Round }.Broadcast(c => Guid.Equals(c.ClientMapID, this.Container.ID));
             }
         }

@@ -8,6 +8,7 @@
     using VTT.Asset;
     using VTT.Asset.Glb;
     using VTT.Network;
+    using VTT.Network.Packet;
     using VTT.Render.LightShadow;
     using VTT.Util;
 
@@ -82,7 +83,7 @@
 
         public object Lock = new object();
         public object FastLightsLock = new object();
-        public Dictionary<string, (float, float)> StatusEffects { get; } = new Dictionary<string, (float, float)>();
+        public List<StatusEffect> StatusEffects { get; } = new List<StatusEffect>();
         public ParticleRepository Particles { get; }
 
         public bool LightsEnabled { get; set; }
@@ -208,15 +209,7 @@
             });
 
             ret.SetArray("FastLights", this.FastLights.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
-            ret.SetArray("Statuses", this.StatusEffects.ToArray(), (n, c, v) =>
-            {
-                DataElement e = new DataElement();
-                e.SetString("n", v.Key);
-                e.SetSingle("s", v.Value.Item1);
-                e.SetSingle("t", v.Value.Item2);
-                c.SetMap(n, e);
-            });
-
+            ret.SetArray("Statuses2", this.StatusEffects.ToArray(), (n, c, v) => c.SetMap(n, v.Serialize()));
             this.Particles.Serialize(ret);
             ret.SetBool("HasCustomNameplate", this.HasCustomNameplate);
             ret.SetGuid("CustomNameplate", this.CustomNameplateID);
@@ -273,16 +266,12 @@
             }, Array.Empty<(float, Color)>()));
 
             this.StatusEffects.Clear();
-            (string, float, float)[] stats = e.GetArray("Statuses", (n, e) =>
+            this.StatusEffects.AddRange(e.GetArray("Statuses2", (n, e) =>
             {
-                DataElement d = e.GetMap(n);
-                return (d.GetString("n"), d.GetSingle("s"), d.GetSingle("t"));
-            }, Array.Empty<(string, float, float)>());
-
-            foreach ((string, float, float) s in stats)
-            {
-                this.StatusEffects[s.Item1] = (s.Item2, s.Item3);
-            }
+                StatusEffect seff = new StatusEffect();
+                seff.Deserialize(e.GetMap(n));
+                return seff;
+            }, Array.Empty<StatusEffect>()));
 
             this.Particles.Deserialize(e);
             this.HasCustomNameplate = e.GetBool("HasCustomNameplate", false);
@@ -356,11 +345,7 @@
             ret.PairedPortalMapID = this.PairedPortalMapID;
             ret.PortalSize = this.PortalSize;
             ret.CustomProperties = new DataElement();
-            foreach (KeyValuePair<string, (float, float)> s in this.StatusEffects)
-            {
-                ret.StatusEffects.Add(s.Key, s.Value);
-            }
-
+            ret.StatusEffects.AddRange(this.StatusEffects.Select(x => x.Clone()));
             ret.Tags.AddRange(this.Tags.Select(x => x.Clone()));
             this.Particles.CloneTo(ret);
             return ret;
@@ -936,5 +921,140 @@
         }
 
         public IEnumerable<IAnimationStorage.BoneData> ProvideBones() => this.StoredBoneData;
+    }
+
+    public class StatusEffect : ISerializable
+    {
+        public Guid ID { get; set; }
+        public Tag Tag { get; set; } = new Tag() { ID = Guid.NewGuid(), Color1 = SixLabors.ImageSharp.Color.Black.Vec4(), Color2 = SixLabors.ImageSharp.Color.White.Vec4(), TextColor = SixLabors.ImageSharp.Color.White.Vec4(), Kind = Tag.TagKind.None, Shape = Tag.ShapeKind.Circle, Text = string.Empty };
+        public int Stack { get; set; } = 0;
+        public int Counter { get; set; } = 0;
+        public int CounterMax { get; set; } = 0;
+        public CounterAutomationType CounterAutomation { get; set; } = CounterAutomationType.None;
+        public string Tooltip { get; set; } = string.Empty;
+        public Vector2 UVs { get; set; } = Vector2.Zero;
+        public Vector4 Color { get; set; } = Vector4.One;
+        public bool IsPublic { get; set; } = false;
+
+        public void HandleServerSideTurnTrackerTrigger(CounterAutomationTrigger trigger, MapObject container, Map m)
+        {
+            int old = this.Counter;
+            int change = 0;
+            switch (trigger)
+            {
+                case CounterAutomationTrigger.TurnStart:
+                {
+                    if (this.CounterAutomation is CounterAutomationType.OnTurnStartUp or CounterAutomationType.OnTurnStartDown)
+                    {
+                        change = this.CounterAutomation == CounterAutomationType.OnTurnStartUp ? 1 : -1;
+                    }
+
+                    break;
+                }
+
+                case CounterAutomationTrigger.TurnEnd:
+                {
+                    if (this.CounterAutomation is CounterAutomationType.OnTurnEndUp or CounterAutomationType.OnTurnEndDown)
+                    {
+                        change = this.CounterAutomation == CounterAutomationType.OnTurnEndUp ? 1 : -1;
+                    }
+
+                    break;
+                }
+
+                case CounterAutomationTrigger.RoundRollover:
+                {
+                    if (this.CounterAutomation is CounterAutomationType.OnRoundRolloverUp or CounterAutomationType.OnRoundRolloverDown)
+                    {
+                        change = this.CounterAutomation == CounterAutomationType.OnRoundRolloverUp ? 1 : -1;
+                    }
+
+                    break;
+                }
+            }
+
+            if (change != 0)
+            {
+                if (this.CounterMax != 0)
+                {
+                    this.Counter = Math.Clamp(this.Counter + change, 0, this.CounterMax);
+                }
+                else
+                {
+                    this.Counter += change;
+                }
+
+                if (old != this.Counter)
+                {
+                    m.NeedsSave = true;
+                    new PacketObjectStatusEffect() { MapID = container.MapID, ObjectID = container.ID, EffectID = this.ID, Data = this.Counter, ActionKind = PacketObjectStatusEffect.UpdateType.Counter }.Broadcast(x => Guid.Equals(x.ClientMapID, container.MapID));
+                }
+            }
+        }
+
+        public void Deserialize(DataElement e)
+        {
+            this.ID = e.GetGuid("ID");
+            this.Tag.Deserialize(e.GetMap("Tag"));
+            this.Stack = e.GetInt("Stack");
+            this.Counter = e.GetInt("CC");
+            this.CounterMax = e.GetInt("CM");
+            this.CounterAutomation = e.GetEnum("CA", CounterAutomationType.None);
+            this.Tooltip = e.GetString("TT");
+            this.UVs = e.GetVec2("UV");
+            this.Color = e.GetVec4("CLR");
+            this.IsPublic = e.GetBool("Public", false);
+        }
+
+        public DataElement Serialize()
+        {
+            DataElement ret = new DataElement();
+            ret.SetGuid("ID", this.ID);
+            ret.SetMap("Tag", this.Tag.Serialize());
+            ret.SetInt("Stack", this.Stack);
+            ret.SetInt("CC", this.Counter);
+            ret.SetInt("CM", this.CounterMax);
+            ret.SetEnum("CA", this.CounterAutomation);
+            ret.SetString("TT", this.Tooltip);
+            ret.SetVec2("UV", this.UVs);
+            ret.SetVec4("CLR", this.Color);
+            ret.SetBool("Public", this.IsPublic);
+            return ret;
+        }
+
+        public StatusEffect Clone(bool cloneID = false)
+        {
+            return new StatusEffect()
+            {
+                ID = cloneID ? this.ID : Guid.NewGuid(),
+                Tag = this.Tag.Clone(cloneID),
+                Stack = this.Stack,
+                Counter = this.Counter,
+                CounterMax = this.CounterMax,
+                CounterAutomation = this.CounterAutomation,
+                Tooltip = this.Tooltip,
+                UVs = this.UVs,
+                Color = this.Color,
+                IsPublic = this.IsPublic,
+            };
+        }
+
+        public enum CounterAutomationType
+        {
+            None,
+            OnTurnStartUp,
+            OnTurnStartDown,
+            OnTurnEndUp,
+            OnTurnEndDown,
+            OnRoundRolloverUp,
+            OnRoundRolloverDown
+        }
+
+        public enum CounterAutomationTrigger
+        {
+            TurnStart,
+            TurnEnd,
+            RoundRollover
+        }
     }
 }

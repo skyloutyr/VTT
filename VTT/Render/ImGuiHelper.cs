@@ -437,6 +437,7 @@
         public static bool BeginTooltipEx(ImGuiWindowFlags windowFlags) => ImGuiNativeExtras.BeginTooltipEx(windowFlags);
 
         public static void ClearActiveID() => ImGuiNativeExtras.ClearActiveID();
+        public static nint FindBlockingModal(nint window) => ImGuiNativeExtras.FindBlockingModal(window);
 
         public readonly record struct CustomImageReference(string Data, Guid AssetID, bool TypeKnown = false, ImageBlockImageType DefiniteType = ImageBlockImageType.Invalid)
         {
@@ -820,6 +821,49 @@
 
             [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
             private static extern void igClearActiveID();
+
+            [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+            private static extern nint igFindBlockingModal(nint window);
+
+            public static nint FindBlockingModal(nint window)
+            {
+                switch (libAvailabilityStatus)
+                {
+                    case 0: // Default
+                    {
+                        try
+                        {
+                            libAvailabilityStatus = 1;
+                            return igFindBlockingModal(window);
+                        }
+                        catch (DllNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return 0;
+                        }
+                        catch (BadImageFormatException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return 0;
+                        }
+                        catch (EntryPointNotFoundException)
+                        {
+                            libAvailabilityStatus = 2;
+                            return 0;
+                        }
+                    }
+
+                    case 1:
+                    {
+                        return igFindBlockingModal(window);
+                    }
+
+                    default:
+                    {
+                        return 0;
+                    }
+                }
+            }
 
             public static void ClearActiveID()
             {

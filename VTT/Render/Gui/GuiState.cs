@@ -71,6 +71,8 @@
         public Tag tagCustomB64ImageTextHovered = null;
         public MapObject barCustomAssetImageHoveredOwner = null;
         public DisplayBar barCustomAssetImageHovered = null;
+        public int statusEffectTagHoverEnum = 0;
+        public bool editStatusEffectPopup = false;
 
         public void Reset()
         {
@@ -144,6 +146,8 @@
             this.tagCustomAssetImageHoveredOwner = null;
             this.barCustomAssetImageHoveredOwner = null;
             this.barCustomAssetImageHovered = null;
+            this.statusEffectTagHoverEnum = 0;
+            this.editStatusEffectPopup = false;
         }
     }
 }

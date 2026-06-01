@@ -218,69 +218,72 @@
                     tagUpdateCallback(PacketObjectTag.ActionType.Update);
                 }
 
-                ImGui.SameLine();
-                if (tagIndex == 0)
+                if (mo != null)
                 {
-                    ImGui.BeginDisabled();
-                }
+                    ImGui.SameLine();
+                    if (tagIndex == 0)
+                    {
+                        ImGui.BeginDisabled();
+                    }
 
-                if (ImGui.ArrowButton("##TagMoveUp", ImGuiDir.Up))
-                {
-                    tagUpdateCallback(PacketObjectTag.ActionType.MoveUp);
-                }
+                    if (ImGui.ArrowButton("##TagMoveUp", ImGuiDir.Up))
+                    {
+                        tagUpdateCallback(PacketObjectTag.ActionType.MoveUp);
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.tag.move_up.tt"));
-                }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.tag.move_up.tt"));
+                    }
 
-                if (tagIndex == 0)
-                {
-                    ImGui.EndDisabled();
-                }
+                    if (tagIndex == 0)
+                    {
+                        ImGui.EndDisabled();
+                    }
 
-                ImGui.SameLine();
-                if (tagIndex == mo.Tags.Count - 1)
-                {
-                    ImGui.BeginDisabled();
-                }
+                    ImGui.SameLine();
+                    if (tagIndex == mo.Tags.Count - 1)
+                    {
+                        ImGui.BeginDisabled();
+                    }
 
-                if (ImGui.ArrowButton("##TagMoveDown", ImGuiDir.Down))
-                {
-                    tagUpdateCallback(PacketObjectTag.ActionType.MoveDown);
-                }
+                    if (ImGui.ArrowButton("##TagMoveDown", ImGuiDir.Down))
+                    {
+                        tagUpdateCallback(PacketObjectTag.ActionType.MoveDown);
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.tag.move_down.tt"));
-                }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.tag.move_down.tt"));
+                    }
 
-                if (tagIndex == mo.Tags.Count - 1)
-                {
-                    ImGui.EndDisabled();
-                }
+                    if (tagIndex == mo.Tags.Count - 1)
+                    {
+                        ImGui.EndDisabled();
+                    }
 
-                ImGui.SameLine();
-                if (ImGui.ImageButton("##TagDuplicate", this.CopyIcon.Texture, new Vector2(16, 16), this.CopyIcon.ST, this.CopyIcon.UV))
-                {
-                    Tag t1 = t.Clone();
-                    tagDuplicateCallback(t1);
-                }
+                    ImGui.SameLine();
+                    if (ImGui.ImageButton("##TagDuplicate", this.CopyIcon.Texture, new Vector2(16, 16), this.CopyIcon.ST, this.CopyIcon.UV))
+                    {
+                        Tag t1 = t.Clone();
+                        tagDuplicateCallback(t1);
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.tag.duplicate.tt"));
-                }
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.tag.duplicate.tt"));
+                    }
 
-                ImGui.SameLine();
-                if (ImGui.ImageButton("##TagDelete", this.DeleteIcon.Texture, new Vector2(16, 16), this.DeleteIcon.ST, this.DeleteIcon.UV))
-                {
-                    tagUpdateCallback(PacketObjectTag.ActionType.Delete);
-                }
+                    ImGui.SameLine();
+                    if (ImGui.ImageButton("##TagDelete", this.DeleteIcon.Texture, new Vector2(16, 16), this.DeleteIcon.ST, this.DeleteIcon.UV))
+                    {
+                        tagUpdateCallback(PacketObjectTag.ActionType.Delete);
+                    }
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(lang.Translate("ui.tag.delete.tt"));
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip(lang.Translate("ui.tag.delete.tt"));
+                    }
                 }
 
                 Vector4 tagColor1 = t.Color1;
@@ -461,6 +464,60 @@
             }
 
             ImGui.EndChild();
+        }
+
+        protected bool RenderStatusEffectIntoList(ImDrawListPtr drawList, StatusEffect effect, Vector2 effectSize, bool haveControls, bool canSeeTag)
+        {
+            Vector2 cHere = ImGui.GetCursorScreenPos();
+            bool hovered = haveControls && ImGui.IsMouseHoveringRect(cHere, cHere + effectSize);
+            Vector2 sz = effectSize;
+            Vector2 hsz = effectSize * 0.5f;
+            Vector2 tagSz = effectSize / 3;
+            tagSz = new Vector2(MathF.Round(tagSz.X), MathF.Round(tagSz.Y));
+            drawList.AddImage(this.StatusAtlas, cHere, cHere + sz, effect.UVs, effect.UVs + new Vector2(this._statusStepX, this._statusStepY), effect.Color.Abgr());
+            if (hovered)
+            {
+                drawList.AddRect(cHere, cHere + sz, ImGui.GetColorU32(ImGuiCol.ButtonHovered), 0, ImDrawFlags.None, 2f);
+            }
+
+            if (canSeeTag || effect.Tag.IsPublic)
+            {
+                this.RenderTagIntoList(drawList, tagSz, effect.Tag);
+            }
+
+            string stack = effect.Stack.ToString();
+            Vector2 stackSzImGui = ImGui.CalcTextSize(stack);
+            drawList.AddText(new Vector2(cHere.X + sz.X - stackSzImGui.X, cHere.Y + 1), Color.Black.Abgr(), stack);
+            drawList.AddText(new Vector2(cHere.X + sz.X - 1 - stackSzImGui.X, cHere.Y), ImGui.GetColorU32(ImGuiCol.Text), stack);
+            if (effect.CounterMax == 0)
+            {
+                string counter = effect.Counter.ToString();
+                Vector2 counterSzImGui = ImGui.CalcTextSize(counter);
+                drawList.AddText(new Vector2(cHere.X + hsz.X - (counterSzImGui.X * 0.5f), cHere.Y + sz.Y - counterSzImGui.Y), Color.Black.Abgr(), counter);
+                drawList.AddText(new Vector2(cHere.X + hsz.X - 1 - (counterSzImGui.X * 0.5f), cHere.Y + sz.Y - 1 - counterSzImGui.Y), ImGui.GetColorU32(ImGuiCol.Text), counter);
+            }
+            else
+            {
+                Vector2 barSz = new Vector2(60, 14) * (effectSize / new Vector2(64, 64));
+                Vector2 barStart = new Vector2(2, sz.Y - 2 - barSz.Y);
+                Vector2 barEnd = new Vector2(sz.X - 2, sz.Y - 2);
+                float p = Math.Clamp(effect.Counter / (float)effect.CounterMax, 0f, 1f);
+                drawList.AddRectFilled(cHere + barStart, cHere + barEnd, ImGui.GetColorU32(ImGuiCol.FrameBg), 2f);
+                float bEndX = barStart.X + (barEnd.X * p);
+                if (bEndX > barStart.X)
+                {
+                    drawList.AddRectFilled(cHere + barStart, cHere + new Vector2(bEndX, barEnd.Y), ImGui.GetColorU32(ImGuiCol.PlotHistogram), 2f);
+                }
+
+                string counter = $"{effect.Counter}/{effect.CounterMax}";
+                Vector2 counterSzImGui = ImGui.CalcTextSize(counter);
+                if (barSz.Y >= 12)
+                {
+                    drawList.AddText(new Vector2(cHere.X + hsz.X - (counterSzImGui.X * 0.5f), cHere.Y + sz.Y - barSz.Y * 0.5f - counterSzImGui.Y * 0.5f), effect.Counter <= 0 ? Color.DarkRed.Abgr() : ImGui.GetColorU32(ImGuiCol.Text), counter);
+                }
+            }
+
+            return hovered;
         }
 
         private unsafe void RenderObjectProperties(SimpleLanguage lang, GuiState state, double time)
@@ -1573,20 +1630,69 @@
 
                             lock (mo.Lock)
                             {
-                                foreach (KeyValuePair<string, (float, float)> kv in mo.StatusEffects)
+                                foreach (StatusEffect effect in mo.StatusEffects)
                                 {
-                                    ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
-                                    Vector2 st = new Vector2(kv.Value.Item1, kv.Value.Item2);
-                                    if (ImGui.ImageButton("##BtnRemoveStatus_" + kv.Key, this.StatusAtlas, Vec24x24, st, st + new Vector2(this._statusStepX, this._statusStepY)))
+                                    if (!canEdit && !Client.Instance.IsObserver && !effect.IsPublic)
                                     {
-                                        new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = mo.ID, EffectName = kv.Key, Remove = true }.Send();
+                                        continue;
                                     }
 
-                                    cX += 40;
-                                    if (cX + 40 > aW)
+                                    ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
+                                    ImGui.Dummy(new Vector2(64, 64));
+                                    ImGui.SetCursorPos(cursorNow + new Vector2(cX, cY));
+                                    bool eHovered = this.RenderStatusEffectIntoList(ImGui.GetWindowDrawList(), effect, new Vector2(64, 64), true, canEdit || Client.Instance.IsObserver);
+                                    if (eHovered && ImGuiHelper.FindBlockingModal(0) == 0)
+                                    {
+                                        float scroll = ImGui.GetIO().MouseWheel;
+                                        if (ImGui.GetIO().KeyCtrl && scroll != 0)
+                                        {
+                                            if (ImGui.GetIO().KeyShift)
+                                            {
+                                                effect.Stack += (int)MathF.Round(scroll);
+                                                new PacketObjectStatusEffect() { ObjectID = mo.ID, MapID = mo.MapID, EffectID = effect.ID, ActionKind = PacketObjectStatusEffect.UpdateType.Stack, Data = effect.Stack }.Send();
+                                            }
+                                            else
+                                            {
+                                                effect.Counter += (int)MathF.Round(scroll);
+                                                new PacketObjectStatusEffect() { ObjectID = mo.ID, MapID = mo.MapID, EffectID = effect.ID, ActionKind = PacketObjectStatusEffect.UpdateType.Counter, Data = effect.Counter }.Send();
+                                            }
+
+                                            ImGui.GetIO().MouseWheel = 0;
+                                        }
+
+                                        if (!string.IsNullOrEmpty(effect.Tooltip))
+                                        {
+                                            ImGui.SetTooltip($"{effect.Tooltip}\n\n{lang.Translate("ui.status_effect.hover.tt")}");
+                                        }
+                                        else
+                                        {
+                                            ImGui.SetTooltip(lang.Translate("ui.status_effect.hover.tt"));
+                                        }
+
+                                        if (canEdit)
+                                        {
+                                            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                                            {
+                                                this._editedStatusEffectCopy = effect.Clone(true);
+                                                this._editedStatusEffectMapID = mo.MapID;
+                                                this._editedStatusEffectOwnerID = mo.ID;
+                                                state.editStatusEffectPopup = true;
+                                            }
+                                            else
+                                            {
+                                                if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                                                {
+                                                    new PacketObjectStatusEffect() { ActionKind = PacketObjectStatusEffect.UpdateType.Delete, EffectID = effect.ID, MapID = mo.MapID, ObjectID = mo.ID }.Send();
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    cX += 64;
+                                    if (cX + 64 > aW)
                                     {
                                         cX = 0;
-                                        cY += 40;
+                                        cY += 64;
                                     }
                                 }
                             }
@@ -1763,13 +1869,14 @@
 
             void RenderStatusEffects(MapObject mo, Vector3 screen, float tX = float.MaxValue)
             {
+                bool canSeeAll = Client.Instance.IsAdmin || Client.Instance.IsObserver || mo.CanEdit(Client.Instance.ID);
                 lock (mo.Lock)
                 {
                     int nEffects = mo.StatusEffects.Count;
-                    float nW = MathF.Min(nEffects * 24, tX);
+                    float nW = MathF.Min(nEffects * 48, tX * 3);
                     if (nW > 0)
                     {
-                        float nH = MathF.Ceiling(nEffects * 24 / nW) * 24;
+                        float nH = MathF.Ceiling(nEffects * 48 / nW) * 48;
 
                         ImGui.SetNextWindowSize(new Vector2(nW, nH));
                         ImGui.SetNextWindowPos(new Vector2(screen.X - (nW / 2), screen.Y));
@@ -1780,20 +1887,23 @@
                         Vector2 imCursor = ImGui.GetCursorScreenPos();
                         float cX = 0;
                         float cY = 0;
-                        foreach ((float, float) eff in mo.StatusEffects.Values)
+                        foreach (StatusEffect eff in mo.StatusEffects)
                         {
-                            Vector2 st = new Vector2(eff.Item1, eff.Item2);
-                            imDrawList.AddImage(this.StatusAtlas,
-                                imCursor + new Vector2(cX, cY),
-                                imCursor + new Vector2(cX, cY) + Vec24x24,
-                                st,
-                                st + new Vector2(this._statusStepX, this._statusStepY));
+                            if (!canSeeAll && !eff.IsPublic)
+                            {
+                                continue;
+                            }
 
-                            cX += 24;
-                            if (cX + 24 > nW)
+                            ImGui.SetCursorScreenPos(imCursor + new Vector2(cX, cY));
+                            ImGui.Dummy(new Vector2(48, 48));
+                            ImGui.SetCursorScreenPos(imCursor + new Vector2(cX, cY));
+                            this.RenderStatusEffectIntoList(imDrawList, eff, new Vector2(48, 48), false, canSeeAll);
+                            
+                            cX += 32;
+                            if (cX + 32 > nW)
                             {
                                 cX = 0;
-                                cY += 24;
+                                cY += 32;
                             }
                         }
 

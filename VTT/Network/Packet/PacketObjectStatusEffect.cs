@@ -1,6 +1,7 @@
 ﻿namespace VTT.Network.Packet
 {
     using System;
+    using System.Numerics;
     using VTT.Control;
     using VTT.Util;
 
@@ -10,10 +11,9 @@
 
         public Guid MapID { get; set; }
         public Guid ObjectID { get; set; }
-        public string EffectName { get; set; }
-        public bool Remove { get; set; }
-        public float S { get; set; }
-        public float T { get; set; }
+        public Guid EffectID { get; set; }
+        public UpdateType ActionKind { get; set; }
+        public object Data { get; set; }
 
         public override void Act(Guid sessionID, Server server, Client client, bool isServer)
         {
@@ -57,13 +57,86 @@
 
             lock (mo.Lock)
             {
-                if (this.Remove)
+                StatusEffect e = mo.StatusEffects.Find(x => Guid.Equals(this.EffectID, x.ID));
+                if (this.ActionKind != UpdateType.Full && e == null)
                 {
-                    mo.StatusEffects.Remove(this.EffectName);
+                    l.Log(LogLevel.Warn, "Got object effect change request for non-existing effect.");
+                    return;
                 }
-                else
+
+                switch (this.ActionKind)
                 {
-                    mo.StatusEffects[this.EffectName] = (this.S, this.T);
+                    case UpdateType.Delete:
+                    {
+                        mo.StatusEffects.Remove(e);
+                        break;
+                    }
+
+                    case UpdateType.Full:
+                    {
+                        if (e == null)
+                        {
+                            e = new StatusEffect();
+                            mo.StatusEffects.Add(e);
+                        }
+
+                        e.Deserialize((DataElement)this.Data);
+                        break;
+                    }
+
+                    case UpdateType.Tag:
+                    {
+                        e.Tag.Deserialize((DataElement)this.Data);
+                        break;
+                    }
+
+                    case UpdateType.Stack:
+                    {
+                        e.Stack = (int)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.Counter:
+                    {
+                        e.Counter = (int)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.CounterMax:
+                    {
+                        e.CounterMax = (int)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.CounterAutomation:
+                    {
+                        e.CounterAutomation = (StatusEffect.CounterAutomationType)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.Tooltip:
+                    {
+                        e.Tooltip = (string)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.UVs:
+                    {
+                        e.UVs = (Vector2)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.Color:
+                    {
+                        e.Color = (Vector4)this.Data;
+                        break;
+                    }
+
+                    case UpdateType.IsPublic:
+                    {
+                        e.IsPublic = (bool)this.Data;
+                        break;
+                    }
                 }
             }
 
@@ -78,13 +151,75 @@
         {
             this.MapID = c.Lookup(this.MapID);
             this.ObjectID = c.Lookup(this.ObjectID);
-            this.EffectName = c.Lookup(this.EffectName);
-            this.Remove = c.Lookup(this.Remove);
-            if (!this.Remove)
+            this.EffectID = c.Lookup(this.EffectID);
+            switch (this.ActionKind = c.Lookup(this.ActionKind))
             {
-                this.S = c.Lookup(this.S);
-                this.T = c.Lookup(this.T);
+                case UpdateType.Full:
+                case UpdateType.Tag:
+                {
+                    this.Data = c.LookupBox<DataElement>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.Stack:
+                case UpdateType.Counter:
+                case UpdateType.CounterMax:
+                {
+                    this.Data = c.LookupBox<int>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.CounterAutomation:
+                {
+                    this.Data = c.LookupBox<StatusEffect.CounterAutomationType>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.Tooltip:
+                {
+                    this.Data = c.LookupBox<string>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.UVs:
+                {
+                    this.Data = c.LookupBox<Vector2>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.Color:
+                {
+                    this.Data = c.LookupBox<Vector4>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.IsPublic:
+                {
+                    this.Data = c.LookupBox<bool>(this.Data, c.Lookup);
+                    break;
+                }
+
+                case UpdateType.Delete:
+                default:
+                {
+                    break;
+                }
             }
+        }
+
+        public enum UpdateType
+        {
+            Delete,
+            Full,
+            Tag,
+            Stack,
+            Counter,
+            CounterMax,
+            CounterAutomation,
+            Tooltip,
+            UVs,
+            Color,
+            IsPublic
         }
     }
 }

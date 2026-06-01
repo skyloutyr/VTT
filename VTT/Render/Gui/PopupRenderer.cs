@@ -831,7 +831,8 @@
                     Vector2 st = new Vector2(btn.Item2, btn.Item3);
                     if (ImGui.ImageButton("##BtnStatus_" + btn.Item1, this.StatusAtlas, Vec32x32, st, st + new Vector2(this._statusStepX, this._statusStepY)))
                     {
-                        new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = this._editedMapObject.ID, EffectName = btn.Item1, S = btn.Item2, T = btn.Item3, Remove = false }.Send();
+                        StatusEffect effect = new StatusEffect() { UVs = new Vector2(btn.Item2, btn.Item3), ID = Guid.NewGuid() };
+                        new PacketObjectStatusEffect() { MapID = state.clientMap.ID, ObjectID = this._editedMapObject.ID, EffectID = effect.ID, ActionKind = PacketObjectStatusEffect.UpdateType.Full, Data = effect.Serialize() }.Send();
                     }
 
                     if (ImGui.IsItemHovered())
@@ -1258,11 +1259,119 @@
 
                 ImGui.EndPopup();
             }
+
+            if (ImGui.BeginPopupModal(lang.Translate("ui.popup.edit_status_effect") + "###EditStatusEffect"))
+            {
+                Vector2 cHere = ImGui.GetCursorScreenPos();
+                this.RenderStatusEffectIntoList(ImGui.GetWindowDrawList(), this._editedStatusEffectCopy, new Vector2(128, 128), false, true);
+                ImGui.Dummy(new Vector2(128, 128));
+                ImGui.TextUnformatted(lang.Translate("ui.popup.edit_status_effect.tag"));
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.popup.edit_status_effect.tag.tt"));
+                }
+
+                this.ImTagSettings(lang, null, this._editedStatusEffectCopy.Tag, 0, x => { }, x => { }, () => state.statusEffectTagHoverEnum = 1, () => state.statusEffectTagHoverEnum = 2);
+                int effectStack = this._editedStatusEffectCopy.Stack;
+                ImGui.PushItemWidth(128);
+                if (ImGui.InputInt($"{lang.Translate("ui.popup.edit_status_effect.stack")}###StatusEffectStack", ref effectStack))
+                {
+                    this._editedStatusEffectCopy.Stack = effectStack;
+                }
+
+                int counterC = this._editedStatusEffectCopy.Counter;
+                int counterM = this._editedStatusEffectCopy.CounterMax;
+                if (ImGui.InputInt($"##StatusEffectCounterCurrent", ref counterC))
+                {
+                    this._editedStatusEffectCopy.Counter = counterC;
+                }
+
+                ImGui.SameLine();
+                ImGui.TextUnformatted("/");
+                ImGui.SameLine();
+                if (ImGui.InputInt($"##StatusEffectCounterMax", ref counterM))
+                {
+                    this._editedStatusEffectCopy.CounterMax = counterM;
+                }
+
+                ImGui.PopItemWidth();
+                ImGui.TextUnformatted(lang.Translate("ui.popup.edit_status_effect.automation"));
+                string[] automodes = { 
+                    lang.Translate("ui.popup.edit_status_effect.automation.none"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.turn_start_up"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.turn_start_down"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.turn_end_up"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.turn_end_down"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.round_rollover_up"), 
+                    lang.Translate("ui.popup.edit_status_effect.automation.round_rollover_down") 
+                };
+
+                int aCurrent = (int)this._editedStatusEffectCopy.CounterAutomation;
+                if (ImGui.Combo("##StatusEffectCounterAutomation", ref aCurrent, automodes, automodes.Length))
+                {
+                    this._editedStatusEffectCopy.CounterAutomation = (StatusEffect.CounterAutomationType)aCurrent;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.popup.edit_status_effect.automation.tt"));
+                }
+
+                Vector4 effectColor = this._editedStatusEffectCopy.Color;
+                ImGui.TextUnformatted(lang.Translate("ui.popup.edit_status_effect.color"));
+                if (ImGui.ColorEdit4("##StatusEffectColorMod", ref effectColor, ImGuiColorEditFlags.AlphaPreview))
+                {
+                    this._editedStatusEffectCopy.Color = effectColor;
+                }
+
+                bool effectIsPublic = this._editedStatusEffectCopy.IsPublic;
+                if (ImGui.Checkbox($"{lang.Translate("ui.popup.edit_status_effect.public")}###StatusEffectIsPublic", ref effectIsPublic))
+                {
+                    this._editedStatusEffectCopy.IsPublic = effectIsPublic;
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(lang.Translate("ui.popup.edit_status_effect.public.tt"));
+                }
+
+                string effectTooltip = this._editedStatusEffectCopy.Tooltip;
+                ImGui.Spacing();
+                ImGui.TextUnformatted(lang.Translate("ui.popup.edit_status_effect.tooltip"));
+                if (ImGuiHelper.InputTextMultilinePreallocated("StatusEffectEditPopupTooltip", "##StatusEffectTooltip", ref effectTooltip, ushort.MaxValue, new Vector2(ImGui.GetContentRegionAvail().X, 240)))
+                {
+                    this._editedStatusEffectCopy.Tooltip = effectTooltip;
+                }
+
+                bool bc = ImGui.Button(cancel);
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 20);
+                bool bo = ImGui.Button(ok);
+                if (bo)
+                {
+                    Map m = Client.Instance.CurrentMapIfMatches(this._editedStatusEffectMapID);
+                    if (m != null && m.GetObject(this._editedStatusEffectOwnerID, out MapObject editedStatusEffectOwner))
+                    {
+                        new PacketObjectStatusEffect() { ActionKind = PacketObjectStatusEffect.UpdateType.Full, MapID = m.ID, ObjectID = editedStatusEffectOwner.ID, EffectID = this._editedStatusEffectCopy.ID, Data = this._editedStatusEffectCopy.Serialize() }.Send();
+                        this._editedStatusEffectCopy = null;
+                    }
+                }
+
+                if (bo || bc)
+                {
+                    ImGui.CloseCurrentPopup();
+                    this._editedStatusEffectCopy = null;
+                }
+
+                ImGui.EndPopup();
+            }
         }
 
         private readonly ChatSearchCollection _currentChatSearchCollection = new ChatSearchCollection();
         private TextureData.Metadata _editedTextureMetadataCopy;
         private ModelData.Metadata _editedModelMetadataCopy;
+        private Guid _editedStatusEffectOwnerID;
+        private Guid _editedStatusEffectMapID;
+        private StatusEffect _editedStatusEffectCopy;
         private Vector3 _initialEditedFastLightColor;
         private bool _escDown;
         private bool _chatQueryPopupOpen;
@@ -1430,6 +1539,11 @@
             if (state.turnTrackerEntryChangeColorPopup)
             {
                 ImGui.OpenPopup("###ChangeTurnTrackerColor");
+            }
+
+            if (state.editStatusEffectPopup)
+            {
+                ImGui.OpenPopup("###EditStatusEffect");
             }
         }
     }

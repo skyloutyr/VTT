@@ -59,8 +59,17 @@
                 ? Client.Instance.IsAdmin && (Client.Instance.Settings.AsyncAssetLoading ? this.LoadAssetAsync(s) : this.LoadAssetSync(s))
                 : this.FrameState.chatHovered ? this.AddEmbeddedChatAsset(s) 
                 : this.FrameState.tagCustomB64ImageTextHovered != null ? this.AddEmbeddedB64TagImage(s)
-                : this.FrameState.barCustomAssetImageHovered != null && this.AddEmbeddedB64BarImage(s);
+                : this.FrameState.barCustomAssetImageHovered != null ? this.AddEmbeddedB64BarImage(s) 
+                : this.FrameState.statusEffectTagHoverEnum == 2 && this.AddEmbeddedB64EffectTagImage(s);
         }
+
+        private bool AddEmbeddedB64EffectTagImage(string s) => this.AddEmbeddedB64Image(s, 32768, 49152, i => i.Width <= 64 && i.Height <= 32, x =>
+        {
+            if (this._editedStatusEffectCopy != null)
+            {
+                this._editedStatusEffectCopy.Tag.EmbedB64Image = x;
+            }
+        });
 
         private bool AddEmbeddedB64BarImage(string s) => this.AddEmbeddedB64Image(s, 32768, 49152, i => i.Width <= 32 && i.Height <= 32, x =>
         {
@@ -1634,6 +1643,12 @@
                             new PacketMapObjectBar() { BarAction = PacketMapObjectBar.Action.Change, Index = i, MapID = state.barCustomAssetImageHoveredOwner.MapID, ContainerID = state.barCustomAssetImageHoveredOwner.ID, Session = Client.Instance.SessionID, IsServer = false, Bar = state.barCustomAssetImageHovered }.Send();
                             haveResult = true;
                         }
+                    }
+
+                    if (!haveResult && state.statusEffectTagHoverEnum == 1 && Client.Instance.IsAdmin && this._draggedRef?.Type == AssetType.Texture && this._editedStatusEffectCopy != null)
+                    {
+                        this._editedStatusEffectCopy.Tag.AssetID = this._draggedRef.AssetID;
+                        haveResult = true;
                     }
                 }
 

@@ -476,14 +476,14 @@
 
                             string rText = lang.Translate("ui.turn_tracker.round.value", cMap.TurnTracker.Round);
                             float rtw = ImGui.CalcTextSize(rText).X;
-                            ImGui.PushStyleColor(ImGuiCol.Text, new Vec4(0, 0, 0, 1));
-                            ImGui.SetCursorPosX(textPosition.X - (rtw / 2) + 1);
-                            ImGui.SetCursorPosY(-1);
-                            ImGui.TextUnformatted(rText);
-                            ImGui.PopStyleColor();
-                            ImGui.SetCursorPosX(textPosition.X - (rtw / 2));
-                            ImGui.SetCursorPosY(-2);
-                            ImGui.TextUnformatted(rText);
+                            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+                            Vec2 roundIndicatorStart = new Vec2(textPosition.X - (rtw / 2) - 8, 0);
+                            ImGui.SetCursorPos(roundIndicatorStart);
+                            roundIndicatorStart = ImGui.GetCursorScreenPos();
+                            Vec2 roundIndicatorSize = new Vec2(rtw + 16, 20);
+                            drawList.AddRectFilled(roundIndicatorStart, roundIndicatorStart + roundIndicatorSize, (*ImGui.GetStyleColorVec4(ImGuiCol.FrameBg) * new Vec4(1, 1, 1, 0.75f)).Abgr(), 8, ImDrawFlags.RoundCornersBottom);
+                            drawList.AddRect(roundIndicatorStart, roundIndicatorStart + roundIndicatorSize, ImGui.GetColorU32(ImGuiCol.Border), 8, ImDrawFlags.RoundCornersBottom);
+                            drawList.AddText(new Vec2(roundIndicatorStart.X + (roundIndicatorSize.X * 0.5f) - (rtw * 0.5f), 0), ImGui.GetColorU32(ImGuiCol.Text), rText);
                         }
                     }
 

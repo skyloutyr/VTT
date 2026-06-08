@@ -558,19 +558,16 @@
         public void LoadAllClients()
         {
             string clientsLoc = Path.Combine(IOVTT.ServerDir, "Clients");
-
-            if (Directory.Exists(clientsLoc))
+            Directory.CreateDirectory(clientsLoc);
+            foreach (string file in Directory.EnumerateFiles(clientsLoc))
             {
-                foreach (string file in Directory.EnumerateFiles(clientsLoc))
-                {
-                    Guid id = Guid.Parse(Path.GetFileNameWithoutExtension(file));
-                    ClientInfo ci = JsonConvert.DeserializeObject<ClientInfo>(File.ReadAllText(file));
-                    ci.ID = id;
-                    using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-                    ci.SessionAuthToken = new byte[32];
-                    rng.GetBytes(ci.SessionAuthToken);
-                    this.ClientInfos[id] = ci;
-                }
+                Guid id = Guid.Parse(Path.GetFileNameWithoutExtension(file));
+                ClientInfo ci = JsonConvert.DeserializeObject<ClientInfo>(File.ReadAllText(file));
+                ci.ID = id;
+                using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+                ci.SessionAuthToken = new byte[32];
+                rng.GetBytes(ci.SessionAuthToken);
+                this.ClientInfos[id] = ci;
             }
         }
 
@@ -625,6 +622,7 @@
         public void LoadChat()
         {
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
+            Directory.CreateDirectory(chatLoc);
             string dbName = Path.Combine(chatLoc, "chatdb");
             if (!this.ServerChat.Read(dbName))
             {
@@ -712,6 +710,7 @@
         public void SaveChat()
         {
             string chatLoc = Path.Combine(IOVTT.ServerDir, "Chat");
+            Directory.CreateDirectory(chatLoc);
             string dbName = Path.Combine(chatLoc, "chatdb");
             lock (this.chatLock)
             {
